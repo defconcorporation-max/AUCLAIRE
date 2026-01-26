@@ -63,6 +63,22 @@ export const apiInvoices = {
 
         if (error) {
             console.warn("Using Mock Create for Invoice");
+
+            // Helper to get real project info for the mock join
+            let projectInfo: any = { title: 'Unknown Project', client: { full_name: 'Unknown' } };
+            if (invoice.project_id) {
+                try {
+                    const storedProjects = JSON.parse(localStorage.getItem('mock_projects') || '[]');
+                    const foundP = storedProjects.find((p: any) => p.id === invoice.project_id);
+                    if (foundP) {
+                        projectInfo = {
+                            title: foundP.title,
+                            client: foundP.client || { full_name: 'Unknown' }
+                        };
+                    }
+                } catch (e) { console.error(e); }
+            }
+
             const newInvoice: Invoice = {
                 id: Math.random().toString(36).substr(2, 9),
                 amount: invoice.amount || 0,
@@ -71,8 +87,7 @@ export const apiInvoices = {
                 project_id: invoice.project_id || '1',
                 stripe_payment_link: invoice.stripe_payment_link,
                 created_at: new Date().toISOString(),
-                // Mock joined data relation (hacky but works for demo)
-                project: { title: 'New Project', client: { full_name: 'Client' } } as Project
+                project: projectInfo as Project
             };
             mockInvoices = [newInvoice, ...mockInvoices];
             saveMockData();
