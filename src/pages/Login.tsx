@@ -41,6 +41,22 @@ export default function Login() {
         }
     }
 
+    const [password, setPassword] = useState('')
+    const [isUnlocked, setIsUnlocked] = useState(false)
+
+    const handleUnlock = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Simple client-side check as requested "just for the first connection"
+        if (password === 'auclaire2468') {
+            setIsUnlocked(true);
+            // Optionally auto-login since there's only one main user in this demo context?
+            // User said "add a password protection... for the first connection".
+            // Showing the login options after unlock is safer.
+        } else {
+            setMessage({ type: 'error', text: 'Incorrect password' });
+        }
+    }
+
     return (
         <div className="min-h-screen grid lg:grid-cols-2">
             <div className="hidden lg:flex flex-col justify-center items-center bg-black text-white p-12 relative overflow-hidden">
@@ -56,57 +72,88 @@ export default function Login() {
 
             <div className="flex items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-900">
                 <Card className="w-full max-w-md border-0 shadow-2xl bg-white/50 dark:bg-black/50 backdrop-blur-sm">
-                    <CardHeader className="space-y-1 text-center">
-                        <CardTitle className="text-2xl font-serif">Welcome Back</CardTitle>
-                        <CardDescription>
-                            Sign in to access the management portal
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleLogin} className="space-y-4">
-                            <div className="space-y-2">
-                                <Input
-                                    type="email"
-                                    placeholder="name@auclaire.com"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="bg-white/50 dark:bg-black/50 border-zinc-200 dark:border-zinc-800"
-                                />
-                            </div>
+                    {!isUnlocked ? (
+                        <>
+                            <CardHeader className="space-y-1 text-center">
+                                <CardTitle className="text-2xl font-serif">A U C L A I R E</CardTitle>
+                                <CardDescription>Enter access code to continue</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleUnlock} className="space-y-4">
+                                    <Input
+                                        type="password"
+                                        placeholder="Access Code"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="text-center tracking-widest"
+                                        autoFocus
+                                    />
+                                    {message && !isUnlocked && (
+                                        <div className="text-sm p-3 rounded bg-red-100 text-red-800 text-center">
+                                            {message.text}
+                                        </div>
+                                    )}
+                                    <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black">
+                                        Enter
+                                    </Button>
+                                </form>
+                            </CardContent>
+                        </>
+                    ) : (
+                        <>
+                            <CardHeader className="space-y-1 text-center">
+                                <CardTitle className="text-2xl font-serif">Welcome Back</CardTitle>
+                                <CardDescription>
+                                    Sign in to access the management portal
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleLogin} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Input
+                                            type="email"
+                                            placeholder="name@auclaire.com"
+                                            required
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="bg-white/50 dark:bg-black/50 border-zinc-200 dark:border-zinc-800"
+                                        />
+                                    </div>
 
-                            {message && (
-                                <div className={`text-sm p-3 rounded ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                    {message.text}
+                                    {message && (
+                                        <div className={`text-sm p-3 rounded ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                            {message.text}
+                                        </div>
+                                    )}
+
+                                    <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black font-medium" disabled={loading}>
+                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sign In with Email'}
+                                    </Button>
+                                </form>
+
+                                <div className="relative my-4">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-white dark:bg-black px-2 text-muted-foreground">Or Development</span>
+                                    </div>
                                 </div>
-                            )}
 
-                            <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black font-medium" disabled={loading}>
-                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sign In with Email'}
-                            </Button>
-                        </form>
-
-                        <div className="relative my-4">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-white dark:bg-black px-2 text-muted-foreground">Or Development</span>
-                            </div>
-                        </div>
-
-                        <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => {
-                                signInAsDev();
-                                navigate('/dashboard');
-                            }}
-                        >
-                            <span className="text-luxury-gold mr-2 font-bold">DEV</span>
-                            Bypass Login
-                        </Button>
-                    </CardContent>
+                                <Button
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => {
+                                        signInAsDev();
+                                        navigate('/dashboard');
+                                    }}
+                                >
+                                    <span className="text-luxury-gold mr-2 font-bold">DEV</span>
+                                    Bypass Login
+                                </Button>
+                            </CardContent>
+                        </>
+                    )}
                 </Card>
             </div>
         </div>
