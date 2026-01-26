@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiInvoices } from '@/services/apiInvoices'
+import { apiProjects } from '@/services/apiProjects'
 import { apiSettings } from '@/services/apiSettings'
 import { generateInvoicePDF } from '@/services/pdfService'
 import { Card } from "@/components/ui/card"
