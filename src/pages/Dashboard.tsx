@@ -39,10 +39,8 @@ export default function Dashboard() {
     // Financial calculations
     const totalProjectValue = projects?.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0) || 0;
 
-    // Collected = Sum of PAID invoices
-    // Note: In a real app we might rely on project.financials.paid_amount if strictly maintained, 
-    // but summing invoices is safer given our recent "Mark Paid" feature.
-    const totalCollected = invoices?.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0) || 0;
+    // Collected = Sum of amount_paid from ALL invoices (handles partial + paid)
+    const totalCollected = invoices?.reduce((sum, i) => sum + (i.amount_paid || 0), 0) || 0;
 
     const totalPending = totalProjectValue - totalCollected;
 
