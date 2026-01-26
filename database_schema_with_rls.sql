@@ -53,40 +53,58 @@ create table if not exists invoices (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- RLS POLICIES (Row Level Security)
--- ENABLE RLS but allow PUBLIC access for "Shared Password" mode
+-- FORCE ENABLE RLS
 alter table profiles enable row level security;
 alter table clients enable row level security;
 alter table projects enable row level security;
 alter table invoices enable row level security;
 
--- DROP OLD POLICIES to avoid conflicts
+-- DROP OLD POLICIES
 drop policy if exists "Admins can do everything" on projects;
-drop policy if exists "Sales Agents can view their projects" on projects;
-drop policy if exists "Manufacturers can view production projects" on projects;
-drop policy if exists "Manufacturers can update production projects" on projects;
-drop policy if exists "Clients can view their own project" on projects;
+drop policy if exists "Public Access Projects" on projects;
+drop policy if exists "Public Access Clients" on clients;
+drop policy if exists "Public Access Invoices" on invoices;
+drop policy if exists "Public Access Profiles" on profiles;
 
--- NEW PUBLIC POLICIES (Allows Anon/Public access)
--- WARNING: This makes your DB public to anyone with the Anon Key.
--- Required because you want to use a shared password without real Auth.
+-- NEW AUTHENTICATED POLICIES
+-- Simple policy: Any logged-in user can Read/Write everything (for this MVP)
+-- In a real app, you would restrict this further.
 
-create policy "Public Access Projects"
+create policy "Authenticated Users All Access Projects"
   on projects for all
-  using ( true )
-  with check ( true );
+  using ( auth.role() = 'authenticated' )
+  with check ( auth.role() = 'authenticated' );
 
-create policy "Public Access Clients"
+create policy "Authenticated Users All Access Clients"
   on clients for all
-  using ( true )
-  with check ( true );
+  using ( auth.role() = 'authenticated' )
+  with check ( auth.role() = 'authenticated' );
 
-create policy "Public Access Invoices"
+create policy "Authenticated Users All Access Invoices"
   on invoices for all
-  using ( true )
-  with check ( true );
+  using ( auth.role() = 'authenticated' )
+  with check ( auth.role() = 'authenticated' );
 
-create policy "Public Access Profiles"
+create policy "Authenticated Users All Access Profiles"
   on profiles for all
-  using ( true )
-  with check ( true );
+  using ( auth.role() = 'authenticated' )
+  with check ( auth.role() = 'authenticated' );
+
+
+-- AUTO PROFILE CREATION TRIGGER
+-- Automatically creates a profile entry when a new user signs up via Supabase Auth
+
+create or replace function public.handle_new_user() 
+returns trigger as $$
+begin
+  insert into public.profiles (id, full_name, role)
+  values (new.id, new.raw_user_meta_data->>'full_name', 'admin');
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger the function every time a user is created
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
