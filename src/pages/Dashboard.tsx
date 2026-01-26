@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { RecentActivityList } from "@/components/RecentActivityList";
 import { RevenueChart } from "@/components/RevenueChart";
 import { Link } from 'react-router-dom';
-import { Clock, AlertCircle } from 'lucide-react';
+
+import { Clock, AlertCircle, Banknote, TrendingUp } from 'lucide-react';
 
 export default function Dashboard() {
     const { profile, role } = useAuth();
@@ -25,7 +26,16 @@ export default function Dashboard() {
     const manufacturerProduction = projects?.filter(p => p.status === 'production' || p.status === 'approved_for_production') || [];
 
     const adminDesignReady = projects?.filter(p => p.status === 'design_ready') || [];
+
     const recentProjects = projects?.slice(0, 5) || [];
+
+    // Financial calculations
+    const totalSale = projects?.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0) || 0;
+    const totalCost = projects?.reduce((sum, p) => sum +
+        (p.financials?.supplier_cost || 0) +
+        (p.financials?.shipping_cost || 0) +
+        (p.financials?.customs_fee || 0), 0) || 0;
+    const totalProfit = totalSale - totalCost;
 
     return (
         <div className="space-y-8">
@@ -108,9 +118,35 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* ADMIN DASHBOARD - DESIGN READY SECTION */}
+            {/* ADMIN DASHBOARD -KPIs & DESIGN READY SECTION */}
             {role === 'admin' && (
                 <div className="grid gap-6">
+                    {/* Financial KPIs */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <Card className="bg-gradient-to-br from-luxury-gold/20 to-transparent border-luxury-gold/30">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                                <Banknote className="h-4 w-4 text-luxury-gold" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold font-serif">${totalSale.toLocaleString()}</div>
+                                <p className="text-xs text-muted-foreground">Gross Revenue</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold font-serif text-green-600 dark:text-green-400">
+                                    ${totalProfit.toLocaleString()}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Net Income</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
                     {adminDesignReady.length > 0 && (
                         <Card className="border-l-4 border-l-amber-500 bg-amber-50/10 mb-6">
                             <CardHeader>
