@@ -9,7 +9,7 @@ const Card = React.forwardRef<
     <div
         ref={ref}
         className={cn(
-            "rounded-lg border bg-card text-card-foreground shadow-sm bg-gradient-to-input",
+            "rounded-lg border border-border bg-card/60 text-card-foreground shadow-sm backdrop-blur-[12px]", // Glass effect
             className
         )}
         {...props}

@@ -80,5 +80,21 @@ export const apiInvoices = {
         }
 
         return data;
+    },
+
+    async update(id: string, updates: Partial<Invoice>) {
+        const { data, error } = await supabase.from('invoices').update(updates).eq('id', id).select().single();
+
+        if (error) {
+            console.warn("Using Mock Update for Invoice");
+            const index = mockInvoices.findIndex(i => i.id === id);
+            if (index !== -1) {
+                mockInvoices[index] = { ...mockInvoices[index], ...updates };
+                saveMockData();
+                return mockInvoices[index];
+            }
+            throw new Error('Invoice not found');
+        }
+        return data;
     }
 };

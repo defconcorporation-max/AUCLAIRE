@@ -1,5 +1,6 @@
 
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiInvoices } from '@/services/apiInvoices'
 import { apiSettings } from '@/services/apiSettings'
 import { generateInvoicePDF } from '@/services/pdfService'
@@ -8,13 +9,50 @@ import { Button } from '@/components/ui/button'
 import { Plus, FileText } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { useAuth } from '@/context/AuthContext'
 
 export default function InvoicesList() {
     const navigate = useNavigate()
+    const { role } = useAuth();
+    const queryClient = useQueryClient();
     const { data: invoices, isLoading } = useQuery({
         queryKey: ['invoices'],
         queryFn: apiInvoices.getAll
     })
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingInvoice, setEditingInvoice] = useState<any>(null);
+    const [paymentLink, setPaymentLink] = useState('');
+
+    const openEditModal = (invoice: any) => {
+        setEditingInvoice(invoice);
+        setPaymentLink(invoice.stripe_payment_link || '');
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveLink = async () => {
+        if (!editingInvoice) return;
+        await apiInvoices.update(editingInvoice.id, { stripe_payment_link: paymentLink });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        setIsEditModalOpen(false);
+    };
+
+    const markAsPaid = async (id: string) => {
+        if (confirm("Are you sure you want to mark this invoice as PAID?")) {
+            await apiInvoices.update(id, { status: 'paid', paid_at: new Date().toISOString() });
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -73,20 +111,26 @@ export default function InvoicesList() {
                                     }}>
                                         Print PDF
                                     </Button>
-                                    {invoice.status !== 'paid' && (
+                                    {/* Admin Actions: Edit Link & Mark Paid */}
+                                    {invoice.status !== 'paid' && role === 'admin' && (
+                                        <>
+                                            <Button variant="ghost" size="sm" onClick={() => openEditModal(invoice)}>
+                                                Edit Link
+                                            </Button>
+                                            {!invoice.stripe_payment_link && (
+                                                <Button size="sm" onClick={() => markAsPaid(invoice.id)}>
+                                                    Mark Paid
+                                                </Button>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {/* Pay Now Action (Eveyone sees this if link exists) */}
+                                    {invoice.status !== 'paid' && invoice.stripe_payment_link && (
                                         <Button
                                             size="sm"
                                             className="bg-green-600 hover:bg-green-700 text-white"
-                                            onClick={() => {
-                                                if (invoice.stripe_payment_link) {
-                                                    window.open(invoice.stripe_payment_link, '_blank');
-                                                } else {
-                                                    if (confirm("Simulate online payment via Stripe?")) {
-                                                        // Mock payment
-                                                        alert("Payment processed successfully! Mock mode.");
-                                                    }
-                                                }
-                                            }}
+                                            onClick={() => window.open(invoice.stripe_payment_link, '_blank')}
                                         >
                                             Pay Now
                                         </Button>
@@ -97,6 +141,31 @@ export default function InvoicesList() {
                     ))
                 )}
             </div>
+
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Update Payment Link</DialogTitle>
+                        <DialogDescription>
+                            Add or update the Stripe payment link for this invoice.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Stripe Link</Label>
+                            <Input
+                                placeholder="https://buy.stripe.com/..."
+                                value={paymentLink}
+                                onChange={(e) => setPaymentLink(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveLink}>Save</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
