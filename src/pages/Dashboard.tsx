@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
+import { apiInvoices } from '@/services/apiInvoices';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,12 +15,17 @@ export default function Dashboard() {
     const { profile, role } = useAuth();
 
     // Fetch all projects for simplicity in mock (RLS would filter in real DB)
-    const { data: projects, isLoading } = useQuery({
+    const { data: projects, isLoading: projectsLoading } = useQuery({
         queryKey: ['projects'],
         queryFn: apiProjects.getAll
     });
 
-    if (isLoading) return <div>Loading dashboard...</div>;
+    const { data: invoices, isLoading: invoicesLoading } = useQuery({
+        queryKey: ['invoices'],
+        queryFn: apiInvoices.getAll
+    });
+
+    if (projectsLoading || invoicesLoading) return <div>Loading dashboard...</div>;
 
     // Filter projects based on role logic
     const manufacturerDesignRequests = projects?.filter(p => p.status === 'designing' || p.status === 'design_modification' || p.status === '3d_model') || [];
@@ -30,12 +36,23 @@ export default function Dashboard() {
     const recentProjects = projects?.slice(0, 5) || [];
 
     // Financial calculations
-    const totalSale = projects?.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0) || 0;
+    // Financial calculations
+    const totalProjectValue = projects?.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0) || 0;
+
+    // Collected = Sum of PAID invoices
+    // Note: In a real app we might rely on project.financials.paid_amount if strictly maintained, 
+    // but summing invoices is safer given our recent "Mark Paid" feature.
+    const totalCollected = invoices?.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0) || 0;
+
+    const totalPending = totalProjectValue - totalCollected;
+
     const totalCost = projects?.reduce((sum, p) => sum +
         (p.financials?.supplier_cost || 0) +
         (p.financials?.shipping_cost || 0) +
         (p.financials?.customs_fee || 0), 0) || 0;
-    const totalProfit = totalSale - totalCost;
+
+    // Profit = Project Value - Costs (Projected Profit)
+    const totalProfit = totalProjectValue - totalCost;
 
     return (
         <div className="space-y-8">
@@ -122,27 +139,43 @@ export default function Dashboard() {
             {role === 'admin' && (
                 <div className="grid gap-6">
                     {/* Financial KPIs */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <Card className="bg-gradient-to-br from-luxury-gold/20 to-transparent border-luxury-gold/30">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                                <Banknote className="h-4 w-4 text-luxury-gold" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold font-serif">${totalSale.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground">Gross Revenue</p>
-                            </CardContent>
-                        </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
-                                <TrendingUp className="h-4 w-4 text-green-600" />
+                                <CardTitle className="text-sm font-medium">Total Collected</CardTitle>
+                                <Banknote className="h-4 w-4 text-green-600" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold font-serif text-green-600 dark:text-green-400">
+                                    ${totalCollected.toLocaleString()}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Cash Received</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/30">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Pending Payment</CardTitle>
+                                <Clock className="h-4 w-4 text-amber-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold font-serif text-amber-600 dark:text-amber-400">
+                                    ${totalPending.toLocaleString()}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Outstanding Balance</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/30">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-luxury-gold" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold font-serif text-luxury-gold">
                                     ${totalProfit.toLocaleString()}
                                 </div>
-                                <p className="text-xs text-muted-foreground">Net Income</p>
+                                <p className="text-xs text-muted-foreground">Projected Net Income</p>
                             </CardContent>
                         </Card>
                     </div>
