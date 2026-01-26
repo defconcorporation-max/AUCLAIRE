@@ -129,11 +129,31 @@ export default function Dashboard() {
                                         <div key={project.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                                             <div>
                                                 <div className="font-medium text-sm">{project.title}</div>
-                                                <div className="text-xs text-muted-foreground">Deadline: {project.deadline}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {project.status === 'approved_for_production' ? 'Pending Production' : 'Production Started'}
+                                                    {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
+                                                </div>
                                             </div>
-                                            <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700" asChild>
-                                                <Link to={`/dashboard/projects/${project.id}`}>Start Production</Link>
-                                            </Button>
+
+                                            {project.status === 'approved_for_production' ? (
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-green-600 hover:bg-green-700"
+                                                    onClick={async () => {
+                                                        if (confirm("Start production for this project?")) {
+                                                            await apiProjects.updateStatus(project.id, 'production');
+                                                            // Force refresh or invalidate query
+                                                            window.location.reload();
+                                                        }
+                                                    }}
+                                                >
+                                                    Start Production
+                                                </Button>
+                                            ) : (
+                                                <Button size="sm" variant="outline" asChild>
+                                                    <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
+                                                </Button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
