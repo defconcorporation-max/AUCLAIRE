@@ -6,7 +6,8 @@ export interface Invoice {
     id: string;
     project_id: string;
     amount: number;
-    status: 'draft' | 'sent' | 'paid' | 'void';
+    amount_paid: number; // New field
+    status: 'draft' | 'sent' | 'partial' | 'paid' | 'void';
     stripe_payment_link?: string;
     due_date?: string;
     paid_at?: string;
@@ -17,7 +18,7 @@ export interface Invoice {
 // MOCK STORE
 let mockInvoices: Invoice[] = [
     {
-        id: '1', amount: 1500, status: 'draft', due_date: '2024-12-31', created_at: new Date().toISOString(),
+        id: '1', amount: 1500, amount_paid: 0, status: 'draft', due_date: '2024-12-31', created_at: new Date().toISOString(),
         project_id: '1',
         project: { title: 'Test Project - Solitaire Ring', client: { full_name: 'Test Client' } } as Project
     },
@@ -85,7 +86,8 @@ export const apiInvoices = {
             const newInvoice: Invoice = {
                 id: Math.random().toString(36).substr(2, 9),
                 amount: invoice.amount || 0,
-                status: 'draft',
+                amount_paid: invoice.amount_paid || 0, // Initialize amount_paid from input or 0
+                status: invoice.status || 'draft', // Initialize status from input or 'draft'
                 due_date: invoice.due_date,
                 project_id: invoice.project_id || '1',
                 stripe_payment_link: invoice.stripe_payment_link,
@@ -107,7 +109,21 @@ export const apiInvoices = {
             console.warn("Using Mock Update for Invoice");
             const index = mockInvoices.findIndex(i => i.id === id);
             if (index !== -1) {
-                mockInvoices[index] = { ...mockInvoices[index], ...updates };
+                // Auto-calculate status based on amount_paid
+                let updatedInvoice = { ...mockInvoices[index], ...updates };
+
+                if (updates.amount_paid !== undefined) {
+                    if (updatedInvoice.amount_paid >= updatedInvoice.amount) {
+                        updatedInvoice.status = 'paid';
+                        updatedInvoice.paid_at = new Date().toISOString();
+                    } else if (updatedInvoice.amount_paid > 0) {
+                        updatedInvoice.status = 'partial';
+                    } else {
+                        updatedInvoice.status = 'sent'; // Default back to sent if 0
+                    }
+                }
+
+                mockInvoices[index] = updatedInvoice;
                 saveMockData();
                 return mockInvoices[index];
             }

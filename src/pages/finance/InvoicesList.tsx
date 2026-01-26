@@ -31,10 +31,14 @@ export default function InvoicesList() {
         queryFn: apiInvoices.getAll
     })
 
+    // State
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [editingInvoice, setEditingInvoice] = useState<any>(null);
     const [paymentLink, setPaymentLink] = useState('');
+    const [paymentAmount, setPaymentAmount] = useState('');
 
+    // Edit Link Handlers
     const openEditModal = (invoice: any) => {
         setEditingInvoice(invoice);
         setPaymentLink(invoice.stripe_payment_link || '');
@@ -48,12 +52,30 @@ export default function InvoicesList() {
         setIsEditModalOpen(false);
     };
 
-    const markAsPaid = async (id: string) => {
-        if (confirm("Are you sure you want to mark this invoice as PAID?")) {
-            await apiInvoices.update(id, { status: 'paid', paid_at: new Date().toISOString() });
-            queryClient.invalidateQueries({ queryKey: ['invoices'] });
-        }
+    // Payment Handlers
+    const openPaymentModal = (invoice: any) => {
+        setEditingInvoice(invoice);
+        setPaymentAmount('');
+        setIsPaymentModalOpen(true);
     };
+
+    const handleRecordPayment = async () => {
+        if (!editingInvoice || !paymentAmount) return;
+        const addAmount = parseFloat(paymentAmount);
+        if (isNaN(addAmount)) return;
+
+        const currentPaid = editingInvoice.amount_paid || 0;
+        const newTotalPaid = currentPaid + addAmount;
+
+        await apiInvoices.update(editingInvoice.id, {
+            amount_paid: newTotalPaid,
+            // Status auto-updated in API
+        });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        setIsPaymentModalOpen(false);
+    };
+
+
 
     // Manual Sync Removed - Now handled automatically in apiInvoices.getAll()
 
@@ -99,12 +121,16 @@ export default function InvoicesList() {
                             <div className="flex items-center gap-8">
                                 <div className="text-right">
                                     <p className="font-bold text-lg">${invoice.amount.toLocaleString()}</p>
+                                    {(invoice.amount_paid || 0) > 0 && invoice.status !== 'paid' && (
+                                        <p className="text-xs text-green-600 font-medium">Paid: ${invoice.amount_paid?.toLocaleString()}</p>
+                                    )}
                                     <p className="text-xs text-muted-foreground">Due {invoice.due_date || 'N/A'}</p>
                                 </div>
                                 <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'} className={
                                     invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
-                                        invoice.status === 'sent' ? 'bg-blue-100 text-blue-800' :
-                                            'bg-gray-100 text-gray-800'
+                                        invoice.status === 'partial' ? 'bg-amber-100 text-amber-800' :
+                                            invoice.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                                                'bg-gray-100 text-gray-800'
                                 }>
                                     {invoice.status.toUpperCase()}
                                 </Badge>
@@ -124,8 +150,8 @@ export default function InvoicesList() {
                                                         Edit Link
                                                     </Button>
                                                     {!invoice.stripe_payment_link && (
-                                                        <Button size="sm" onClick={() => markAsPaid(invoice.id)}>
-                                                            Mark Paid
+                                                        <Button size="sm" onClick={() => openPaymentModal(invoice)}>
+                                                            Record Payment
                                                         </Button>
                                                     )}
                                                 </>
@@ -179,6 +205,36 @@ export default function InvoicesList() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
                         <Button onClick={handleSaveLink}>Save</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Record Payment</DialogTitle>
+                        <DialogDescription>
+                            Enter the amount received.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Amount Received ($)</Label>
+                            <Input
+                                type="number"
+                                placeholder="0.00"
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Total Due: ${editingInvoice?.amount?.toLocaleString()} <br />
+                                Remaining: ${(editingInvoice?.amount - (editingInvoice?.amount_paid || 0))?.toLocaleString()}
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleRecordPayment}>Record Payment</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
