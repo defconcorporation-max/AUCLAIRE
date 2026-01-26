@@ -54,34 +54,7 @@ export const apiInvoices = {
         if (error || !data) {
             console.warn("Using Mock Data for Invoices");
 
-            // AUTO-SYNC: Ensure every project has an invoice
-            try {
-                const storedProjects = JSON.parse(localStorage.getItem('mock_projects') || '[]');
-                let added = false;
-                storedProjects.forEach((p: any) => {
-                    const hasInvoice = mockInvoices.some(i => i.project_id === p.id);
-                    if (!hasInvoice && p.budget) {
-                        const newInv: Invoice = {
-                            id: Math.random().toString(36).substr(2, 9),
-                            project_id: p.id,
-                            amount: p.budget,
-                            status: 'draft',
-                            created_at: new Date().toISOString(),
-                            due_date: p.deadline,
-                            project: { title: p.title, client: p.client || { full_name: 'Unknown' } } as Project
-                        };
-                        mockInvoices.push(newInv);
-                        added = true;
-                    }
-                });
-                if (added) {
-                    saveMockData();
-                    // Sort descending
-                    mockInvoices.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                }
-            } catch (e) {
-                console.error("Auto-sync failed", e);
-            }
+
 
             return [...mockInvoices];
         }
