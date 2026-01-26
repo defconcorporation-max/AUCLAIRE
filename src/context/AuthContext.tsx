@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 export type UserRole = 'admin' | 'sales' | 'manufacturer' | 'client';
 
@@ -21,7 +21,8 @@ interface AuthContextType {
     isAdmin: boolean;
     role?: UserRole;
     signOut: () => Promise<void>;
-    signInAsDev: () => void;
+    unlockApp: () => void;
+    signInAsDev: () => void; // Deprecated
     switchRole: (role: UserRole) => void;
 }
 
@@ -31,10 +32,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [isLoadingSession, setIsLoadingSession] = useState(true);
-    const queryClient = useQueryClient();
 
-    // Dev Mode State
-    const [isDevMode, setIsDevMode] = useState(false);
+    // Shared Mode State
+    const [isSharedMode, setIsSharedMode] = useState(false);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,17 +50,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(session?.user ?? null);
         });
 
+        // Check if previously unlocked (persisted in session storage or similar?)
+        // For now, simple state.
+
         return () => subscription.unsubscribe();
     }, []);
 
-    // Fetch profile only if user exists
+    // Fetch profile only if user exists OR in Shared Mode
     const { data: profile, isLoading: isLoadingProfile } = useQuery({
-        queryKey: ['profile', user?.id, isDevMode],
+        queryKey: ['profile', user?.id, isSharedMode],
         queryFn: async () => {
-            if (isDevMode) {
+            if (isSharedMode) {
                 return {
-                    id: 'dev-user',
-                    full_name: 'Developer Admin',
+                    id: 'details-admin', // Shared Admin ID
+                    full_name: 'Auclaire Admin',
                     role: 'admin',
                     avatar_url: null
                 } as Profile;
@@ -74,41 +77,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 .single();
 
             if (error) {
-                console.error('Error fetching profile:', error);
+                // Return null if no profile found
                 return null;
             }
             return data as Profile;
         },
-        enabled: !!user || isDevMode,
+        enabled: !!user || isSharedMode,
     });
 
-    const signInAsDev = () => {
-        setIsDevMode(true);
-        // Mock session/user
-        const mockUser = { id: 'dev-user', email: 'dev@auclaire.com' } as User;
-        const mockSession = { user: mockUser, access_token: 'mock', refresh_token: 'mock' } as Session;
-
+    const unlockApp = () => {
+        setIsSharedMode(true);
+        // We simulate a user so protected routes don't redirect
+        // But we DON'T use Supabase Auth. We use Anon key + RLS policies.
+        const mockUser = { id: 'shared-admin', email: 'admin@auclaire.com' } as User;
         setUser(mockUser);
-        setSession(mockSession);
-    };
-
-    // Role Switching for Demo
-    const switchRole = (role: UserRole) => {
-        // if (!isDevMode) return; // Allow switching even if not strictly in "Dev Mode" state originally
-        if (!isDevMode) setIsDevMode(true);
-
-
-        // Mock Session Update
-        const mockUser = { id: 'dev-user', email: `dev-${role}@auclaire.com` } as User;
-        setUser(mockUser);
-
-        // Force refetch of profile with new role
-        queryClient.setQueryData(['profile', 'dev-user', true], {
-            id: 'dev-user',
-            full_name: `Dev ${role.charAt(0).toUpperCase() + role.slice(1)}`,
-            role: role,
-            avatar_url: null
-        });
     };
 
     const value = {
@@ -116,20 +98,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         profile: profile ?? null,
         isLoading: isLoadingSession || (!!user && isLoadingProfile),
-        isAdmin: (profile?.role as string) === 'admin' || (isDevMode && (profile?.role as string) === 'admin'),
+        isAdmin: isSharedMode || (profile?.role as string) === 'admin',
         role: profile?.role,
         signOut: async () => {
-            if (isDevMode) {
-                setIsDevMode(false);
-                setUser(null);
-                setSession(null);
-                queryClient.clear();
-            } else {
-                await supabase.auth.signOut()
-            }
+            // Just lock the app
+            setIsSharedMode(false);
+            setUser(null);
+            await supabase.auth.signOut();
         },
-        signInAsDev,
-        switchRole
+        signInAsDev: unlockApp, // Alias for compatibility during refactor
+        unlockApp,
+        switchRole: () => { } // Remove demo role switching in shared mode
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

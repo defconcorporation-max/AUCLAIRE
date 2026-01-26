@@ -2,7 +2,7 @@
 create extension if not exists "uuid-ossp";
 
 -- 1. PROFILES (Users)
-create table profiles (
+create table if not exists profiles (
   id uuid references auth.users not null primary key,
   full_name text,
   role text check (role in ('admin', 'manufacturer', 'client', 'sales_agent')),
@@ -10,7 +10,7 @@ create table profiles (
 );
 
 -- 2. CLIENTS
-create table clients (
+create table if not exists clients (
   id uuid default uuid_generate_v4() primary key,
   full_name text not null,
   email text,
@@ -20,7 +20,7 @@ create table clients (
 );
 
 -- 3. PROJECTS
-create table projects (
+create table if not exists projects (
   id uuid default uuid_generate_v4() primary key,
   title text not null,
   description text,
@@ -41,48 +41,52 @@ create table projects (
 );
 
 -- 4. INVOICES
-create table invoices (
+create table if not exists invoices (
   id uuid default uuid_generate_v4() primary key,
   project_id uuid references projects(id),
   amount numeric not null,
-  status text check (status in ('draft', 'sent', 'paid', 'overdue')) default 'draft',
+  status text check (status in ('draft', 'sent', 'partial', 'paid', 'void')) default 'draft',
+  amount_paid numeric default 0,
   stripe_payment_link text,
   due_date date,
+  paid_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 -- RLS POLICIES (Row Level Security)
+-- ENABLE RLS but allow PUBLIC access for "Shared Password" mode
 alter table profiles enable row level security;
 alter table clients enable row level security;
 alter table projects enable row level security;
 alter table invoices enable row level security;
 
--- POLICIES
+-- DROP OLD POLICIES to avoid conflicts
+drop policy if exists "Admins can do everything" on projects;
+drop policy if exists "Sales Agents can view their projects" on projects;
+drop policy if exists "Manufacturers can view production projects" on projects;
+drop policy if exists "Manufacturers can update production projects" on projects;
+drop policy if exists "Clients can view their own project" on projects;
 
--- Admin: Full Access
-create policy "Admins can do everything"
+-- NEW PUBLIC POLICIES (Allows Anon/Public access)
+-- WARNING: This makes your DB public to anyone with the Anon Key.
+-- Required because you want to use a shared password without real Auth.
+
+create policy "Public Access Projects"
   on projects for all
-  using ( auth.uid() in (select id from profiles where role = 'admin') );
+  using ( true )
+  with check ( true );
 
--- Sales Agent: Access their own projects + read all clients
-create policy "Sales Agents can view their projects"
-  on projects for select
-  using ( auth.uid() = sales_agent_id or auth.uid() in (select id from profiles where role = 'admin') );
+create policy "Public Access Clients"
+  on clients for all
+  using ( true )
+  with check ( true );
 
--- Manufacturer: Read/Update only necessary fields (Handled via API logic usually, but row access:)
-create policy "Manufacturers can view production projects"
-  on projects for select
-  using ( auth.uid() in (select id from profiles where role = 'manufacturer') );
+create policy "Public Access Invoices"
+  on invoices for all
+  using ( true )
+  with check ( true );
 
-create policy "Manufacturers can update production projects"
-  on projects for update
-  using ( auth.uid() in (select id from profiles where role = 'manufacturer') );
-
--- Client: Read OWN project only
-create policy "Clients can view their own project"
-  on projects for select
-  using ( 
-    auth.uid() in (select id from profiles where role = 'client') 
-    AND 
-    client_id in (select id from clients where email = (select email from auth.users where id = auth.uid()))
-  );
+create policy "Public Access Profiles"
+  on profiles for all
+  using ( true )
+  with check ( true );
