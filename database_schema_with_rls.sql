@@ -24,7 +24,7 @@ create table projects (
   id uuid default uuid_generate_v4() primary key,
   title text not null,
   description text,
-  status text check (status in ('designing', '3d_model', 'design_ready', 'design_modification', 'production', 'delivery', 'completed')) default 'designing',
+  status text check (status in ('designing', '3d_model', 'design_ready', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed')) default 'designing',
   
   client_id uuid references clients(id),
   sales_agent_id uuid references auth.users(id),
@@ -46,6 +46,7 @@ create table invoices (
   project_id uuid references projects(id),
   amount numeric not null,
   status text check (status in ('draft', 'sent', 'paid', 'overdue')) default 'draft',
+  stripe_payment_link text,
   due_date date,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
