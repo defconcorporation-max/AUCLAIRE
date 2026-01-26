@@ -278,6 +278,26 @@ export const apiProjects = {
 
                 mockProjects[index] = updatedProject;
                 saveMockData();
+                mockProjects[index] = updatedProject;
+                saveMockData();
+
+                // FINANCIAL SYNC: Update Invoice if Budget Changed
+                if (updates.budget) {
+                    try {
+                        // Dynamic import to avoid cycles if any
+                        const { apiInvoices } = await import('./apiInvoices');
+                        const invoices = await apiInvoices.getAll();
+                        const linkedInvoice = invoices.find(i => i.project_id === id && i.status !== 'paid');
+
+                        if (linkedInvoice) {
+                            console.log(`Syncing Invoice ${linkedInvoice.id} amount to ${updates.budget}`);
+                            await apiInvoices.update(linkedInvoice.id, { amount: updates.budget });
+                        }
+                    } catch (err) {
+                        console.error("Failed to sync invoice price", err);
+                    }
+                }
+
                 return mockProjects[index];
             }
             throw new Error('Project not found');

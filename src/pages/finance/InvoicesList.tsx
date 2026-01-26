@@ -54,6 +54,29 @@ export default function InvoicesList() {
         }
     };
 
+    const handleGenerateMissingInvoices = async () => {
+        if (!confirm("This will create draft invoices for all projects that don't have one yet. Continue?")) return;
+
+        const allProjects = await apiProjects.getAll();
+        const allInvoices = await apiInvoices.getAll();
+
+        let createdCount = 0;
+        for (const project of allProjects) {
+            const hasInvoice = allInvoices.some(i => i.project_id === project.id);
+            if (!hasInvoice && project.budget) {
+                await apiInvoices.create({
+                    project_id: project.id,
+                    amount: project.budget,
+                    status: 'draft',
+                    due_date: project.deadline || undefined
+                });
+                createdCount++;
+            }
+        }
+        alert(`Created ${createdCount} missing invoices.`);
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -68,6 +91,11 @@ export default function InvoicesList() {
                     <Plus className="w-4 h-4 mr-2" />
                     Create Invoice
                 </Button>
+                {role === 'admin' && (
+                    <Button variant="outline" onClick={handleGenerateMissingInvoices} className="ml-2">
+                        Sync Invoices
+                    </Button>
+                )}
             </div>
 
             <div className="space-y-4">
