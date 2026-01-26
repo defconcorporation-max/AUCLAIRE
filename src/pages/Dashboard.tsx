@@ -40,7 +40,11 @@ export default function Dashboard() {
     const totalProjectValue = projects?.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0) || 0;
 
     // Collected = Sum of amount_paid from ALL invoices (handles partial + paid)
-    const totalCollected = invoices?.reduce((sum, i) => sum + (i.amount_paid || 0), 0) || 0;
+    // Fallback: If amount_paid is 0 but status is 'paid', assume full amount (backward compatibility)
+    const totalCollected = invoices?.reduce((sum, i) => {
+        const paid = i.amount_paid || (i.status === 'paid' ? i.amount : 0);
+        return sum + paid;
+    }, 0) || 0;
 
     const totalPending = totalProjectValue - totalCollected;
 
