@@ -4,80 +4,82 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE (Not optimized for luxury yet, but keeping clean) */
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+@layer base {
 
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  /* LIGHT MODE (Not optimized for luxury yet, but keeping clean) */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-  --primary: 43 74% 49%;
-  --primary-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+    --primary: 43 74% 49%;
+    --primary-foreground: 210 40% 98%;
 
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 43 74% 49%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-  --radius: 0.5rem;
-}
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 43 74% 49%;
 
-/* PREMIUM DARK MODE */
-.dark {
-  /* Deepest Obsidian Background */
-  --background: 240 10% 3.9%;
-  /* #09090b - Zinc 950 base */
-  --foreground: 45 20% 96%;
-  /* Warm Pearl White */
+    --radius: 0.5rem;
+  }
 
-  /* Glassy / Deep Cards */
-  --card: 240 10% 5.9%;
-  /* Slightly lighter than bg */
-  --card-foreground: 45 20% 96%;
+  /* PREMIUM DARK MODE */
+  .dark {
+    /* Deepest Obsidian Background */
+    --background: 240 10% 3.9%;
+    /* #09090b - Zinc 950 base */
+    --foreground: 45 20% 96%;
+    /* Warm Pearl White */
 
-  --popover: 240 10% 5.9%;
-  --popover-foreground: 45 20% 96%;
+    /* Glassy / Deep Cards */
+    --card: 240 10% 5.9%;
+    /* Slightly lighter than bg */
+    --card-foreground: 45 20% 96%;
 
-  /* Luxury Gold */
-  --primary: 46 64% 52%;
-  /* #D4AF37ish */
-  --primary-foreground: 240 10% 3.9%;
-  /* Dark Text on Gold */
+    --popover: 240 10% 5.9%;
+    --popover-foreground: 45 20% 96%;
 
-  --secondary: 240 3.7% 15.9%;
-  /* Deep Zinc */
-  --secondary-foreground: 45 20% 96%;
+    /* Luxury Gold */
+    --primary: 46 64% 52%;
+    /* #D4AF37ish */
+    --primary-foreground: 240 10% 3.9%;
+    /* Dark Text on Gold */
 
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
+    --secondary: 240 3.7% 15.9%;
+    /* Deep Zinc */
+    --secondary-foreground: 45 20% 96%;
 
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 45 20% 96%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 45 20% 96%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 45 20% 96%;
 
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 45 20% 96%;
 
-  /* Gold Ring Focus */
-  --ring: 46 64% 52%;
-}
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+
+    /* Gold Ring Focus */
+    --ring: 46 64% 52%;
+  }
 }
 
 @layer base {
