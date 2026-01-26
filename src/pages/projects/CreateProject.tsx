@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Loader2, Link, DollarSign, Calendar as CalendarIcon } from 'lucide-react';
 import { apiProjects } from '@/services/apiProjects';
+
 import { apiClients } from '@/services/apiClients';
+import { apiInvoices } from '@/services/apiInvoices';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ClientForm } from '@/components/forms/ClientForm';
@@ -38,13 +40,25 @@ export default function CreateProject() {
         e.preventDefault();
         setLoading(true);
         try {
-            await apiProjects.create({
+            const newProject = await apiProjects.create({
                 ...formData,
                 budget: formData.budget ? parseFloat(formData.budget) : undefined,
                 status: 'designing'
             });
+
+            // Auto-create Invoice
+            if (newProject && formData.budget) {
+                await apiInvoices.create({
+                    project_id: newProject.id,
+                    amount: parseFloat(formData.budget),
+                    status: 'draft',
+                    due_date: formData.deadline || undefined
+                });
+            }
+
             // Invalidate query to refresh list
             await queryClient.invalidateQueries({ queryKey: ['projects'] });
+            await queryClient.invalidateQueries({ queryKey: ['invoices'] });
 
             await new Promise(resolve => setTimeout(resolve, 500));
 
