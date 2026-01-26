@@ -46,7 +46,12 @@ export default function Dashboard() {
         return sum + paid;
     }, 0) || 0;
 
-    const totalPending = totalProjectValue - totalCollected;
+    // Pending = Sum of (Invoice Amount - Paid Amount) for all invoices
+    // This ignores un-invoiced project value, per user request.
+    const totalPending = invoices?.reduce((sum, i) => {
+        const paid = i.amount_paid || (i.status === 'paid' ? i.amount : 0);
+        return sum + (i.amount - paid);
+    }, 0) || 0;
 
     const totalCost = projects?.reduce((sum, p) => sum +
         (p.financials?.supplier_cost || 0) +
