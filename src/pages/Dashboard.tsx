@@ -51,8 +51,8 @@ export default function Dashboard() {
         (p.financials?.shipping_cost || 0) +
         (p.financials?.customs_fee || 0), 0) || 0;
 
-    // Profit = Project Value - Costs (Projected Profit)
-    const totalProfit = totalProjectValue - totalCost;
+    // Actual Profit = Collected (Paid) - Total Reported Costs
+    const totalProfit = totalCollected - totalCost;
 
     return (
         <div className="space-y-8">
@@ -168,14 +168,14 @@ export default function Dashboard() {
 
                         <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/30">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
+                                <CardTitle className="text-sm font-medium">Actual Profit</CardTitle>
                                 <TrendingUp className="h-4 w-4 text-luxury-gold" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold font-serif text-luxury-gold">
                                     ${totalProfit.toLocaleString()}
                                 </div>
-                                <p className="text-xs text-muted-foreground">Projected Net Income</p>
+                                <p className="text-xs text-muted-foreground">Realized Net Income</p>
                             </CardContent>
                         </Card>
                     </div>
