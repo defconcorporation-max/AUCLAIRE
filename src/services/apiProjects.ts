@@ -318,5 +318,16 @@ export const apiProjects = {
             return mockProjects[index];
         }
         throw new Error('Project not found');
+    },
+
+    async delete(id: string) {
+        const { error } = await supabase.from('projects').delete().eq('id', id);
+
+        if (error) {
+            console.warn("Using Mock Delete for Project");
+            mockProjects = mockProjects.filter(p => p.id !== id);
+            saveMockData();
+            return;
+        }
     }
 };

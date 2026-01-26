@@ -25,7 +25,8 @@ import {
     ThumbsDown,
     Pencil,
     Save,
-    X
+    X,
+    Trash2
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
@@ -168,82 +169,95 @@ export default function ProjectDetails() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-                    <ArrowLeft className="w-4 h-4" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-serif font-bold text-luxury-gold">{project.title}</h1>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <User className="w-3 h-3" />
-                        {!isEditingClient ? (
-                            <div className="flex items-center gap-2">
-                                <span>Client: {project.client?.full_name}</span>
-                                {(role === 'admin' || role === 'sales') && (
-                                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
-                                        setSelectedClientId(project.client_id);
-                                        setIsEditingClient(true);
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                        <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-serif font-bold text-luxury-gold">{project.title}</h1>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <User className="w-3 h-3" />
+                            {!isEditingClient ? (
+                                <div className="flex items-center gap-2">
+                                    <span>Client: {project.client?.full_name}</span>
+                                    {(role === 'admin' || role === 'sales') && (
+                                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
+                                            setSelectedClientId(project.client_id);
+                                            setIsEditingClient(true);
+                                        }}>
+                                            <Pencil className="w-3 h-3" />
+                                        </Button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1 animate-in fade-in zoom-in-95">
+                                    <select
+                                        className="h-7 rounded border border-input bg-background text-sm px-1"
+                                        value={selectedClientId}
+                                        onChange={(e) => setSelectedClientId(e.target.value)}
+                                    >
+                                        {clients?.map((client: any) => (
+                                            <option key={client.id} value={client.id}>{client.full_name}</option>
+                                        ))}
+                                    </select>
+                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => {
+                                        apiProjects.update(project.id, { client_id: selectedClientId })
+                                            .then(() => {
+                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                setIsEditingClient(false);
+                                            });
                                     }}>
-                                        <Pencil className="w-3 h-3" />
+                                        <Save className="w-3 h-3" />
                                     </Button>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1 animate-in fade-in zoom-in-95">
-                                <select
-                                    className="h-7 rounded border border-input bg-background text-sm px-1"
-                                    value={selectedClientId}
-                                    onChange={(e) => setSelectedClientId(e.target.value)}
-                                >
-                                    {clients?.map((client: any) => (
-                                        <option key={client.id} value={client.id}>{client.full_name}</option>
-                                    ))}
-                                </select>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => {
-                                    apiProjects.update(project.id, { client_id: selectedClientId })
-                                        .then(() => {
-                                            queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                            setIsEditingClient(false);
-                                        });
-                                }}>
-                                    <Save className="w-3 h-3" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setIsEditingClient(false)}>
-                                    <X className="w-3 h-3" />
-                                </Button>
-                            </div>
-                        )}
+                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setIsEditingClient(false)}>
+                                        <X className="w-3 h-3" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-                <div className="ml-auto flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground mr-2">Status:</span>
-                    <select
-                        className="h-8 px-2 rounded-md border border-input bg-background text-sm capitalize"
-                        value={project.status}
-                        onChange={(e) => {
-                            const newStatus = e.target.value as ProjectStatus;
-                            handleStatusUpdate(newStatus);
-                            apiActivities.log({
-                                project_id: project.id,
-                                user_id: 'admin', // Mock User ID
-                                user_name: 'Admin User',
-                                action: 'status_change',
-                                details: `Changed status from ${project.status} to ${newStatus}`
-                            });
-                        }}
-                        disabled={role === 'client'} // Clients shouldn't manually update status
-                    >
-                        <option value="designing">Designing</option>
-                        <option value="3d_model">3D Model</option>
-                        <option value="design_ready">Design Ready (Review)</option>
-                        <option value="design_modification">Mod Requested</option>
-                        <option value="production">Production</option>
-                        <option value="approved_for_production">Approved (Pending Prod)</option>
-                        <option value="delivery">Delivery</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                </div>
-            </div >
+                {role === 'admin' && (
+                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={async () => {
+                        if (confirm("DELETE PROJECT? This action cannot be undone.")) {
+                            await apiProjects.delete(project.id);
+                            navigate('/dashboard');
+                        }
+                    }}>
+                        <Trash2 className="w-5 h-5" />
+                    </Button>
+                )}
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground mr-2">Status:</span>
+                <select
+                    className="h-8 px-2 rounded-md border border-input bg-background text-sm capitalize"
+                    value={project.status}
+                    onChange={(e) => {
+                        const newStatus = e.target.value as ProjectStatus;
+                        handleStatusUpdate(newStatus);
+                        apiActivities.log({
+                            project_id: project.id,
+                            user_id: 'admin', // Mock User ID
+                            user_name: 'Admin User',
+                            action: 'status_change',
+                            details: `Changed status from ${project.status} to ${newStatus}`
+                        });
+                    }}
+                    disabled={role === 'client'} // Clients shouldn't manually update status
+                >
+                    <option value="designing">Designing</option>
+                    <option value="3d_model">3D Model</option>
+                    <option value="design_ready">Design Ready (Review)</option>
+                    <option value="design_modification">Mod Requested</option>
+                    <option value="production">Production</option>
+                    <option value="approved_for_production">Approved (Pending Prod)</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+
 
             {/* Approval Banners */}
             {
