@@ -140,6 +140,17 @@ export const apiInvoices = {
             }
             throw new Error('Invoice not found');
         }
-        return data;
+        return data; // Fixed missing brace in previous attempt context
+    },
+
+    async delete(id: string) {
+        const { error } = await supabase.from('invoices').delete().eq('id', id);
+
+        if (error) {
+            console.warn("Using Mock Delete for Invoice");
+            mockInvoices = mockInvoices.filter(i => i.id !== id);
+            saveMockData();
+            return;
+        }
     }
 };

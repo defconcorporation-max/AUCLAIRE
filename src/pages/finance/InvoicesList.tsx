@@ -7,7 +7,7 @@ import { apiSettings } from '@/services/apiSettings'
 import { generateInvoicePDF } from '@/services/pdfService'
 import { Card } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
-import { Plus, FileText } from 'lucide-react'
+import { Plus, FileText, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -115,17 +115,29 @@ export default function InvoicesList() {
                                     }}>
                                         Print PDF
                                     </Button>
-                                    {/* Admin Actions: Edit Link & Mark Paid */}
-                                    {invoice.status !== 'paid' && role === 'admin' && (
+                                    {/* Admin Actions: Edit Link & Mark Paid & Delete */}
+                                    {role === 'admin' && (
                                         <>
-                                            <Button variant="ghost" size="sm" onClick={() => openEditModal(invoice)}>
-                                                Edit Link
-                                            </Button>
-                                            {!invoice.stripe_payment_link && (
-                                                <Button size="sm" onClick={() => markAsPaid(invoice.id)}>
-                                                    Mark Paid
-                                                </Button>
+                                            {invoice.status !== 'paid' && (
+                                                <>
+                                                    <Button variant="ghost" size="sm" onClick={() => openEditModal(invoice)}>
+                                                        Edit Link
+                                                    </Button>
+                                                    {!invoice.stripe_payment_link && (
+                                                        <Button size="sm" onClick={() => markAsPaid(invoice.id)}>
+                                                            Mark Paid
+                                                        </Button>
+                                                    )}
+                                                </>
                                             )}
+                                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={async () => {
+                                                if (confirm("Delete this invoice?")) {
+                                                    await apiInvoices.delete(invoice.id);
+                                                    queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                                                }
+                                            }}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
                                         </>
                                     )}
 

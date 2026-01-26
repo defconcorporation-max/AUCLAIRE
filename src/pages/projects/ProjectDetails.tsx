@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiProjects, ProjectStatus } from '@/services/apiProjects';
+import { apiInvoices } from '@/services/apiInvoices';
 import { apiClients } from '@/services/apiClients';
 import { apiNotifications } from '@/services/apiNotifications';
 import { apiActivities } from '@/services/apiActivities';
@@ -99,6 +100,11 @@ export default function ProjectDetails() {
         queryKey: ['clients'],
         queryFn: apiClients.getAll,
         enabled: isEditingClient // Only fetch when editing
+    });
+
+    const { data: invoices } = useQuery({
+        queryKey: ['invoices'],
+        queryFn: apiInvoices.getAll
     });
 
     const project = projects?.find(p => p.id === id) || projects?.[0]; // Fallback for demo
@@ -512,6 +518,32 @@ export default function ProjectDetails() {
                                         ${((project.budget || 0) - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0)).toLocaleString()}
                                     </div>
                                 </div>
+
+                                {/* Manual Invoice Control */}
+                                <div className="pt-2 border-t mt-2 flex justify-end">
+                                    {(() => {
+                                        const hasInvoice = invoices?.some(i => i.project_id === project.id);
+                                        if (!hasInvoice) {
+                                            return (
+                                                <Button size="sm" variant="outline" className="text-xs" onClick={async () => {
+                                                    if (confirm("Create an invoice for this project?")) {
+                                                        await apiInvoices.create({
+                                                            project_id: project.id,
+                                                            amount: project.budget,
+                                                            status: 'draft',
+                                                            due_date: project.deadline || undefined
+                                                        });
+                                                        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                                                    }
+                                                }}>
+                                                    + Create Invoice
+                                                </Button>
+                                            );
+                                        } else {
+                                            return <div className="text-xs text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Invoice Created</div>;
+                                        }
+                                    })()}
+                                </div>
                             </div>
                         )}
 
@@ -796,6 +828,6 @@ export default function ProjectDetails() {
                 onClose={() => setPreviewImage(null)}
                 imageUrl={previewImage}
             />
-        </div>
+        </div >
     );
 }
