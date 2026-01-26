@@ -50,6 +50,7 @@ export default function Dashboard() {
         (p.financials?.customs_fee || 0), 0) || 0;
 
     // Actual Profit = Collected (Paid) - Total Reported Costs
+    const projectedProfit = totalProjectValue - totalCost;
     const totalProfit = totalCollected - totalCost;
 
     return (
@@ -173,7 +174,10 @@ export default function Dashboard() {
                                 <div className="text-2xl font-bold font-serif text-luxury-gold">
                                     ${totalProfit.toLocaleString()}
                                 </div>
-                                <p className="text-xs text-muted-foreground">Realized Net Income</p>
+                                <div className="text-xs text-muted-foreground flex justify-between">
+                                    <span>Realized Net Income</span>
+                                    <span title="Potential profit if all invoices are paid">/ ${projectedProfit.toLocaleString()} Projected</span>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
