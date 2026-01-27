@@ -28,7 +28,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
         { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
         // Link back to the CAD tool
         { label: 'Design Studio', href: '/studio', icon: Gem, roles: ['admin', 'sales'] },
-        { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'manufacturer'] },
+        { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin'] },
     ]
 
     const Sidebar = () => (
