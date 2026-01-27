@@ -181,7 +181,8 @@ export default function Settings() {
                                                 }).select().single();
 
                                                 if (data) {
-                                                    clientMap[c.id] = data.id;
+                                                    // Force string key for reliability
+                                                    clientMap[String(c.id)] = data.id;
                                                     importedClients++;
                                                 } else {
                                                     console.warn('Failed to import client:', c.full_name, error);
@@ -192,11 +193,15 @@ export default function Settings() {
                                             const localProjects = JSON.parse(localStorage.getItem('mock_projects') || '[]');
                                             const projectMap: Record<string, string> = {}; // OldID -> NewUUID
                                             let importedProjects = 0;
+                                            let skippedProjects = 0;
 
                                             for (const p of localProjects) {
-                                                const newClientId = clientMap[p.client_id];
+                                                // Robust ID Lookup (String conversion)
+                                                const newClientId = clientMap[String(p.client_id)];
+
                                                 if (!newClientId) {
-                                                    console.warn(`Skipping project "${p.title}" - Client not found/imported.`);
+                                                    console.warn(`Skipping project "${p.title}" - Client ID ${p.client_id} not mapped. Map keys:`, Object.keys(clientMap));
+                                                    skippedProjects++;
                                                     continue;
                                                 }
 
@@ -208,10 +213,11 @@ export default function Settings() {
                                                     deadline: p.deadline,
                                                     description: p.description,
                                                     created_at: p.created_at || new Date().toISOString(),
+                                                    // Map other fields if needed
                                                 }).select().single();
 
                                                 if (pData) {
-                                                    projectMap[p.id] = pData.id;
+                                                    projectMap[String(p.id)] = pData.id;
                                                     importedProjects++;
                                                 }
                                                 else console.warn('Failed to import project:', p.title, error);
@@ -222,7 +228,7 @@ export default function Settings() {
                                             let importedInvoices = 0;
 
                                             for (const inv of localInvoices) {
-                                                const newProjectId = projectMap[inv.project_id];
+                                                const newProjectId = projectMap[String(inv.project_id)];
                                                 if (!newProjectId) continue;
 
                                                 const { error } = await supabase.from('invoices').insert({
@@ -238,7 +244,7 @@ export default function Settings() {
                                                 if (!error) importedInvoices++;
                                             }
 
-                                            alert(`Migration Complete!\nImported:\n- ${importedClients} Clients\n- ${importedProjects} Projects\n- ${importedInvoices} Invoices\n\nPlease refresh the page.`);
+                                            alert(`Migration Complete!\n\n- Clients: ${importedClients}\n- Projects: ${importedProjects} (Skipped: ${skippedProjects})\n- Invoices: ${importedInvoices}\n\nIf projects were skipped, check console for details.\nPlease refresh the page.`);
 
                                         } catch (e) {
                                             console.error(e);
