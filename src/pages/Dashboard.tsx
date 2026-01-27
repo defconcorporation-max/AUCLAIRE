@@ -53,10 +53,18 @@ export default function Dashboard() {
         return sum + (i.amount - paid);
     }, 0) || 0;
 
-    const totalCost = projects?.reduce((sum, p) => sum +
-        (p.financials?.supplier_cost || 0) +
-        (p.financials?.shipping_cost || 0) +
-        (p.financials?.customs_fee || 0), 0) || 0;
+    // Only calculate cost if the project is actually in production or later.
+    const COST_RELEVANT_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
+
+    const totalCost = projects?.reduce((sum, p) => {
+        // If still in design phase, cost is just an estimate, not incurred yet.
+        if (!COST_RELEVANT_STATUSES.includes(p.status)) return sum;
+
+        return sum +
+            (p.financials?.supplier_cost || 0) +
+            (p.financials?.shipping_cost || 0) +
+            (p.financials?.customs_fee || 0);
+    }, 0) || 0;
 
     // Actual Profit = Collected (Paid) - Total Reported Costs
     const projectedProfit = totalProjectValue - totalCost;
