@@ -63,8 +63,9 @@ export default function CreateProject() {
             await new Promise(resolve => setTimeout(resolve, 500));
 
             navigate(-1);
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.error("Create Project Failed:", error);
+            alert(`Failed to create project: ${error.message || 'Unknown error'}`);
         } finally {
             setLoading(false);
         }
@@ -138,8 +139,10 @@ export default function CreateProject() {
                                     </DialogDescription>
                                 </DialogHeader>
                                 <ClientForm
-                                    onSuccess={(newClient) => {
+                                    onSuccess={async (newClient) => {
                                         setOpenNewClient(false);
+                                        // Refetch clients to ensure dropdown is updated
+                                        await queryClient.invalidateQueries({ queryKey: ['clients'] });
                                         // Auto-select the new client
                                         setFormData(prev => ({ ...prev, client_id: newClient.id }));
                                     }}

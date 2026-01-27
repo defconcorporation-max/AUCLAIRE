@@ -139,46 +139,8 @@ export const apiProjects = {
         const { data, error } = await supabase.from('projects').insert(project).select().single();
 
         if (error) {
-            console.warn("Using Mock Create for Project");
-
-            // Try to find client name for better UX in mock mode
-            let clientName = 'Mock Client';
-            if (project.client_id) {
-                try {
-                    // Cyclic dependency workaround: re-fetch from local storage directly if API fails
-                    // or try dynamic import
-                    const { apiClients } = await import('./apiClients');
-                    // Ensure we are fetching fresh data
-                    await apiClients.getAll();
-                    const client = await apiClients.getById(project.client_id);
-                    if (client) clientName = client.full_name;
-                } catch (e) {
-                    console.warn("Could not resolve client for mock project", e);
-                    // Fallback: try to read from localStorage directly
-                    try {
-                        const storedClients = JSON.parse(localStorage.getItem('mock_clients') || '[]');
-                        const found = storedClients.find((c: any) => c.id === project.client_id);
-                        if (found) clientName = found.full_name;
-                    } catch (err) {
-                        console.error("Double fallback failed", err);
-                    }
-                }
-            }
-
-            const newProject: Project = {
-                id: Math.random().toString(36).substr(2, 9),
-                title: project.title || 'New Project',
-                client_id: project.client_id || '1',
-                status: 'designing',
-                description: project.description,
-                budget: project.budget,
-                deadline: project.deadline,
-                created_at: new Date().toISOString(),
-                client: { full_name: clientName }
-            };
-            mockProjects = [newProject, ...mockProjects];
-            saveMockData(); // Save to local storage
-            return newProject;
+            console.error("Supabase Create Project Error:", error);
+            throw error;
         }
 
         return data;

@@ -11,7 +11,7 @@ export interface Client {
     created_at: string;
 }
 
-// MOCK STORE
+// MOCK STORE (Fallback)
 let mockClients: Client[] = [
     { id: '1', full_name: 'Test Client', email: 'client@test.com', phone: '555-0000', status: 'active', created_at: new Date().toISOString() },
 ];
@@ -67,20 +67,8 @@ export const apiClients = {
         const { data, error } = await supabase.from('clients').insert(client).select().single();
 
         if (error) {
-            console.warn("Using Mock Create for Client");
-            // Mock Create
-            const newClient: Client = {
-                id: Math.random().toString(36).substr(2, 9),
-                full_name: client.full_name || 'Unknown',
-                email: client.email,
-                phone: client.phone,
-                notes: client.notes,
-                status: 'active',
-                created_at: new Date().toISOString()
-            };
-            mockClients = [newClient, ...mockClients];
-            saveMockData(); // Save persistence
-            return newClient;
+            console.error("Supabase Create Client Error:", error);
+            throw error;
         }
         return data;
     },

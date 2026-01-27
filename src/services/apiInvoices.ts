@@ -66,37 +66,8 @@ export const apiInvoices = {
         const { data, error } = await supabase.from('invoices').insert(invoice).select().single();
 
         if (error) {
-            console.warn("Using Mock Create for Invoice");
-
-            // Helper to get real project info for the mock join
-            let projectInfo: any = { title: 'Unknown Project', client: { full_name: 'Unknown' } };
-            if (invoice.project_id) {
-                try {
-                    const storedProjects = JSON.parse(localStorage.getItem('mock_projects') || '[]');
-                    const foundP = storedProjects.find((p: any) => p.id === invoice.project_id);
-                    if (foundP) {
-                        projectInfo = {
-                            title: foundP.title,
-                            client: foundP.client || { full_name: 'Unknown' }
-                        };
-                    }
-                } catch (e) { console.error(e); }
-            }
-
-            const newInvoice: Invoice = {
-                id: Math.random().toString(36).substr(2, 9),
-                amount: invoice.amount || 0,
-                amount_paid: invoice.amount_paid || 0, // Initialize amount_paid from input or 0
-                status: invoice.status || 'draft', // Initialize status from input or 'draft'
-                due_date: invoice.due_date,
-                project_id: invoice.project_id || '1',
-                stripe_payment_link: invoice.stripe_payment_link,
-                created_at: new Date().toISOString(),
-                project: projectInfo as Project
-            };
-            mockInvoices = [newInvoice, ...mockInvoices];
-            saveMockData();
-            return newInvoice;
+            console.error("Supabase Create Invoice Error:", error);
+            throw error;
         }
 
         return data;
