@@ -15,6 +15,7 @@ import CreateClient from './pages/clients/CreateClient';
 import InvoicesList from './pages/finance/InvoicesList';
 import CreateInvoice from './pages/finance/CreateInvoice';
 import UsersList from './pages/admin/UsersList';
+import PendingApproval from './pages/PendingApproval';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
@@ -27,6 +28,11 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 
   if (!user && !isAdmin) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Pending User Trap
+  if (role === 'pending' && !isAdmin) {
+    return <Navigate to="/pending" replace />;
   }
 
   // RBAC Check
@@ -44,6 +50,11 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+
+            {/* Pending Page - separate from Dashboard Layout */}
+            <Route path="/pending" element={
+              <PendingApproval />
+            } />
 
             <Route path="/dashboard" element={
               <ProtectedRoute>

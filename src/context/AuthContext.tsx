@@ -4,7 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 
-export type UserRole = 'admin' | 'sales' | 'manufacturer' | 'client';
+export type UserRole = 'admin' | 'sales' | 'manufacturer' | 'client' | 'pending';
 
 interface Profile {
     id: string;

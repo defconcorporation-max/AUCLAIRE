@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User, Shield, Briefcase, UserCircle } from 'lucide-react';
+import { User, Shield, Briefcase, UserCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/badge';
 
@@ -28,6 +28,7 @@ export default function UsersList() {
             case 'admin': return <Shield className="w-4 h-4 text-red-500" />;
             case 'manufacturer': return <Briefcase className="w-4 h-4 text-blue-500" />;
             case 'client': return <User className="w-4 h-4 text-green-500" />;
+            case 'pending': return <Clock className="w-4 h-4 text-amber-500" />;
             default: return <UserCircle className="w-4 h-4 text-gray-500" />;
         }
     };
@@ -59,6 +60,7 @@ export default function UsersList() {
                                     <div>
                                         <div className="font-medium flex items-center gap-2">
                                             {user.full_name || 'Unnamed User'}
+                                            {user.role === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending</Badge>}
                                             {user.id === currentProfile?.id && <Badge variant="outline" className="text-xs">You</Badge>}
                                         </div>
                                         <div className="text-xs text-muted-foreground font-mono">ID: {user.id.slice(0, 8)}...</div>
@@ -81,6 +83,7 @@ export default function UsersList() {
                                         }}
                                         disabled={user.id === currentProfile?.id}
                                     >
+                                        <option value="pending">Pending Approval</option>
                                         <option value="client">Client</option>
                                         <option value="manufacturer">Manufacturer</option>
                                         <option value="admin">Admin</option>
