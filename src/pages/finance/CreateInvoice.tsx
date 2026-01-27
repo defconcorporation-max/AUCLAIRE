@@ -15,6 +15,7 @@ export default function CreateInvoice() {
     const [projectId, setProjectId] = useState('');
     const [amount, setAmount] = useState('');
     const [paymentLink, setPaymentLink] = useState('');
+    const [dueDate, setDueDate] = useState(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
     const { data: projects } = useQuery({
         queryKey: ['projects'],
@@ -28,7 +29,7 @@ export default function CreateInvoice() {
             project_id: projectId,
             amount: parseFloat(amount),
             stripe_payment_link: paymentLink,
-            due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Default 7 days
+            due_date: dueDate
         });
         setLoading(false);
         navigate(-1);
@@ -105,6 +106,8 @@ export default function CreateInvoice() {
                                     className="pl-9"
                                     type="date"
                                     required
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
                                 />
                             </div>
                         </div>

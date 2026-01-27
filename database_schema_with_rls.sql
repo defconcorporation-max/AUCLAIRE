@@ -62,38 +62,39 @@ alter table invoices enable row level security;
 -- DROP OLD POLICIES
 drop policy if exists "Admins can do everything" on projects;
 drop policy if exists "Public Access Projects" on projects;
+drop policy if exists "Authenticated Users All Access Projects" on projects;
 drop policy if exists "Public Access Clients" on clients;
+drop policy if exists "Authenticated Users All Access Clients" on clients;
 drop policy if exists "Public Access Invoices" on invoices;
+drop policy if exists "Authenticated Users All Access Invoices" on invoices;
 drop policy if exists "Public Access Profiles" on profiles;
+drop policy if exists "Authenticated Users All Access Profiles" on profiles;
 
--- NEW AUTHENTICATED POLICIES
--- Simple policy: Any logged-in user can Read/Write everything (for this MVP)
--- In a real app, you would restrict this further.
+-- NEW HYBRID POLICIES (Public Access)
+-- Allows both Authenticated Users AND Anon Users (Shared Code) to read/write.
+-- Essential for "Shared Code" mode to access data on secondary devices.
 
-create policy "Authenticated Users All Access Projects"
+create policy "Hybrid Access Projects"
   on projects for all
-  using ( auth.role() = 'authenticated' )
-  with check ( auth.role() = 'authenticated' );
+  using ( true )
+  with check ( true );
 
-create policy "Authenticated Users All Access Clients"
+create policy "Hybrid Access Clients"
   on clients for all
-  using ( auth.role() = 'authenticated' )
-  with check ( auth.role() = 'authenticated' );
+  using ( true )
+  with check ( true );
 
-create policy "Authenticated Users All Access Invoices"
+create policy "Hybrid Access Invoices"
   on invoices for all
-  using ( auth.role() = 'authenticated' )
-  with check ( auth.role() = 'authenticated' );
+  using ( true )
+  with check ( true );
 
-create policy "Authenticated Users All Access Profiles"
+create policy "Hybrid Access Profiles"
   on profiles for all
-  using ( auth.role() = 'authenticated' )
-  with check ( auth.role() = 'authenticated' );
+  using ( true )
+  with check ( true );
 
-
--- AUTO PROFILE CREATION TRIGGER
--- Automatically creates a profile entry when a new user signs up via Supabase Auth
-
+-- AUTO PROFILE CREATION TRIGGER (Keep this for registered users)
 create or replace function public.handle_new_user() 
 returns trigger as $$
 begin

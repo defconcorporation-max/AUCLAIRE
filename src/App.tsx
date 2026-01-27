@@ -1,6 +1,7 @@
 
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import CRMLayout from './components/layout/CRMLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -16,8 +17,18 @@ import CreateInvoice from './pages/finance/CreateInvoice';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import { RingProvider } from "./context/RingContext";
 
-// Protected Route Wrapper
-// ProtectedRoute removed (unused)
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isAdmin, isLoading } = useAuth();
+
+  if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+
+  if (!user && !isAdmin) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 function App() {
   return (
@@ -28,10 +39,12 @@ function App() {
             <Route path="/login" element={<Login />} />
 
             <Route path="/dashboard" element={
-              <CRMLayout>
-                <RoleSwitcher />
-                <Outlet /> {/* This is where nested routes will render */}
-              </CRMLayout>
+              <ProtectedRoute>
+                <CRMLayout>
+                  <RoleSwitcher />
+                  <Outlet /> {/* This is where nested routes will render */}
+                </CRMLayout>
+              </ProtectedRoute>
             }>
               <Route index element={<Dashboard />} />
               <Route path="projects" element={<ProjectsList />} />
