@@ -135,8 +135,8 @@ export default function InvoicesList() {
                                     {invoice.status.toUpperCase()}
                                 </Badge>
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => {
-                                        const settings = apiSettings.get();
+                                    <Button variant="outline" size="sm" onClick={async () => {
+                                        const settings = await apiSettings.get();
                                         generateInvoicePDF(invoice, settings);
                                     }}>
                                         Print PDF

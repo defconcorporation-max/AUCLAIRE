@@ -6,11 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Building, Save } from "lucide-react";
 
 export default function Settings() {
-    const [settings, setSettings] = useState<CompanySettings>(apiSettings.get());
+    // Initialize with defaults to avoid "Promise" type mismatch errors during initial render
+    const [settings, setSettings] = useState<CompanySettings>({
+        company_name: '',
+        contact_email: '',
+        phone: '',
+        address_line1: '',
+        city: '',
+        country: '',
+        tax_rate: 0,
+        currency_symbol: '$'
+    });
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        setSettings(apiSettings.get());
+        // Fetch async
+        apiSettings.get().then(data => setSettings(data));
     }, []);
 
     const handleChange = (field: keyof CompanySettings, value: string | number) => {
