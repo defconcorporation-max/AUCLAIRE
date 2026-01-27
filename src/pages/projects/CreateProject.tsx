@@ -42,6 +42,7 @@ export default function CreateProject() {
         try {
             const newProject = await apiProjects.create({
                 ...formData,
+                deadline: formData.deadline ? formData.deadline : null, // Fix: Send null if empty string
                 budget: formData.budget ? parseFloat(formData.budget) : undefined,
                 status: 'designing'
             });
