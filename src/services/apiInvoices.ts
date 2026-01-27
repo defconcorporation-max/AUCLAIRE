@@ -103,6 +103,28 @@ export const apiInvoices = {
     },
 
     async update(id: string, updates: Partial<Invoice>) {
+
+        // LOGIC PARITY: Retrieve current invoice to calculate status if amount_paid changes
+        if (updates.amount_paid !== undefined) {
+            const { data: current } = await supabase.from('invoices').select('amount').eq('id', id).single();
+            if (current) {
+                const total = updates.amount !== undefined ? updates.amount : current.amount;
+                const paid = updates.amount_paid;
+
+                if (paid >= total) {
+                    updates.status = 'paid';
+                    updates.paid_at = new Date().toISOString();
+                } else if (paid > 0) {
+                    updates.status = 'partial';
+                    // Clear paid_at if it was previously set (optional, but good for consistency)
+                    updates.paid_at = null as any;
+                } else {
+                    updates.status = 'sent';
+                    updates.paid_at = null as any;
+                }
+            }
+        }
+
         const { data, error } = await supabase.from('invoices').update(updates).eq('id', id).select().single();
 
         if (error) {

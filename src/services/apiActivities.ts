@@ -1,4 +1,4 @@
-// import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export interface ActivityLog {
     id: string;
@@ -10,7 +10,7 @@ export interface ActivityLog {
     created_at: string;
 }
 
-// MOCK STORE
+// MOCK STORE (Fallback)
 let mockActivities: ActivityLog[] = [
     {
         id: '1',
@@ -18,7 +18,7 @@ let mockActivities: ActivityLog[] = [
         user_id: '2',
         user_name: 'Admin User',
         action: 'create',
-        details: 'Created project "Test Project"',
+        details: 'Created project "Test Project" (Mock)',
         created_at: new Date(Date.now() - 86400000).toISOString() // 1 day ago
     }
 ];
@@ -38,26 +38,50 @@ const saveMockData = () => {
 
 export const apiActivities = {
     async getAll() {
-        loadMockData();
-        return mockActivities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const { data, error } = await supabase
+            .from('activity_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50); // Reasonable limit for dashboard
+
+        if (error || !data) {
+            loadMockData();
+            return mockActivities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        }
+        return data as ActivityLog[];
     },
 
     async getByProject(projectId: string) {
-        loadMockData();
-        return mockActivities
-            .filter(a => a.project_id === projectId)
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const { data, error } = await supabase
+            .from('activity_logs')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: false });
+
+        if (error || !data) {
+            loadMockData();
+            return mockActivities
+                .filter(a => a.project_id === projectId)
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        }
+        return data as ActivityLog[];
     },
 
     async log(activity: Omit<ActivityLog, 'id' | 'created_at'>) {
-        loadMockData();
-        const newActivity: ActivityLog = {
-            id: Math.random().toString(36).substring(7),
-            created_at: new Date().toISOString(),
-            ...activity
-        };
-        mockActivities.push(newActivity);
-        saveMockData();
-        return newActivity;
+        const { data, error } = await supabase.from('activity_logs').insert(activity).select().single();
+
+        if (error) {
+            console.warn("Using Mock Log for Activity");
+            loadMockData();
+            const newActivity: ActivityLog = {
+                id: Math.random().toString(36).substring(7),
+                created_at: new Date().toISOString(),
+                ...activity
+            };
+            mockActivities.push(newActivity);
+            saveMockData();
+            return newActivity;
+        }
+        return data;
     }
 };

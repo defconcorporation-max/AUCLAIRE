@@ -1,4 +1,4 @@
-// import { supabase } from "@/lib/supabase"; // Commented out until real backend integration
+import { supabase } from "@/lib/supabase";
 
 export interface Notification {
     id: string;
@@ -11,13 +11,13 @@ export interface Notification {
     created_at: string;
 }
 
-// MOCK STORE
+// MOCK STORE (Fallback)
 let mockNotifications: Notification[] = [
     {
         id: '1',
         user_id: '1', // Admin
         title: 'Welcome!',
-        message: 'Welcome to your new CRM Dashboard.',
+        message: 'Welcome to your new CRM Dashboard. (Mock)',
         type: 'info',
         is_read: false,
         created_at: new Date().toISOString()
@@ -39,33 +39,63 @@ const saveMockData = () => {
 
 export const apiNotifications = {
     async getAll() {
-        loadMockData();
-        // In real app: await supabase.from('notifications').select('*').eq('user_id', auth.user.id).order('created_at', { ascending: false });
-        return [...mockNotifications].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error || !data) {
+            console.warn("Using Mock Data for Notifications");
+            loadMockData();
+            return [...mockNotifications].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        }
+        return data as Notification[];
     },
 
     async getUnreadCount() {
-        loadMockData();
-        return mockNotifications.filter(n => !n.is_read).length;
+        const { count, error } = await supabase
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_read', false);
+
+        if (error) {
+            loadMockData();
+            return mockNotifications.filter(n => !n.is_read).length;
+        }
+        return count || 0;
     },
 
     async markAllRead() {
-        loadMockData();
-        mockNotifications = mockNotifications.map(n => ({ ...n, is_read: true }));
-        saveMockData();
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('is_read', false); // Updates all unread
+
+        if (error) {
+            loadMockData();
+            mockNotifications = mockNotifications.map(n => ({ ...n, is_read: true }));
+            saveMockData();
+            return true;
+        }
         return true;
     },
 
     async create(notification: Omit<Notification, 'id' | 'created_at' | 'is_read'>) {
-        loadMockData(); // Ensure fresh
-        const newNotification: Notification = {
-            id: Math.random().toString(36).substring(7),
-            created_at: new Date().toISOString(),
-            is_read: false,
-            ...notification
-        };
-        mockNotifications.push(newNotification);
-        saveMockData();
-        return newNotification;
+        const { data, error } = await supabase.from('notifications').insert(notification).select().single();
+
+        if (error) {
+            console.warn("Using Mock Create for Notification");
+            loadMockData(); // Ensure fresh
+            const newNotification: Notification = {
+                id: Math.random().toString(36).substring(7),
+                created_at: new Date().toISOString(),
+                is_read: false,
+                ...notification
+            };
+            mockNotifications.push(newNotification);
+            saveMockData();
+            return newNotification;
+        }
+        return data;
     }
 };

@@ -97,11 +97,11 @@ export const apiProjects = {
     },
 
     async getStats() {
-        loadMockData(); // Ensure fresh data
-        const total = mockProjects.length;
-        const active = mockProjects.filter(p => !['completed', 'delivery'].includes(p.status)).length;
-        const completed = mockProjects.filter(p => p.status === 'completed').length;
-        const revenue = mockProjects.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0);
+        const projects = await this.getAll();
+        const total = projects.length;
+        const active = projects.filter(p => !['completed', 'delivery'].includes(p.status)).length;
+        const completed = projects.filter(p => p.status === 'completed').length;
+        const revenue = projects.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0);
 
         return {
             total,
@@ -112,7 +112,7 @@ export const apiProjects = {
     },
 
     async getRevenueStats() {
-        loadMockData();
+        const projects = await this.getAll();
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const currentYear = new Date().getFullYear();
 
@@ -120,7 +120,7 @@ export const apiProjects = {
         const revenueMap = new Map<string, number>();
         months.forEach(m => revenueMap.set(m, 0));
 
-        mockProjects.forEach(p => {
+        projects.forEach(p => {
             const date = new Date(p.created_at);
             if (date.getFullYear() === currentYear) {
                 const month = months[date.getMonth()];
@@ -230,6 +230,25 @@ export const apiProjects = {
     },
 
     async updateDetails(id: string, details: Partial<Project['stage_details']>) {
+        // 1. Fetch current to merge JSONB
+        const { data: currentProject, error: fetchError } = await supabase
+            .from('projects')
+            .select('stage_details')
+            .eq('id', id)
+            .single();
+
+        if (!fetchError && currentProject) {
+            const newDetails = { ...(currentProject.stage_details || {}), ...details };
+            const { data, error } = await supabase
+                .from('projects')
+                .update({ stage_details: newDetails })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (!error) return data;
+        }
+
         console.warn("Using Mock Update for Project Details");
         const index = mockProjects.findIndex(p => p.id === id);
         if (index !== -1) {
@@ -246,6 +265,27 @@ export const apiProjects = {
 
     async update(id: string, updates: Partial<Project>) {
         const { data, error } = await supabase.from('projects').update(updates).eq('id', id).select().single();
+
+        // FINANCIAL SYNC (Real DB): Update Invoice if Budget Changed
+        if (!error && data && updates.budget) {
+            try {
+                // Dynamic import to avoid cycles
+                const { apiInvoices } = await import('./apiInvoices');
+                // We need to find the invoice for this project. 
+                // Since we don't have a direct "getInvoiceByProjectId" yet, we'll list (or filter if RLS allows).
+                // Ideally, better to add a getByProject method to apiInvoices, but re-using getAll() for consistency with mock pattern for now 
+                // or better: select id from invoices where project_id = id
+                const { data: invoices } = await supabase.from('invoices').select('*').eq('project_id', id).neq('status', 'paid');
+
+                if (invoices && invoices.length > 0) {
+                    const linkedInvoice = invoices[0];
+                    console.log(`Syncing Invoice ${linkedInvoice.id} amount to ${updates.budget}`);
+                    await apiInvoices.update(linkedInvoice.id, { amount: updates.budget });
+                }
+            } catch (err) {
+                console.error("Failed to sync invoice price (DB)", err);
+            }
+        }
 
         if (error) {
             console.warn("Using Mock Update for Project Root");
@@ -306,6 +346,25 @@ export const apiProjects = {
     },
 
     async updateFinancials(id: string, financials: Partial<Project['financials']>) {
+        // 1. Fetch current to merge JSONB
+        const { data: currentProject, error: fetchError } = await supabase
+            .from('projects')
+            .select('financials')
+            .eq('id', id)
+            .single();
+
+        if (!fetchError && currentProject) {
+            const newFinancials = { ...(currentProject.financials || {}), ...financials };
+            const { data, error } = await supabase
+                .from('projects')
+                .update({ financials: newFinancials })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (!error) return data;
+        }
+
         console.warn("Using Mock Update for Project Financials");
         const index = mockProjects.findIndex(p => p.id === id);
         if (index !== -1) {
