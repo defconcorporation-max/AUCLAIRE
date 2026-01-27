@@ -171,32 +171,66 @@ export default function Settings() {
 
                                             let importedClients = 0;
                                             for (const c of localClients) {
-                                                // Create new client in DB
-                                                const { data, error } = await supabase.from('clients').insert({
-                                                    full_name: c.full_name,
-                                                    email: c.email,
-                                                    phone: c.phone,
-                                                    notes: c.notes,
-                                                    created_at: new Date().toISOString()
-                                                }).select().single();
+                                                let newClientId = null;
 
-                                                if (data) {
-                                                    // Force string key for reliability
-                                                    clientMap[String(c.id)] = data.id;
-                                                    importedClients++;
-                                                } else {
-                                                    console.warn('Failed to import client:', c.full_name, error);
+                                                // 1. Try to FIND existing client first (to avoid duplicates)
+                                                // Check by Email first (most reliable)
+                                                if (c.email) {
+                                                    const { data: existing } = await supabase.from('clients').select('id').eq('email', c.email).maybeSingle();
+                                                    if (existing) newClientId = existing.id;
+                                                }
+                                                // Check by Name if strict email match failed
+                                                if (!newClientId) {
+                                                    const { data: existingByName } = await supabase.from('clients').select('id').eq('full_name', c.full_name).maybeSingle();
+                                                    if (existingByName) newClientId = existingByName.id;
+                                                }
+
+                                                // 2. If not found, CREATE it
+                                                if (!newClientId) {
+                                                    const { data, error } = await supabase.from('clients').insert({
+                                                        full_name: c.full_name,
+                                                        email: c.email,
+                                                        phone: c.phone,
+                                                        notes: c.notes,
+                                                        created_at: new Date().toISOString()
+                                                    }).select().single();
+
+                                                    if (data) {
+                                                        newClientId = data.id;
+                                                        importedClients++;
+                                                    } else {
+                                                        console.warn('Failed to import client:', c.full_name, error);
+                                                    }
+                                                }
+
+                                                // 3. Map Old ID to New/Existing ID
+                                                if (newClientId) {
+                                                    clientMap[String(c.id)] = newClientId;
                                                 }
                                             }
 
                                             // 2. Projects
-                                            const localProjects = JSON.parse(localStorage.getItem('mock_projects') || '[]');
+                                            // Fallback to default mock project if LS is empty (User never edited anything)
+                                            let localProjects = JSON.parse(localStorage.getItem('mock_projects') || '[]');
+                                            if (localProjects.length === 0) {
+                                                console.log("No projects in localStorage. Using DEFAULT mock project.");
+                                                localProjects = [{
+                                                    id: '1', title: 'Test Project - Solitaire Ring',
+                                                    client_id: '1', status: 'designing',
+                                                    budget: 5000, deadline: '2024-12-31',
+                                                    created_at: new Date().toISOString()
+                                                }];
+                                            }
+
                                             const projectMap: Record<string, string> = {}; // OldID -> NewUUID
                                             let importedProjects = 0;
                                             let skippedProjects = 0;
 
+                                            console.log(`Found ${localProjects.length} projects to migrate...`);
+
                                             for (const p of localProjects) {
                                                 // Robust ID Lookup (String conversion)
+                                                // Also handle the case where default project uses '1' but migration created a new UUID for client '1'
                                                 const newClientId = clientMap[String(p.client_id)];
 
                                                 if (!newClientId) {

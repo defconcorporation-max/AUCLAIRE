@@ -124,7 +124,17 @@ export default function ClientsList() {
                                     <DropdownMenuItem onClick={() => navigate(`/dashboard/clients/${client.id}`)}>View Details</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => openEditModal(client)}>Edit Client</DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-red-500" onClick={() => console.log('Delete client', client.id)}>Delete</DropdownMenuItem>
+                                    <DropdownMenuItem className="text-red-500" onClick={async () => {
+                                        if (confirm(`Are you sure you want to delete ${client.full_name}?`)) {
+                                            try {
+                                                await apiClients.delete(client.id);
+                                                queryClient.invalidateQueries({ queryKey: ['clients'] });
+                                            } catch (e) {
+                                                console.error(e);
+                                                alert("Failed to delete client. " + e.message);
+                                            }
+                                        }
+                                    }}>Delete</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </CardHeader>

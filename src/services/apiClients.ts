@@ -99,5 +99,15 @@ export const apiClients = {
             throw new Error('Client not found');
         }
         return data;
+    },
+
+    async delete(id: string) {
+        const { error } = await supabase.from('clients').delete().eq('id', id);
+        if (error) {
+            console.warn("Using Mock Delete for Client");
+            mockClients = mockClients.filter(c => c.id !== id);
+            saveMockData();
+            return;
+        }
     }
 };
