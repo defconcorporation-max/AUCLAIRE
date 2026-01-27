@@ -15,6 +15,7 @@ import CreateClient from './pages/clients/CreateClient';
 import InvoicesList from './pages/finance/InvoicesList';
 import CreateInvoice from './pages/finance/CreateInvoice';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
+import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
 
 // Protected Route Component
@@ -56,6 +57,7 @@ function App() {
               <Route path="invoices" element={<InvoicesList />} />
               <Route path="invoices/new" element={<CreateInvoice />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="debug" element={<DebugPage />} />
             </Route>
 
             {/* Redirect root to dashboard */}
