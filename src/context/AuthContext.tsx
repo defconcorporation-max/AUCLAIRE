@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Shared Mode State
     const [isSharedMode, setIsSharedMode] = useState(false);
+    const [demoRole, setDemoRole] = useState<UserRole>('admin');
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,21 +51,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(session?.user ?? null);
         });
 
-        // Check if previously unlocked (persisted in session storage or similar?)
-        // For now, simple state.
-
         return () => subscription.unsubscribe();
     }, []);
 
     // Fetch profile only if user exists OR in Shared Mode
     const { data: profile, isLoading: isLoadingProfile } = useQuery({
-        queryKey: ['profile', user?.id, isSharedMode],
+        queryKey: ['profile', user?.id, isSharedMode, demoRole],
         queryFn: async () => {
             if (isSharedMode) {
+                // Return dynamic profile based on demoRole
                 return {
-                    id: 'details-admin', // Shared Admin ID
-                    full_name: 'Auclaire Admin',
-                    role: 'admin',
+                    id: `demo-${demoRole}`,
+                    full_name: `Demo ${demoRole.charAt(0).toUpperCase() + demoRole.slice(1)}`,
+                    role: demoRole,
                     avatar_url: null
                 } as Profile;
             }
@@ -87,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const unlockApp = () => {
         setIsSharedMode(true);
+        setDemoRole('admin'); // Default start as admin
         // We simulate a user so protected routes don't redirect
         // But we DON'T use Supabase Auth. We use Anon key + RLS policies.
         const mockUser = { id: 'shared-admin', email: 'admin@auclaire.com' } as User;
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         profile: profile ?? null,
         isLoading: isLoadingSession || (!!user && isLoadingProfile),
-        isAdmin: isSharedMode || (profile?.role as string) === 'admin',
+        isAdmin: isSharedMode ? demoRole === 'admin' : (profile?.role as string) === 'admin',
         role: profile?.role,
         signOut: async () => {
             // Just lock the app
@@ -108,7 +108,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         signInAsDev: unlockApp, // Alias for compatibility during refactor
         unlockApp,
-        switchRole: () => { } // Remove demo role switching in shared mode
+        switchRole: (role: UserRole) => {
+            if (isSharedMode) {
+                setDemoRole(role);
+            }
+        }
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
