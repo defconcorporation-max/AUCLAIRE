@@ -21,14 +21,14 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
     const [isMobileOpen, setIsMobileOpen] = useState(false)
 
     const navItems = [
-        { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { label: 'Projects', href: '/dashboard/projects', icon: Briefcase },
-        { label: 'Clients', href: '/dashboard/clients', icon: Users },
-        { label: 'Invoices', href: '/dashboard/invoices', icon: FileText },
-        { label: 'Users', href: '/dashboard/users', icon: Users },
+        { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'sales'] },
+        { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'sales', 'client'] },
+        { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'sales'] },
+        { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'sales'] },
+        { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
         // Link back to the CAD tool
-        { label: 'Design Studio', href: '/studio', icon: Gem },
-        { label: 'Settings', href: '/dashboard/settings', icon: Settings },
+        { label: 'Design Studio', href: '/studio', icon: Gem, roles: ['admin', 'sales'] },
+        { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'manufacturer'] },
     ]
 
     const Sidebar = () => (
@@ -39,22 +39,24 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
             </div>
 
             <nav className="flex-1 px-4 space-y-2 py-4">
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.href}
-                        to={item.href}
-                        className={({ isActive }) => `
+                {navItems
+                    .filter(item => !item.roles || (profile?.role && item.roles.includes(profile.role)))
+                    .map((item) => (
+                        <NavLink
+                            key={item.href}
+                            to={item.href}
+                            className={({ isActive }) => `
               flex items-center gap-3 px-4 py-3 rounded-md transition-all text-sm font-medium
               ${isActive
-                                ? 'bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20'
-                                : 'hover:bg-white/5 hover:text-white'}
+                                    ? 'bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20'
+                                    : 'hover:bg-white/5 hover:text-white'}
             `}
-                        onClick={() => setIsMobileOpen(false)}
-                    >
-                        <item.icon className="w-4 h-4" />
-                        {item.label}
-                    </NavLink>
-                ))}
+                            onClick={() => setIsMobileOpen(false)}
+                        >
+                            <item.icon className="w-4 h-4" />
+                            {item.label}
+                        </NavLink>
+                    ))}
             </nav>
 
             <div className="p-4 border-t border-[#333]">

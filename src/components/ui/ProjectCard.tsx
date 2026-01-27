@@ -2,6 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "./StatusBadge"
 import { Calendar } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
 
 interface ProjectCardProps {
     project: any // Type this properly later
@@ -9,6 +10,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
+    const { role } = useAuth()
     return (
         <Card
             className="cursor-pointer hover:border-luxury-gold transition-colors group"
@@ -33,7 +35,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                         <Calendar className="w-3 h-3" />
                         <span>Due {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'TBD'}</span>
                     </div>
-                    {project.budget && (
+                    {project.budget && role !== 'manufacturer' && role !== 'client' && (
                         <div className="font-mono text-foreground font-medium">
                             ${project.budget.toLocaleString()}
                         </div>

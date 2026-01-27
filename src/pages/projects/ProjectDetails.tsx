@@ -445,6 +445,7 @@ export default function ProjectDetails() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {/* Budget & Profit - Hidden for Clients & Suppliers (partially) */}
+
                         {role !== 'client' && role !== 'manufacturer' && (
                             <>
                                 <div className="flex items-center justify-between border-b pb-2">
