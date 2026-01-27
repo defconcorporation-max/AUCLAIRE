@@ -14,18 +14,24 @@ import ClientDetails from './pages/clients/ClientDetails';
 import CreateClient from './pages/clients/CreateClient';
 import InvoicesList from './pages/finance/InvoicesList';
 import CreateInvoice from './pages/finance/CreateInvoice';
+import UsersList from './pages/admin/UsersList';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
 
 // Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isAdmin, isLoading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
+  const { user, role, isAdmin, isLoading } = useAuth();
 
   if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
 
   if (!user && !isAdmin) {
     return <Navigate to="/login" replace />;
+  }
+
+  // RBAC Check
+  if (allowedRoles && role && !allowedRoles.includes(role) && !isAdmin) {
+    return <div className="p-8 text-center text-red-500">Access Denied: You do not have permission to view this page.</div>;
   }
 
   return <>{children}</>;
@@ -57,6 +63,11 @@ function App() {
               <Route path="invoices" element={<InvoicesList />} />
               <Route path="invoices/new" element={<CreateInvoice />} />
               <Route path="settings" element={<Settings />} />
+
+              {/* Admin Only */}
+              <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
+
+              {/* Debugging */}
               <Route path="debug" element={<DebugPage />} />
             </Route>
 

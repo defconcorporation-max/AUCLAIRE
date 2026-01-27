@@ -93,13 +93,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(mockUser);
     };
 
+    // Admin Preview Mode State
+    const [overrideRole, setOverrideRole] = useState<UserRole | null>(null);
+
     const value = {
         session,
         user,
         profile: profile ?? null,
         isLoading: isLoadingSession || (!!user && isLoadingProfile),
         isAdmin: isSharedMode ? demoRole === 'admin' : (profile?.role as string) === 'admin',
-        role: profile?.role,
+        // Effective Role: Shared Mode -> demoRole, Admin Preview -> overrideRole, Normal -> profile.role
+        role: isSharedMode ? demoRole : (overrideRole ?? profile?.role),
         signOut: async () => {
             // Just lock the app
             setIsSharedMode(false);
@@ -111,6 +115,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         switchRole: (role: UserRole) => {
             if (isSharedMode) {
                 setDemoRole(role);
+            } else if (profile?.role === 'admin') {
+                // Allow real admins to preview other roles
+                setOverrideRole(role);
             }
         }
     };

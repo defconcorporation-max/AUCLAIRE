@@ -25,6 +25,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
         { label: 'Projects', href: '/dashboard/projects', icon: Briefcase },
         { label: 'Clients', href: '/dashboard/clients', icon: Users },
         { label: 'Invoices', href: '/dashboard/invoices', icon: FileText },
+        { label: 'Users', href: '/dashboard/users', icon: Users },
         // Link back to the CAD tool
         { label: 'Design Studio', href: '/studio', icon: Gem },
         { label: 'Settings', href: '/dashboard/settings', icon: Settings },
