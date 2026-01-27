@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, CheckCircle, Trash2, RefreshCw } from "lucide-react";
+import { AlertCircle, Trash2, RefreshCw } from "lucide-react";
 
 export default function DebugPage() {
     const [counts, setCounts] = useState({ clients: 0, projects: 0, invoices: 0 });
