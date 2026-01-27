@@ -96,16 +96,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Admin Preview Mode State
     const [overrideRole, setOverrideRole] = useState<UserRole | null>(null);
 
+    // Effective Role: Shared Mode -> demoRole, Admin Preview -> overrideRole, Normal -> profile.role
+    const effectiveRole = isSharedMode ? demoRole : (overrideRole ?? profile?.role);
+
     const value = {
         session,
         user,
         profile: profile ?? null,
+        role: effectiveRole as UserRole,
+        // isAdmin should be false if we are simulating another role
+        isAdmin: effectiveRole === 'admin',
         isLoading: isLoadingSession || (!!user && isLoadingProfile),
-        isAdmin: isSharedMode ? demoRole === 'admin' : (profile?.role as string) === 'admin',
-        // Effective Role: Shared Mode -> demoRole, Admin Preview -> overrideRole, Normal -> profile.role
-        role: isSharedMode ? demoRole : (overrideRole ?? profile?.role),
+        isInSharedMode: isSharedMode,
         signOut: async () => {
-            // Just lock the app
             setIsSharedMode(false);
             setUser(null);
             await supabase.auth.signOut();
