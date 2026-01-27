@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User, Shield, Briefcase, UserCircle, Clock } from 'lucide-react';
+import { User, Shield, Briefcase, UserCircle, Clock, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 export default function UsersList() {
     const { profile: currentProfile } = useAuth();
@@ -16,6 +17,13 @@ export default function UsersList() {
 
     const updateRoleMutation = useMutation({
         mutationFn: ({ id, role }: { id: string; role: string }) => apiUsers.updateRole(id, role as any),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+        }
+    });
+
+    const deleteUserMutation = useMutation({
+        mutationFn: (id: string) => apiUsers.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         }
@@ -89,6 +97,21 @@ export default function UsersList() {
                                         <option value="admin">Admin</option>
                                         <option value="sales">Sales Agent</option>
                                     </select>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
+                                        onClick={() => {
+                                            if (user.id === currentProfile?.id) return;
+                                            if (confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) {
+                                                deleteUserMutation.mutate(user.id);
+                                            }
+                                        }}
+                                        disabled={user.id === currentProfile?.id}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
                                 </div>
                             </div>
                         ))}

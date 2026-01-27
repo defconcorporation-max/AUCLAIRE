@@ -97,7 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [overrideRole, setOverrideRole] = useState<UserRole | null>(null);
 
     // Effective Role: Shared Mode -> demoRole, Admin Preview -> overrideRole, Normal -> profile.role
-    const effectiveRole = isSharedMode ? demoRole : (overrideRole ?? profile?.role);
+    // Security Fallback: If profile is missing (deleted), default to 'pending'
+    const effectiveRole = isSharedMode ? demoRole : (overrideRole ?? (profile?.role || 'pending'));
 
     const value = {
         session,

@@ -36,5 +36,14 @@ export const apiUsers = {
 
         if (error) throw error;
         return data;
+    },
+
+    async delete(id: string) {
+        const { error } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
     }
 };
