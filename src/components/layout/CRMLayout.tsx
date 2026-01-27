@@ -17,7 +17,7 @@ import { useState } from 'react'
 import NotificationBell from '@/components/NotificationBell'
 
 export default function CRMLayout({ children }: { children?: React.ReactNode }) {
-    const { signOut, profile } = useAuth()
+    const { signOut, profile, role } = useAuth()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
 
     const navItems = [
@@ -40,7 +40,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
 
             <nav className="flex-1 px-4 space-y-2 py-4">
                 {navItems
-                    .filter(item => !item.roles || (profile?.role && item.roles.includes(profile.role)))
+                    .filter(item => !item.roles || (role && item.roles.includes(role)))
                     .map((item) => (
                         <NavLink
                             key={item.href}
