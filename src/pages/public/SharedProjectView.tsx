@@ -208,6 +208,34 @@ export default function SharedProjectView() {
                             </CardContent>
                         </Card>
 
+                        {/* Initial Design Brief */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><FileText className="w-4 h-4" /> Initial Design Brief</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div>
+                                    <span className="text-zinc-500 block text-xs font-bold uppercase tracking-wider mb-2">Instructions / Notes</span>
+                                    <div className="text-sm refresh-pre-wrap whitespace-pre-wrap bg-zinc-50 dark:bg-zinc-900 p-3 rounded-md border border-zinc-100 dark:border-zinc-800">
+                                        {details.design_notes || "No design notes provided."}
+                                    </div>
+                                </div>
+
+                                {details.sketch_files && details.sketch_files.length > 0 && (
+                                    <div>
+                                        <span className="text-zinc-500 block text-xs font-bold uppercase tracking-wider mb-2">Reference Images</span>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                            {details.sketch_files.map((url: string, i: number) => (
+                                                <div key={i} className="relative aspect-square rounded-md overflow-hidden border bg-zinc-100">
+                                                    <img src={url} alt={`Sketch ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer" onClick={() => window.open(url, '_blank')} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
                         {/* Actions */}
                         <Card>
                             <CardHeader>
