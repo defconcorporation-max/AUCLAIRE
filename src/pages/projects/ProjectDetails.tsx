@@ -110,16 +110,16 @@ export default function ProjectDetails() {
             const token = (project as any).share_token;
 
             if (!token) {
-                toast.error("Share token missing. Please refresh or contact admin.");
+                alert("Share token missing. Please refresh or contact admin.");
                 return;
             }
 
             const shareUrl = `${window.location.origin}/shared/${token}`;
             await navigator.clipboard.writeText(shareUrl);
-            toast.success("Manufacturer Link copied to clipboard!");
+            alert("Manufacturer Link copied to clipboard!");
         } catch (err) {
             console.error(err);
-            toast.error("Failed to copy link");
+            alert("Failed to copy link");
         } finally {
             setIsSharing(false);
         }

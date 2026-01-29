@@ -1,11 +1,10 @@
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Loader2, Upload, Save, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -103,7 +102,7 @@ export default function SharedProjectView() {
         } catch (err) {
             console.error(err);
             setIsThinking(false);
-            toast.error("Failed to process image");
+            alert("Failed to process image");
         }
     };
 
