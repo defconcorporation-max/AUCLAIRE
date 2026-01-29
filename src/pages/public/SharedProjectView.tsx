@@ -111,9 +111,20 @@ export default function SharedProjectView() {
         setIsThinking(true);
         updateProjectMutation.mutate({
             stage_details: details,
-            financials: { ...financials, manufacturing_cost: parseFloat(manufacturingCost) },
+            financials: { ...financials, supplier_cost: parseFloat(manufacturingCost) },
             status: project.status
         });
+    };
+
+    const handleSubmitDesign = () => {
+        if (confirm("Submit design for review?")) {
+            setIsThinking(true);
+            updateProjectMutation.mutate({
+                stage_details: details,
+                financials: financials,
+                status: 'design_ready'
+            });
+        }
     };
 
     const handleStartProduction = () => {
@@ -203,6 +214,11 @@ export default function SharedProjectView() {
                                 <CardTitle className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Production Actions</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                                {project.status === 'designing' && (
+                                    <Button onClick={handleSubmitDesign} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" disabled={isThinking}>
+                                        Submit Design for Review
+                                    </Button>
+                                )}
                                 {project.status === 'approved_for_production' && (
                                     <Button onClick={handleStartProduction} className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isThinking}>
                                         Start Production
@@ -221,7 +237,7 @@ export default function SharedProjectView() {
                                             <span className="absolute left-2.5 top-2.5 text-zinc-500">$</span>
                                             <Input
                                                 type="number"
-                                                placeholder={financials.manufacturing_cost?.toString() || "0.00"}
+                                                placeholder={financials.supplier_cost?.toString() || "0.00"}
                                                 className="pl-7"
                                                 value={manufacturingCost}
                                                 onChange={(e) => setManufacturingCost(e.target.value)}
@@ -231,8 +247,8 @@ export default function SharedProjectView() {
                                             <Save className="w-4 h-4" />
                                         </Button>
                                     </div>
-                                    {financials.manufacturing_cost && (
-                                        <p className="text-xs text-zinc-500 mt-1">Current recorded cost: ${financials.manufacturing_cost}</p>
+                                    {financials.supplier_cost && (
+                                        <p className="text-xs text-zinc-500 mt-1">Current recorded cost: ${financials.supplier_cost}</p>
                                     )}
                                 </div>
                             </CardContent>
