@@ -90,6 +90,40 @@ export default function ProjectDetails() {
     const [isEditingClient, setIsEditingClient] = useState(false);
     const [selectedClientId, setSelectedClientId] = useState('');
     const [uploadError, setUploadError] = useState('');
+    const [isSharing, setIsSharing] = useState(false);
+
+    const handleShareProject = async () => {
+        if (!projects || projects.length === 0) return;
+        // In this component, we fetch ALL projects. We need to find the specific one.
+        const project = projects.find(p => p.id === id);
+
+        if (!project) return;
+
+        setIsSharing(true);
+        try {
+            // Check if token exists on the object. If not, we might need to refresh or the DB trigger/default hasn't run.
+            // But since we selected all columns, if the column exists, we have it.
+            // For older projects, it might be null if we didn't backfill.
+            // The SQL I wrote ADDS the column with DEFAULT uuid_generate_v4(), so it SHOULD backfill.
+
+            // NOTE: We need to augment the Project interface in the frontend to know about 'share_token'
+            const token = (project as any).share_token;
+
+            if (!token) {
+                toast.error("Share token missing. Please refresh or contact admin.");
+                return;
+            }
+
+            const shareUrl = `${window.location.origin}/shared/${token}`;
+            await navigator.clipboard.writeText(shareUrl);
+            toast.success("Manufacturer Link copied to clipboard!");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to copy link");
+        } finally {
+            setIsSharing(false);
+        }
+    };
 
     // In a real app, we'd fetch by ID. 
     const { data: projects } = useQuery({
@@ -174,7 +208,19 @@ export default function ProjectDetails() {
                     <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
                         <ArrowLeft className="w-4 h-4" />
                     </Button>
-                    <div>
+                    <div className="flex items-center gap-2">
+                        {role === 'admin' && (
+                            <Button variant="outline" size="sm" onClick={handleShareProject} disabled={isSharing} className="gap-2 text-luxury-gold border-luxury-gold/50 hover:bg-luxury-gold/10">
+                                <Send className="w-4 h-4" />
+                                {isSharing ? "Copying..." : "Share Link"}
+                            </Button>
+                        )}
+                        {(role === 'admin' || role === 'sales') && (
+                            <Button variant="outline" size="sm" onClick={() => setIsEditingClient(true)} className="gap-2">
+                                <Pencil className="w-4 h-4" />
+                                Edit Client
+                            </Button>
+                        )}
                         <h1 className="text-2xl font-serif font-bold text-luxury-gold">{project.title}</h1>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <User className="w-3 h-3" />

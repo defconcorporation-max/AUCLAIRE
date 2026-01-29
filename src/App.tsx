@@ -16,6 +16,7 @@ import InvoicesList from './pages/finance/InvoicesList';
 import CreateInvoice from './pages/finance/CreateInvoice';
 import UsersList from './pages/admin/UsersList';
 import PendingApproval from './pages/PendingApproval';
+import SharedProjectView from './pages/public/SharedProjectView';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
@@ -55,6 +56,9 @@ function App() {
             <Route path="/pending" element={
               <PendingApproval />
             } />
+
+            {/* Public Shared Project View */}
+            <Route path="/shared/:token" element={<SharedProjectView />} />
 
             <Route path="/dashboard" element={
               <ProtectedRoute>

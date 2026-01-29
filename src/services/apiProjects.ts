@@ -147,48 +147,48 @@ export const apiProjects = {
     },
 
     async updateStatus(id: string, status: ProjectStatus) {
-        const { data, error } = await supabase.from('projects').update({ status }).eq('id', id).select().single();
+        const { data, error } = await supabase
+            .from('projects')
+            .update({ status })
+            .eq('id', id)
+            .select()
+            .single();
 
-        if (error) {
-            console.warn("Using Mock Update for Project Status");
-            const index = mockProjects.findIndex(p => p.id === id);
-            if (index !== -1) {
-                // Versioning Logic: Snapshot current design if requesting modification
-                if (status === 'design_modification' && mockProjects[index].status === 'design_ready') {
-                    const current = mockProjects[index];
-                    const details = current.stage_details || {};
-                    const versions = details.design_versions || [];
+        if (error) throw error;
 
-                    const newVersion = {
-                        version_number: versions.length + 1,
-                        created_at: new Date().toISOString(),
-                        notes: details.model_notes || 'No notes',
-                        files: details.design_files || [], // Snapshot current files
-                        model_link: details.model_link,
-                        status: 'rejected' as const,
-                        feedback: 'Changes requested by Admin'
-                    };
-
-                    mockProjects[index] = {
-                        ...current,
-                        status,
-                        stage_details: {
-                            ...details,
-                            design_versions: [...versions, newVersion]
-                        }
-                    };
-                } else {
-                    // Standard update
-                    mockProjects[index] = { ...mockProjects[index], status };
-                }
-
-                saveMockData(); // Save to local storage
-                return mockProjects[index];
-            }
-            throw new Error('Project not found in mock store');
+        // Mock fallback/sync (legacy support)
+        const index = mockProjects.findIndex(p => p.id === id);
+        if (index !== -1) {
+            const current = mockProjects[index];
+            // Simple state update for mock
+            mockProjects[index] = { ...current, status };
+            saveMockData();
         }
 
-        return data;
+        return data as Project;
+    },
+
+    // Public / Shared Token Access
+    async getByToken(token: string) {
+        const { data, error } = await supabase
+            .rpc('get_project_by_token', { token_uuid: token });
+
+        if (error) throw error;
+        // RPC returns an array of rows
+        if (!data || data.length === 0) throw new Error("Project not found");
+        return data[0] as Project;
+    },
+
+    async updateByToken(token: string, updates: { stage_details: any, financials: any, status: string }) {
+        const { error } = await supabase
+            .rpc('update_project_by_token', {
+                token_uuid: token,
+                new_stage_details: updates.stage_details,
+                new_financials: updates.financials,
+                new_status: updates.status
+            });
+
+        if (error) throw error;
     },
 
     async updateDetails(id: string, details: Partial<Project['stage_details']>) {
