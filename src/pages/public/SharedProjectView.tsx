@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Upload, Save, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 
 // Reuse file compression helper or import it if shared
 const compressImage = (file: File): Promise<string> => {
@@ -53,6 +54,7 @@ export default function SharedProjectView() {
     const queryClient = useQueryClient();
     const [manufacturingCost, setManufacturingCost] = useState('');
     const [isThinking, setIsThinking] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const { data: project, isLoading, error } = useQuery({
         queryKey: ['shared-project', token],
@@ -227,7 +229,7 @@ export default function SharedProjectView() {
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                             {details.sketch_files.map((url: string, i: number) => (
                                                 <div key={i} className="relative aspect-square rounded-md overflow-hidden border bg-zinc-100">
-                                                    <img src={url} alt={`Sketch ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer" onClick={() => window.open(url, '_blank')} />
+                                                    <img src={url} alt={`Sketch ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer" onClick={() => setPreviewUrl(url)} />
                                                 </div>
                                             ))}
                                         </div>
@@ -295,7 +297,7 @@ export default function SharedProjectView() {
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     {images.map((img: string, idx: number) => (
                                         <div key={idx} className="relative aspect-square rounded-md overflow-hidden border bg-zinc-100">
-                                            <img src={img} alt={`Render ${idx}`} className="w-full h-full object-cover" />
+                                            <img src={img} alt={`Render ${idx}`} className="w-full h-full object-cover cursor-pointer hover:opacity-90" onClick={() => setPreviewUrl(img)} />
                                         </div>
                                     ))}
                                     {images.length === 0 && (
@@ -323,6 +325,13 @@ export default function SharedProjectView() {
                     </div>
                 </div>
             </div>
+
+            <ImagePreviewModal
+                isOpen={!!previewUrl}
+                imageUrl={previewUrl}
+                onClose={() => setPreviewUrl(null)}
+                title="Project Design Preview"
+            />
         </div>
     );
 }
