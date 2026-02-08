@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, DollarSign, Briefcase, TrendingUp } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils'; // Assuming this exists or I'll implement inline
+
 
 export default function AffiliateDashboard() {
     const { profile } = useAuth();
