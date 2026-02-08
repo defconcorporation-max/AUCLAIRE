@@ -244,7 +244,7 @@ export default function AffiliateDetails() {
                                         </TableRow>
                                     ) : (
                                         projects.map((p: any) => {
-                                            const price = Number(p.sale_price) || 0;
+                                            const price = Number(p.budget) || 0;
                                             let com = 0;
                                             if (p.affiliate_commission_type === 'fixed') {
                                                 com = Number(p.affiliate_commission_rate) || 0;

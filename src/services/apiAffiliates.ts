@@ -47,7 +47,7 @@ export const apiAffiliates = {
         // For now, we'll fetch all non-archived projects.
         const { data: projects, error } = await supabase
             .from('projects')
-            .select('id, sale_price, status, payment_status, affiliate_commission_rate, affiliate_commission_type')
+            .select('id, budget, status, payment_status, affiliate_commission_rate, affiliate_commission_type')
             .eq('affiliate_id', affiliateId);
 
         if (error) throw error;
@@ -57,7 +57,7 @@ export const apiAffiliates = {
         let activeProjectsCount = 0;
 
         projects.forEach(project => {
-            const price = Number(project.sale_price) || 0;
+            const price = Number(project.budget) || 0;
 
             // Calculate Commission
             // If the project has a snapshot rate, use it. Otherwise use 0 (or should we fetch profile default?)
