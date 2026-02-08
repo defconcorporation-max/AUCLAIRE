@@ -19,6 +19,10 @@ export default function UsersList() {
         mutationFn: ({ id, role }: { id: string; role: string }) => apiUsers.updateRole(id, role as any),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
+        },
+        onError: (error: any) => {
+            alert(`Failed to update role: ${error.message}`);
+            console.error(error);
         }
     });
 
@@ -96,6 +100,7 @@ export default function UsersList() {
                                         <option value="manufacturer">Manufacturer</option>
                                         <option value="admin">Admin</option>
                                         <option value="sales">Sales Agent</option>
+                                        <option value="affiliate">Ambassador (Affiliate)</option>
                                     </select>
 
                                     <Button
