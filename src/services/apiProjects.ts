@@ -88,16 +88,32 @@ export const apiProjects = {
         // Reload on every fetch to ensure consistency across tabs if needed
         loadMockData();
 
+        // Primary Query: Try with Affiliate Join
         const { data, error } = await supabase
             .from('projects')
             .select('*, client:clients(full_name), affiliate:profiles!projects_affiliate_id_fkey(full_name)')
             .order('updated_at', { ascending: false });
 
-        if (error || !data) {
-            console.warn("Using Mock Data for Projects");
-            return [...mockProjects];
+        if (!error && data) {
+            return data as Project[];
         }
-        return data as Project[];
+
+        console.warn("Primary Project Query failed (likely schema mismatch). Attempting fallback...", error);
+
+        // Fallback Query: Without Affiliate Join (Pre-migration compatibility)
+        const { data: fallbackData, error: fallbackError } = await supabase
+            .from('projects')
+            .select('*, client:clients(full_name)')
+            .order('updated_at', { ascending: false });
+
+        if (!fallbackError && fallbackData) {
+            console.log("Fallback query successful. Returning projects without affiliate data.");
+            return fallbackData as Project[];
+        }
+
+        console.error("All Project Fetching Failed. Falling back to Mock.", fallbackError);
+        console.warn("Using Mock Data for Projects");
+        return [...mockProjects];
     },
 
     async getStats() {
