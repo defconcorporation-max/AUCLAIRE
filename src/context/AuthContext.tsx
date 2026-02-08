@@ -4,13 +4,17 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 
-export type UserRole = 'admin' | 'sales' | 'manufacturer' | 'client' | 'pending';
+export type UserRole = 'admin' | 'sales' | 'manufacturer' | 'client' | 'pending' | 'affiliate';
 
 interface Profile {
     id: string;
     full_name: string | null;
     role: UserRole;
     avatar_url: string | null;
+    affiliate_status?: 'pending' | 'active' | 'rejected';
+    affiliate_level?: 'starter' | 'confirmed' | 'elite' | 'partner';
+    commission_rate?: number;
+    commission_type?: 'percent' | 'fixed';
 }
 
 interface AuthContextType {

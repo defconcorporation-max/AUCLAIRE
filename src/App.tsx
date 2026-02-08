@@ -14,12 +14,14 @@ import ClientDetails from './pages/clients/ClientDetails';
 import CreateClient from './pages/clients/CreateClient';
 import InvoicesList from './pages/finance/InvoicesList';
 import CreateInvoice from './pages/finance/CreateInvoice';
-import UsersList from './pages/admin/UsersList';
 import PendingApproval from './pages/PendingApproval';
 import SharedProjectView from './pages/public/SharedProjectView';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
+import AffiliatesList from './pages/admin/AffiliatesList';
+import AffiliateDashboard from './pages/affiliates/AffiliateDashboard';
+import RegisterAffiliate from './pages/affiliates/RegisterAffiliate';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -34,6 +36,11 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
   // Pending User Trap
   if (role === 'pending' && !isAdmin) {
     return <Navigate to="/pending" replace />;
+  }
+
+  // Affiliate Redirect: If accessing root dashboard, send to affiliate dashboard
+  if (role === 'affiliate' && location.pathname === '/dashboard') {
+    return <Navigate to="/dashboard/affiliate" replace />;
   }
 
   // RBAC Check
@@ -79,12 +86,16 @@ function App() {
               <Route path="invoices/new" element={<CreateInvoice />} />
               <Route path="settings" element={<Settings />} />
 
-              {/* Admin Only */}
-              <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
+              {/* Affiliate Routes */}
+              <Route path="affiliate" element={<ProtectedRoute allowedRoles={['affiliate']}><AffiliateDashboard /></ProtectedRoute>} />
+              <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
 
               {/* Debugging */}
               <Route path="debug" element={<DebugPage />} />
             </Route>
+
+            {/* Public Affiliate Registration */}
+            <Route path="/affiliate/register" element={<RegisterAffiliate />} />
 
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase' // Use directly for Auth
 import { Button } from '@/components/ui/button'
@@ -166,6 +166,10 @@ export default function Login() {
                             </div>
                         )}
                     </CardContent>
+                    <div className="p-6 pt-0 text-center text-xs text-muted-foreground">
+                        Vous souhaitez collaborer avec nous ? <br />
+                        <Link to="/affiliate/register" className="text-luxury-gold hover:underline">Devenir Ambassadeur</Link>
+                    </div>
                 </Card>
             </div>
         </div>

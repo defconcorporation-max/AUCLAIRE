@@ -5,6 +5,7 @@ import { apiProjects, ProjectStatus } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
 import { apiClients } from '@/services/apiClients';
 import { apiNotifications } from '@/services/apiNotifications';
+import { apiAffiliates } from '@/services/apiAffiliates';
 import { apiActivities } from '@/services/apiActivities';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -26,7 +27,8 @@ import {
     Pencil,
     Save,
     X,
-    Trash2
+    Trash2,
+    Handshake
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
@@ -89,6 +91,8 @@ export default function ProjectDetails() {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [isEditingClient, setIsEditingClient] = useState(false);
     const [selectedClientId, setSelectedClientId] = useState('');
+    const [isEditingAffiliate, setIsEditingAffiliate] = useState(false);
+    const [selectedAffiliateId, setSelectedAffiliateId] = useState('');
     const [uploadError, setUploadError] = useState('');
     const [isSharing, setIsSharing] = useState(false);
 
@@ -135,6 +139,12 @@ export default function ProjectDetails() {
         queryKey: ['clients'],
         queryFn: apiClients.getAll,
         enabled: isEditingClient // Only fetch when editing
+    });
+
+    const { data: affiliates } = useQuery({
+        queryKey: ['affiliates'],
+        queryFn: apiAffiliates.getAffiliates,
+        enabled: isEditingAffiliate
     });
 
     const { data: invoices } = useQuery({
@@ -490,6 +500,59 @@ export default function ProjectDetails() {
                         <CardTitle>Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                        {/* Affiliate Section */}
+                        {(role === 'admin' || role === 'sales' || project.affiliate_id) && (
+                            <div className="flex items-center justify-between border-b pb-2">
+                                <span className="text-sm text-muted-foreground flex items-center gap-2">
+                                    <Handshake className="w-3 h-3" /> Ambassador
+                                </span>
+                                {!isEditingAffiliate ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-medium">{project.affiliate?.full_name || 'None'}</span>
+                                        {(role === 'admin') && (
+                                            <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => {
+                                                setSelectedAffiliateId(project.affiliate_id || '');
+                                                setIsEditingAffiliate(true);
+                                            }}>
+                                                <Pencil className="w-3 h-3" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1 animate-in fade-in zoom-in-95">
+                                        <select
+                                            className="h-6 rounded border border-input bg-background text-xs px-1 w-32"
+                                            value={selectedAffiliateId}
+                                            onChange={(e) => setSelectedAffiliateId(e.target.value)}
+                                        >
+                                            <option value="">None</option>
+                                            {affiliates?.map((a) => (
+                                                <option key={a.id} value={a.id}>{a.full_name}</option>
+                                            ))}
+                                        </select>
+                                        <Button size="icon" variant="ghost" className="h-5 w-5 text-green-600" onClick={() => {
+                                            const affiliate = affiliates?.find(a => a.id === selectedAffiliateId);
+                                            const updates: any = { affiliate_id: selectedAffiliateId || null };
+                                            if (affiliate) {
+                                                updates.affiliate_commission_rate = affiliate.commission_rate;
+                                                updates.affiliate_commission_type = affiliate.commission_type;
+                                            }
+
+                                            apiProjects.update(project.id, updates)
+                                                .then(() => {
+                                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                    setIsEditingAffiliate(false);
+                                                });
+                                        }}>
+                                            <Save className="w-3 h-3" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500" onClick={() => setIsEditingAffiliate(false)}>
+                                            <X className="w-3 h-3" />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         {/* Budget & Profit - Hidden for Clients & Suppliers (partially) */}
 
                         {role !== 'client' && role !== 'manufacturer' && (

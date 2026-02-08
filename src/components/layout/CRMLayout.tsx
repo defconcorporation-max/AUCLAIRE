@@ -21,10 +21,12 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
     const [isMobileOpen, setIsMobileOpen] = useState(false)
 
     const navItems = [
+        { label: 'Tableau de Bord', href: '/dashboard/affiliate', icon: LayoutDashboard, roles: ['affiliate'] },
         { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'sales'] },
         { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'sales', 'client'] },
         { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'sales'] },
         { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'sales'] },
+        { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin'] },
         { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
         // Link back to the CAD tool
         { label: 'Design Studio', href: '/studio', icon: Gem, roles: ['admin', 'sales'] },

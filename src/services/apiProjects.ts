@@ -49,6 +49,10 @@ export interface Project {
         selling_price?: number; // Usually same as budget, but tracked separately
         paid_amount?: number;   // Total amount paid by client
     };
+    affiliate_id?: string;
+    affiliate?: { full_name: string };
+    affiliate_commission_rate?: number;
+    affiliate_commission_type?: 'percent' | 'fixed';
 }
 
 export type ProjectStatus = Project['status'];
@@ -86,7 +90,7 @@ export const apiProjects = {
 
         const { data, error } = await supabase
             .from('projects')
-            .select('*, client:clients(full_name)')
+            .select('*, client:clients(full_name), affiliate:profiles!projects_affiliate_id_fkey(full_name)')
             .order('updated_at', { ascending: false });
 
         if (error || !data) {
