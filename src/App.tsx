@@ -14,6 +14,7 @@ import ClientDetails from './pages/clients/ClientDetails';
 import CreateClient from './pages/clients/CreateClient';
 import InvoicesList from './pages/finance/InvoicesList';
 import CreateInvoice from './pages/finance/CreateInvoice';
+import UsersList from './pages/admin/UsersList';
 import PendingApproval from './pages/PendingApproval';
 import SharedProjectView from './pages/public/SharedProjectView';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
@@ -75,16 +76,17 @@ function App() {
                 </CRMLayout>
               </ProtectedRoute>
             }>
-              <Route index element={<Dashboard />} />
-              <Route path="projects" element={<ProjectsList />} />
-              <Route path="projects/new" element={<CreateProject />} />
-              <Route path="projects/:id" element={<ProjectDetails />} />
-              <Route path="clients" element={<ClientsList />} />
-              <Route path="clients/new" element={<CreateClient />} />
-              <Route path="clients/:id" element={<ClientDetails />} />
-              <Route path="invoices" element={<InvoicesList />} />
-              <Route path="invoices/new" element={<CreateInvoice />} />
-              <Route path="settings" element={<Settings />} />
+              <Route index element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><Dashboard /></ProtectedRoute>} />
+              <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><ProjectsList /></ProtectedRoute>} />
+              <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateProject /></ProtectedRoute>} />
+              <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer', 'affiliate']}><ProjectDetails /></ProtectedRoute>} />
+              <Route path="clients" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientsList /></ProtectedRoute>} />
+              <Route path="clients/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateClient /></ProtectedRoute>} />
+              <Route path="clients/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientDetails /></ProtectedRoute>} />
+              <Route path="invoices" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'accounting']}><InvoicesList /></ProtectedRoute>} />
+              <Route path="invoices/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateInvoice /></ProtectedRoute>} />
+              <Route path="settings" element={<ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>} />
+              <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
 
               {/* Affiliate Routes */}
               <Route path="affiliate" element={<ProtectedRoute allowedRoles={['affiliate']}><AffiliateDashboard /></ProtectedRoute>} />
