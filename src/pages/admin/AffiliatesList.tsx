@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiAffiliates, AffiliateProfile } from '@/services/apiAffiliates';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,10 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Edit } from 'lucide-react';
+import { Loader2, Edit, Eye } from 'lucide-react';
 // import { toast } from 'sonner';
 
 export default function AffiliatesList() {
+    const navigate = useNavigate();
     const [affiliates, setAffiliates] = useState<AffiliateProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingAffiliate, setEditingAffiliate] = useState<AffiliateProfile | null>(null);
@@ -117,6 +119,9 @@ export default function AffiliatesList() {
                                             {affiliate.commission_rate}% {affiliate.commission_type === 'fixed' ? '(Fixe)' : ''}
                                         </TableCell>
                                         <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => navigate(`/dashboard/affiliates/${affiliate.id}`)}>
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleEdit(affiliate)}>
                                                 <Edit className="h-4 w-4" />
                                             </Button>

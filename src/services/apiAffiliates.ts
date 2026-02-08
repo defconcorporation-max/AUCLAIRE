@@ -20,7 +20,7 @@ export const apiAffiliates = {
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .eq('role', 'affiliate')
+            .in('role', ['affiliate', 'admin'])
             .order('full_name', { ascending: true });
 
         if (error) throw error;

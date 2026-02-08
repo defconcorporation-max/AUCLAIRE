@@ -637,9 +637,27 @@ export default function ProjectDetails() {
                                     <div>Shipping/Customs:</div>
                                     <div className="font-mono text-right text-red-500">-${(project.financials?.shipping_cost || 0) + (project.financials?.customs_fee || 0)}</div>
 
+                                    {/* Commission Display */}
+                                    {project.affiliate_id && (
+                                        <>
+                                            <div>Commission ({project.affiliate_commission_type === 'fixed' ? 'Fixed' : `${project.affiliate_commission_rate}%`}):</div>
+                                            <div className="font-mono text-right text-red-500">
+                                                -${(() => {
+                                                    if (project.affiliate_commission_type === 'fixed') return Number(project.affiliate_commission_rate || 0);
+                                                    return ((project.budget || 0) * (Number(project.affiliate_commission_rate) || 0) / 100);
+                                                })().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </div>
+                                        </>
+                                    )}
+
                                     <div className="border-t pt-1 font-bold">Net Profit:</div>
-                                    <div className={`border-t pt-1 font-mono text-right font-bold ${(project.budget || 0) - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        ${((project.budget || 0) - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0)).toLocaleString()}
+                                    <div className={`border-t pt-1 font-mono text-right font-bold ${(project.budget || 0) - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0) - (project.affiliate_id ? (project.affiliate_commission_type === 'fixed' ? Number(project.affiliate_commission_rate || 0) : ((project.budget || 0) * (Number(project.affiliate_commission_rate) || 0) / 100)) : 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        ${((project.budget || 0) -
+                                            (project.financials?.supplier_cost || 0) -
+                                            (project.financials?.shipping_cost || 0) -
+                                            (project.financials?.customs_fee || 0) -
+                                            (project.affiliate_id ? (project.affiliate_commission_type === 'fixed' ? Number(project.affiliate_commission_rate || 0) : ((project.budget || 0) * (Number(project.affiliate_commission_rate) || 0) / 100)) : 0)
+                                        ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </div>
                                 </div>
 

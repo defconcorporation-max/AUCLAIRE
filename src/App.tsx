@@ -22,6 +22,7 @@ import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
 import AffiliatesList from './pages/admin/AffiliatesList';
 import AffiliateDashboard from './pages/affiliates/AffiliateDashboard';
+import AffiliateDetails from './pages/affiliates/AffiliateDetails';
 import RegisterAffiliate from './pages/affiliates/RegisterAffiliate';
 
 // Protected Route Component
@@ -91,6 +92,7 @@ function App() {
               {/* Affiliate Routes */}
               <Route path="affiliate" element={<ProtectedRoute allowedRoles={['affiliate']}><AffiliateDashboard /></ProtectedRoute>} />
               <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
+              <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin']}><AffiliateDetails /></ProtectedRoute>} />
 
               {/* Debugging */}
               <Route path="debug" element={<DebugPage />} />
