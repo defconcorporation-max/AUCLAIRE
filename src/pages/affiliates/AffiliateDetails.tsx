@@ -18,6 +18,7 @@ export default function AffiliateDetails() {
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Editable Fields
     const [fullName, setFullName] = useState('');
@@ -56,12 +57,26 @@ export default function AffiliateDetails() {
                 const statsData = await apiAffiliates.getAffiliateStats(id!);
                 setStats(statsData);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to load affiliate", error);
+            setError(error.message);
         } finally {
             setIsLoading(false);
         }
     };
+
+    if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    if (error) return (
+        <div className="p-8 text-center space-y-4">
+            <h2 className="text-xl font-bold text-red-500">Failed to load Affiliate Data</h2>
+            <p className="text-muted-foreground">{error}</p>
+            <p className="text-sm bg-zinc-100 p-2 rounded max-w-lg mx-auto font-mono">
+                Hint: Check if 'budget' or 'affiliate_id' columns exist in your database.
+            </p>
+            <Button onClick={loadData}>Retry</Button>
+        </div>
+    );
+    if (!affiliate) return <div className="p-8 text-center text-red-500">Affiliate not found.</div>;
 
     const handleSave = async () => {
         if (!id) return;
@@ -83,9 +98,6 @@ export default function AffiliateDetails() {
             setIsSaving(false);
         }
     };
-
-    if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
-    if (!affiliate) return <div className="p-8 text-center text-red-500">Affiliate not found.</div>;
 
     const { totalSales = 0, totalCommission = 0, activeProjectsCount = 0, projects = [] } = stats || {};
 

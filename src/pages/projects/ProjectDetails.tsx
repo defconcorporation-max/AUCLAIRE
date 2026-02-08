@@ -542,6 +542,10 @@ export default function ProjectDetails() {
                                                 .then(() => {
                                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                     setIsEditingAffiliate(false);
+                                                })
+                                                .catch(error => {
+                                                    console.error(error);
+                                                    alert(`Failed to assign ambassador. Likely database schema mismatch.\nDid you run the SQL script?\n\nError: ${error.message}`);
                                                 });
                                         }}>
                                             <Save className="w-3 h-3" />
