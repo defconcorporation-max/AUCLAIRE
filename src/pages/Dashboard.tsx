@@ -56,7 +56,8 @@ export default function Dashboard() {
     // Only calculate cost if the project is actually in production or later.
     const COST_RELEVANT_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
 
-    const totalCost = projects?.reduce((sum, p) => {
+    // 1. Calculate Production Costs
+    const totalProductionCost = projects?.reduce((sum, p) => {
         // If still in design phase, cost is just an estimate, not incurred yet.
         if (!COST_RELEVANT_STATUSES.includes(p.status)) return sum;
 
@@ -66,9 +67,27 @@ export default function Dashboard() {
             (p.financials?.customs_fee || 0);
     }, 0) || 0;
 
-    // Actual Profit = Collected (Paid) - Total Reported Costs
-    const projectedProfit = totalProjectValue - totalCost;
-    const totalProfit = totalCollected - totalCost;
+    // 2. Calculate Affiliate Commissions
+    const totalCommissions = projects?.reduce((sum, p) => {
+        if (!p.affiliate_id) return sum;
+
+        let comm = 0;
+        if (p.affiliate_commission_type === 'fixed') {
+            comm = p.affiliate_commission_rate || 0;
+        } else {
+            // Percent of Budget
+            const budget = p.financials?.selling_price || p.budget || 0;
+            const rate = p.affiliate_commission_rate || 0;
+            comm = (budget * rate) / 100;
+        }
+        return sum + comm;
+    }, 0) || 0;
+
+    const totalExpenses = totalProductionCost + totalCommissions;
+
+    // Actual Profit = Collected (Paid) - Total Expenses (Cost + Commissions)
+    const projectedProfit = totalProjectValue - totalExpenses;
+    const totalProfit = totalCollected - totalExpenses;
 
     return (
         <div className="space-y-8">
@@ -175,7 +194,7 @@ export default function Dashboard() {
             {role === 'admin' && (
                 <div className="grid gap-6">
                     {/* Financial KPIs */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Collected</CardTitle>
@@ -202,6 +221,19 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
 
+                        <Card className="bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/30">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Commissions</CardTitle>
+                                <Banknote className="h-4 w-4 text-purple-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold font-serif text-purple-600 dark:text-purple-400">
+                                    ${totalCommissions.toLocaleString()}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Affiliate Payouts (Est)</p>
+                            </CardContent>
+                        </Card>
+
                         <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/30">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Actual Profit</CardTitle>
@@ -211,9 +243,9 @@ export default function Dashboard() {
                                 <div className="text-2xl font-bold font-serif text-luxury-gold">
                                     ${totalProfit.toLocaleString()}
                                 </div>
-                                <div className="text-xs text-muted-foreground flex justify-between">
-                                    <span>Realized Net Income</span>
-                                    <span title="Potential profit if all invoices are paid">/ ${projectedProfit.toLocaleString()} Projected</span>
+                                <div className="text-xs text-muted-foreground flex justify-between gap-2">
+                                    <span>Net Income</span>
+                                    <span title="Potential profit if all invoices are paid">/ ${projectedProfit.toLocaleString()} Proj.</span>
                                 </div>
                             </CardContent>
                         </Card>
