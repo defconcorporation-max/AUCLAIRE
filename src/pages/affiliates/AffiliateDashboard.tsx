@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { apiAffiliates } from '@/services/apiAffiliates';
+import { apiAffiliates, AffiliateStats } from '@/services/apiAffiliates';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,12 +10,7 @@ import { Loader2, DollarSign, Briefcase, TrendingUp } from 'lucide-react';
 
 export default function AffiliateDashboard() {
     const { profile } = useAuth();
-    const [stats, setStats] = useState<{
-        totalSales: number;
-        totalCommission: number;
-        activeProjectsCount: number;
-        projects: any[];
-    } | null>(null);
+    const [stats, setStats] = useState<AffiliateStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {

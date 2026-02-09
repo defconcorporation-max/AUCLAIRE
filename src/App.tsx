@@ -99,8 +99,7 @@ function App() {
               <Route path="debug" element={<DebugPage />} />
             </Route>
 
-            {/* Public Affiliate Registration */}
-            <Route path="/affiliate/register" element={<RegisterAffiliate />} />
+
 
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
