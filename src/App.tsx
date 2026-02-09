@@ -21,6 +21,7 @@ import UsersList from './pages/admin/UsersList';
 import PendingApproval from './pages/PendingApproval';
 import SharedProjectView from './pages/public/SharedProjectView';
 import DebugPage from './pages/DebugPage';
+import Studio from './pages/Studio';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import { RingProvider } from "./context/RingContext";
 import AffiliatesList from './pages/affiliates/AffiliatesList';
@@ -92,6 +93,7 @@ function App() {
               <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>} />
               <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
+              <Route path="studio" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><Studio /></ProtectedRoute>} />
 
               {/* Affiliate Routes */}
               <Route path="affiliate" element={<ProtectedRoute allowedRoles={['affiliate']}><AffiliateDashboard /></ProtectedRoute>} />

@@ -31,7 +31,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
         { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin'] },
         { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
         // Link back to the CAD tool
-        { label: 'Design Studio', href: '/studio', icon: Gem, roles: ['admin', 'sales'] },
+        { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'sales', 'manufacturer'] },
         { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin'] },
     ]
 

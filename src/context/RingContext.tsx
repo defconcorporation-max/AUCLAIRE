@@ -8,18 +8,41 @@ export type MetalType = 'White Gold' | 'Yellow Gold' | 'Rose Gold' | 'Platinum'
 export type GemType = 'Diamond' | 'Sapphire' | 'Ruby' | 'Emerald'
 export type ProfileType = "Court" | "D-Shape" | "Flat" | "Knife-Edge"
 
-interface RingConfig {
-    profile: ProfileType
-    width: number
-    thickness: number
-    taper: number
-    coverage: number // Pave
-    gemSize: number
-    gemShape: string
-    settingStyle: '4-Prong' | '6-Prong' | 'Bezel'
-    headType: 'Solitaire' | 'Halo' | 'Three-Stone' | 'Vintage'
-    shankType: 'Classic' | 'Cathedral' | 'Split' | 'Twist'
-    sideGemShape: string
+export interface RingConfig {
+    metal: MetalType
+
+    // Center Stone
+    gem: {
+        type: GemType
+        shape: string // "Round", "Princess", etc.
+        size: number // Carat/mm scale (0.5 to 3.0)
+        ratio: number // Length/Width ratio
+    }
+
+    // Head / Setting
+    head: {
+        style: 'Solitaire' | 'Halo' | 'Three-Stone' | 'Vintage'
+        prongStyle: 'Claw' | 'Round' | 'Tab'
+        prongCount: 4 | 6
+        height: number
+    }
+
+    // Shank / Band
+    shank: {
+        style: 'Classic' | 'Cathedral' | 'Twist' | 'Split'
+        profile: ProfileType
+        width: number // mm
+        thickness: number // mm
+        taper: number // 0.8 to 1.2
+    }
+
+    // Side Stones
+    sideStones: {
+        active: boolean
+        style: string // "Pave", "Channel"
+        size: number
+        length: number // 0.5 (half eternity)
+    }
 }
 
 interface MaterialConfig {
@@ -34,23 +57,46 @@ interface AppState {
     materials: MaterialConfig
     setTool: (t: ToolType) => void
     setViewMode: (v: ViewMode) => void
-    updateRing: (updates: Partial<RingConfig>) => void
+    updateRing: (updates: RecursivePartial<RingConfig>) => void
     updateMaterials: (updates: Partial<MaterialConfig>) => void
 }
 
+type RecursivePartial<T> = {
+    [P in keyof T]?: T[P] extends (infer U)[]
+    ? RecursivePartial<U>[]
+    : T[P] extends object
+    ? RecursivePartial<T[P]>
+    : T[P];
+};
+
 // --- DEFAULTS ---
 const defaultConfig: RingConfig = {
-    profile: "Court",
-    width: 3.0,
-    thickness: 1.8,
-    taper: 1.0,
-    coverage: 0.0,
-    gemSize: 1.0,
-    gemShape: 'Round',
-    settingStyle: '4-Prong',
-    headType: 'Solitaire',
-    shankType: 'Classic',
-    sideGemShape: 'Round'
+    metal: 'Yellow Gold',
+    gem: {
+        type: 'Diamond',
+        shape: 'Round',
+        size: 1.0,
+        ratio: 1.0
+    },
+    head: {
+        style: 'Solitaire',
+        prongStyle: 'Claw',
+        prongCount: 4,
+        height: 1.0
+    },
+    shank: {
+        style: 'Classic',
+        profile: 'Court',
+        width: 3.0,
+        thickness: 1.8,
+        taper: 1.0
+    },
+    sideStones: {
+        active: false,
+        style: 'Pave',
+        size: 1.5,
+        length: 0.5
+    }
 }
 
 const defaultMaterials: MaterialConfig = {
@@ -68,8 +114,28 @@ export function RingProvider({ children }: { children: ReactNode }) {
     const [ringConfig, setRingConfig] = useState<RingConfig>(defaultConfig)
     const [materials, setMaterials] = useState<MaterialConfig>(defaultMaterials)
 
-    const updateRing = (updates: Partial<RingConfig>) => {
-        setRingConfig(prev => ({ ...prev, ...updates }))
+    // Recursive merge for deep updates
+    const deepMerge = (target: any, source: any) => {
+        for (const key of Object.keys(source)) {
+            if (source[key] instanceof Object && key in target) {
+                Object.assign(source[key], deepMerge(target[key], source[key]))
+            }
+        }
+        Object.assign(target || {}, source)
+        return target
+    }
+
+    const updateRing = (updates: RecursivePartial<RingConfig>) => {
+        setRingConfig(prev => {
+            // Simple deep merge for 2-level depth
+            const next = { ...prev }
+            if (updates.gem) next.gem = { ...prev.gem, ...updates.gem }
+            if (updates.head) next.head = { ...prev.head, ...updates.head }
+            if (updates.shank) next.shank = { ...prev.shank, ...updates.shank }
+            if (updates.sideStones) next.sideStones = { ...prev.sideStones, ...updates.sideStones }
+            if (updates.metal) next.metal = updates.metal as MetalType
+            return next
+        })
     }
 
     const updateMaterials = (updates: Partial<MaterialConfig>) => {
