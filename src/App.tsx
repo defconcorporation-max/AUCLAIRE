@@ -3,7 +3,7 @@ import React from 'react';
 // Force new deployment: V2.4 Fixed Protected Route Location Hook
 console.log("App Version: V2.4 - Fixed Protected Route Location Hook");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import CRMLayout from './components/layout/CRMLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
