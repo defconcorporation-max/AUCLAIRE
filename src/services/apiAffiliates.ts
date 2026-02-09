@@ -8,7 +8,49 @@ export interface AffiliateStats {
     activeProjects: number;
 }
 
+export interface AffiliateProfile {
+    id: string;
+    full_name: string | null;
+    email?: string;
+    role: string;
+    affiliate_status?: 'pending' | 'active' | 'rejected';
+    affiliate_level?: 'starter' | 'confirmed' | 'elite' | 'partner';
+    commission_rate?: number;
+    commission_type?: 'percent' | 'fixed';
+    stats?: AffiliateStats;
+}
+
 export const apiAffiliates = {
+    // Legacy support / Direct fetch
+    async getAffiliates(): Promise<AffiliateProfile[]> {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('role', ['affiliate', 'ambassador', 'admin', 'sales']); // Include others who might be affiliates? sticking to affiliate/ambassador primarily but let's be broad if legacy used it.
+        // Actually, keep it simple:
+        // .in('role', ['affiliate', 'ambassador']);
+
+        // Wait, ProjectDetails used it for specific dropdowns. Let's just fetch all potential affiliates.
+        if (error) throw error;
+        return data as AffiliateProfile[];
+    },
+
+    async updateAffiliate(id: string, updates: Partial<AffiliateProfile>) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async getAffiliateStats(affiliateId: string): Promise<AffiliateStats> {
+        return this.getStats(affiliateId);
+    },
+
     async getStats(affiliateId: string): Promise<AffiliateStats> {
         // 1. Get Projects Stats (Sales & Earned Commission)
         const { data: projects, error: projectsError } = await supabase
@@ -72,11 +114,11 @@ export const apiAffiliates = {
         const { data: profiles, error } = await supabase
             .from('profiles')
             .select('*')
-            .in('role', ['affiliate', 'ambassador']); // Handle likely role names
+            .in('role', ['affiliate', 'ambassador']);
 
         if (error) throw error;
 
-        // Enrich with stats (N+1 query but acceptable for small number of affiliates)
+        // Enrich with stats
         const affiliatesWithStats = await Promise.all(profiles.map(async (p) => {
             const stats = await this.getStats(p.id);
             return { ...p, stats };
