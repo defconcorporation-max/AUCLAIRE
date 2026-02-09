@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function DebugPage() {
     const [logs, setLogs] = useState<string[]>([]);
-    const [step, setStep] = useState(0);
 
     const addLog = (msg: string) => setLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
 
@@ -17,6 +16,7 @@ export default function DebugPage() {
         const { data: profiles, error: pError } = await supabase.from('profiles').select('id, role, full_name').limit(5);
         const t1_end = performance.now();
         addLog(`1. Fetch 5 Profiles: ${pError ? 'ERROR' : 'OK'} (${(t1_end - t1).toFixed(0)}ms)`);
+        if (profiles) console.log("Profiles sample:", profiles);
         if (pError) addLog(`Error: ${pError.message}`);
 
         // Test 2: Fetch Projects
@@ -24,6 +24,7 @@ export default function DebugPage() {
         const { data: projects, error: pjError } = await supabase.from('projects').select('id, status').limit(5);
         const t2_end = performance.now();
         addLog(`2. Fetch 5 Projects: ${pjError ? 'ERROR' : 'OK'} (${(t2_end - t2).toFixed(0)}ms)`);
+        if (projects) console.log("Projects sample:", projects);
 
         // Test 3: Join Test (The suspect)
         const t3 = performance.now();
@@ -33,6 +34,7 @@ export default function DebugPage() {
             .limit(2);
         const t3_end = performance.now();
         addLog(`3. Join Profiles->Projects (Limit 2): ${jError ? 'ERROR' : 'OK'} (${(t3_end - t3).toFixed(0)}ms)`);
+        if (joinData) console.log("Join Data sample:", joinData);
         if (jError) addLog(`Error: ${jError.message}`);
 
         // Test 4: Expenses Join
@@ -43,6 +45,7 @@ export default function DebugPage() {
             .limit(2);
         const t4_end = performance.now();
         addLog(`4. Join Profiles->Expenses (Limit 2): ${eError ? 'ERROR' : 'OK'} (${(t4_end - t4).toFixed(0)}ms)`);
+        if (expData) console.log("Expense Data sample:", expData);
         if (eError) addLog(`Error: ${eError.message}`);
     };
 

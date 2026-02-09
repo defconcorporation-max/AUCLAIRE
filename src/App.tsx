@@ -22,7 +22,6 @@ import PendingApproval from './pages/PendingApproval';
 import SharedProjectView from './pages/public/SharedProjectView';
 import DebugPage from './pages/DebugPage';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
-import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
 import AffiliatesList from './pages/affiliates/AffiliatesList';
 import AffiliateDashboard from './pages/affiliates/AffiliateDashboard';
