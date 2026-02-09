@@ -37,7 +37,7 @@ export default function AffiliateDashboard() {
         );
     }
 
-    const { totalSales = 0, commissionEarned = 0, commissionPending = 0, activeProjects = 0, projects = [] } = stats || {};
+    const { totalSales = 0, commissionEarned = 0, activeProjects = 0, projects = [] } = stats || {};
 
     return (
         <div className="space-y-8">
