@@ -73,8 +73,35 @@ export default function ExpensesList() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Check for Demo Mode
+        if (profile?.id?.toString().startsWith('demo-')) {
+            alert("Demo Mode: Expense created successfully! (Data is not saved to the database in this mode)");
+            setIsAddOpen(false);
+            // Optimistically update the UI for the demo session (optional)
+            const demoExpense = {
+                ...newExpense,
+                id: `temp-${Date.now()}`,
+                created_at: new Date().toISOString(),
+                recipient: { full_name: 'Demo Recipient', email: 'demo@example.com' },
+                project: null
+            };
+            queryClient.setQueryData(['expenses'], (old: any) => [demoExpense, ...(old || [])]);
+
+            setNewExpense({
+                date: new Date().toISOString().split('T')[0],
+                category: 'commission',
+                status: 'paid',
+                amount: 0,
+                description: '',
+                recipient_id: undefined
+            });
+            return;
+        }
+
         createMutation.mutate({
             ...newExpense,
+            // Only send created_by if it's a valid UUID (users might have legacy IDs in weird edge cases, but mainly for demo safety)
             created_by: profile?.id
         });
     };
