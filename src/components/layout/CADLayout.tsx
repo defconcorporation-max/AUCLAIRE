@@ -1,5 +1,5 @@
-import React from 'react'
-import { useRing, ToolType, MetalType } from '../../context/RingContext'
+import React, { useState } from 'react'
+import { useRing, ToolType, MetalType, ProfileType } from '../../context/RingContext'
 import { Icons } from '../ui/Icons'
 import Viewport3D from '../3d/Viewport3D'
 import PreviewModal from '../ui/PreviewModal'
@@ -54,7 +54,7 @@ export default function CADLayout() {
         materials, updateMaterials
     } = useRing()
 
-    const [showPreview, setShowPreview] = React.useState(false)
+    const [showPreview, setShowPreview] = useState(false)
 
     const tools: { id: ToolType, icon: any }[] = [
         { id: 'select', icon: Icons.Select },
@@ -81,18 +81,20 @@ export default function CADLayout() {
         { id: 3, name: "Three-Stone", type: 'head', value: 'Three-Stone' },
         { id: 4, name: "Split Shank", type: 'shank', value: 'Split' },
         { id: 5, name: "Twist Shank", type: 'shank', value: 'Twist' },
-        { id: 6, name: "Bezel Head", type: 'head', value: 'Bezel Head' },
-        { id: 7, name: "Pave Shank", type: 'shank', value: 'Pave' }, // Logic needed for Pave auto-enable?
+        { id: 6, name: "Bezel Head", type: 'head', value: 'Bezel Head' }, // Note: Bezel Head mapping to style might need check if supported
+        { id: 7, name: "Pave Shank", type: 'shank', value: 'Pave' }, // Special logic below
         { id: 8, name: "Vintage Head", type: 'head', value: 'Vintage' },
     ]
 
     const handleComponentClick = (comp: any) => {
         if (comp.type === 'head') {
-            updateRing({ headType: comp.value })
+            updateRing({ head: { style: comp.value } })
         } else if (comp.type === 'shank') {
-            updateRing({ shankType: comp.value })
-            // Logic for specific shank params?
-            if (comp.value === 'Pave') updateRing({ coverage: 0.5 })
+            if (comp.value === 'Pave') {
+                updateRing({ sideStones: { active: true } })
+            } else {
+                updateRing({ shank: { style: comp.value } })
+            }
         }
     }
 
@@ -163,11 +165,11 @@ export default function CADLayout() {
                                     key={c.id}
                                     onClick={() => handleComponentClick(c)}
                                     className={`h-full aspect-square bg-[#111] border rounded cursor-pointer flex flex-col items-center justify-center gap-1 group transition-all
-                                        ${(ringConfig.headType === c.value || ringConfig.shankType === c.value) ? 'border-[#40a9ff] bg-[#40a9ff]/10' : 'border-[#333] hover:border-[#40a9ff]'}
+                                        ${(ringConfig.head.style === c.value || ringConfig.shank.style === c.value) ? 'border-[#40a9ff] bg-[#40a9ff]/10' : 'border-[#333] hover:border-[#40a9ff]'}
                                     `}
                                 >
-                                    <Icons.Ring className={`w-6 h-6 ${(ringConfig.headType === c.value || ringConfig.shankType === c.value) ? 'text-[#40a9ff]' : 'text-gray-600 group-hover:text-[#40a9ff]'}`} />
-                                    <span className={`text-[8px] font-mono text-center leading-tight px-1 ${(ringConfig.headType === c.value || ringConfig.shankType === c.value) ? 'text-[#40a9ff] font-bold' : 'text-gray-500'}`}>{c.name}</span>
+                                    <Icons.Ring className={`w-6 h-6 ${(ringConfig.head.style === c.value || ringConfig.shank.style === c.value) ? 'text-[#40a9ff]' : 'text-gray-600 group-hover:text-[#40a9ff]'}`} />
+                                    <span className={`text-[8px] font-mono text-center leading-tight px-1 ${(ringConfig.head.style === c.value || ringConfig.shank.style === c.value) ? 'text-[#40a9ff] font-bold' : 'text-gray-500'}`}>{c.name}</span>
                                 </div>
                             ))}
                         </div>
@@ -183,10 +185,10 @@ export default function CADLayout() {
                         {gemShapes.map(s => (
                             <button
                                 key={s}
-                                onClick={() => updateRing({ gemShape: s })}
-                                className={`flex flex-col items-center p-2 rounded border ${ringConfig.gemShape === s ? 'bg-[#40a9ff]/20 border-[#40a9ff]' : 'border-[#333] hover:bg-[#333]'}`}
+                                onClick={() => updateRing({ gem: { ...ringConfig.gem, shape: s } })}
+                                className={`flex flex-col items-center p-2 rounded border ${ringConfig.gem.shape === s ? 'bg-[#40a9ff]/20 border-[#40a9ff]' : 'border-[#333] hover:bg-[#333]'}`}
                             >
-                                <Icons.Diamond className={`w-6 h-6 mb-1 ${ringConfig.gemShape === s ? 'text-[#40a9ff]' : 'text-gray-500'}`} />
+                                <Icons.Diamond className={`w-6 h-6 mb-1 ${ringConfig.gem.shape === s ? 'text-[#40a9ff]' : 'text-gray-500'}`} />
                                 <span className="text-[8px] uppercase">{s}</span>
                             </button>
                         ))}
@@ -198,10 +200,10 @@ export default function CADLayout() {
                         {['Round', 'Princess', 'Pear', 'Marquise', 'Oval'].map(s => (
                             <button
                                 key={s}
-                                onClick={() => updateRing({ sideGemShape: s })}
-                                className={`flex flex-col items-center p-2 rounded border ${ringConfig.sideGemShape === s ? 'bg-[#40a9ff]/20 border-[#40a9ff]' : 'border-[#333] hover:bg-[#333]'}`}
+                                onClick={() => updateRing({ sideStones: { ...ringConfig.sideStones, style: s, active: true } })}
+                                className={`flex flex-col items-center p-2 rounded border ${ringConfig.sideStones.style === s ? 'bg-[#40a9ff]/20 border-[#40a9ff]' : 'border-[#333] hover:bg-[#333]'}`}
                             >
-                                <Icons.Diamond className={`w-3 h-3 mb-1 ${ringConfig.sideGemShape === s ? 'text-[#40a9ff]' : 'text-gray-500'}`} />
+                                <Icons.Diamond className={`w-3 h-3 mb-1 ${ringConfig.sideStones.style === s ? 'text-[#40a9ff]' : 'text-gray-500'}`} />
                                 <span className="text-[7px] uppercase">{s}</span>
                             </button>
                         ))}
@@ -209,13 +211,18 @@ export default function CADLayout() {
 
                     {/* B. STONE SETTINGS */}
                     <SectionHeader title="Stone Settings" />
-                    <PropRow label="Size (ct)" value={`${ringConfig.gemSize}ct`}>
-                        <input type="range" min="0.5" max="5.0" step="0.1" value={ringConfig.gemSize} onChange={e => updateRing({ gemSize: parseFloat(e.target.value) })} className="w-full h-1 bg-gray-700 rounded-full appearance-none accent-[#40a9ff]" />
+                    <PropRow label="Size (ct)" value={`${ringConfig.gem.size}ct`}>
+                        <input type="range" min="0.5" max="5.0" step="0.1" value={ringConfig.gem.size} onChange={e => updateRing({ gem: { ...ringConfig.gem, size: parseFloat(e.target.value) } })} className="w-full h-1 bg-gray-700 rounded-full appearance-none accent-[#40a9ff]" />
                     </PropRow>
                     <PropRow label="Prongs">
                         <select
-                            value={ringConfig.settingStyle}
-                            onChange={(e) => updateRing({ settingStyle: e.target.value as any })}
+                            value={ringConfig.head.prongCount === 6 ? "6-Prong" : "4-Prong"}
+                            onChange={(e) => {
+                                const val = e.target.value
+                                if (val === "6-Prong") updateRing({ head: { ...ringConfig.head, prongCount: 6 } })
+                                else if (val === "4-Prong") updateRing({ head: { ...ringConfig.head, prongCount: 4 } })
+                                else if (val === "Bezel") updateRing({ head: { ...ringConfig.head, style: "Solitaire", prongStyle: "Tab" } }) // Approx mapping
+                            }}
                             className="w-full bg-[#111] border border-[#333] text-xs p-1 rounded text-gray-300 outline-none focus:border-[#40a9ff]"
                         >
                             <option value="4-Prong">4 Prongs</option>
@@ -229,21 +236,21 @@ export default function CADLayout() {
                     <PropRow label="Profile">
                         <div className="flex gap-1">
                             {["Court", "Flat", "D-Shape"].map(p => (
-                                <button key={p} onClick={() => updateRing({ profile: p as any })} className={`flex-1 text-[9px] py-1 border rounded ${ringConfig.profile === p ? 'bg-[#40a9ff] border-[#40a9ff] text-white' : 'border-[#333] text-gray-400'}`}>{p[0]}</button>
+                                <button key={p} onClick={() => updateRing({ shank: { ...ringConfig.shank, profile: p as ProfileType } })} className={`flex-1 text-[9px] py-1 border rounded ${ringConfig.shank.profile === p ? 'bg-[#40a9ff] border-[#40a9ff] text-white' : 'border-[#333] text-gray-400'}`}>{p[0]}</button>
                             ))}
                         </div>
                     </PropRow>
-                    <PropRow label="Band Width" value={`${ringConfig.width}mm`}>
-                        <input type="range" min="1.5" max="6.0" step="0.1" value={ringConfig.width} onChange={e => updateRing({ width: parseFloat(e.target.value) })} className="w-full h-1 bg-gray-700 rounded-full appearance-none accent-[#40a9ff]" />
+                    <PropRow label="Band Width" value={`${ringConfig.shank.width}mm`}>
+                        <input type="range" min="1.5" max="6.0" step="0.1" value={ringConfig.shank.width} onChange={e => updateRing({ shank: { ...ringConfig.shank, width: parseFloat(e.target.value) } })} className="w-full h-1 bg-gray-700 rounded-full appearance-none accent-[#40a9ff]" />
                     </PropRow>
-                    <PropRow label="Band Thickness" value={`${ringConfig.thickness}mm`}>
-                        <input type="range" min="1.0" max="3.0" step="0.1" value={ringConfig.thickness} onChange={e => updateRing({ thickness: parseFloat(e.target.value) })} className="w-full h-1 bg-gray-700 rounded-full appearance-none accent-[#40a9ff]" />
+                    <PropRow label="Band Thickness" value={`${ringConfig.shank.thickness}mm`}>
+                        <input type="range" min="1.0" max="3.0" step="0.1" value={ringConfig.shank.thickness} onChange={e => updateRing({ shank: { ...ringConfig.shank, thickness: parseFloat(e.target.value) } })} className="w-full h-1 bg-gray-700 rounded-full appearance-none accent-[#40a9ff]" />
                     </PropRow>
-                    <PropRow label="Pave Stones" value={ringConfig.coverage > 0 ? "ON" : "OFF"}>
+                    <PropRow label="Pave Stones" value={ringConfig.sideStones.active ? "ON" : "OFF"}>
                         <div className="flex items-center gap-2">
-                            <input type="checkbox" checked={ringConfig.coverage > 0} onChange={e => updateRing({ coverage: e.target.checked ? 0.5 : 0.0 })} className="w-4 h-4 accent-[#40a9ff]" />
-                            {ringConfig.coverage > 0 && (
-                                <input type="range" min="0.1" max="1.0" step="0.1" value={ringConfig.coverage} onChange={e => updateRing({ coverage: parseFloat(e.target.value) })} className="flex-1 h-1 bg-gray-700 rounded-full appearance-none accent-purple-500" />
+                            <input type="checkbox" checked={ringConfig.sideStones.active} onChange={e => updateRing({ sideStones: { ...ringConfig.sideStones, active: e.target.checked } })} className="w-4 h-4 accent-[#40a9ff]" />
+                            {ringConfig.sideStones.active && (
+                                <input type="range" min="0.1" max="1.0" step="0.1" value={ringConfig.sideStones.length} onChange={e => updateRing({ sideStones: { ...ringConfig.sideStones, length: parseFloat(e.target.value) } })} className="flex-1 h-1 bg-gray-700 rounded-full appearance-none accent-purple-500" />
                             )}
                         </div>
                     </PropRow>
