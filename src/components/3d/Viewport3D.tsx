@@ -3,13 +3,13 @@ import { useRef, useEffect, useMemo } from "react"
 import { Canvas, useFrame, useThree, extend } from "@react-three/fiber"
 import * as THREE from "three"
 // @ts-ignore
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
+// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 // @ts-ignore
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 // @ts-ignore
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+// import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 // @ts-ignore
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass'
+// import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass'
 // @ts-ignore
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
@@ -17,7 +17,7 @@ import RingModel from "./RingModel"
 import { ErrorBoundary } from "./ErrorBoundary"
 import { useRing } from "../../context/RingContext"
 
-extend({ EffectComposer, RenderPass, UnrealBloomPass, OutputPass, OrbitControls })
+extend({ OrbitControls })
 
 // --- CONTROLS ---
 function CameraController() {
@@ -85,20 +85,6 @@ function ProStudio() {
     return null
 }
 
-function PostProcessing() {
-    const { gl, scene, camera, size } = useThree()
-    const composer = useRef<any>()
-    useEffect(() => {
-        composer.current = new EffectComposer(gl)
-        composer.current.addPass(new RenderPass(scene, camera))
-        composer.current.addPass(new UnrealBloomPass(new THREE.Vector2(size.width, size.height), 0.05, 0.5, 1.0))
-        composer.current.addPass(new OutputPass())
-        return () => composer.current?.dispose()
-    }, [gl, scene, camera, size])
-    useFrame(() => composer.current?.render(), 1)
-    return null
-}
-
 // --- MAIN VIEWPORT COMPONENT ---
 // Replaces RingViewer, strictly active rendering only.
 export default function Viewport3D() {
@@ -145,7 +131,7 @@ export default function Viewport3D() {
 
                     {/* No PostProcessing for clean look initially */}
                     {/* Subtle Bloom to soften, not glow */}
-                    <PostProcessing />
+                    {/* <PostProcessing /> */}
                 </Canvas>
 
                 {/* BOTTOM BAR OVERLAY */}
@@ -154,13 +140,6 @@ export default function Viewport3D() {
                         <span className="text-white">Perspective</span>
                         <span>Grid: 0.1mm</span>
                     </div>
-                    {/* 
-                    <div className="flex gap-2">
-                        <span>X: 0.00</span>
-                        <span>Y: 0.00</span>
-                        <span>Z: 0.00</span>
-                    </div>
-                 */}
                 </div>
             </ErrorBoundary>
         </div>

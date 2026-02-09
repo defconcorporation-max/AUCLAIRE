@@ -20,13 +20,13 @@ export default function PreviewModal({ config, materials, onClose }: PreviewModa
         'Heart': 1400, 'Marquise': 1200
     }
 
-    const gemFactor = (config.gemSize || 1.0) * (config.gemSize || 1.0); // Exponential price for carat
-    const gemPrice = (gemPrices[config.gemShape || 'Round'] || 1000) * gemFactor;
+    const gemFactor = (config.gem.size || 1.0) * (config.gem.size || 1.0); // Exponential price for carat
+    const gemPrice = (gemPrices[config.gem.shape || 'Round'] || 1000) * gemFactor;
 
     // Settings Logic
-    const headPrice = config.headType === 'Halo' ? 400 : (config.headType === 'Three-Stone' ? 600 : 0)
-    const shankPrice = config.shankType === 'Split' ? 200 : (config.shankType === 'Twist' ? 150 : (config.shankType === 'Cathedral' ? 100 : 0))
-    const pavePrice = (config.coverage || 0) * 800; // Pave usually adds up
+    const headPrice = config.head.style === 'Halo' ? 400 : (config.head.style === 'Three-Stone' ? 600 : 0)
+    const shankPrice = config.shank.style === 'Split' ? 200 : (config.shank.style === 'Twist' ? 150 : (config.shank.style === 'Cathedral' ? 100 : 0))
+    const pavePrice = (config.sideStones.active ? 1 : 0) * 800; // Pave usually adds up
 
     const totalPrice = Math.round(basePrice + gemPrice + headPrice + shankPrice + pavePrice);
 
@@ -61,8 +61,8 @@ export default function PreviewModal({ config, materials, onClose }: PreviewModa
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <span className="text-[10px] text-gray-500 uppercase font-bold">Center Stone</span>
-                            <div className="text-white text-sm font-medium">{config.gemShape || 'Round'} Diamond</div>
-                            <div className="text-[#40a9ff] text-xs font-mono">{config.gemSize || 1.0} Carat</div>
+                            <div className="text-white text-sm font-medium">{config.gem.shape || 'Round'} Diamond</div>
+                            <div className="text-[#40a9ff] text-xs font-mono">{config.gem.size || 1.0} Carat</div>
                         </div>
                         <div className="space-y-1">
                             <span className="text-[10px] text-gray-500 uppercase font-bold">Metal</span>
@@ -71,13 +71,13 @@ export default function PreviewModal({ config, materials, onClose }: PreviewModa
                         </div>
                         <div className="space-y-1">
                             <span className="text-[10px] text-gray-500 uppercase font-bold">Setting Style</span>
-                            <div className="text-white text-sm font-medium">{config.headType || 'Solitaire'}</div>
-                            <div className="text-gray-400 text-xs">{config.settingStyle || '4-Prong'}</div>
+                            <div className="text-white text-sm font-medium">{config.head.style || 'Solitaire'}</div>
+                            <div className="text-gray-400 text-xs">{config.head.prongStyle || '4-Prong'}</div>
                         </div>
                         <div className="space-y-1">
                             <span className="text-[10px] text-gray-500 uppercase font-bold">Band Style</span>
-                            <div className="text-white text-sm font-medium">{config.shankType || 'Classic'}</div>
-                            <div className="text-gray-400 text-xs">{config.profile || 'Court'} Profile</div>
+                            <div className="text-white text-sm font-medium">{config.shank.style || 'Classic'}</div>
+                            <div className="text-gray-400 text-xs">{config.shank.profile || 'Court'} Profile</div>
                         </div>
                     </div>
 
