@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Search } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { useAuth } from '@/context/AuthContext';
 
 export default function ExpensesList() {
