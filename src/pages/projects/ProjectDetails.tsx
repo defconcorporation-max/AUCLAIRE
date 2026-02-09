@@ -502,94 +502,95 @@ export default function ProjectDetails() {
                     <CardContent className="space-y-4">
                         {/* Affiliate Section */}
                         {(role === 'admin' || role === 'sales' || project.affiliate_id) && (
-                            <div className="flex items-center justify-between border-b pb-2">
-                                <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                    <Handshake className="w-3 h-3" /> Ambassador
-                                </span>
-                                {!isEditingAffiliate ? (
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium">{project.affiliate?.full_name || 'None'}</span>
-                                        {(role === 'admin') && (
-                                            <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => {
-                                                setSelectedAffiliateId(project.affiliate_id || '');
-                                                setIsEditingAffiliate(true);
-                                            }}>
-                                                <Pencil className="w-3 h-3" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1 animate-in fade-in zoom-in-95">
-                                        <select
-                                            className="h-6 rounded border border-input bg-background text-xs px-1 w-32"
-                                            value={selectedAffiliateId}
-                                            onChange={(e) => setSelectedAffiliateId(e.target.value)}
-                                        >
-                                            <option value="">None</option>
-                                            {affiliates?.map((a) => (
-                                                <option key={a.id} value={a.id}>{a.full_name}</option>
-                                            ))}
-                                        </select>
-                                        <Button size="icon" variant="ghost" className="h-5 w-5 text-green-600" onClick={() => {
-                                            const affiliate = affiliates?.find(a => a.id === selectedAffiliateId);
-                                            const updates: any = { affiliate_id: selectedAffiliateId || null };
-                                            if (affiliate) {
-                                                updates.affiliate_commission_rate = affiliate.commission_rate;
-                                                updates.affiliate_commission_type = affiliate.commission_type;
-                                            }
+                            <>
+                                <div className="flex items-center justify-between border-b pb-2">
+                                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                                        <Handshake className="w-3 h-3" /> Ambassador
+                                    </span>
+                                    {!isEditingAffiliate ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">{project.affiliate?.full_name || 'None'}</span>
+                                            {(role === 'admin') && (
+                                                <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => {
+                                                    setSelectedAffiliateId(project.affiliate_id || '');
+                                                    setIsEditingAffiliate(true);
+                                                }}>
+                                                    <Pencil className="w-3 h-3" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1 animate-in fade-in zoom-in-95">
+                                            <select
+                                                className="h-6 rounded border border-input bg-background text-xs px-1 w-32"
+                                                value={selectedAffiliateId}
+                                                onChange={(e) => setSelectedAffiliateId(e.target.value)}
+                                            >
+                                                <option value="">None</option>
+                                                {affiliates?.map((a) => (
+                                                    <option key={a.id} value={a.id}>{a.full_name}</option>
+                                                ))}
+                                            </select>
+                                            <Button size="icon" variant="ghost" className="h-5 w-5 text-green-600" onClick={() => {
+                                                const affiliate = affiliates?.find(a => a.id === selectedAffiliateId);
+                                                const updates: any = { affiliate_id: selectedAffiliateId || null };
+                                                if (affiliate) {
+                                                    updates.affiliate_commission_rate = affiliate.commission_rate;
+                                                    updates.affiliate_commission_type = affiliate.commission_type;
+                                                }
 
-                                            apiProjects.update(project.id, updates)
-                                                .then(() => {
-                                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                    setIsEditingAffiliate(false);
-                                                })
-                                                .catch(error => {
-                                                    console.error(error);
-                                                    alert(`Failed to assign ambassador. Likely database schema mismatch.\nDid you run the SQL script?\n\nError: ${error.message}`);
-                                                });
-                                        }}>
-                                            <Save className="w-3 h-3" />
-                                        </Button>
-                                        <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500" onClick={() => setIsEditingAffiliate(false)}>
-                                            <X className="w-3 h-3" />
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                                    {/* Commission Controls (Editable) */}
-                                    {project.affiliate_id && (role === 'admin' || role === 'sales') && (
-                                        <div className="flex items-center justify-between mt-2 pl-5">
-                                            <span className="text-xs text-muted-foreground">Commission</span>
-                                            <div className="flex items-center gap-1">
-                                                <input
-                                                    type="number"
-                                                    className="w-16 text-right border rounded px-1 py-0.5 text-xs bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                                                    defaultValue={project.affiliate_commission_rate || 0}
-                                                    onBlur={(e) => {
-                                                        const val = parseFloat(e.target.value);
-                                                        if (!isNaN(val)) {
-                                                            apiProjects.update(project.id, { affiliate_commission_rate: val })
-                                                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
-                                                                .catch(err => alert(err.message));
-                                                        }
-                                                    }}
-                                                />
-                                                <select
-                                                    className="h-6 rounded border border-input bg-background text-xs px-1"
-                                                    value={project.affiliate_commission_type || 'percent'}
-                                                    onChange={(e) => {
-                                                        apiProjects.update(project.id, { affiliate_commission_type: e.target.value as any })
-                                                            .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
-                                                            .catch(err => alert(err.message));
-                                                    }}
-                                                >
-                                                    <option value="percent">%</option>
-                                                    <option value="fixed">$</option>
-                                                </select>
-                                            </div>
+                                                apiProjects.update(project.id, updates)
+                                                    .then(() => {
+                                                        queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                        setIsEditingAffiliate(false);
+                                                    })
+                                                    .catch(error => {
+                                                        console.error(error);
+                                                        alert(`Failed to assign ambassador. Likely database schema mismatch.\nDid you run the SQL script?\n\nError: ${error.message}`);
+                                                    });
+                                            }}>
+                                                <Save className="w-3 h-3" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500" onClick={() => setIsEditingAffiliate(false)}>
+                                                <X className="w-3 h-3" />
+                                            </Button>
                                         </div>
                                     )}
                                 </div>
+                                {/* Commission Controls (Editable) */}
+                                {project.affiliate_id && (role === 'admin' || role === 'sales') && (
+                                    <div className="flex items-center justify-between mt-2 pl-5">
+                                        <span className="text-xs text-muted-foreground">Commission</span>
+                                        <div className="flex items-center gap-1">
+                                            <input
+                                                type="number"
+                                                className="w-16 text-right border rounded px-1 py-0.5 text-xs bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                                                defaultValue={project.affiliate_commission_rate || 0}
+                                                onBlur={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    if (!isNaN(val)) {
+                                                        apiProjects.update(project.id, { affiliate_commission_rate: val })
+                                                            .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
+                                                            .catch(err => alert(err.message));
+                                                    }
+                                                }}
+                                            />
+                                            <select
+                                                className="h-6 rounded border border-input bg-background text-xs px-1"
+                                                value={project.affiliate_commission_type || 'percent'}
+                                                onChange={(e) => {
+                                                    apiProjects.update(project.id, { affiliate_commission_type: e.target.value as any })
+                                                        .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
+                                                        .catch(err => alert(err.message));
+                                                }}
+                                            >
+                                                <option value="percent">%</option>
+                                                <option value="fixed">$</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
                         {/* Budget & Profit - Hidden for Clients & Suppliers (partially) */}
 
