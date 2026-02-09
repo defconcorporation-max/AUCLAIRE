@@ -117,15 +117,37 @@ export const apiAffiliates = {
         /* 
            To be super safe against case-sensitive roles and ensure we get data if available:
         */
-        const { data: allProfiles, error: fetchError } = await supabase
-            .from('profiles')
-            .select(`
-                *,
-                projects:projects(id, financials, status, affiliate_commission_rate, affiliate_commission_type),
-                expenses:expenses(amount, status, category)
-             `);
+        let allProfiles: any[] = [];
 
-        if (fetchError) throw fetchError;
+        try {
+            // Attempt 1: Optimized Fetch with Explicit Joins
+            // We use !affiliate_id hint to resolve ambiguity between 'sales_agent_id' and 'affiliate_id'
+            const { data, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    projects:projects!affiliate_id(id, financials, status, affiliate_commission_rate, affiliate_commission_type),
+                    expenses:expenses(amount, status, category)
+                `);
+
+            if (error) throw error;
+            allProfiles = data;
+
+        } catch (err: any) {
+            console.warn("Optimized affiliate fetch failed (likely missing columns or ambiguous keys). Falling back to simple fetch.", err);
+
+            // Attempt 2: Simple Fetch (Names only, no stats)
+            // This ensures the dashboard loads even if the database schema is slightly partial.
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*');
+
+            if (error) {
+                console.error("Critical: Could not fetch profiles even in fallback mode.", error);
+                throw error;
+            }
+            allProfiles = data;
+        }
 
         // Filter for affiliates
         // const targetRoles = ['affiliate', 'ambassador'];
