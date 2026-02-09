@@ -21,12 +21,16 @@ export const apiExpenses = {
             .from('expenses')
             .select(`
                 *,
-                recipient:profiles!expenses_recipient_id_fkey(full_name, email),
+                recipient:profiles(full_name, email),
                 project:projects(title)
             `)
             .order('date', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error fetching expenses:', error);
+            throw error;
+        }
+        console.log('Fetched Expenses:', data);
         return data as Expense[];
     },
 
