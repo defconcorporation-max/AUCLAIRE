@@ -129,7 +129,7 @@ export const apiAffiliates = {
         if (error) throw error;
 
         // Enrich with stats
-        const affiliatesWithStats = await Promise.all(profiles.map(async (p) => {
+        const affiliatesWithStats = await Promise.all(affiliateProfiles.map(async (p) => {
             const stats = await this.getStats(p.id);
             return { ...p, stats };
         }));
