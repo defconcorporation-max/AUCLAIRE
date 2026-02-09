@@ -267,7 +267,8 @@ export default function AffiliateDetails() {
                                             return (
                                                 <TableRow key={p.id} className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900" onClick={() => navigate(`/dashboard/projects/${p.id}`)}>
                                                     <TableCell className="font-medium">
-                                                        Project #{p.id.slice(0, 8)}
+                                                        <div>{p.title || 'Untitled Project'}</div>
+                                                        <div className="text-xs text-muted-foreground">ID: {p.id.slice(0, 8)} • {p.client?.full_name || 'Client'}</div>
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge variant="outline" className="capitalize">{p.status.replace('_', ' ')}</Badge>

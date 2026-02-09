@@ -47,7 +47,9 @@ export const apiAffiliates = {
         // For now, we'll fetch all non-archived projects.
         const { data: projects, error } = await supabase
             .from('projects')
-            .select('id, budget, status, affiliate_commission_rate, affiliate_commission_type')
+        const { data: projects, error } = await supabase
+            .from('projects')
+            .select('id, budget, status, title, client:clients(full_name), affiliate_commission_rate, affiliate_commission_type')
             .eq('affiliate_id', affiliateId);
 
         if (error) throw error;
