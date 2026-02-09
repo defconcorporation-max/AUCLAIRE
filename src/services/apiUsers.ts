@@ -19,10 +19,11 @@ export const apiUsers = {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id, full_name, role, email, created_at')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
+        console.log('Fetched Users:', data);
         return data as UserProfile[];
     },
 
