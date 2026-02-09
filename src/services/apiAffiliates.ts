@@ -114,20 +114,6 @@ export const apiAffiliates = {
     async getAllAffiliatesWithStats() {
         // Efficient Single Query with Joins
         // We fetch profiles and join their projects and expenses in one go.
-        const { data: profiles, error } = await supabase
-            .from('profiles')
-            .select(`
-                *,
-                projects:projects(id, financials, status, affiliate_commission_rate, affiliate_commission_type, affiliate_id),
-                expenses:expenses(amount, status, category, recipient_id)
-            `)
-            // We want to filter by role, but "in" on json/array columns or joined tables can be tricky.
-            // Let's fetch all and filter in memory, OR assume the role column works.
-            // Note: If RLS hides profiles, this will return empty.
-            .in('role', ['affiliate', 'ambassador']);
-        // If the above .in() fails to match due to casing, remove it and filter in memory like before, 
-        // but keep the joins. Let's try the safer memory filter approach combined with joins.
-
         /* 
            To be super safe against case-sensitive roles and ensure we get data if available:
         */
