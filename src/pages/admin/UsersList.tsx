@@ -57,9 +57,6 @@ export default function UsersList() {
             <Card>
                 <CardHeader>
                     <CardTitle>Registered Users</CardTitle>
-                    <CardDescription>
-                        Note: Due to security settings, email addresses are private. Identify users by Name.
-                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
@@ -75,6 +72,7 @@ export default function UsersList() {
                                             {user.role === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending</Badge>}
                                             {user.id === currentProfile?.id && <Badge variant="outline" className="text-xs">You</Badge>}
                                         </div>
+                                        <div className="text-sm text-neutral-500">{user.email || 'No Email (Check Database)'}</div>
                                         <div className="text-xs text-muted-foreground font-mono">ID: {user.id.slice(0, 8)}...</div>
                                     </div>
                                 </div>
