@@ -56,6 +56,11 @@ export default function ExpensesList() {
                 description: '',
                 recipient_id: undefined
             });
+            alert("Expense Saved!");
+        },
+        onError: (error: any) => {
+            console.error("Failed to create expense:", error);
+            alert(`Error saving expense: ${error.message || error.error_description || "Unknown error"}`);
         }
     });
 
