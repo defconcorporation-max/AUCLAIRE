@@ -1,5 +1,7 @@
-
 import React from 'react';
+
+// Force new deployment: V2.1 Fixed Affiliates
+console.log("App Version: V2.1 - Fixed Affiliates & Profit Logic");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import CRMLayout from './components/layout/CRMLayout';
