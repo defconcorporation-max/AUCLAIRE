@@ -6,6 +6,7 @@ export interface AffiliateStats {
     commissionPaid: number;
     commissionPending: number;
     activeProjects: number;
+    projects: any[];
 }
 
 export interface AffiliateProfile {
@@ -105,7 +106,8 @@ export const apiAffiliates = {
             commissionEarned,
             commissionPaid,
             commissionPending: commissionEarned - commissionPaid,
-            activeProjects
+            activeProjects,
+            projects: projects || []
         };
     },
 

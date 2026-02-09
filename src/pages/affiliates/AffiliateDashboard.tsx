@@ -37,7 +37,7 @@ export default function AffiliateDashboard() {
         );
     }
 
-    const { totalSales = 0, commissionEarned = 0, commissionPending = 0, activeProjects = 0 } = stats || {};
+    const { totalSales = 0, commissionEarned = 0, commissionPending = 0, activeProjects = 0, projects = [] } = stats || {};
 
     return (
         <div className="space-y-8">
@@ -61,7 +61,7 @@ export default function AffiliateDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-luxury-gold">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(totalCommission)}
+                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(commissionEarned)}
                         </div>
                         <p className="text-xs text-gray-500">
                             Revenus générés à ce jour
@@ -95,7 +95,7 @@ export default function AffiliateDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif">
-                            {activeProjectsCount}
+                            {activeProjects}
                         </div>
                         <p className="text-xs text-gray-500">
                             En cours de production
