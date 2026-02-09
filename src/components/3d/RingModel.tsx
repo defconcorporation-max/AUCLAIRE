@@ -140,158 +140,64 @@ export default function RingModel({ config }: { config: RingConfig }) {
                         ))}
                     </group>
                 )}
-                {/* Placeholder for other styles */}
-            </group>
-        </group>
-    )
 
-    return (
-        <group key={i} rotation={[0, -rad, 0]}>
-            <group scale={[sFactor, 1, 1]}>
-                {/* The Prong Shaft */}
-                <mesh material={goldMaterial}>
-                    <tubeGeometry args={[curve, 32, 0.045, 8, false]} />
-                </mesh>
-
-                {/* The Prong Tip Logic */}
-                <group position={[wTip, tipY, 0]} rotation={[0, 0, -Math.PI / 4.5]}>
-
-                    {/* STYLE SWITCHER */}
-                    {pStyle === 'Claw' && (
-                        <mesh material={goldMaterial} position={[0, 0.06, 0]}>
-                            <coneGeometry args={[0.042, 0.18, 16]} />
+                {/* 2. HALO HEAD */}
+                {config.head.style === 'Halo' && (
+                    <group>
+                        {/* Halo Rail */}
+                        <mesh position={[0, -0.05, 0]} rotation={[Math.PI / 2, 0, 0]} material={metalMaterial}>
+                            <torusGeometry args={[0.45 * finalGemScale, 0.08, 8, 32]} />
                         </mesh>
-                    )}
-                    {pStyle === 'Round' && (
-                        <mesh material={goldMaterial} position={[0, 0.02, 0]}>
-                            <sphereGeometry args={[0.048, 16, 16]} />
-                        </mesh>
-                    )}
-                    {pStyle === 'Tab' && (
-                        <mesh material={goldMaterial} position={[0, 0.04, 0]} rotation={[0, 0, Math.PI / 4]}>
-                            <boxGeometry args={[0.08, 0.12, 0.03]} />
-                        </mesh>
-                    )}
-                    {pStyle === 'Double' && (
-                        <group>
-                            <mesh material={goldMaterial} position={[0, 0.06, 0.03]} rotation={[0, 0.2, 0]}>
-                                <coneGeometry args={[0.03, 0.16, 16]} />
-                            </mesh>
-                            <mesh material={goldMaterial} position={[0, 0.06, -0.03]} rotation={[0, -0.2, 0]}>
-                                <coneGeometry args={[0.03, 0.16, 16]} />
-                            </mesh>
-                        </group>
-                    )}
-                    {/* Default Fallback / Compass Tip */}
-                    {pStyle === 'Compass' && (
-                        <mesh material={goldMaterial} position={[0, 0.06, 0]}>
-                            <coneGeometry args={[0.042, 0.18, 16]} />
-                        </mesh>
-                    )}
 
-                </group>
-            </group>
-        </group>
-    )
-})}
-                                </group >
-                            )
-                        }) ()
-                    )}
-                </group >
-            )}
-
-{/* 2. HALO HEAD */ }
-{
-    config.headType === 'Halo' && (
-        <group>
-            {/* Dynamic Halo Logic */}
-            {(() => {
-                // Calculate Halo Positions
-                const stoneSize = 0.12 // Halo stone size
-                // Use actual gem scale for dimensions
-                const haloItems = getHaloPositions(
-                    (config.gemShape || config.shape) as any || "Round",
-                    gemScale[0], // Width
-                    gemScale[2], // Length
-                    stoneSize,
-                    0.05 // Gap
-                )
-
-                // Halo Rail (Metal under stones)
-                // We can build a tube from the positions
-                const railPoints = haloItems.map(h => h.position)
-                // Close loop
-                if (railPoints.length > 0) railPoints.push(railPoints[0])
-
-                return (
-                    <group position={[0, 0.1, 0]}>
-                        {/* Metal Rail */}
-                        {railPoints.length > 2 && (
-                            <mesh material={goldMaterial}>
-                                <tubeGeometry args={[
-                                    new THREE.CatmullRomCurve3(railPoints),
-                                    64,
-                                    0.1, // Thickness
-                                    8,
-                                    true
-                                ]} />
-                            </mesh>
-                        )}
-
-                        {/* Halo Stones */}
-                        {haloItems.map((item, i) => (
-                            <group key={'g' + i} position={item.position} rotation={item.rotation} scale={stoneSize}>
+                        {/* Halo Gems (Simplified Loop) */}
+                        {[0, 45, 90, 135, 180, 225, 270, 315].map(a => (
+                            <group key={a} position={[
+                                Math.sin(a * Math.PI / 180) * 0.45 * finalGemScale,
+                                -0.05,
+                                Math.cos(a * Math.PI / 180) * 0.45 * finalGemScale
+                            ]} scale={0.4}>
                                 <mesh geometry={sideGemGeom.crown} material={baseDiamondMaterial} />
                                 <mesh geometry={sideGemGeom.pavilion} material={baseDiamondMaterial} />
-                                {/* Tiny Prongs */}
-                                <mesh position={[0.4, 0, 0.4]} material={goldMaterial}><cylinderGeometry args={[0.1, 0.1, 0.8, 6]} /></mesh>
-                                <mesh position={[-0.4, 0, -0.4]} material={goldMaterial}><cylinderGeometry args={[0.1, 0.1, 0.8, 6]} /></mesh>
+                            </group>
+                        ))}
+
+                        {/* Center Prongs */}
+                        {[45, 135, 225, 315].map(a => (
+                            <mesh key={a} material={metalMaterial} position={[
+                                Math.sin(a * Math.PI / 180) * 0.25 * finalGemScale, 0.2, Math.cos(a * Math.PI / 180) * 0.25 * finalGemScale
+                            ]}><cylinderGeometry args={[0.04, 0.04, 0.5, 8]} /></mesh>
+                        ))}
+                    </group>
+                )}
+
+                {/* 3. THREE-STONE HEAD */}
+                {config.head.style === 'Three-Stone' && (
+                    <group>
+                        {/* Main Center Basket */}
+                        <mesh position={[0, -0.05, 0]} material={metalMaterial}><cylinderGeometry args={[0.25 * finalGemScale, 0.15, 0.2, 32]} /></mesh>
+
+                        {/* Main Prongs */}
+                        {[45, 135, 225, 315].map(a => <mesh key={a} material={metalMaterial} position={[Math.sin(a * Math.PI / 180) * 0.25 * finalGemScale, 0.25, Math.cos(a * Math.PI / 180) * 0.25 * finalGemScale]}><cylinderGeometry args={[0.04, 0.04, 0.6, 16]} /></mesh>)}
+
+                        {/* Side Stones */}
+                        {[-1, 1].map((dir) => (
+                            <group key={dir} position={[dir * 0.8 * finalGemScale, -0.2, 0]} rotation={[0, 0, -dir * 0.3]} scale={0.6}>
+                                <mesh geometry={sideGemGeom.crown} material={baseDiamondMaterial} position={[0, 0.3, 0]} />
+                                <mesh geometry={sideGemGeom.pavilion} material={baseDiamondMaterial} position={[0, 0.3, 0]} />
+                                {/* Basket */}
+                                <mesh position={[0, 0, 0]} material={metalMaterial}><cylinderGeometry args={[0.3, 0.1, 0.3, 16]} /></mesh>
                             </group>
                         ))}
                     </group>
-                )
-            })()}
+                )}
 
-            {/* Center Prongs for Halo - keep standard logic but ensure they penetrate rail */}
-            {[45, 135, 225, 315].map(a => (
-                <mesh key={a} material={goldMaterial} position={[
-                    Math.sin(a * Math.PI / 180) * 0.25 * finalGemScale, 0.2, Math.cos(a * Math.PI / 180) * 0.25 * finalGemScale
-                ]}><cylinderGeometry args={[0.04, 0.04, 0.5, 8]} /></mesh>
-            ))}
-        </group>
-    )
-}
-
-{/* 3. THREE-STONE HEAD */ }
-{
-    config.headType === 'Three-Stone' && (
-        <group>
-            {/* Main Center (Simple 4 prong) */}
-            <mesh position={[0, -0.05, 0]} material={goldMaterial}><cylinderGeometry args={[0.25 * finalGemScale, 0.15, 0.2, 32]} /></mesh>
-            {[45, 135, 225, 315].map(a => <mesh key={a} material={goldMaterial} position={[Math.sin(a * Math.PI / 180) * 0.25 * finalGemScale, 0.25, Math.cos(a * Math.PI / 180) * 0.25 * finalGemScale]}><cylinderGeometry args={[0.04, 0.04, 0.6, 16]} /></mesh>)}
-
-            {/* Side Stones */}
-            {[-1, 1].map((dir) => (
-                <group key={dir} position={[dir * 0.8 * finalGemScale, -0.2, 0]} rotation={[0, 0, -dir * 0.3]} scale={0.6}>
-                    <mesh geometry={sideGemGeom.crown} material={baseDiamondMaterial} position={[0, 0.3, 0]} />
-                    <mesh geometry={sideGemGeom.pavilion} material={baseDiamondMaterial} position={[0, 0.3, 0]} />
-                    {/* Basket */}
-                    <mesh position={[0, 0, 0]} material={goldMaterial}><cylinderGeometry args={[0.3, 0.1, 0.3, 16]} /></mesh>
-                    <mesh position={[0.2, 0.3, 0]} material={goldMaterial}><cylinderGeometry args={[0.04, 0.04, 0.5]} /></mesh>
-                    <mesh position={[-0.2, 0.3, 0]} material={goldMaterial}><cylinderGeometry args={[0.04, 0.04, 0.5]} /></mesh>
+                {/* Main Gem */}
+                <group position={[0, 0.4 * finalGemScale, 0]} scale={gemScale}>
+                    <mesh geometry={currentGemGeom.crown} material={gemMaterial} castShadow />
+                    <mesh geometry={currentGemGeom.pavilion} material={gemMaterial} />
                 </group>
-            ))}
+
+            </group>
         </group>
     )
-}
-        </group >
-
-    {/* MAIN GEM */ }
-    < group position = { [0, 1.35, 0]} scale = { gemScale } >
-            <mesh geometry={currentGemGeom.crown} material={gemMaterial} />
-            <mesh geometry={currentGemGeom.pavilion} material={gemMaterial} />
-        </group >
-    </group >
-)
 }
