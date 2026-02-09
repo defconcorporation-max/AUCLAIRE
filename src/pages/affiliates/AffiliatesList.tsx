@@ -19,27 +19,37 @@ import { Users, AlertCircle, ChevronRight } from 'lucide-react';
 
 export default function AffiliatesList() {
     const navigate = useNavigate();
-    const { data: affiliates, isLoading, error } = useQuery({
-        queryKey: ['affiliates-stats'],
-        queryFn: apiAffiliates.getAllAffiliatesWithStats
-    });
-
-    if (error) console.error("Error loading affiliates:", error);
-    if (affiliates) console.log("Loaded Affiliates:", affiliates);
-
-    if (isLoading) return <div className="p-8 text-center">Loading ambassador data...</div>;
-
-    const totalPending = affiliates?.reduce((sum, a) => sum + a.stats.commissionPending, 0) || 0;
+    const queryClient = useQueryClient();
 
     const [selectedAffiliate, setSelectedAffiliate] = useState<any>(null);
     const [amountToPay, setAmountToPay] = useState('');
     const [paymentNotes, setPaymentNotes] = useState('');
-    const queryClient = useQueryClient();
+
+    const { data: affiliates, isLoading, error } = useQuery({
+        queryKey: ['affiliates-stats'],
+        queryFn: async () => {
+            // Wrapper to ensure we catch errors from the refactored service
+            try {
+                const res = await apiAffiliates.getAllAffiliatesWithStats();
+                return res;
+            } catch (e) {
+                console.error("Query failed", e);
+                throw e;
+            }
+        }
+    });
+
+    if (error) console.error("Error loading affiliates:", error);
+    if (affiliates) console.log("Loaded Affiliates:", affiliates ? affiliates.length : 0);
+
+    if (isLoading) return <div className="p-8 text-center">Loading ambassador data...</div>;
+
+    const totalPending = affiliates?.reduce((sum, a) => sum + (a.stats?.commissionPending || 0), 0) || 0;
 
     const handleOpenPayment = (affiliate: any, e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent navigation
         setSelectedAffiliate(affiliate);
-        setAmountToPay(affiliate.stats.commissionPending.toString());
+        setAmountToPay(affiliate.stats?.commissionPending?.toString() || '0');
     };
 
     const handlePayCommission = async () => {
