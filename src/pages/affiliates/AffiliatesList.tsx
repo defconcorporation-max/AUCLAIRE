@@ -7,10 +7,13 @@ import { Users, AlertCircle, ChevronRight } from 'lucide-react';
 
 export default function AffiliatesList() {
     const navigate = useNavigate();
-    const { data: affiliates, isLoading } = useQuery({
+    const { data: affiliates, isLoading, error } = useQuery({
         queryKey: ['affiliates-stats'],
         queryFn: apiAffiliates.getAllAffiliatesWithStats
     });
+
+    if (error) console.error("Error loading affiliates:", error);
+    if (affiliates) console.log("Loaded Affiliates:", affiliates);
 
     if (isLoading) return <div className="p-8 text-center">Loading ambassador data...</div>;
 

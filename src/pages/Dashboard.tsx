@@ -85,10 +85,32 @@ export default function Dashboard() {
     // User asked: "expense should be taken in consideration in the financial data".
     // Let's use Real Expenses as the "Total Expenses" line item.
 
-    // Actual Profit = Collected - Real Expenses
-    const totalProfit = totalCollected - totalRealExpenses;
-    const projectedProfit = totalProjectValue - totalRealExpenses; // Rough projection
+    // 1. Calculate Production Costs (Estimated from Projects)
+    const totalProductionCost = projects?.reduce((sum, p) => {
+        // If still in design phase, cost is just an estimate, not incurred yet? 
+        // Let's count it if status implies production/completion to be safe/conservative
+        const COST_RELEVANT_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
+        if (!COST_RELEVANT_STATUSES.includes(p.status)) return sum;
 
+        return sum +
+            (p.financials?.supplier_cost || 0) +
+            (p.financials?.shipping_cost || 0) +
+            (p.financials?.customs_fee || 0);
+    }, 0) || 0;
+
+    // Actual Profit = Collected - Real Expenses (Table) - Production Costs (Projects)
+    // Note: This assumes 'Expenses' table tracks overhead/commissions and 'Projects' tracks COGS. 
+    // If user duplicates data, this will double count. But better to show lower profit than fake high profit.
+    const totalProfit = totalCollected - totalRealExpenses - totalProductionCost;
+    const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost;
+
+    console.log("--- Dashboard Financial Debug ---");
+    console.log("Projects:", projects?.length, "Value:", totalProjectValue);
+    console.log("Invoices:", invoices?.length, "Collected:", totalCollected, "Pending:", totalPending);
+    console.log("Expenses (Table):", expenses?.length, "Paid:", totalRealExpenses);
+    console.log("Production Costs (Projects):", totalProductionCost);
+    console.log("Calculated Profit:", totalProfit);
+    console.log("---------------------------------");
 
     return (
         <div className="space-y-8">
