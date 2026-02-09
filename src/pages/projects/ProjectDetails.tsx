@@ -556,6 +556,40 @@ export default function ProjectDetails() {
                                     </div>
                                 )}
                             </div>
+                                    {/* Commission Controls (Editable) */}
+                                    {project.affiliate_id && (role === 'admin' || role === 'sales') && (
+                                        <div className="flex items-center justify-between mt-2 pl-5">
+                                            <span className="text-xs text-muted-foreground">Commission</span>
+                                            <div className="flex items-center gap-1">
+                                                <input
+                                                    type="number"
+                                                    className="w-16 text-right border rounded px-1 py-0.5 text-xs bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                                                    defaultValue={project.affiliate_commission_rate || 0}
+                                                    onBlur={(e) => {
+                                                        const val = parseFloat(e.target.value);
+                                                        if (!isNaN(val)) {
+                                                            apiProjects.update(project.id, { affiliate_commission_rate: val })
+                                                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
+                                                                .catch(err => alert(err.message));
+                                                        }
+                                                    }}
+                                                />
+                                                <select
+                                                    className="h-6 rounded border border-input bg-background text-xs px-1"
+                                                    value={project.affiliate_commission_type || 'percent'}
+                                                    onChange={(e) => {
+                                                        apiProjects.update(project.id, { affiliate_commission_type: e.target.value as any })
+                                                            .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
+                                                            .catch(err => alert(err.message));
+                                                    }}
+                                                >
+                                                    <option value="percent">%</option>
+                                                    <option value="fixed">$</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                         )}
                         {/* Budget & Profit - Hidden for Clients & Suppliers (partially) */}
 
