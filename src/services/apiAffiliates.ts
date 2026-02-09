@@ -45,8 +45,7 @@ export const apiAffiliates = {
         // We need to fetch all projects assigned to this affiliate
         // ideally filtering by status (e.g., only 'delivered' or 'paid' counts for stats?)
         // For now, we'll fetch all non-archived projects.
-        const { data: projects, error } = await supabase
-            .from('projects')
+
         const { data: projects, error } = await supabase
             .from('projects')
             .select('id, budget, status, title, client:clients(full_name), affiliate_commission_rate, affiliate_commission_type')
