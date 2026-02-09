@@ -125,43 +125,35 @@ export default function ExpensesList() {
 
                             <div className="space-y-2">
                                 <Label>Category</Label>
-                                <Select
+                                <select
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.category}
-                                    onValueChange={(val: any) => setNewExpense({ ...newExpense, category: val })}
+                                    onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value as any })}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="commission">Commission Payout</SelectItem>
-                                        <SelectItem value="operational">Operational</SelectItem>
-                                        <SelectItem value="material">Material Cost</SelectItem>
-                                        <SelectItem value="marketing">Marketing</SelectItem>
-                                        <SelectItem value="salary">Salary</SelectItem>
-                                        <SelectItem value="software">Software / Tools</SelectItem>
-                                        <SelectItem value="other">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                    <option value="commission">Commission Payout</option>
+                                    <option value="operational">Operational</option>
+                                    <option value="material">Material Cost</option>
+                                    <option value="marketing">Marketing</option>
+                                    <option value="salary">Salary</option>
+                                    <option value="software">Software / Tools</option>
+                                    <option value="other">Other</option>
+                                </select>
                             </div>
 
                             <div className="space-y-2">
                                 <Label>Recipient (Optional)</Label>
-                                <Select
+                                <select
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.recipient_id || "none"}
-                                    onValueChange={(val) => setNewExpense({ ...newExpense, recipient_id: val === "none" ? undefined : val })}
+                                    onChange={(e) => setNewExpense({ ...newExpense, recipient_id: e.target.value === "none" ? undefined : e.target.value })}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select who got paid..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">-- None / External --</SelectItem>
-                                        {profiles?.map(p => (
-                                            <SelectItem key={p.id} value={p.id}>
-                                                {p.full_name} ({p.role})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    <option value="none">-- None / External --</option>
+                                    {profiles?.map(p => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.full_name} ({p.role})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="space-y-2">
@@ -175,18 +167,14 @@ export default function ExpensesList() {
 
                             <div className="space-y-2">
                                 <Label>Status</Label>
-                                <Select
+                                <select
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.status}
-                                    onValueChange={(val: any) => setNewExpense({ ...newExpense, status: val })}
+                                    onChange={(e) => setNewExpense({ ...newExpense, status: e.target.value as any })}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="paid">Paid</SelectItem>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                    <option value="paid">Paid</option>
+                                    <option value="pending">Pending</option>
+                                </select>
                             </div>
 
                             <Button type="submit" className="w-full bg-luxury-gold text-black" disabled={createMutation.isPending}>
