@@ -112,101 +112,52 @@ export const apiAffiliates = {
     },
 
     async getAllAffiliatesWithStats() {
-        // Efficient Single Query with Joins
-        // We fetch profiles and join their projects and expenses in one go.
-        /* 
-           To be super safe against case-sensitive roles and ensure we get data if available:
-        */
         let allProfiles: any[] = [];
 
         try {
-            // Attempt 1: Optimized Fetch with Explicit Joins
-            // We use !affiliate_id hint to resolve ambiguity between 'sales_agent_id' and 'affiliate_id'
-            const { data, error } = await supabase
-                .from('profiles')
-                .select(`
-                    *,
-                    projects:projects!affiliate_id(id, financials, status, affiliate_commission_rate, affiliate_commission_type),
-                    expenses:expenses(amount, status, category)
-                `);
-
-            if (error) throw error;
-            allProfiles = data;
-
-        } catch (err: any) {
-            console.warn("Optimized affiliate fetch failed (likely missing columns or ambiguous keys). Falling back to simple fetch.", err);
-
-            // Attempt 2: Simple Fetch (Names only, no stats)
-            // This ensures the dashboard loads even if the database schema is slightly partial.
+            // Attempt 1: Fetch Profiles first
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*');
 
-            if (error) {
-                console.error("Critical: Could not fetch profiles even in fallback mode.", error);
-                throw error;
-            }
-            allProfiles = data;
+            if (error) throw error;
+            allProfiles = data || [];
+
+            // Filter for affiliates/ambassadors
+            const affiliateProfiles = allProfiles.filter(p =>
+                ['affiliate', 'ambassador'].includes(p.role?.toLowerCase())
+            );
+
+            // Fetch generic stats for them (Batched or individual - keeping it simple/safe for now)
+            // To avoid N+1 slow loading or complex joins failing, we'll do a safe Promise.all
+            // This is less efficient but WAY more robust against schema mismatches
+            const results = await Promise.all(affiliateProfiles.map(async (profile) => {
+                try {
+                    const stats = await this.getStats(profile.id);
+                    return { ...profile, stats };
+                } catch (e) {
+                    console.warn(`Failed to load stats for ${profile.id}`, e);
+                    // Return zero stats on error
+                    return {
+                        ...profile,
+                        stats: {
+                            totalSales: 0,
+                            commissionEarned: 0,
+                            commissionPaid: 0,
+                            commissionPending: 0,
+                            activeProjects: 0,
+                            projects: []
+                        }
+                    };
+                }
+            }));
+
+            return results;
+
+        } catch (err: any) {
+            console.error("Critical: Could not fetch affiliates.", err);
+            return [];
         }
-
-        // Filter for affiliates
-        // const targetRoles = ['affiliate', 'ambassador'];
-        // const affiliateProfiles = allProfiles?.filter(p => targetRoles.includes(p.role?.toLowerCase()));
-        // Actually, let's stick to the simpler query first if the user is having "no data" issues.
-        // It's likely RLS. But let's optimize the fetching logic first.
-
-        const affiliateProfiles = allProfiles?.filter(p =>
-            ['affiliate', 'ambassador'].includes(p.role?.toLowerCase())
-        ) || [];
-
-        // Process stats in memory
-        const results = affiliateProfiles.map(profile => {
-            const projects = profile.projects || [];
-            const expenses = profile.expenses || [];
-
-            let totalSales = 0;
-            let commissionEarned = 0;
-            let activeProjects = 0;
-
-            // Calculate Project Stats
-            projects.forEach((p: any) => {
-                if (p.status !== 'completed' && p.status !== 'delivered' && p.status !== 'cancelled') {
-                    activeProjects++;
-                }
-                if (p.status === 'cancelled') return;
-
-                const price = p.financials?.selling_price || 0;
-                totalSales += price;
-
-                let comm = 0;
-                if (p.affiliate_commission_type === 'fixed') {
-                    comm = p.affiliate_commission_rate || 0;
-                } else {
-                    const rate = p.affiliate_commission_rate || 0;
-                    comm = (price * rate) / 100;
-                }
-                commissionEarned += comm;
-            });
-
-            // Calculate Expenses Stats
-            const commissionPaid = expenses
-                .filter((e: any) => e.status === 'paid' && e.category === 'commission')
-                .reduce((sum: number, e: any) => sum + Number(e.amount), 0);
-
-            return {
-                ...profile,
-                stats: {
-                    totalSales,
-                    commissionEarned,
-                    commissionPaid,
-                    commissionPending: commissionEarned - commissionPaid,
-                    activeProjects,
-                    projects
-                }
-            };
-        });
-
-        return results;
     },
 
     async payCommission(affiliateId: string, amount: number, notes?: string) {
