@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from "@/context/AuthContext"
 import { apiProjects } from "@/services/apiProjects"
 import { useNavigate } from "react-router-dom"
-import { RingProvider, useRing, RingConfig, MetalType, ProfileType } from "@/context/RingContext"
+import { RingProvider, useRing, MetalType, ProfileType } from "@/context/RingContext"
 import {
     Dialog,
     DialogContent,
