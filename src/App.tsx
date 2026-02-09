@@ -1,8 +1,8 @@
 import React from 'react';
 
-// Force new deployment: V2.3 Fixed Affiliates (Retry)
-console.log("App Version: V2.3 - Fixed Affiliates & Profit Logic");
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+// Force new deployment: V2.4 Fixed Protected Route Location Hook
+console.log("App Version: V2.4 - Fixed Protected Route Location Hook");
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import CRMLayout from './components/layout/CRMLayout';
 import Login from './pages/Login';
@@ -31,6 +31,7 @@ import AffiliateDetails from './pages/affiliates/AffiliateDetails';
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
   const { user, role, isAdmin, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
 
