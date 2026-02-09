@@ -21,10 +21,9 @@ import SharedProjectView from './pages/public/SharedProjectView';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
-import AffiliatesList from './pages/admin/AffiliatesList';
+import AffiliatesList from './pages/affiliates/AffiliatesList';
 import AffiliateDashboard from './pages/affiliates/AffiliateDashboard';
 import AffiliateDetails from './pages/affiliates/AffiliateDetails';
-import RegisterAffiliate from './pages/affiliates/RegisterAffiliate';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -88,12 +87,12 @@ function App() {
               <Route path="invoices" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'accounting']}><InvoicesList /></ProtectedRoute>} />
               <Route path="invoices/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateInvoice /></ProtectedRoute>} />
               <Route path="finance/expenses" element={<ProtectedRoute allowedRoles={['admin']}><ExpensesList /></ProtectedRoute>} />
+              <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>} />
               <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
 
               {/* Affiliate Routes */}
               <Route path="affiliate" element={<ProtectedRoute allowedRoles={['affiliate']}><AffiliateDashboard /></ProtectedRoute>} />
-              <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
               <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin']}><AffiliateDetails /></ProtectedRoute>} />
 
               {/* Debugging */}

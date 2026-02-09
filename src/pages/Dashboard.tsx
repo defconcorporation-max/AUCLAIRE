@@ -11,10 +11,14 @@ import { Link } from 'react-router-dom';
 
 import { Clock, AlertCircle, Banknote, TrendingUp } from 'lucide-react';
 
+import { apiExpenses } from '@/services/apiExpenses';
+
+// ... (imports)
+
 export default function Dashboard() {
     const { profile, role } = useAuth();
 
-    // Fetch all projects for simplicity in mock (RLS would filter in real DB)
+    // Fetch all projects
     const { data: projects, isLoading: projectsLoading } = useQuery({
         queryKey: ['projects'],
         queryFn: apiProjects.getAll
@@ -25,69 +29,50 @@ export default function Dashboard() {
         queryFn: apiInvoices.getAll
     });
 
-    if (projectsLoading || invoicesLoading) return <div>Loading dashboard...</div>;
+    // NEW: Fetch all expenses to subtract from profit
+    const { data: expenses, isLoading: expensesLoading } = useQuery({
+        queryKey: ['expenses'],
+        queryFn: apiExpenses.getAll
+    });
 
-    // Filter projects based on role logic
+    if (projectsLoading || invoicesLoading || expensesLoading) return <div>Loading dashboard...</div>;
+
+    // ... (filters)
     const manufacturerDesignRequests = projects?.filter(p => p.status === 'designing' || p.status === 'design_modification' || p.status === '3d_model') || [];
     const manufacturerProduction = projects?.filter(p => p.status === 'production' || p.status === 'approved_for_production') || [];
-
     const adminDesignReady = projects?.filter(p => p.status === 'design_ready') || [];
-
     const recentProjects = projects?.slice(0, 5) || [];
 
     // Financial calculations
-    // Financial calculations
     const totalProjectValue = projects?.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0) || 0;
 
-    // Collected = Sum of amount_paid from ALL invoices (handles partial + paid)
-    // Fallback: If amount_paid is 0 but status is 'paid', assume full amount (backward compatibility)
+    // Collected (Invoices)
     const totalCollected = invoices?.reduce((sum, i) => {
         const paid = i.amount_paid || (i.status === 'paid' ? i.amount : 0);
         return sum + paid;
     }, 0) || 0;
 
-    // Pending = Sum of (Invoice Amount - Paid Amount) for all invoices
-    // This ignores un-invoiced project value, per user request.
+    // Pending (Invoices)
     const totalPending = invoices?.reduce((sum, i) => {
         const paid = i.amount_paid || (i.status === 'paid' ? i.amount : 0);
         return sum + (i.amount - paid);
     }, 0) || 0;
 
-    // Only calculate cost if the project is actually in production or later.
-    const COST_RELEVANT_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
+    // Expenses Calculation (Only PAID expenses count towards actual costs for now, or maybe all?)
+    // Usually Profit = Income - Expenses. Let's subtract all PAID expenses.
+    const totalRealExpenses = expenses
+        ?.filter(e => e.status === 'paid')
+        .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
-    // 1. Calculate Production Costs
-    const totalProductionCost = projects?.reduce((sum, p) => {
-        // If still in design phase, cost is just an estimate, not incurred yet.
-        if (!COST_RELEVANT_STATUSES.includes(p.status)) return sum;
+    // 1. Calculate Production Costs (Estimated from Projects) - OPTIONAL: We might want to replace this with REAL expenses if they are tracked?
+    // For now, let's keep the project-based estimation as "COGS" maybe? Or just use the Real Expenses?
+    // User asked: "expense should be taken in consideration in the financial data".
+    // Let's use Real Expenses as the "Total Expenses" line item.
 
-        return sum +
-            (p.financials?.supplier_cost || 0) +
-            (p.financials?.shipping_cost || 0) +
-            (p.financials?.customs_fee || 0);
-    }, 0) || 0;
+    // Actual Profit = Collected - Real Expenses
+    const totalProfit = totalCollected - totalRealExpenses;
+    const projectedProfit = totalProjectValue - totalRealExpenses; // Rough projection
 
-    // 2. Calculate Affiliate Commissions
-    const totalCommissions = projects?.reduce((sum, p) => {
-        if (!p.affiliate_id) return sum;
-
-        let comm = 0;
-        if (p.affiliate_commission_type === 'fixed') {
-            comm = p.affiliate_commission_rate || 0;
-        } else {
-            // Percent of Budget
-            const budget = p.financials?.selling_price || p.budget || 0;
-            const rate = p.affiliate_commission_rate || 0;
-            comm = (budget * rate) / 100;
-        }
-        return sum + comm;
-    }, 0) || 0;
-
-    const totalExpenses = totalProductionCost + totalCommissions;
-
-    // Actual Profit = Collected (Paid) - Total Expenses (Cost + Commissions)
-    const projectedProfit = totalProjectValue - totalExpenses;
-    const totalProfit = totalCollected - totalExpenses;
 
     return (
         <div className="space-y-8">

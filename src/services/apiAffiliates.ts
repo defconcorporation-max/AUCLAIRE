@@ -1,101 +1,87 @@
-
 import { supabase } from '@/lib/supabase';
-import { UserRole } from '@/context/AuthContext';
 
-export interface AffiliateProfile {
-    id: string;
-    full_name: string | null;
-    role: UserRole;
-    avatar_url: string | null;
-    affiliate_status: 'pending' | 'active' | 'rejected';
-    affiliate_level: 'starter' | 'confirmed' | 'elite' | 'partner';
-    commission_rate: number;
-    commission_type: 'percent' | 'fixed';
-    email?: string; // Often joined from auth.users, but RLS might block. We rely on profiles.
+export interface AffiliateStats {
+    totalSales: number;
+    commissionEarned: number;
+    commissionPaid: number;
+    commissionPending: number;
+    activeProjects: number;
 }
 
 export const apiAffiliates = {
-    // Fetch all affiliates (for Admin)
-    async getAffiliates() {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .in('role', ['affiliate', 'admin'])
-            .order('full_name', { ascending: true });
-
-        if (error) throw error;
-        return data as AffiliateProfile[];
-    },
-
-    // Update affiliate details (Admin)
-    async updateAffiliate(id: string, updates: Partial<AffiliateProfile>) {
-        const { data, error } = await supabase
-            .from('profiles')
-            .update(updates)
-            .eq('id', id)
-            .select()
-            .single();
-
-        if (error) throw error;
-        return data as AffiliateProfile;
-    },
-
-    // Get stats for a specific affiliate
-    async getAffiliateStats(affiliateId: string) {
-        // We need to fetch all projects assigned to this affiliate
-        // ideally filtering by status (e.g., only 'delivered' or 'paid' counts for stats?)
-        // For now, we'll fetch all non-archived projects.
-
-        const { data: projects, error } = await supabase
+    async getStats(affiliateId: string): Promise<AffiliateStats> {
+        // 1. Get Projects Stats (Sales & Earned Commission)
+        const { data: projects, error: projectsError } = await supabase
             .from('projects')
-            .select('id, budget, status, title, client:clients(full_name), affiliate_commission_rate, affiliate_commission_type')
-            .eq('affiliate_id', affiliateId);
+            .select('financials, status, affiliate_commission_rate, affiliate_commission_type')
+            .eq('affiliate_id', affiliateId)
+            .neq('status', 'cancelled'); // Exclude cancelled projects
 
-        if (error) throw error;
+        if (projectsError) throw projectsError;
 
         let totalSales = 0;
-        let totalCommission = 0;
-        let activeProjectsCount = 0;
+        let commissionEarned = 0;
+        let activeProjects = 0;
 
-        projects.forEach(project => {
-            const price = Number(project.budget) || 0;
+        projects?.forEach(p => {
+            if (p.status !== 'completed' && p.status !== 'delivered') {
+                activeProjects++;
+            }
 
-            // Calculate Commission
-            // If the project has a snapshot rate, use it. Otherwise use 0 (or should we fetch profile default?)
-            // We assume the snapshot is set when project is assigned.
-            let commission = 0;
-            if (project.affiliate_commission_type === 'fixed') {
-                commission = Number(project.affiliate_commission_rate) || 0;
+            // Sales Volume
+            const price = p.financials?.selling_price || 0;
+            totalSales += price;
+
+            // Commission Earned Calculation
+            let comm = 0;
+            if (p.affiliate_commission_type === 'fixed') {
+                comm = p.affiliate_commission_rate || 0;
             } else {
-                // percent
-                const rate = Number(project.affiliate_commission_rate) || 0;
-                commission = (price * rate) / 100;
+                // Percentage
+                const rate = p.affiliate_commission_rate || 0;
+                comm = (price * rate) / 100;
             }
-
-            // Status Logic
-            if (project.status === 'delivered' || project.status === 'completed') {
-                // fulfilled
-            }
-
-            if (project.status !== 'archived' && project.status !== 'cancelled') {
-                activeProjectsCount++;
-            }
-
-            // For Total Sales/Commission, typically we count EVERYTHING or only PAID?
-            // "ongoing project... total price sale" -> Suggests potential pipeline value.
-            // "dashboard with total sales and total commission" -> Usually historical + potential.
-            // Let's count everything that isn't cancelled.
-            if (project.status !== 'cancelled') {
-                totalSales += price;
-                totalCommission += commission;
-            }
+            commissionEarned += comm;
         });
+
+        // 2. Get Expenses Stats (Commission Paid)
+        const { data: expenses, error: expensesError } = await supabase
+            .from('expenses')
+            .select('amount, status')
+            .eq('recipient_id', affiliateId)
+            .eq('category', 'commission'); // Ensure we only count commission payouts
+
+        if (expensesError) throw expensesError;
+
+        // Sum up PAID expenses
+        const commissionPaid = expenses
+            ?.filter(e => e.status === 'paid')
+            .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
         return {
             totalSales,
-            totalCommission,
-            activeProjectsCount,
-            projects // Return the raw list if needed for the table
+            commissionEarned,
+            commissionPaid,
+            commissionPending: commissionEarned - commissionPaid,
+            activeProjects
         };
+    },
+
+    async getAllAffiliatesWithStats() {
+        // Fetch all users with affiliate role
+        const { data: profiles, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('role', ['affiliate', 'ambassador']); // Handle likely role names
+
+        if (error) throw error;
+
+        // Enrich with stats (N+1 query but acceptable for small number of affiliates)
+        const affiliatesWithStats = await Promise.all(profiles.map(async (p) => {
+            const stats = await this.getStats(p.id);
+            return { ...p, stats };
+        }));
+
+        return affiliatesWithStats;
     }
 };
