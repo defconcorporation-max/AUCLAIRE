@@ -207,5 +207,24 @@ export const apiAffiliates = {
         });
 
         return results;
+    },
+
+    async payCommission(affiliateId: string, amount: number, notes?: string) {
+        // Create an expense record for the commission payment
+        const { data, error } = await supabase
+            .from('expenses')
+            .insert([{
+                category: 'commission',
+                amount: amount,
+                recipient_id: affiliateId,
+                description: notes || `Commission Payout`,
+                status: 'paid',
+                date: new Date().toISOString()
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     }
 };

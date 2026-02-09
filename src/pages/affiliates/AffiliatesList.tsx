@@ -1,7 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiAffiliates } from '@/services/apiAffiliates';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { useNavigate } from 'react-router-dom';
 import { Users, AlertCircle, ChevronRight } from 'lucide-react';
 
@@ -18,6 +30,39 @@ export default function AffiliatesList() {
     if (isLoading) return <div className="p-8 text-center">Loading ambassador data...</div>;
 
     const totalPending = affiliates?.reduce((sum, a) => sum + a.stats.commissionPending, 0) || 0;
+
+    const [selectedAffiliate, setSelectedAffiliate] = useState<any>(null);
+    const [amountToPay, setAmountToPay] = useState('');
+    const [paymentNotes, setPaymentNotes] = useState('');
+    const queryClient = useQueryClient();
+
+    const handleOpenPayment = (affiliate: any, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent navigation
+        setSelectedAffiliate(affiliate);
+        setAmountToPay(affiliate.stats.commissionPending.toString());
+    };
+
+    const handlePayCommission = async () => {
+        if (!selectedAffiliate || !amountToPay) return;
+
+        try {
+            await apiAffiliates.payCommission(
+                selectedAffiliate.id,
+                parseFloat(amountToPay),
+                paymentNotes
+            );
+
+            // Success
+            alert("Commission paid successfully!");
+            setSelectedAffiliate(null);
+            setAmountToPay('');
+            setPaymentNotes('');
+            queryClient.invalidateQueries({ queryKey: ['affiliates-stats'] });
+        } catch (err) {
+            console.error(err);
+            alert("Failed to process payment");
+        }
+    };
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto p-6">
@@ -81,11 +126,22 @@ export default function AffiliatesList() {
                                             </div>
                                         </div>
 
-                                        <div className="text-right min-w-[100px]">
+                                        <div className="text-right min-w-[150px]">
                                             <div className="text-xs text-muted-foreground uppercase tracking-wider">Pending Payout</div>
                                             <div className={`font-bold text-xl ${affiliate.stats.commissionPending > 0 ? 'text-amber-500' : 'text-zinc-400'}`}>
                                                 ${affiliate.stats.commissionPending.toLocaleString()}
                                             </div>
+
+                                            {/* Pay Button */}
+                                            {affiliate.stats.commissionPending > 0 && (
+                                                <Button
+                                                    size="sm"
+                                                    className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs"
+                                                    onClick={(e) => handleOpenPayment(affiliate, e)}
+                                                >
+                                                    Pay Commission
+                                                </Button>
+                                            )}
                                         </div>
 
                                         <ChevronRight className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -96,6 +152,45 @@ export default function AffiliatesList() {
                     ))
                 )}
             </div>
+
+            {/* Payment Dialog */}
+            <Dialog open={!!selectedAffiliate} onOpenChange={(open) => !open && setSelectedAffiliate(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Pay Commission</DialogTitle>
+                        <DialogDescription>
+                            Record a commission payment for {selectedAffiliate?.full_name}.
+                            This will create an expense record.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Amount ($)</Label>
+                            <Input
+                                type="number"
+                                value={amountToPay}
+                                onChange={(e) => setAmountToPay(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Notes (Optional)</Label>
+                            <Input
+                                placeholder="e.g. Bank Transfer Ref #123"
+                                value={paymentNotes}
+                                onChange={(e) => setPaymentNotes(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setSelectedAffiliate(null)}>Cancel</Button>
+                        <Button onClick={handlePayCommission} className="bg-emerald-600 hover:bg-emerald-700">
+                            Confirm Payment
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
