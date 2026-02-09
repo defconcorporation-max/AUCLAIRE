@@ -58,6 +58,22 @@ export default function Dashboard() {
         return sum + (i.amount - paid);
     }, 0) || 0;
 
+    // 2. Calculate Affiliate Commissions
+    const totalCommissions = projects?.reduce((sum, p) => {
+        if (!p.affiliate_id) return sum;
+
+        let comm = 0;
+        if (p.affiliate_commission_type === 'fixed') {
+            comm = p.affiliate_commission_rate || 0;
+        } else {
+            // Percent of Budget
+            const budget = p.financials?.selling_price || p.budget || 0;
+            const rate = p.affiliate_commission_rate || 0;
+            comm = (budget * rate) / 100;
+        }
+        return sum + comm;
+    }, 0) || 0;
+
     // Expenses Calculation (Only PAID expenses count towards actual costs for now, or maybe all?)
     // Usually Profit = Income - Expenses. Let's subtract all PAID expenses.
     const totalRealExpenses = expenses

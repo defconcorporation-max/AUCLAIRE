@@ -1,11 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiAffiliates } from '@/services/apiAffiliates';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Users, DollarSign, TrendingUp, AlertCircle, ChevronRight } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils'; // Assuming this exists or I'll implement inline
+import { Users, AlertCircle, ChevronRight } from 'lucide-react';
 
 export default function AffiliatesList() {
     const navigate = useNavigate();
