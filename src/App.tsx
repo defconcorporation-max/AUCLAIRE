@@ -20,6 +20,7 @@ import ExpensesList from './pages/finance/ExpensesList';
 import UsersList from './pages/admin/UsersList';
 import PendingApproval from './pages/PendingApproval';
 import SharedProjectView from './pages/public/SharedProjectView';
+import DebugPage from './pages/DebugPage';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import DebugPage from './pages/DebugPage';
 import { RingProvider } from "./context/RingContext";
@@ -102,6 +103,9 @@ function App() {
             </Route>
 
 
+
+            {/* Debugging */}
+            <Route path="/debug-tool" element={<DebugPage />} />
 
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
