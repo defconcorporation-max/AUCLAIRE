@@ -112,28 +112,92 @@ export const apiAffiliates = {
     },
 
     async getAllAffiliatesWithStats() {
-        // Fetch all users with affiliate role
-        // Fetch all users and filter in memory to match apiUsers behavior (and avoid case sensitivity issues)
+        // Efficient Single Query with Joins
+        // We fetch profiles and join their projects and expenses in one go.
         const { data: profiles, error } = await supabase
             .from('profiles')
-            .select('*');
+            .select(`
+                *,
+                projects:projects(id, financials, status, affiliate_commission_rate, affiliate_commission_type, affiliate_id),
+                expenses:expenses(amount, status, category, recipient_id)
+            `)
+            // We want to filter by role, but "in" on json/array columns or joined tables can be tricky.
+            // Let's fetch all and filter in memory, OR assume the role column works.
+            // Note: If RLS hides profiles, this will return empty.
+            .in('role', ['affiliate', 'ambassador']);
+        // If the above .in() fails to match due to casing, remove it and filter in memory like before, 
+        // but keep the joins. Let's try the safer memory filter approach combined with joins.
 
-        if (error) throw error;
+        /* 
+           To be super safe against case-sensitive roles and ensure we get data if available:
+        */
+        const { data: allProfiles, error: fetchError } = await supabase
+            .from('profiles')
+            .select(`
+                *,
+                projects:projects(id, financials, status, affiliate_commission_rate, affiliate_commission_type),
+                expenses:expenses(amount, status, category)
+             `);
 
-        console.log("All Profiles (Admin View):", profiles);
+        if (fetchError) throw fetchError;
 
         // Filter for affiliates
-        const targetRoles = ['affiliate', 'ambassador'];
-        const affiliateProfiles = profiles?.filter(p => targetRoles.includes(p.role?.toLowerCase())) || [];
+        // const targetRoles = ['affiliate', 'ambassador'];
+        // const affiliateProfiles = allProfiles?.filter(p => targetRoles.includes(p.role?.toLowerCase()));
+        // Actually, let's stick to the simpler query first if the user is having "no data" issues.
+        // It's likely RLS. But let's optimize the fetching logic first.
 
-        if (error) throw error;
+        const affiliateProfiles = allProfiles?.filter(p =>
+            ['affiliate', 'ambassador'].includes(p.role?.toLowerCase())
+        ) || [];
 
-        // Enrich with stats
-        const affiliatesWithStats = await Promise.all(affiliateProfiles.map(async (p) => {
-            const stats = await this.getStats(p.id);
-            return { ...p, stats };
-        }));
+        // Process stats in memory
+        const results = affiliateProfiles.map(profile => {
+            const projects = profile.projects || [];
+            const expenses = profile.expenses || [];
 
-        return affiliatesWithStats;
+            let totalSales = 0;
+            let commissionEarned = 0;
+            let activeProjects = 0;
+
+            // Calculate Project Stats
+            projects.forEach((p: any) => {
+                if (p.status !== 'completed' && p.status !== 'delivered' && p.status !== 'cancelled') {
+                    activeProjects++;
+                }
+                if (p.status === 'cancelled') return;
+
+                const price = p.financials?.selling_price || 0;
+                totalSales += price;
+
+                let comm = 0;
+                if (p.affiliate_commission_type === 'fixed') {
+                    comm = p.affiliate_commission_rate || 0;
+                } else {
+                    const rate = p.affiliate_commission_rate || 0;
+                    comm = (price * rate) / 100;
+                }
+                commissionEarned += comm;
+            });
+
+            // Calculate Expenses Stats
+            const commissionPaid = expenses
+                .filter((e: any) => e.status === 'paid' && e.category === 'commission')
+                .reduce((sum: number, e: any) => sum + Number(e.amount), 0);
+
+            return {
+                ...profile,
+                stats: {
+                    totalSales,
+                    commissionEarned,
+                    commissionPaid,
+                    commissionPending: commissionEarned - commissionPaid,
+                    activeProjects,
+                    projects
+                }
+            };
+        });
+
+        return results;
     }
 };
