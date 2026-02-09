@@ -14,6 +14,7 @@ import ClientDetails from './pages/clients/ClientDetails';
 import CreateClient from './pages/clients/CreateClient';
 import InvoicesList from './pages/finance/InvoicesList';
 import CreateInvoice from './pages/finance/CreateInvoice';
+import ExpensesList from './pages/finance/ExpensesList';
 import UsersList from './pages/admin/UsersList';
 import PendingApproval from './pages/PendingApproval';
 import SharedProjectView from './pages/public/SharedProjectView';
@@ -86,6 +87,7 @@ function App() {
               <Route path="clients/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientDetails /></ProtectedRoute>} />
               <Route path="invoices" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'accounting']}><InvoicesList /></ProtectedRoute>} />
               <Route path="invoices/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateInvoice /></ProtectedRoute>} />
+              <Route path="finance/expenses" element={<ProtectedRoute allowedRoles={['admin']}><ExpensesList /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>} />
               <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
 

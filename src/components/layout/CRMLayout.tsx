@@ -9,7 +9,8 @@ import {
     LogOut,
     Gem,
     Menu,
-    Settings
+    Settings,
+    Banknote
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -26,6 +27,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
         { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'sales', 'client'] },
         { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'sales'] },
         { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'sales'] },
+        { label: 'Expenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin'] },
         { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin'] },
         { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
         // Link back to the CAD tool
