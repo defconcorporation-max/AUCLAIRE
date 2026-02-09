@@ -113,10 +113,18 @@ export const apiAffiliates = {
 
     async getAllAffiliatesWithStats() {
         // Fetch all users with affiliate role
+        // Fetch all users and filter in memory to match apiUsers behavior (and avoid case sensitivity issues)
         const { data: profiles, error } = await supabase
             .from('profiles')
-            .select('*')
-            .in('role', ['affiliate', 'ambassador']);
+            .select('*');
+
+        if (error) throw error;
+
+        console.log("All Profiles (Admin View):", profiles);
+
+        // Filter for affiliates
+        const targetRoles = ['affiliate', 'ambassador'];
+        const affiliateProfiles = profiles?.filter(p => targetRoles.includes(p.role?.toLowerCase())) || [];
 
         if (error) throw error;
 
