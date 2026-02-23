@@ -116,7 +116,7 @@ export default function Dashboard() {
         <div className="space-y-8">
             <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <div>
-                    <h1 className="text-4xl font-serif text-white tracking-wide">Welcome back, <span className="text-luxury-gold italic">{profile?.full_name?.split(' ')[0]}</span></h1>
+                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">Welcome back, <span className="text-luxury-gold italic">{profile?.full_name?.split(' ')[0]}</span></h1>
                     <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Here is what needs your attention today.</p>
                 </div>
                 {role === 'admin' && (
@@ -218,45 +218,45 @@ export default function Dashboard() {
                 <div className="grid gap-6">
                     {/* Financial KPIs */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Card className="bg-black/40 backdrop-blur-md border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
                             <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-300 group-hover:text-green-400 transition-colors">Total Collected</CardTitle>
-                                <Banknote className="h-4 w-4 text-green-500/70" />
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Total Collected</CardTitle>
+                                <Banknote className="h-4 w-4 text-green-600/70 dark:text-green-500/70" />
                             </CardHeader>
                             <CardContent className="relative z-10">
-                                <div className="text-3xl font-serif text-white group-hover:text-green-400 transition-colors duration-500">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-500">
                                     ${totalCollected.toLocaleString()}
                                 </div>
-                                <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Cash Received</p>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Cash Received</p>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-black/40 backdrop-blur-md border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
                             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-300 group-hover:text-amber-400 transition-colors">Pending Payment</CardTitle>
-                                <Clock className="h-4 w-4 text-amber-500/70" />
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Pending Payment</CardTitle>
+                                <Clock className="h-4 w-4 text-amber-600/70 dark:text-amber-500/70" />
                             </CardHeader>
                             <CardContent className="relative z-10">
-                                <div className="text-3xl font-serif text-white group-hover:text-amber-400 transition-colors duration-500">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors duration-500">
                                     ${totalPending.toLocaleString()}
                                 </div>
-                                <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Outstanding Balance</p>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Outstanding Balance</p>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-black/40 backdrop-blur-md border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
                             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-300 group-hover:text-purple-400 transition-colors">Commissions</CardTitle>
-                                <Banknote className="h-4 w-4 text-purple-500/70" />
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Commissions</CardTitle>
+                                <Banknote className="h-4 w-4 text-purple-600/70 dark:text-purple-500/70" />
                             </CardHeader>
                             <CardContent className="relative z-10">
-                                <div className="text-3xl font-serif text-white group-hover:text-purple-400 transition-colors duration-500">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-500">
                                     ${totalCommissions.toLocaleString()}
                                 </div>
-                                <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Affiliate Payouts (Est)</p>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Affiliate Payouts (Est)</p>
                             </CardContent>
                         </Card>
 
@@ -267,7 +267,7 @@ export default function Dashboard() {
                                 <TrendingUp className="h-4 w-4 text-luxury-gold" />
                             </CardHeader>
                             <CardContent className="relative z-10">
-                                <div className="text-3xl font-serif text-white">
+                                <div className="text-3xl font-serif text-black dark:text-white">
                                     ${totalProfit.toLocaleString()}
                                 </div>
                                 <div className="text-[10px] text-luxury-gold/70 uppercase tracking-widest mt-1 flex justify-between gap-2 font-medium">
@@ -279,7 +279,7 @@ export default function Dashboard() {
                     </div>
 
                     {adminDesignReady.length > 0 && (
-                        <Card className="border-l-2 border-l-luxury-gold bg-black/40 backdrop-blur-md border border-white/5 mb-6 shadow-xl">
+                        <Card className="border-l-2 border-l-luxury-gold bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 mb-6 shadow-xl">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-luxury-gold font-serif text-xl">
                                     <AlertCircle className="w-5 h-5" />
@@ -290,10 +290,10 @@ export default function Dashboard() {
                             <CardContent>
                                 <div className="space-y-3">
                                     {adminDesignReady.map(project => (
-                                        <div key={project.id} className="group flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 transition-colors shadow-sm rounded-lg border border-white/5">
+                                        <div key={project.id} className="group flex items-center justify-between p-4 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors shadow-sm rounded-lg border border-black/5 dark:border-white/5">
                                             <div>
-                                                <div className="font-serif text-lg text-white group-hover:text-luxury-gold transition-colors">{project.title}</div>
-                                                <div className="text-xs text-gray-300 uppercase tracking-wider mt-1">Submitted by Manufacturer</div>
+                                                <div className="font-serif text-lg text-black dark:text-white group-hover:text-luxury-gold transition-colors">{project.title}</div>
+                                                <div className="text-xs text-gray-600 dark:text-gray-300 uppercase tracking-wider mt-1">Submitted by Manufacturer</div>
                                             </div>
                                             <div className="flex gap-2">
                                                 <Button size="sm" variant="outline" className="border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black" asChild>
@@ -313,7 +313,7 @@ export default function Dashboard() {
             {(role === 'admin' || role === 'sales') && (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {/* Revenue Overview */}
-                    <Card className="col-span-2 lg:col-span-2 bg-black/40 backdrop-blur-md border-white/10 shadow-xl">
+                    <Card className="col-span-2 lg:col-span-2 bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 shadow-xl">
                         <CardHeader>
                             <CardTitle className="font-serif text-xl tracking-wide">Revenue Overview</CardTitle>
                         </CardHeader>
@@ -323,17 +323,17 @@ export default function Dashboard() {
                     </Card>
 
                     {/* Standard Dashboard Cards... */}
-                    <Card className="col-span-2 lg:col-span-1 bg-black/40 backdrop-blur-md border-white/10 shadow-xl">
+                    <Card className="col-span-2 lg:col-span-1 bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 shadow-xl">
                         <CardHeader>
                             <CardTitle className="font-serif text-xl tracking-wide">Recent Projects</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
                                 {recentProjects.map((project) => (
-                                    <div key={project.id} className="group flex items-center justify-between border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                                    <div key={project.id} className="group flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4 last:border-0 last:pb-0">
                                         <div>
-                                            <h3 className="font-serif text-lg text-gray-200 group-hover:text-luxury-gold transition-colors">{project.title}</h3>
-                                            <p className="text-xs text-gray-300 uppercase tracking-wider mt-1">{project.status.replace('_', ' ')} <span className="text-luxury-gold/50">•</span> {project.client?.full_name}</p>
+                                            <h3 className="font-serif text-lg text-gray-800 dark:text-gray-200 group-hover:text-luxury-gold transition-colors">{project.title}</h3>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300 uppercase tracking-wider mt-1">{project.status.replace('_', ' ')} <span className="text-luxury-gold/50">•</span> {project.client?.full_name}</p>
                                         </div>
                                         <Badge variant={project.status === 'completed' ? 'secondary' : 'default'} className="bg-luxury-gold/10 text-luxury-gold hover:bg-luxury-gold hover:text-black border border-luxury-gold/30">
                                             {project.status.replace('_', ' ')}
@@ -345,7 +345,7 @@ export default function Dashboard() {
                     </Card>
 
                     {/* RECENT ACTIVITY WIDGET */}
-                    <Card className="col-span-2 bg-black/40 backdrop-blur-md border-white/10 shadow-xl">
+                    <Card className="col-span-2 bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 shadow-xl">
                         <CardHeader>
                             <CardTitle className="font-serif text-xl tracking-wide">Recent Activity</CardTitle>
                         </CardHeader>

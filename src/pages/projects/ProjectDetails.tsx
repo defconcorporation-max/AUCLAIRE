@@ -213,12 +213,12 @@ export default function ProjectDetails() {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 border-b border-white/5 pb-6 w-full relative">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-300 hover:text-white hover:bg-white/5 transition-colors group">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-4 border-b border-black/5 dark:border-white/5 pb-2 w-full relative">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     </Button>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                         {role === 'admin' && (
                             <Button variant="outline" size="sm" onClick={handleShareProject} disabled={isSharing} className="gap-2 text-luxury-gold border-luxury-gold/30 hover:bg-luxury-gold hover:text-black transition-colors">
                                 <Send className="w-4 h-4" />
@@ -226,13 +226,13 @@ export default function ProjectDetails() {
                             </Button>
                         )}
                         {(role === 'admin' || role === 'sales') && (
-                            <Button variant="outline" size="sm" onClick={() => setIsEditingClient(true)} className="gap-2 border-white/10 text-gray-300 hover:text-white hover:bg-white/10">
+                            <Button variant="outline" size="sm" onClick={() => setIsEditingClient(true)} className="gap-2 border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10">
                                 <Pencil className="w-4 h-4" />
                                 Edit Client
                             </Button>
                         )}
-                        <h1 className="text-3xl font-serif font-bold text-white tracking-wide ml-2">{project.title}</h1>
-                        <div className="flex items-center gap-2 text-sm text-gray-300 ml-4 border-l border-white/10 pl-6">
+                        <h1 className="text-3xl font-serif font-bold text-black dark:text-white tracking-wide ml-2">{project.title}</h1>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 ml-4 border-l border-black/10 dark:border-white/10 pl-6">
                             <User className="w-4 h-4 text-luxury-gold/70" />
                             {!isEditingClient ? (
                                 <div className="flex items-center gap-2">
@@ -285,33 +285,54 @@ export default function ProjectDetails() {
                     </Button>
                 )}
             </div>
-            <div className="flex items-center justify-end gap-3 mt-[-20px]">
-                <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Status:</span>
-                <select
-                    className="h-8 px-2 rounded-md border border-input bg-background text-sm capitalize"
-                    value={project.status}
-                    onChange={(e) => {
-                        const newStatus = e.target.value as ProjectStatus;
-                        handleStatusUpdate(newStatus);
-                        apiActivities.log({
-                            project_id: project.id,
-                            user_id: 'admin', // Mock User ID
-                            user_name: 'Admin User',
-                            action: 'status_change',
-                            details: `Changed status from ${project.status} to ${newStatus}`
-                        });
-                    }}
-                    disabled={role === 'client'} // Clients shouldn't manually update status
-                >
-                    <option value="designing">Designing</option>
-                    <option value="3d_model">3D Model</option>
-                    <option value="design_ready">Design Ready (Review)</option>
-                    <option value="design_modification">Mod Requested</option>
-                    <option value="production">Production</option>
-                    <option value="approved_for_production">Approved (Pending Prod)</option>
-                    <option value="delivery">Delivery</option>
-                    <option value="completed">Completed</option>
-                </select>
+            <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4 mt-2 flex-wrap gap-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                    {role !== 'client' && (
+                        <>
+                            <span className="text-xs font-medium text-gray-500 mr-2">Quick Actions:</span>
+                            <Button size="sm" variant={project.status === 'design_ready' ? 'default' : 'outline'} className={project.status === 'design_ready' ? 'bg-luxury-gold hover:bg-luxury-gold-dark text-black' : ''} onClick={() => handleStatusUpdate('design_ready')}>
+                                Design Ready
+                            </Button>
+                            <Button size="sm" variant={project.status === 'design_modification' ? 'default' : 'outline'} className={project.status === 'design_modification' ? 'bg-luxury-gold hover:bg-luxury-gold-dark text-black' : ''} onClick={() => handleStatusUpdate('design_modification')}>
+                                Modif Requested
+                            </Button>
+                            <Button size="sm" variant={project.status === 'approved_for_production' ? 'default' : 'outline'} className={project.status === 'approved_for_production' ? 'bg-luxury-gold hover:bg-luxury-gold-dark text-black' : ''} onClick={() => handleStatusUpdate('approved_for_production')}>
+                                Approved (Prod)
+                            </Button>
+                            <Button size="sm" variant={project.status === 'production' ? 'default' : 'outline'} className={project.status === 'production' ? 'bg-luxury-gold hover:bg-luxury-gold-dark text-black' : ''} onClick={() => handleStatusUpdate('production')}>
+                                Start Production
+                            </Button>
+                        </>
+                    )}
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Status:</span>
+                    <select
+                        className="h-8 px-2 rounded-md border border-input bg-background font-medium text-sm capitalize"
+                        value={project.status}
+                        onChange={(e) => {
+                            const newStatus = e.target.value as ProjectStatus;
+                            handleStatusUpdate(newStatus);
+                            apiActivities.log({
+                                project_id: project.id,
+                                user_id: 'admin', // Mock User ID
+                                user_name: 'Admin User',
+                                action: 'status_change',
+                                details: `Changed status from ${project.status} to ${newStatus}`
+                            });
+                        }}
+                        disabled={role === 'client'} // Clients shouldn't manually update status
+                    >
+                        <option value="designing">Designing</option>
+                        <option value="3d_model">3D Model</option>
+                        <option value="design_ready">Design Ready (Review)</option>
+                        <option value="design_modification">Mod Requested</option>
+                        <option value="approved_for_production">Approved (Pending Prod)</option>
+                        <option value="production">Production</option>
+                        <option value="delivery">Delivery</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
             </div>
 
 
@@ -388,15 +409,16 @@ export default function ProjectDetails() {
             }
 
             {/* CLIENT APPROVAL BANNER */}
+            {/* CLIENT APPROVAL BANNER */}
             {
                 project.status === 'design_ready' && role === 'client' && (
-                    <Card className="border-l-2 border-l-luxury-gold bg-black/40 backdrop-blur-md border border-white/5 shadow-xl">
+                    <Card className="border-l-2 border-l-luxury-gold bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl">
                         <CardHeader className="pb-4">
                             <CardTitle className="flex items-center gap-2 text-luxury-gold font-serif text-xl">
                                 <Clock className="w-5 h-5 text-luxury-gold" />
                                 Design Approval Required
                             </CardTitle>
-                            <CardDescription className="text-gray-300">Your custom design is ready for review! Please leave feedback or approve it for production.</CardDescription>
+                            <CardDescription className="text-gray-600 dark:text-gray-300">Your custom design is ready for review! Please leave feedback or approve it for production.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-5">
                             <div className="flex gap-4">
@@ -465,8 +487,8 @@ export default function ProjectDetails() {
                             <TabsTrigger value="activity">Activity Log</TabsTrigger>
                         </TabsList>
                         <TabsContent value="timeline">
-                            <Card className="bg-black/40 backdrop-blur-md border-white/5 shadow-xl">
-                                <CardHeader className="border-b border-white/5 pb-4">
+                            <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/5 dark:border-white/5 shadow-xl">
+                                <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
                                     <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Project Timeline</CardTitle>
                                     <CardDescription className="text-xs uppercase tracking-widest text-[#A68A56]">Design & Manufacturing Progress</CardDescription>
                                 </CardHeader>
@@ -495,9 +517,9 @@ export default function ProjectDetails() {
                     </Tabs>
                 </div>
 
-                <Card className="bg-black/40 backdrop-blur-md border-white/5 shadow-xl relative overflow-hidden group">
+                <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl relative overflow-hidden group">
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                    <CardHeader className="border-b border-white/5 pb-4 bg-white/[0.02]">
+                    <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02]">
                         <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Financial Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5 pt-6">
@@ -739,8 +761,8 @@ export default function ProjectDetails() {
                 </Card>
 
                 {/* Stage Specific Data Form */}
-                <Card className="md:col-span-3 bg-black/40 backdrop-blur-md border border-white/5 shadow-xl group">
-                    <CardHeader className="border-b border-white/5 pb-4 bg-white/[0.02]">
+                <Card className="md:col-span-3 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl group">
+                    <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02]">
                         <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Stage Information: {project.status.replace(/_/g, ' ').toUpperCase()}</CardTitle>
                         <CardDescription className="text-xs uppercase tracking-widest text-gray-500">Update information for the current stage.</CardDescription>
                     </CardHeader>

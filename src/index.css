@@ -5,14 +5,50 @@
 @tailwind utilities;
 
 @layer base {
-
-  /* PREMIUM DARK MODE (Global Default) */
   :root {
+    /* DEFAULT LIGHT MODE */
+    --background: 0 0% 100%;
+    /* Pure white */
+    --foreground: 240 10% 10%;
+    /* Almost black text */
+
+    /* Cards */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    /* Luxury Gold (Soft Champagne Gold) - Same in both modes for consistency */
+    --primary: 43 60% 65%;
+    --primary-foreground: 240 10% 2%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 10%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 5% 40%;
+
+    --accent: 43 60% 65%;
+    --accent-foreground: 240 10% 2%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 5% 90%;
+    --input: 240 5% 90%;
+
+    --ring: 43 60% 65%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* PREMIUM DARK MODE */
     /* Deepest Obsidian/Midnight Background */
     --background: 240 10% 2%;
-    /* Almost black */
+    /* Almost white text */
     --foreground: 45 10% 90%;
-    /* Soft off-white, not harsh */
 
     /* Glassy / Deep Cards */
     --card: 240 5% 6%;
@@ -21,11 +57,9 @@
     --popover: 240 5% 6%;
     --popover-foreground: 45 10% 90%;
 
-    /* Luxury Gold (Soft Champagne Gold) */
+    /* Luxury Gold */
     --primary: 43 60% 65%;
-    /* Soft, elegant gold */
     --primary-foreground: 240 10% 2%;
-    /* Dark Text on Gold */
 
     --secondary: 240 4% 12%;
     --secondary-foreground: 45 10% 90%;
@@ -34,20 +68,15 @@
     --muted-foreground: 240 5% 82%;
 
     --accent: 43 60% 65%;
-    /* Accent uses the gold */
     --accent-foreground: 240 10% 2%;
 
     --destructive: 0 60% 40%;
     --destructive-foreground: 45 10% 90%;
 
     --border: 240 4% 12%;
-    /* Very subtle borders */
     --input: 240 4% 12%;
 
-    /* Gold Ring Focus */
     --ring: 43 60% 65%;
-
-    --radius: 0.5rem;
   }
 }
 

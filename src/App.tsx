@@ -3,6 +3,7 @@ import React from 'react';
 // Force new deployment: V2.4 Fixed Protected Route Location Hook
 console.log("App Version: V2.4 - Fixed Protected Route Location Hook");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
 import CRMLayout from './components/layout/CRMLayout';
 import Login from './pages/Login';
@@ -59,60 +60,62 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 
 function App() {
   return (
-    <Router>
-      <RingProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+    <ThemeProvider defaultTheme="dark" storageKey="auclaire-theme">
+      <Router>
+        <RingProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          {/* Pending Page - separate from Dashboard Layout */}
-          <Route path="/pending" element={
-            <PendingApproval />
-          } />
+            {/* Pending Page - separate from Dashboard Layout */}
+            <Route path="/pending" element={
+              <PendingApproval />
+            } />
 
-          {/* Public Shared Project View */}
-          <Route path="/shared/:token" element={<SharedProjectView />} />
+            {/* Public Shared Project View */}
+            <Route path="/shared/:token" element={<SharedProjectView />} />
 
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <CRMLayout>
-                <RoleSwitcher />
-                <Outlet /> {/* This is where nested routes will render */}
-              </CRMLayout>
-            </ProtectedRoute>
-          }>
-            <Route index element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><Dashboard /></ProtectedRoute>} />
-            <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><ProjectsList /></ProtectedRoute>} />
-            <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateProject /></ProtectedRoute>} />
-            <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer', 'affiliate']}><ProjectDetails /></ProtectedRoute>} />
-            <Route path="clients" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientsList /></ProtectedRoute>} />
-            <Route path="clients/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateClient /></ProtectedRoute>} />
-            <Route path="clients/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientDetails /></ProtectedRoute>} />
-            <Route path="invoices" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'accounting']}><InvoicesList /></ProtectedRoute>} />
-            <Route path="invoices/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateInvoice /></ProtectedRoute>} />
-            <Route path="finance/expenses" element={<ProtectedRoute allowedRoles={['admin']}><ExpensesList /></ProtectedRoute>} />
-            <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
-            <Route path="settings" element={<ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>} />
-            <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
-            <Route path="studio" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><Studio /></ProtectedRoute>} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <CRMLayout>
+                  <RoleSwitcher />
+                  <Outlet /> {/* This is where nested routes will render */}
+                </CRMLayout>
+              </ProtectedRoute>
+            }>
+              <Route index element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><Dashboard /></ProtectedRoute>} />
+              <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><ProjectsList /></ProtectedRoute>} />
+              <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateProject /></ProtectedRoute>} />
+              <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer', 'affiliate']}><ProjectDetails /></ProtectedRoute>} />
+              <Route path="clients" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientsList /></ProtectedRoute>} />
+              <Route path="clients/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateClient /></ProtectedRoute>} />
+              <Route path="clients/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientDetails /></ProtectedRoute>} />
+              <Route path="invoices" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'accounting']}><InvoicesList /></ProtectedRoute>} />
+              <Route path="invoices/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateInvoice /></ProtectedRoute>} />
+              <Route path="finance/expenses" element={<ProtectedRoute allowedRoles={['admin']}><ExpensesList /></ProtectedRoute>} />
+              <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
+              <Route path="settings" element={<ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>} />
+              <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
+              <Route path="studio" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><Studio /></ProtectedRoute>} />
 
-            {/* Affiliate Routes */}
-            <Route path="affiliate" element={<ProtectedRoute allowedRoles={['affiliate']}><AffiliateDashboard /></ProtectedRoute>} />
-            <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin']}><AffiliateDetails /></ProtectedRoute>} />
+              {/* Affiliate Routes */}
+              <Route path="affiliate" element={<ProtectedRoute allowedRoles={['affiliate']}><AffiliateDashboard /></ProtectedRoute>} />
+              <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin']}><AffiliateDetails /></ProtectedRoute>} />
+
+              {/* Debugging */}
+              <Route path="debug" element={<DebugPage />} />
+            </Route>
+
+
 
             {/* Debugging */}
-            <Route path="debug" element={<DebugPage />} />
-          </Route>
+            <Route path="/debug-tool" element={<DebugPage />} />
 
-
-
-          {/* Debugging */}
-          <Route path="/debug-tool" element={<DebugPage />} />
-
-          {/* Redirect root to dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </RingProvider>
-    </Router>
+            {/* Redirect root to dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </RingProvider>
+      </Router>
+    </ThemeProvider>
   )
 }
 
