@@ -4,19 +4,20 @@ interface StatusBadgeProps {
 }
 
 export const StatusBadge = ({ status }: StatusBadgeProps) => {
+    // Luxury Status Badges (Glassy and subtle)
     const styles: Record<string, string> = {
-        designing: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-        '3d_model': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-        approved_for_production: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
-        production: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
-        delivery: 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
-        completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+        designing: 'bg-white/5 text-blue-300 border-blue-500/30 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]',
+        '3d_model': 'bg-white/5 text-purple-300 border-purple-500/30 shadow-[inset_0_0_10px_rgba(168,85,247,0.1)]',
+        approved_for_production: 'bg-white/5 text-emerald-300 border-emerald-500/30 shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]',
+        production: 'bg-white/5 text-amber-300 border-amber-500/30 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]',
+        delivery: 'bg-white/5 text-indigo-300 border-indigo-500/30 shadow-[inset_0_0_10px_rgba(99,102,241,0.1)]',
+        completed: 'bg-luxury-gold/10 text-luxury-gold border-luxury-gold/30 shadow-[inset_0_0_10px_rgba(210,181,123,0.15)]',
     };
 
-    const label = status.replace('_', ' ').toUpperCase();
+    const label = status.replace(/_/g, ' ').toUpperCase();
 
     return (
-        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+        <span className={`px-2.5 py-0.5 rounded text-[10px] font-medium tracking-widest border ${styles[status] || 'bg-white/5 text-gray-400 border-white/10'}`}>
             {label}
         </span>
     );

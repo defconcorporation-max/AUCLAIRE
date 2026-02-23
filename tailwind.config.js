@@ -51,12 +51,12 @@ export default {
                     foreground: "hsl(var(--card-foreground))",
                 },
                 luxury: {
-                    gold: "#D4AF37",
-                    "gold-light": "#F1D278",
-                    "gold-dark": "#AA8C2C",
-                    black: "#0A0A0A",
-                    charcoal: "#1A1A1A",
-                    pearl: "#F5F5F0"
+                    gold: "#D2B57B", /* Soft Champagne Gold */
+                    "gold-light": "#E9D8A6",
+                    "gold-dark": "#A68A56",
+                    black: "#050505", /* Almost pure black */
+                    charcoal: "#111111",
+                    pearl: "#F8F6F0"
                 }
             },
             borderRadius: {

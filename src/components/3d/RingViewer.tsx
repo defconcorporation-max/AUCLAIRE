@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import RingModel from "./RingModel"
-import { useEffect, useRef, useMemo } from "react"
+import { useEffect, useRef, useState } from "react"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import * as THREE from "three"
 
@@ -30,7 +30,6 @@ function LuxuryStudio({ intensity = 1 }: { intensity?: number }) {
         const pmremGenerator = new THREE.PMREMGenerator(gl)
         pmremGenerator.compileEquirectangularShader()
         const studioScene = new THREE.Scene()
-        // studioScene.background = new THREE.Color("#f5f5f5") // Light gray for reflections
 
         // 1. KEY LIGHT - Soft White Top
         const texKey = createGradientTexture(512, 512, "#ffffff", "#ffffff")
@@ -65,7 +64,6 @@ function LuxuryStudio({ intensity = 1 }: { intensity?: number }) {
         // Generate Environment
         const envMap = pmremGenerator.fromScene(studioScene).texture
         scene.environment = envMap
-        // scene.background = new THREE.Color("#000000") // Keep background black
 
         return () => {
             envMap.dispose()
@@ -77,7 +75,6 @@ function LuxuryStudio({ intensity = 1 }: { intensity?: number }) {
         <group>
             <ambientLight intensity={0.5 * intensity} />
             <spotLight position={[5, 15, 5]} intensity={20 * intensity} angle={0.2} penumbra={1} castShadow />
-            {/* Removed colored point lights ("Sparkle Storm") */}
             <pointLight position={[-5, 5, -5]} intensity={10 * intensity} color="white" />
         </group>
     )
@@ -100,17 +97,59 @@ const CameraController = () => {
     return null
 }
 
+const PROFILES = ["Court", "D-Shape", "Flat", "Knife-Edge"]
+
 export default function RingViewer({ config, intensity = 1.2 }: { config: any, intensity?: number }) {
+    // Local overrides for UI demo purposes
+    const [profile, setProfile] = useState("Court")
+    const [prongStyle, setProngStyle] = useState("Round")
+    const [sideStones, setSideStones] = useState(false)
+
+    // Merge props with local state for the model
+    const activeConfig = {
+        ...config,
+        shank: { ...config.shank, profile },
+        head: { ...config.head, prongStyle },
+        sideStones: { ...config.sideStones, active: sideStones }
+    }
+
     return (
-        <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-gray-100 to-gray-200 flex items-center justify-center">
+        <div className="w-full h-full min-h-[600px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-gray-100 to-gray-200 flex flex-col font-sans border border-neutral-200 relative">
+
+            {/* TOP BAR UI */}
+            <div className="absolute top-4 left-0 w-full z-10 flex flex-col gap-2 items-center pointer-events-none">
+                <div className="bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg pointer-events-auto flex gap-2">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest py-1 pl-2">Shank:</span>
+                    {PROFILES.map(p => (
+                        <button key={p} onClick={() => setProfile(p)} className={`px-3 py-1 text-[10px] items-center flex font-bold tracking-wider rounded-full transition-all ${profile === p ? 'bg-neutral-900 text-white shadow-md' : 'bg-transparent text-neutral-500 hover:bg-neutral-100'}`}>
+                            {p}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg pointer-events-auto flex gap-2">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest py-1 pl-2">Prongs:</span>
+                    {["Round", "Claw", "Tab", "Double", "Compass"].map(s => (
+                        <button key={s} onClick={() => setProngStyle(s)} className={`px-3 py-1 text-[10px] items-center flex font-bold tracking-wider rounded-full transition-all ${prongStyle === s ? 'bg-amber-600 text-white shadow-md' : 'bg-transparent text-neutral-500 hover:bg-amber-50'}`}>
+                            {s}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg pointer-events-auto flex gap-2">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest py-1 pl-2">Options:</span>
+                    <button onClick={() => setSideStones(!sideStones)} className={`px-3 py-1 text-[10px] items-center flex font-bold tracking-wider rounded-full transition-all ${sideStones ? 'bg-rose-500 text-white shadow-md' : 'bg-transparent text-neutral-500 hover:bg-rose-50'}`}>
+                        {sideStones ? 'SIDE STONES: ON' : 'SIDE STONES: OFF'}
+                    </button>
+                </div>
+            </div>
+
             <Canvas shadows camera={{ position: [0, 5, 5], fov: 45 }} gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: intensity }}>
                 <LuxuryStudio intensity={intensity} />
-                <RingModel config={config} />
+                <RingModel config={activeConfig} />
 
                 <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
                     <shadowMaterial opacity={0.2} />
-                    {/* <planeGeometry args={[100, 100]} />
-                    <meshStandardMaterial color="#f5f5f5" metalness={0.1} roughness={0.8} envMapIntensity={intensity} /> */}
                 </mesh>
                 <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.01, 0]} receiveShadow>
                     <planeGeometry args={[100, 100]} />

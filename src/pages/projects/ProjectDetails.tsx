@@ -212,28 +212,28 @@ export default function ProjectDetails() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-                        <ArrowLeft className="w-4 h-4" />
+                <div className="flex items-center gap-4 border-b border-white/5 pb-6 w-full relative">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/5 transition-colors group">
+                        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     </Button>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                         {role === 'admin' && (
-                            <Button variant="outline" size="sm" onClick={handleShareProject} disabled={isSharing} className="gap-2 text-luxury-gold border-luxury-gold/50 hover:bg-luxury-gold/10">
+                            <Button variant="outline" size="sm" onClick={handleShareProject} disabled={isSharing} className="gap-2 text-luxury-gold border-luxury-gold/30 hover:bg-luxury-gold hover:text-black transition-colors">
                                 <Send className="w-4 h-4" />
                                 {isSharing ? "Copying..." : "Share Link"}
                             </Button>
                         )}
                         {(role === 'admin' || role === 'sales') && (
-                            <Button variant="outline" size="sm" onClick={() => setIsEditingClient(true)} className="gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setIsEditingClient(true)} className="gap-2 border-white/10 text-gray-300 hover:text-white hover:bg-white/10">
                                 <Pencil className="w-4 h-4" />
                                 Edit Client
                             </Button>
                         )}
-                        <h1 className="text-2xl font-serif font-bold text-luxury-gold">{project.title}</h1>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <User className="w-3 h-3" />
+                        <h1 className="text-3xl font-serif font-bold text-white tracking-wide ml-2">{project.title}</h1>
+                        <div className="flex items-center gap-2 text-sm text-gray-400 ml-4 border-l border-white/10 pl-6">
+                            <User className="w-4 h-4 text-luxury-gold/70" />
                             {!isEditingClient ? (
                                 <div className="flex items-center gap-2">
                                     <span>Client: {project.client?.full_name}</span>
@@ -275,7 +275,7 @@ export default function ProjectDetails() {
                     </div>
                 </div>
                 {role === 'admin' && (
-                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={async () => {
+                    <Button variant="ghost" size="icon" className="absolute right-0 top-0 text-red-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" onClick={async () => {
                         if (confirm("DELETE PROJECT? This action cannot be undone.")) {
                             await apiProjects.delete(project.id);
                             navigate('/dashboard');
@@ -285,8 +285,8 @@ export default function ProjectDetails() {
                     </Button>
                 )}
             </div>
-            <div className="ml-auto flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground mr-2">Status:</span>
+            <div className="flex items-center justify-end gap-3 mt-[-20px]">
+                <span className="text-xs uppercase tracking-widest font-medium text-gray-500">Status:</span>
                 <select
                     className="h-8 px-2 rounded-md border border-input bg-background text-sm capitalize"
                     value={project.status}
@@ -390,15 +390,15 @@ export default function ProjectDetails() {
             {/* CLIENT APPROVAL BANNER */}
             {
                 project.status === 'design_ready' && role === 'client' && (
-                    <Card className="border-l-4 border-l-luxury-gold bg-amber-50/30">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                    <Card className="border-l-2 border-l-luxury-gold bg-black/40 backdrop-blur-md border border-white/5 shadow-xl">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center gap-2 text-luxury-gold font-serif text-xl">
                                 <Clock className="w-5 h-5 text-luxury-gold" />
                                 Design Approval Required
                             </CardTitle>
-                            <CardDescription>Your custom design is ready for review! Please leave feedback or approve it for production.</CardDescription>
+                            <CardDescription className="text-gray-400">Your custom design is ready for review! Please leave feedback or approve it for production.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-5">
                             <div className="flex gap-4">
                                 <Button
                                     className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2"
@@ -465,10 +465,10 @@ export default function ProjectDetails() {
                             <TabsTrigger value="activity">Activity Log</TabsTrigger>
                         </TabsList>
                         <TabsContent value="timeline">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Project Timeline</CardTitle>
-                                    <CardDescription>Design & Manufacturing Progress</CardDescription>
+                            <Card className="bg-black/40 backdrop-blur-md border-white/5 shadow-xl">
+                                <CardHeader className="border-b border-white/5 pb-4">
+                                    <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Project Timeline</CardTitle>
+                                    <CardDescription className="text-xs uppercase tracking-widest text-[#A68A56]">Design & Manufacturing Progress</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     {/* Mock Timeline Visual */}
@@ -495,11 +495,12 @@ export default function ProjectDetails() {
                     </Tabs>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Details</CardTitle>
+                <Card className="bg-black/40 backdrop-blur-md border-white/5 shadow-xl relative overflow-hidden group">
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <CardHeader className="border-b border-white/5 pb-4 bg-white/[0.02]">
+                        <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Financial Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-5 pt-6">
                         {/* Affiliate Section */}
                         {(role === 'admin' || role === 'sales' || project.affiliate_id) && (
                             <>
@@ -738,12 +739,12 @@ export default function ProjectDetails() {
                 </Card>
 
                 {/* Stage Specific Data Form */}
-                <Card className="md:col-span-3">
-                    <CardHeader>
-                        <CardTitle>Stage Information: {project.status.replace('_', ' ').toUpperCase()}</CardTitle>
-                        <CardDescription>Update information for the current stage.</CardDescription>
+                <Card className="md:col-span-3 bg-black/40 backdrop-blur-md border border-white/5 shadow-xl group">
+                    <CardHeader className="border-b border-white/5 pb-4 bg-white/[0.02]">
+                        <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Stage Information: {project.status.replace(/_/g, ' ').toUpperCase()}</CardTitle>
+                        <CardDescription className="text-xs uppercase tracking-widest text-gray-500">Update information for the current stage.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                         <div className="space-y-4">
                             {project.status === 'designing' && (
                                 <div className="space-y-2">

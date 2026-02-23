@@ -3,6 +3,8 @@ import { useRing, ToolType, MetalType, ProfileType } from '../../context/RingCon
 import { Icons } from '../ui/Icons'
 import Viewport3D from '../3d/Viewport3D'
 import PreviewModal from '../ui/PreviewModal'
+import SaveLoadModal from '../ui/SaveLoadModal'
+import { generateSpecSheet } from '../../utils/pdfGenerator'
 
 // --- HELPER COMPONENTS ---
 
@@ -55,6 +57,16 @@ export default function CADLayout() {
     } = useRing()
 
     const [showPreview, setShowPreview] = useState(false)
+    const [showSaveLoad, setShowSaveLoad] = useState(false)
+
+    const handleExport = () => {
+        // 1. Capture Canvas
+        const canvas = document.querySelector('canvas')
+        const imageUrl = canvas ? canvas.toDataURL('image/png') : ''
+
+        // 2. Generate PDF
+        generateSpecSheet(ringConfig, materials, imageUrl, "My Custom Design")
+    }
 
     const tools: { id: ToolType, icon: any }[] = [
         { id: 'select', icon: Icons.Select },
@@ -103,13 +115,23 @@ export default function CADLayout() {
 
             {/* 1. TOP BAR */}
             {showPreview && <PreviewModal config={ringConfig} materials={materials} onClose={() => setShowPreview(false)} />}
+            {showSaveLoad && <SaveLoadModal onClose={() => setShowSaveLoad(false)} />}
+
             <header className="h-10 bg-[#1a1a1a] border-b border-[#333] flex items-center justify-between px-2 shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="flex gap-1 px-2">
-                        {['File', 'Edit', 'View', 'Tools', 'Render'].map(m => (
+                        {['File', 'Edit', 'View', 'Tools'].map(m => (
                             <button key={m} className="px-3 py-1 text-[11px] text-gray-400 hover:bg-[#333] hover:text-white rounded transition-colors">{m}</button>
                         ))}
                     </div>
+                    {/* SAVE / LOAD BUTTON */}
+                    <button
+                        onClick={() => setShowSaveLoad(true)}
+                        className="flex items-center gap-2 px-3 py-1 bg-[#222] hover:bg-[#333] border border-[#333] rounded text-[10px] text-gray-300 font-bold uppercase tracking-wider transition-colors"
+                    >
+                        <Icons.Save className="w-3 h-3 text-[#40a9ff]" />
+                        Save / Load
+                    </button>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -123,6 +145,14 @@ export default function CADLayout() {
                     <button className="ml-2 px-4 py-1.5 bg-[#40a9ff] hover:bg-[#3090ef] text-white text-[11px] font-bold rounded flex items-center gap-2">
                         <Icons.Render className="w-3 h-3" />
                         RENDER
+                    </button>
+                    <span className="text-[9px] text-gray-600 font-mono ml-2">v1.1</span>
+                    <button
+                        onClick={() => { localStorage.removeItem('auclaire_designs'); window.location.reload() }}
+                        className="text-[9px] text-red-900 hover:text-red-500 ml-1"
+                        title="Reset App State"
+                    >
+                        (RESET)
                     </button>
                 </div>
             </header>
@@ -194,7 +224,31 @@ export default function CADLayout() {
                         ))}
                     </div>
 
-                    {/* A2. SIDE STONES */}
+
+
+                    {/* A3. THREE-STONE CONFIG */}
+                    {ringConfig.head.style === 'Three-Stone' && (
+                        <>
+                            <SectionHeader title="Side Gems (3-Stone)" />
+                            <div className="p-3 grid grid-cols-3 gap-2">
+                                {['Pear', 'Round', 'Princess', 'Bagquette', 'Oval'].map(s => (
+                                    <button
+                                        key={s}
+                                        onClick={() => updateRing({ threeStone: { shape: s } })}
+                                        className={`flex flex-col items-center p-2 rounded border ${ringConfig.threeStone?.shape === s ? 'bg-[#40a9ff]/20 border-[#40a9ff]' : 'border-[#333] hover:bg-[#333]'}`}
+                                    >
+                                        <Icons.Diamond className={`w-3 h-3 mb-1 ${ringConfig.threeStone?.shape === s ? 'text-[#40a9ff]' : 'text-gray-500'}`} />
+                                        <span className="text-[7px] uppercase">{s}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <PropRow label="Side Size" value={`${ringConfig.threeStone?.size || 0.5}x`}>
+                                <input type="range" min="0.2" max="1.0" step="0.05" value={ringConfig.threeStone?.size || 0.5} onChange={e => updateRing({ threeStone: { size: parseFloat(e.target.value) } })} className="w-full h-1 bg-gray-700 rounded-full appearance-none accent-[#40a9ff]" />
+                            </PropRow>
+                        </>
+                    )}
+
+                    {/* A2. SIDE STONES (PAVE) */}
                     <SectionHeader title="Side Stones" />
                     <div className="p-3 grid grid-cols-3 gap-2">
                         {['Round', 'Princess', 'Pear', 'Marquise', 'Oval'].map(s => (
@@ -230,6 +284,18 @@ export default function CADLayout() {
                             <option value="Bezel">Bezel</option>
                         </select>
                     </PropRow>
+                    <PropRow label="Gallery">
+                        <select
+                            value={ringConfig.head.gallery || 'Rail'}
+                            onChange={(e) => updateRing({ head: { ...ringConfig.head, gallery: e.target.value as any } })}
+                            className="w-full bg-[#111] border border-[#333] text-xs p-1 rounded text-gray-300 outline-none focus:border-[#40a9ff]"
+                        >
+                            <option value="Rail">Rail</option>
+                            <option value="Basket">Basket</option>
+                            <option value="Trellis">Trellis</option>
+                            <option value="None">None</option>
+                        </select>
+                    </PropRow>
 
                     {/* C. SHANK PROPERTIES */}
                     <SectionHeader title="Shank Properties" />
@@ -254,6 +320,33 @@ export default function CADLayout() {
                             )}
                         </div>
                     </PropRow>
+
+                    {/* C2. ENGRAVING */}
+                    <SectionHeader title="Engraving" />
+                    <div className="p-3 space-y-2">
+                        <PropRow label="Text">
+                            <input
+                                type="text"
+                                placeholder="Initials, Date..."
+                                value={ringConfig.engraving?.text || ''}
+                                onChange={e => updateRing({ engraving: { text: e.target.value } })}
+                                className="w-full bg-[#111] border border-[#333] text-xs p-1 rounded text-gray-300 outline-none focus:border-[#40a9ff]"
+                            />
+                        </PropRow>
+                        {ringConfig.engraving?.text && (
+                            <PropRow label="Size">
+                                <input
+                                    type="range"
+                                    min="0.3"
+                                    max="1.0"
+                                    step="0.1"
+                                    value={ringConfig.engraving?.size || 0.5}
+                                    onChange={e => updateRing({ engraving: { size: parseFloat(e.target.value) } })}
+                                    className="w-full h-1 bg-gray-700 rounded-full appearance-none accent-[#40a9ff]"
+                                />
+                            </PropRow>
+                        )}
+                    </div>
 
                     {/* D. MATERIALS */}
                     <SectionHeader title="Materials" />
@@ -291,14 +384,14 @@ export default function CADLayout() {
 
                     {/* EXPORT ACTION */}
                     <div className="p-4 border-t border-[#333]">
-                        <button onClick={() => setShowPreview(true)} className="w-full py-3 bg-[#40a9ff] hover:bg-[#3090ef] text-white font-bold rounded shadow-lg shadow-blue-900/20 uppercase tracking-widest text-xs flex items-center justify-center gap-2">
+                        <button onClick={handleExport} className="w-full py-3 bg-[#40a9ff] hover:bg-[#3090ef] text-white font-bold rounded shadow-lg shadow-blue-900/20 uppercase tracking-widest text-xs flex items-center justify-center gap-2">
                             <Icons.Select className="w-4 h-4" />
-                            Preview & Export
+                            Preview & Export PDF
                         </button>
                     </div>
 
                 </aside>
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }

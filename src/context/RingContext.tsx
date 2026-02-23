@@ -24,6 +24,7 @@ export interface RingConfig {
         style: 'Solitaire' | 'Halo' | 'Three-Stone' | 'Vintage'
         prongStyle: 'Claw' | 'Round' | 'Tab'
         prongCount: 4 | 6
+        gallery: 'Rail' | 'Trellis' | 'Basket' | 'None'
         height: number
     }
 
@@ -36,12 +37,26 @@ export interface RingConfig {
         taper: number // 0.8 to 1.2
     }
 
-    // Side Stones
+    // Side Stones (Pave)
     sideStones: {
         active: boolean
         style: string // "Pave", "Channel"
         size: number
         length: number // 0.5 (half eternity)
+    }
+
+    // Engraving
+    engraving: {
+        text: string
+        font: string // "Serif", "Sans", "Script"
+        size: number
+    }
+
+    // Three-Stone Settings
+    threeStone: {
+        shape: string // "Pear", "Round", "Bagouqette"
+        size: number // Carat relative to center
+        type: GemType
     }
 }
 
@@ -50,15 +65,28 @@ interface MaterialConfig {
     gem: GemType
 }
 
+export interface SavedDesign {
+    id: string
+    name: string
+    date: string
+    config: RingConfig
+    materials: MaterialConfig
+    thumbnail?: string
+}
+
 interface AppState {
     currentTool: ToolType
     viewMode: ViewMode
     ringConfig: RingConfig
     materials: MaterialConfig
+    savedDesigns: SavedDesign[]
     setTool: (t: ToolType) => void
     setViewMode: (v: ViewMode) => void
     updateRing: (updates: RecursivePartial<RingConfig>) => void
     updateMaterials: (updates: Partial<MaterialConfig>) => void
+    saveDesign: (name: string) => void
+    loadDesign: (design: SavedDesign) => void
+    deleteDesign: (id: string) => void
 }
 
 type RecursivePartial<T> = {
@@ -82,6 +110,7 @@ const defaultConfig: RingConfig = {
         style: 'Solitaire',
         prongStyle: 'Claw',
         prongCount: 4,
+        gallery: 'Rail',
         height: 1.0
     },
     shank: {
@@ -96,6 +125,16 @@ const defaultConfig: RingConfig = {
         style: 'Pave',
         size: 1.5,
         length: 0.5
+    },
+    threeStone: {
+        shape: 'Pear',
+        size: 0.5,
+        type: 'Diamond'
+    },
+    engraving: {
+        text: "",
+        font: "Serif",
+        size: 0.5
     }
 }
 
@@ -113,6 +152,31 @@ export function RingProvider({ children }: { children: ReactNode }) {
 
     const [ringConfig, setRingConfig] = useState<RingConfig>(defaultConfig)
     const [materials, setMaterials] = useState<MaterialConfig>(defaultMaterials)
+
+    // Load initial saves
+    // Load initial saves
+    const [savedDesigns, setSavedDesigns] = useState<SavedDesign[]>(() => {
+        try {
+            const saved = localStorage.getItem('auclaire_designs')
+            const parsed = saved ? JSON.parse(saved) : []
+            // Defensive: Ensure loaded configs have all new fields
+            return parsed.map((d: any) => ({
+                ...d,
+                config: {
+                    ...defaultConfig,
+                    ...d.config,
+                    // Deep merge specific objects to avoid overwriting new prop defaults with undefined
+                    head: { ...defaultConfig.head, ...d.config.head },
+                    sideStones: { ...defaultConfig.sideStones, ...d.config.sideStones },
+                    threeStone: { ...defaultConfig.threeStone, ...d.config.threeStone },
+                    engraving: { ...defaultConfig.engraving, ...d.config.engraving }
+                }
+            }))
+        } catch (e) {
+            console.error("Failed to load designs", e)
+            return []
+        }
+    })
 
     // Recursive merge for deep updates
     const deepMerge = (target: any, source: any) => {
@@ -133,6 +197,8 @@ export function RingProvider({ children }: { children: ReactNode }) {
             if (updates.head) next.head = { ...prev.head, ...updates.head }
             if (updates.shank) next.shank = { ...prev.shank, ...updates.shank }
             if (updates.sideStones) next.sideStones = { ...prev.sideStones, ...updates.sideStones }
+            if (updates.threeStone) next.threeStone = { ...prev.threeStone, ...updates.threeStone }
+            if (updates.engraving) next.engraving = { ...prev.engraving, ...updates.engraving }
             if (updates.metal) next.metal = updates.metal as MetalType
             return next
         })
@@ -142,12 +208,38 @@ export function RingProvider({ children }: { children: ReactNode }) {
         setMaterials(prev => ({ ...prev, ...updates }))
     }
 
+    // --- SAVE / LOAD LOGIC ---
+    const saveDesign = (name: string) => {
+        const newDesign: SavedDesign = {
+            id: crypto.randomUUID(),
+            name,
+            date: new Date().toISOString(),
+            config: ringConfig,
+            materials: materials
+        }
+        const newSaves = [newDesign, ...savedDesigns]
+        setSavedDesigns(newSaves)
+        localStorage.setItem('auclaire_designs', JSON.stringify(newSaves))
+    }
+
+    const loadDesign = (design: SavedDesign) => {
+        setRingConfig(design.config)
+        setMaterials(design.materials)
+    }
+
+    const deleteDesign = (id: string) => {
+        const newSaves = savedDesigns.filter(d => d.id !== id)
+        setSavedDesigns(newSaves)
+        localStorage.setItem('auclaire_designs', JSON.stringify(newSaves))
+    }
+
     return (
         <RingContext.Provider value={{
             currentTool, setTool,
             viewMode, setViewMode,
             ringConfig, updateRing,
-            materials, updateMaterials
+            materials, updateMaterials,
+            savedDesigns, saveDesign, loadDesign, deleteDesign
         }}>
             {children}
         </RingContext.Provider>

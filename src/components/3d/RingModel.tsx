@@ -1,17 +1,19 @@
 // @ts-nocheck
-import { useRef, useMemo } from "react"
+import React, { useRef, useMemo } from 'react'
+import { useFrame, useLoader } from '@react-three/fiber'
+import { Text } from '@react-three/drei'
 import * as THREE from "three"
 import { RingConfig } from "../../context/RingContext"
 import { getGemGeometry } from "./GemGeometryEngine"
-import { getGemScaleVector } from "./GemPhysics"
+import { getGemScaleVector, getGemDimensionsMM } from "./GemPhysics"
 import { getProfileShape } from "./RingProfileEngine"
 import { createProceduralRingGeometry } from "./RingGeometryEngine"
 import { getHaloPositions } from "./HaloLogic"
 
 const METALS: Record<string, string> = {
-    "Gold (18k)": "#F0C050",
+    "Yellow Gold": "#F0C050",
     "Rose Gold": "#E8A29A",
-    "Agrippa (White Gold)": "#E8E8E8",
+    "White Gold": "#E8E8E8",
     "Platinum": "#E5E4E2"
 }
 
@@ -22,11 +24,13 @@ export default function RingModel({ config }: { config: RingConfig }) {
     const gemShape = config.gem.shape || "Round"
     const gemSize = config.gem.size || 1.0
 
+    // Get Real Dimensions for Logic
+    const gemDims = useMemo(() => getGemDimensionsMM(gemShape as any, gemSize), [gemShape, gemSize])
+
     const gemScaleVector = useMemo(() => {
-        return getGemScaleVector(gemShape, gemSize)
+        return getGemScaleVector(gemShape as any, gemSize)
     }, [gemShape, gemSize])
 
-    // Backward compatibility for Halo logic
     const finalGemScale = gemScaleVector[0]
     const gemScale: [number, number, number] = gemScaleVector
 
@@ -67,17 +71,18 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
     // Gem Geometry
     const currentGemGeom = useMemo(() => getGemGeometry(gemShape as any), [gemShape])
-    // Side Stones (Simple placeholder for now)
+    // Side Stones Geometry
     const sideGemGeom = useMemo(() => getGemGeometry("Round"), [])
 
     // --- MATERIALS ---
-    const metalColor = METALS[config.metal] || METALS["Gold (18k)"]
+    const metalColor = METALS[config.metal] || METALS["Yellow Gold"]
 
     const metalMaterial = useMemo(() => new THREE.MeshStandardMaterial({
         color: metalColor,
         metalness: 1.0,
         roughness: 0.15,
         envMapIntensity: 1.0,
+        side: THREE.DoubleSide
     }), [metalColor])
 
     const gemMaterial = useMemo(() => {
@@ -112,6 +117,157 @@ export default function RingModel({ config }: { config: RingConfig }) {
         thickness: 0.5, clearcoat: 1.0
     }), [])
 
+    // --- PRONG & HEAD LOGIC ---
+    const prongStyle = config.head.prongStyle || 'Claw'
+
+    // Calculate Prong Positions
+    const prongMeshes = useMemo(() => {
+        if (config.head.style === 'Halo') return null; // Halo handles its own internal prongs or bezel usually
+
+        const meshes: JSX.Element[] = []
+
+        // Base angles for 4 prongs
+        const baseAngles = [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4]
+        // Compass rotates by 45deg
+        const angles = prongStyle === 'Compass' ? [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2] : baseAngles
+
+        // Trellis / Cathedral Curves
+        angles.forEach((angle, i) => {
+            const x = Math.sin(angle) * 0.35 * finalGemScale
+            const z = Math.cos(angle) * 0.35 * finalGemScale
+
+            // Dynamic Curve Points
+            // Start low on shank, curve up to girdle
+            const startY = -0.2 // Below shank top
+            const midY = 0.2 * finalGemScale
+            const endY = 0.5 * finalGemScale // Top of prong
+
+            // Curve Path for "Trellis" style
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(x * 0.5, startY, z * 0.5), // Base rooted in shank
+                new THREE.Vector3(x * 0.9, midY * 0.5, z * 0.9), // Bulge out
+                new THREE.Vector3(x, endY, z) // Tip
+            ], false, 'catmullrom', 0.5)
+
+            const tubeGeom = new THREE.TubeGeometry(curve, 16, 0.045, 8, false)
+
+            meshes.push(
+                <mesh key={`stem-${i}`} geometry={tubeGeom} material={metalMaterial} />
+            )
+
+            // TIPS
+            const tipPos = new THREE.Vector3(x, endY, z)
+            if (prongStyle === 'Round') {
+                meshes.push(
+                    <mesh key={`tip-${i}`} position={tipPos} material={metalMaterial}>
+                        <sphereGeometry args={[0.048, 16, 16]} />
+                    </mesh>
+                )
+            } else if (prongStyle === 'Claw' || prongStyle === 'Compass') {
+                meshes.push(
+                    <mesh key={`tip-${i}`} position={tipPos} rotation={[0.4, angle, 0]} material={metalMaterial}>
+                        <coneGeometry args={[0.042, 0.15, 16]} />
+                    </mesh>
+                )
+            } else if (prongStyle === 'Tab') {
+                meshes.push(
+                    <mesh key={`tip-${i}`} position={tipPos} rotation={[0, angle, Math.PI / 4]} material={metalMaterial}>
+                        <boxGeometry args={[0.08, 0.12, 0.03]} />
+                    </mesh>
+                )
+            }
+        })
+
+        // --- GALLERY / UNDERCARRIAGE ---
+        const galleryStyle = config.head.gallery || 'Rail'
+        const railRadius = 0.3 * finalGemScale
+        const railHeight = 0.2 * finalGemScale
+
+        if (galleryStyle === 'Rail') {
+            meshes.push(
+                <mesh key="rail" position={[0, railHeight, 0]} rotation={[Math.PI / 2, 0, 0]} material={metalMaterial}>
+                    <torusGeometry args={[railRadius, 0.035, 8, 32]} />
+                </mesh>
+            )
+        } else if (galleryStyle === 'Basket') {
+            // Rail + Vertical Struts
+            meshes.push(
+                <mesh key="rail" position={[0, railHeight, 0]} rotation={[Math.PI / 2, 0, 0]} material={metalMaterial}>
+                    <torusGeometry args={[railRadius, 0.035, 8, 32]} />
+                </mesh>
+            )
+            // Vertical Struts (between prongs)
+            const strutCount = prongCount
+            for (let i = 0; i < strutCount; i++) {
+                const angle = (i / strutCount) * Math.PI * 2 + (Math.PI / strutCount) // Offset to be between prongs
+                const x = Math.sin(angle) * railRadius
+                const z = Math.cos(angle) * railRadius
+                meshes.push(
+                    <mesh key={`strut-${i}`} position={[x, railHeight / 2, z]} material={metalMaterial}>
+                        <cylinderGeometry args={[0.03, 0.03, railHeight, 8]} />
+                    </mesh>
+                )
+            }
+        } else if (galleryStyle === 'Trellis') {
+            // Interwoven Curves (X-shape)
+            // Ideally we use TubeGeometry with a curve
+            const strutCount = prongCount
+            for (let i = 0; i < strutCount; i++) {
+                const angle = (i / strutCount) * Math.PI * 2
+                // Curve from Prong Base (Bottom) to Next Prong Top?
+                // Or easier: Just X shapes between prongs.
+                // Let's do simple diagonals for now.
+                const nextAngle = ((i + 1) / strutCount) * Math.PI * 2
+
+                const r = railRadius * 0.9
+                const h = railHeight
+
+                // Point A (Bottom of i)
+                const ax = Math.sin(angle) * r * 0.6
+                const az = Math.cos(angle) * r * 0.6
+                // Point B (Top of next)
+                const bx = Math.sin(nextAngle) * r
+                const bz = Math.cos(nextAngle) * r
+
+                // Midpoint
+                const mx = (ax + bx) / 2
+                const mz = (az + bz) / 2
+
+                // Curve logic is complex for procedural. 
+                // Let's use simple straight bars for "X" effect for now.
+                const dist = Math.sqrt((bx - ax) ** 2 + (bz - az) ** 2 + h ** 2)
+                const midPos = new THREE.Vector3((ax + bx) / 2, h / 2, (az + bz) / 2)
+                const orientation = new THREE.Vector3(bx - ax, h, bz - az).normalize()
+                const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), orientation)
+
+                meshes.push(
+                    <mesh key={`trellis-${i}`} position={midPos} quaternion={quat} material={metalMaterial}>
+                        <cylinderGeometry args={[0.03, 0.03, dist, 8]} />
+                    </mesh>
+                )
+                // We need the other diagonal for a true X, but let's stick to this "Swoop" for now.
+            }
+        }
+
+        return meshes
+    }, [prongStyle, finalGemScale, config.head.style, metalMaterial])
+
+    // --- HALO LOGIC ---
+    const haloItems = useMemo(() => {
+        if (config.head.style !== 'Halo') return []
+
+        // Convert gemDims (mm) to Scene Units
+        const w = gemDims.width * 0.1
+        const l = gemDims.length * 0.1
+        const stoneSize = 0.15 // 1.5mm stones default
+        const gap = 0.02
+
+        // Get positions from Logic
+        const positions = getHaloPositions(gemShape, w, l, stoneSize, gap)
+        return positions
+    }, [config.head.style, gemDims, gemShape])
+
+
     // --- RENDERING ---
     return (
         <group ref={groupRef} rotation={[Math.PI / 8, Math.PI / 4, 0]}>
@@ -126,76 +282,125 @@ export default function RingModel({ config }: { config: RingConfig }) {
                     <mesh geometry={currentGemGeom.pavilion} material={gemMaterial} />
                 </group>
 
-                {/* HEAD / SETTING Logic */}
-                {config.head.style === 'Solitaire' && (
-                    <group>
-                        {[45, 135, 225, 315].map(a => (
-                            <mesh key={a} material={metalMaterial} position={[
-                                Math.sin(a * Math.PI / 180) * 0.35 * finalGemScale,
-                                0.25 * finalGemScale,
-                                Math.cos(a * Math.PI / 180) * 0.35 * finalGemScale
-                            ]} rotation={[0.1, 0, 0.1]}>
-                                <cylinderGeometry args={[0.04, 0.05, 0.6 * finalGemScale, 8]} />
-                            </mesh>
-                        ))}
-                    </group>
+                {/* HEAD: Solitaire / Custom Prongs */}
+                {(config.head.style === 'Solitaire' || config.head.style === 'Vintage') && (
+                    <group>{prongMeshes}</group>
                 )}
 
-                {/* 2. HALO HEAD */}
-                {config.head.style === 'Halo' && (
-                    <group>
-                        {/* Halo Rail */}
-                        <mesh position={[0, -0.05, 0]} rotation={[Math.PI / 2, 0, 0]} material={metalMaterial}>
-                            <torusGeometry args={[0.45 * finalGemScale, 0.08, 8, 32]} />
-                        </mesh>
-
-                        {/* Halo Gems (Simplified Loop) */}
-                        {[0, 45, 90, 135, 180, 225, 270, 315].map(a => (
-                            <group key={a} position={[
-                                Math.sin(a * Math.PI / 180) * 0.45 * finalGemScale,
-                                -0.05,
-                                Math.cos(a * Math.PI / 180) * 0.45 * finalGemScale
-                            ]} scale={0.4}>
-                                <mesh geometry={sideGemGeom.crown} material={baseDiamondMaterial} />
-                                <mesh geometry={sideGemGeom.pavilion} material={baseDiamondMaterial} />
-                            </group>
-                        ))}
-
-                        {/* Center Prongs */}
-                        {[45, 135, 225, 315].map(a => (
-                            <mesh key={a} material={metalMaterial} position={[
-                                Math.sin(a * Math.PI / 180) * 0.25 * finalGemScale, 0.2, Math.cos(a * Math.PI / 180) * 0.25 * finalGemScale
-                            ]}><cylinderGeometry args={[0.04, 0.04, 0.5, 8]} /></mesh>
-                        ))}
-                    </group>
-                )}
-
-                {/* 3. THREE-STONE HEAD */}
+                {/* HEAD: Three-Stone */}
                 {config.head.style === 'Three-Stone' && (
                     <group>
-                        {/* Main Center Basket */}
-                        <mesh position={[0, -0.05, 0]} material={metalMaterial}><cylinderGeometry args={[0.25 * finalGemScale, 0.15, 0.2, 32]} /></mesh>
+                        {[-1, 1].map(dir => {
+                            const sideGemSize = config.threeStone?.size || 0.5
+                            const sideScale = sideGemSize // A bit simplistic, but works for scale factor relative to 1.0
+                            const sideShape = config.threeStone?.shape || 'Round'
+                            const sideGeom = getGemGeometry(sideShape)
 
-                        {/* Main Prongs */}
-                        {[45, 135, 225, 315].map(a => <mesh key={a} material={metalMaterial} position={[Math.sin(a * Math.PI / 180) * 0.25 * finalGemScale, 0.25, Math.cos(a * Math.PI / 180) * 0.25 * finalGemScale]}><cylinderGeometry args={[0.04, 0.04, 0.6, 16]} /></mesh>)}
+                            // Position: Sides of the main stone, angled down slightly
+                            // Gap from center: Main Radius + Side Radius
+                            const offset = (0.35 * finalGemScale) + (0.2 * sideScale)
+                            const angle = 0.3 // Radians tilt
+                            const x = dir * offset
+                            const y = -0.1 * finalGemScale // Lower than main
 
-                        {/* Side Stones */}
+                            return (
+                                <group key={`side-gem-${dir}`} position={[x, y, 0]} rotation={[0, 0, -dir * angle]} scale={sideScale}>
+                                    <mesh geometry={sideGeom.crown} material={baseDiamondMaterial} castShadow />
+                                    <mesh geometry={sideGeom.pavilion} material={baseDiamondMaterial} />
+
+                                    {/* Side Prongs (Simplified 3-prong per side stone) */}
+                                    {[0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].map((rad, i) => (
+                                        <mesh key={i} position={[Math.sin(rad) * 0.35, 0.1, Math.cos(rad) * 0.35]} material={metalMaterial}>
+                                            <cylinderGeometry args={[0.04, 0.04, 0.4, 8]} />
+                                            <mesh position={[0, 0.2, 0]}>
+                                                <sphereGeometry args={[0.045, 8, 8]} />
+                                            </mesh>
+                                        </mesh>
+                                    ))}
+
+                                    {/* Basket Rail */}
+                                    <mesh position={[0, -0.1, 0]} rotation={[Math.PI / 2, 0, 0]} material={metalMaterial}>
+                                        <torusGeometry args={[0.35, 0.03, 8, 16]} />
+                                    </mesh>
+                                </group>
+                            )
+                        })}
+                    </group>
+                )}
+
+                {/* HEAD: Halo */}
+                {config.head.style === 'Halo' && (
+                    <group>
+                        {/* Render Halo Stones */}
+                        {haloItems.map((item, i) => (
+                            <group key={i} position={item.position} rotation={item.rotation}>
+                                {/* Stones face UP by default */}
+                                <group scale={0.6}>
+                                    <mesh geometry={sideGemGeom.crown} material={baseDiamondMaterial} />
+                                    <mesh geometry={sideGemGeom.pavilion} material={baseDiamondMaterial} />
+                                </group>
+                                {/* Small Prong for Halo */}
+                                <mesh position={[0.05, 0, 0]} material={metalMaterial}>
+                                    <sphereGeometry args={[0.02, 8, 8]} />
+                                </mesh>
+                            </group>
+                        ))}
+
+                        {/* Inner Bezel / Seat for Main Stone (simplified) */}
+                        <mesh position={[0, 0.1 * finalGemScale, 0]} material={metalMaterial}>
+                            <cylinderGeometry args={[0.25 * finalGemScale, 0.25 * finalGemScale, 0.2, 16, 1, true]} />
+                            {/* Or just a rail */}
+                        </mesh>
+                    </group>
+                )}
+
+                {/* Side Stones (If Active) */}
+                {config.sideStones?.active && (
+                    <group>
+                        {/* Placeholder Pave Logic along Shank */}
                         {[-1, 1].map((dir) => (
-                            <group key={dir} position={[dir * 0.8 * finalGemScale, -0.2, 0]} rotation={[0, 0, -dir * 0.3]} scale={0.6}>
-                                <mesh geometry={sideGemGeom.crown} material={baseDiamondMaterial} position={[0, 0.3, 0]} />
-                                <mesh geometry={sideGemGeom.pavilion} material={baseDiamondMaterial} position={[0, 0.3, 0]} />
-                                {/* Basket */}
-                                <mesh position={[0, 0, 0]} material={metalMaterial}><cylinderGeometry args={[0.3, 0.1, 0.3, 16]} /></mesh>
+                            <group key={dir} position={[dir * 0.825, -0.5, 0]} rotation={[0, 0, -dir * 1.0]}>
+                                {/* Pave strip logic would go here */}
                             </group>
                         ))}
                     </group>
                 )}
 
-                {/* Main Gem */}
-                <group position={[0, 0.4 * finalGemScale, 0]} scale={gemScale}>
-                    <mesh geometry={currentGemGeom.crown} material={gemMaterial} castShadow />
-                    <mesh geometry={currentGemGeom.pavilion} material={gemMaterial} />
-                </group>
+                {/* ENGRAVING */}
+                {config.engraving?.text && (
+                    <group rotation={[Math.PI, 0, Math.PI]}>
+                        {/* Text Logic: Simple flat text for now, positioned inside bottom shank */}
+                        <Text
+                            font="https://fonts.gstatic.com/s/playfairdisplay/v30/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtM.woff"
+                            fontSize={0.25 * (config.engraving.size || 0.5)}
+                            maxWidth={2}
+                            lineHeight={1}
+                            letterSpacing={0.05}
+                            textAlign="center"
+                            anchorX="center"
+                            anchorY="middle"
+                            position={[0, 0.82, 0]} // Just inside the band (Radius ~0.825)
+                            rotation={[Math.PI / 2, 0, 0]} // Resting on inner surface?
+                            // Actually:
+                            // Inner surface normal points inwards (towards 0,0,0).
+                            // At bottom (angle PI), normal is UP (0,1,0).
+                            // Surface is at y = -0.825? No.
+                            // Ring is centered. Inner radius ~0.825.
+                            // If we want text at BOTTOM inside:
+                            // Pos = (0, -0.82, 0).
+                            // Normal = (0, 1, 0).
+                            // Text up-vector should be Z?
+                            color={metalMaterial.color} // Engraving matches metal (or slightly darker?)
+                        >
+                            {config.engraving.text}
+                            <meshStandardMaterial
+                                color={new THREE.Color(METALS[config.metal]).offsetHSL(0, 0, -0.2)}
+                                roughness={0.8}
+                                metalness={0.5}
+                            />
+                        </Text>
+                    </group>
+                )}
 
             </group>
         </group>

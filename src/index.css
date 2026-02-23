@@ -41,44 +41,38 @@
 
   /* PREMIUM DARK MODE */
   .dark {
-    /* Deepest Obsidian Background */
-    --background: 240 10% 3.9%;
-    /* #09090b - Zinc 950 base */
-    --foreground: 45 20% 96%;
-    /* Warm Pearl White */
+    /* Deepest Obsidian/Midnight Background */
+    --background: 240 10% 2%; /* Almost black */
+    --foreground: 45 10% 90%; /* Soft off-white, not harsh */
 
     /* Glassy / Deep Cards */
-    --card: 240 10% 5.9%;
-    /* Slightly lighter than bg */
-    --card-foreground: 45 20% 96%;
+    --card: 240 5% 6%;
+    --card-foreground: 45 10% 90%;
 
-    --popover: 240 10% 5.9%;
-    --popover-foreground: 45 20% 96%;
+    --popover: 240 5% 6%;
+    --popover-foreground: 45 10% 90%;
 
-    /* Luxury Gold */
-    --primary: 46 64% 52%;
-    /* #D4AF37ish */
-    --primary-foreground: 240 10% 3.9%;
-    /* Dark Text on Gold */
+    /* Luxury Gold (Soft Champagne Gold) */
+    --primary: 43 60% 65%; /* Soft, elegant gold */
+    --primary-foreground: 240 10% 2%; /* Dark Text on Gold */
 
-    --secondary: 240 3.7% 15.9%;
-    /* Deep Zinc */
-    --secondary-foreground: 45 20% 96%;
+    --secondary: 240 4% 12%;
+    --secondary-foreground: 45 10% 90%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 5% 60%;
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 45 20% 96%;
+    --accent: 43 60% 65%; /* Accent uses the gold */
+    --accent-foreground: 240 10% 2%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 45 20% 96%;
+    --destructive: 0 60% 40%;
+    --destructive-foreground: 45 10% 90%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 240 4% 12%; /* Very subtle borders */
+    --input: 240 4% 12%;
 
     /* Gold Ring Focus */
-    --ring: 46 64% 52%;
+    --ring: 43 60% 65%;
   }
 }
 

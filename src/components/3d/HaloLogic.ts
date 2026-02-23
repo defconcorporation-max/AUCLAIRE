@@ -157,8 +157,9 @@ export function getHaloPositions(
 
     // Convert 2D Ellipse to 3D Curve if needed
     if (shape === 'Oval' || shape === 'Round' || shape === 'Cushion') {
+        const ellipse = curve as unknown as THREE.EllipseCurve
         // Re-create as 3D path for consistency
-        const ellipsePoints = (curve as any).getPoints(64).map((p: any) => new THREE.Vector3(p.x, 0, p.y))
+        const ellipsePoints = ellipse.getPoints(64).map((p) => new THREE.Vector3(p.x, 0, p.y))
         curve = new THREE.CatmullRomCurve3(ellipsePoints, true)
     }
 
