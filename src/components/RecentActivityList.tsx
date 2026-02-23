@@ -22,14 +22,14 @@ export function RecentActivityList() {
                         <div className="flex-1 space-y-1.5">
                             <p className="font-serif text-[13px] text-gray-300">
                                 <span className="font-bold text-white group-hover:text-luxury-gold transition-colors">{activity.user_name}</span>
-                                <span className="text-gray-500 ml-1.5 italic">
+                                <span className="text-gray-400 ml-1.5 italic">
                                     {activity.action === 'status_change' ? 'changed status' :
                                         activity.action === 'update' ? 'updated details' :
                                             activity.action}
                                 </span>
                             </p>
-                            <p className="text-gray-400 text-xs line-clamp-2 leading-relaxed">{activity.details}</p>
-                            <p className="text-[9px] uppercase tracking-widest text-[#A68A56]/70 pt-1">
+                            <p className="text-gray-300 text-xs line-clamp-2 leading-relaxed">{activity.details}</p>
+                            <p className="text-[9px] uppercase tracking-widest text-[#A68A56]/80 pt-1">
                                 {new Date(activity.created_at).toLocaleString()}
                             </p>
                         </div>

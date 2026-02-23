@@ -33,7 +33,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
             <CardContent className="px-4 py-3">
                 <StatusBadge status={project.status} />
 
-                <div className="flex items-center justify-between gap-4 text-[10px] text-gray-500 uppercase tracking-widest mt-4 pt-3 border-t border-white/5">
+                <div className="flex items-center justify-between gap-4 text-[10px] text-gray-400 uppercase tracking-widest mt-4 pt-3 border-t border-white/5">
                     <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-luxury-gold/50" />
                         <span>Due {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'TBD'}</span>

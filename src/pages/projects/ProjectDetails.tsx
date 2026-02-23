@@ -215,7 +215,7 @@ export default function ProjectDetails() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 border-b border-white/5 pb-6 w-full relative">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/5 transition-colors group">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-300 hover:text-white hover:bg-white/5 transition-colors group">
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     </Button>
                     <div className="flex items-center gap-4">
@@ -232,7 +232,7 @@ export default function ProjectDetails() {
                             </Button>
                         )}
                         <h1 className="text-3xl font-serif font-bold text-white tracking-wide ml-2">{project.title}</h1>
-                        <div className="flex items-center gap-2 text-sm text-gray-400 ml-4 border-l border-white/10 pl-6">
+                        <div className="flex items-center gap-2 text-sm text-gray-300 ml-4 border-l border-white/10 pl-6">
                             <User className="w-4 h-4 text-luxury-gold/70" />
                             {!isEditingClient ? (
                                 <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ export default function ProjectDetails() {
                 )}
             </div>
             <div className="flex items-center justify-end gap-3 mt-[-20px]">
-                <span className="text-xs uppercase tracking-widest font-medium text-gray-500">Status:</span>
+                <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Status:</span>
                 <select
                     className="h-8 px-2 rounded-md border border-input bg-background text-sm capitalize"
                     value={project.status}
@@ -396,7 +396,7 @@ export default function ProjectDetails() {
                                 <Clock className="w-5 h-5 text-luxury-gold" />
                                 Design Approval Required
                             </CardTitle>
-                            <CardDescription className="text-gray-400">Your custom design is ready for review! Please leave feedback or approve it for production.</CardDescription>
+                            <CardDescription className="text-gray-300">Your custom design is ready for review! Please leave feedback or approve it for production.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-5">
                             <div className="flex gap-4">

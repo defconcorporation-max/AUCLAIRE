@@ -42,8 +42,10 @@
   /* PREMIUM DARK MODE */
   .dark {
     /* Deepest Obsidian/Midnight Background */
-    --background: 240 10% 2%; /* Almost black */
-    --foreground: 45 10% 90%; /* Soft off-white, not harsh */
+    --background: 240 10% 2%;
+    /* Almost black */
+    --foreground: 45 10% 90%;
+    /* Soft off-white, not harsh */
 
     /* Glassy / Deep Cards */
     --card: 240 5% 6%;
@@ -53,22 +55,26 @@
     --popover-foreground: 45 10% 90%;
 
     /* Luxury Gold (Soft Champagne Gold) */
-    --primary: 43 60% 65%; /* Soft, elegant gold */
-    --primary-foreground: 240 10% 2%; /* Dark Text on Gold */
+    --primary: 43 60% 65%;
+    /* Soft, elegant gold */
+    --primary-foreground: 240 10% 2%;
+    /* Dark Text on Gold */
 
     --secondary: 240 4% 12%;
     --secondary-foreground: 45 10% 90%;
 
     --muted: 240 4% 12%;
-    --muted-foreground: 240 5% 60%;
+    --muted-foreground: 240 5% 82%;
 
-    --accent: 43 60% 65%; /* Accent uses the gold */
+    --accent: 43 60% 65%;
+    /* Accent uses the gold */
     --accent-foreground: 240 10% 2%;
 
     --destructive: 0 60% 40%;
     --destructive-foreground: 45 10% 90%;
 
-    --border: 240 4% 12%; /* Very subtle borders */
+    --border: 240 4% 12%;
+    /* Very subtle borders */
     --input: 240 4% 12%;
 
     /* Gold Ring Focus */

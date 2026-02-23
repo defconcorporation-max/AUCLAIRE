@@ -60,30 +60,30 @@ export default function PreviewModal({ config, materials, onClose }: PreviewModa
                     {/* Summary Grid */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <span className="text-[10px] text-gray-500 uppercase font-bold">Center Stone</span>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">Center Stone</span>
                             <div className="text-white text-sm font-medium">{config.gem.shape || 'Round'} Diamond</div>
                             <div className="text-[#40a9ff] text-xs font-mono">{config.gem.size || 1.0} Carat</div>
                         </div>
                         <div className="space-y-1">
-                            <span className="text-[10px] text-gray-500 uppercase font-bold">Metal</span>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">Metal</span>
                             <div className="text-white text-sm font-medium">{materials.metal || 'Gold (18k)'}</div>
-                            <div className="text-gray-400 text-xs text-xs">High Polish Finish</div>
+                            <div className="text-gray-300 text-xs">High Polish Finish</div>
                         </div>
                         <div className="space-y-1">
-                            <span className="text-[10px] text-gray-500 uppercase font-bold">Setting Style</span>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">Setting Style</span>
                             <div className="text-white text-sm font-medium">{config.head.style || 'Solitaire'}</div>
-                            <div className="text-gray-400 text-xs">{config.head.prongStyle || '4-Prong'}</div>
+                            <div className="text-gray-300 text-xs">{config.head.prongStyle || '4-Prong'}</div>
                         </div>
                         <div className="space-y-1">
-                            <span className="text-[10px] text-gray-500 uppercase font-bold">Band Style</span>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">Band Style</span>
                             <div className="text-white text-sm font-medium">{config.shank.style || 'Classic'}</div>
-                            <div className="text-gray-400 text-xs">{config.shank.profile || 'Court'} Profile</div>
+                            <div className="text-gray-300 text-xs">{config.shank.profile || 'Court'} Profile</div>
                         </div>
                     </div>
 
                     {/* Price Estimate */}
                     <div className="p-4 bg-[#111] border border-[#333] rounded flex items-center justify-between">
-                        <span className="text-xs text-gray-400 uppercase font-bold tracking-wider">Estimated Value</span>
+                        <span className="text-xs text-gray-300 uppercase font-bold tracking-wider">Estimated Value</span>
                         <span className="text-xl text-[#40a9ff] font-mono font-bold">${totalPrice.toLocaleString()}</span>
                     </div>
 

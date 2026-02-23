@@ -23,7 +23,7 @@ export default function ClientDetails() {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
                     <ArrowLeft className="w-5 h-5" />
                 </Button>
                 <div>
@@ -33,7 +33,7 @@ export default function ClientDetails() {
                     </div>
                 </div>
                 <div className="ml-auto">
-                    <Badge variant="outline" className={`border-luxury-gold/50 tracking-widest uppercase text-[10px] ${client.status === 'active' ? 'bg-luxury-gold/10 text-luxury-gold' : 'text-gray-500 border-white/10'}`}>
+                    <Badge variant="outline" className={`border-luxury-gold/50 tracking-widest uppercase text-[10px] ${client.status === 'active' ? 'bg-luxury-gold/10 text-luxury-gold' : 'text-gray-400 border-white/10'}`}>
                         {client.status}
                     </Badge>
                 </div>
@@ -78,7 +78,7 @@ export default function ClientDetails() {
                         <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">Notes</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6 relative z-10">
-                        <p className="text-sm text-gray-400 font-serif leading-relaxed italic">{client.notes || 'No private notes added.'}</p>
+                        <p className="text-sm text-gray-300 font-serif leading-relaxed italic">{client.notes || 'No private notes added.'}</p>
                     </CardContent>
                 </Card>
             </div>
