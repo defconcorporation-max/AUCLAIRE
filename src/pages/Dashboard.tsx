@@ -39,7 +39,8 @@ export default function Dashboard() {
 
     // ... (filters)
     const manufacturerDesignRequests = projects?.filter(p => p.status === 'designing' || p.status === 'design_modification' || p.status === '3d_model') || [];
-    const manufacturerProduction = projects?.filter(p => p.status === 'production' || p.status === 'approved_for_production') || [];
+    const manufacturerPendingProduction = projects?.filter(p => p.status === 'approved_for_production') || [];
+    const manufacturerOngoingProduction = projects?.filter(p => p.status === 'production') || [];
     const adminDesignReady = projects?.filter(p => p.status === 'design_ready') || [];
     const recentProjects = projects?.slice(0, 5) || [];
 
@@ -128,7 +129,7 @@ export default function Dashboard() {
 
             {/* MANUFACTURER DASHBOARD */}
             {role === 'manufacturer' && (
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {/* 1. DESIGN REQUESTS */}
                     <Card className="border-l-4 border-l-blue-500">
                         <CardHeader>
@@ -161,49 +162,76 @@ export default function Dashboard() {
                         </CardContent>
                     </Card>
 
-                    {/* 2. PRODUCTION TO LAUNCH */}
+                    {/* 2. PENDING PRODUCTION */}
                     <Card className="border-l-4 border-l-green-500">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <AlertCircle className="w-5 h-5 text-green-500" />
-                                Production to Launch
+                                Pending Production
                             </CardTitle>
                             <CardDescription>Approved designs ready for manufacturing.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {manufacturerProduction.length === 0 ? (
+                            {manufacturerPendingProduction.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">No approved production tasks.</p>
                             ) : (
                                 <div className="space-y-4">
-                                    {manufacturerProduction.map(project => (
+                                    {manufacturerPendingProduction.map(project => (
                                         <div key={project.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                                             <div>
                                                 <div className="font-medium text-sm">{project.title}</div>
                                                 <div className="text-xs text-muted-foreground">
-                                                    {project.status === 'approved_for_production' ? 'Pending Production' : 'Production Started'}
+                                                    Pending Production
                                                     {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
                                                 </div>
                                             </div>
 
-                                            {project.status === 'approved_for_production' ? (
-                                                <Button
-                                                    size="sm"
-                                                    className="bg-green-600 hover:bg-green-700"
-                                                    onClick={async () => {
-                                                        if (confirm("Start production for this project?")) {
-                                                            await apiProjects.updateStatus(project.id, 'production');
-                                                            // Force refresh or invalidate query
-                                                            window.location.reload();
-                                                        }
-                                                    }}
-                                                >
-                                                    Start Production
-                                                </Button>
-                                            ) : (
-                                                <Button size="sm" variant="outline" asChild>
-                                                    <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
-                                                </Button>
-                                            )}
+                                            <Button
+                                                size="sm"
+                                                className="bg-green-600 hover:bg-green-700"
+                                                onClick={async () => {
+                                                    if (confirm("Start production for this project?")) {
+                                                        await apiProjects.updateStatus(project.id, 'production');
+                                                        window.location.reload();
+                                                    }
+                                                }}
+                                            >
+                                                Start Production
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* 3. ONGOING PRODUCTION */}
+                    <Card className="border-l-4 border-l-purple-500">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-purple-500" />
+                                Ongoing Production
+                            </CardTitle>
+                            <CardDescription>Projects currently being manufactured.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {manufacturerOngoingProduction.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No projects currently in production.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {manufacturerOngoingProduction.map(project => (
+                                        <div key={project.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                                            <div>
+                                                <div className="font-medium text-sm">{project.title}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    Production Started
+                                                    {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
+                                                </div>
+                                            </div>
+
+                                            <Button size="sm" variant="outline" asChild>
+                                                <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
+                                            </Button>
                                         </div>
                                     ))}
                                 </div>
