@@ -79,6 +79,7 @@ function FormationContent() {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const expertiseSteps = [
         { id: 'cuts', title: 'Coupes', emoji: '💎', fullTitle: 'Guide des Coupes (Diamants)' },
+        { id: 'gemstones', title: 'Gemmes', emoji: '🌈', fullTitle: 'Types de Gemmes' },
         { id: 'settings', title: 'Montures', emoji: '💍', fullTitle: 'Types de Settings (Montures)' },
         { id: 'bandStyle', title: 'Joncs', emoji: '➖', fullTitle: 'Types de Jonc (Band Style)' },
         { id: 'bandSetting', title: 'Sertissages', emoji: '🛡️', fullTitle: 'Types de Sertissage du Jonc' },
@@ -463,8 +464,44 @@ function FormationContent() {
                                 </section>
                             )}
 
-                            {/* SECTION TYPES DE SETTINGS */}
+                            {/* SECTION TYPES DE GEMMES */}
                             {currentExpertiseStep === 1 && (
+                                <section className="animate-in fade-in slide-in-from-right-8 duration-500">
+                                    <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
+                                        <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">🌈</span> Les Pierres Précieuses (Gemmes)
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4">
+                                        {[
+                                            { title: 'Diamant', desc: "La pierre précieuse suprême. Note de 10/10 sur l'échelle de Mohs (la plus dure au monde). Brillance incomparable et durabilité parfaite pour le quotidien.", imgs: ['https://assets.vrai.com/25216/1683871270-petite-4-prong-solitaire-ring-oval-1-50-ct-plain-upright-yellow.jpg?ar=1%253A1&auto=format%2C+compress&crop=focalpoint&fit=crop&q=60&w=1440', 'https://www.brilliantearth.com/media/product_new_images/7D/BE1DPR14R_1_white_top.jpg', 'https://i.etsystatic.com/15510683/r/il/663c0f/4751474921/il_1080xN.4751474921_1g9h.jpg'], tags: ['Dureté 10', 'Éclat absolu'] },
+                                            { title: 'Saphir', desc: "Le saphir bleu est le plus populaire, mais existe dans toutes les couleurs sauf le rouge. Note de 9/10 sur l'échelle de Mohs. Très robuste et élégant.", imgs: ['https://i.etsystatic.com/7936195/r/il/e428cf/2188267605/il_1080xN.2188267605_r8f4.jpg', 'https://i.etsystatic.com/11261314/r/il/a7b189/3419912065/il_fullxfull.3419912065_n0j4.jpg', 'https://i.etsystatic.com/8328114/r/il/3de80b/3782500135/il_570xN.3782500135_q2r4.jpg'], tags: ['Dureté 9', 'Royauté'] },
+                                            { title: 'Rubis', desc: "Même famille que le saphir (Corindon) mais de couleur rouge intense due au chrome. Note de 9/10 sur l'échelle de Mohs. Symbole de passion.", imgs: ['https://i.etsystatic.com/15286595/r/il/752dd1/4984180436/il_570xN.4984180436_l4f2.jpg', 'https://www.capucinne.com/cdn/shop/products/ruby-engagement-ring-vintage-pave-ring-970364.jpg?v=1716301389', 'https://i.etsystatic.com/8328114/r/il/5b21ea/1987593281/il_570xN.1987593281_f9c2.jpg'], tags: ['Dureté 9', 'Passion'] },
+                                            { title: 'Émeraude', desc: "Magnifique couleur verte mais plus délicate (7.5 - 8/10 sur Mohs). Elle contient des 'jardins' (inclusions naturelles). Sensible aux chocs violents.", imgs: ['https://www.gabrielny.com/media/catalog/product/E/R/ER15764R4W44JJ-1.jpg', 'https://i.etsystatic.com/14299479/r/il/c8abf8/2471616782/il_1080xN.2471616782_m9c9.jpg', 'https://i.etsystatic.com/8328114/r/il/30cf9d/2393375865/il_570xN.2393375865_82c2.jpg'], tags: ['Dureté 8', 'Délicat'] },
+                                        ].map(item => (
+                                            <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg flex flex-col">
+                                                <div className="flex h-32 overflow-hidden bg-black/50">
+                                                    <ImageWithPreview src={item.imgs[0]} />
+                                                    <ImageWithPreview src={item.imgs[1]} />
+                                                    <ImageWithPreview src={item.imgs[2]} />
+                                                </div>
+                                                <div className="p-5 flex-1 flex flex-col">
+                                                    <h3 className="text-xl font-serif text-white mb-2">{item.title}</h3>
+                                                    <div className="mb-4">
+                                                        <p className="text-xs text-gray-400 leading-relaxed">{item.desc}</p>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2 mt-auto">
+                                                        {item.tags.map(tag => (
+                                                            <span key={tag} className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">{tag}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* SECTION TYPES DE SETTINGS */}
+                            {currentExpertiseStep === 2 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">💍</span> Types de Settings (Montures)
@@ -501,7 +538,7 @@ function FormationContent() {
                             )}
 
                             {/* SECTION TYPES DE JONC */}
-                            {currentExpertiseStep === 2 && (
+                            {currentExpertiseStep === 3 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">➖</span> Types de Jonc (Band Style)
@@ -537,7 +574,7 @@ function FormationContent() {
                             )}
 
                             {/* SECTION TYPES DE SERTISSAGE DU JONC */}
-                            {currentExpertiseStep === 3 && (
+                            {currentExpertiseStep === 4 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">🛡️</span> Types de Sertissage du Jonc
@@ -573,7 +610,7 @@ function FormationContent() {
                             )}
 
                             {/* SECTION TYPES DE PRONGS */}
-                            {currentExpertiseStep === 4 && (
+                            {currentExpertiseStep === 5 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">🦅</span> Types de Prongs (Griffes)
@@ -609,7 +646,7 @@ function FormationContent() {
                             )}
 
                             {/* SECTION BAGUES HIS & HERS */}
-                            {currentExpertiseStep === 5 && (
+                            {currentExpertiseStep === 6 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">🎎</span> Bagues His & Hers (Alliances)
@@ -645,7 +682,7 @@ function FormationContent() {
                             )}
 
                             {/* SECTION LES 4C DU DIAMANT */}
-                            {currentExpertiseStep === 6 && (
+                            {currentExpertiseStep === 7 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">🔍</span> Les 4C du Diamant
@@ -684,7 +721,7 @@ function FormationContent() {
                             )}
 
                             {/* SECTION ANATOMIE */}
-                            {currentExpertiseStep === 7 && (
+                            {currentExpertiseStep === 8 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">💍</span> Anatomie d'une Bague
@@ -721,7 +758,7 @@ function FormationContent() {
                             )}
 
                             {/* SECTION METAUX AVANCES */}
-                            {currentExpertiseStep === 8 && (
+                            {currentExpertiseStep === 9 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">✨</span> Expertise Métaux & Allergies
@@ -746,6 +783,7 @@ function FormationContent() {
                                             <div className="space-y-4 text-sm text-gray-300">
                                                 <p><strong className="text-white">Or Rose :</strong> Obtenu par l'ajout de cuivre. C'est l'alliage le plus robuste après le platine.</p>
                                                 <p><strong className="text-white">Or Jaune :</strong> Obtenu par un mélange d'argent et de cuivre avec l'or pur.</p>
+                                                <p><strong className="text-white">Argent (925) :</strong> Moins cher mais très malléable. S'oxyde (noircit) avec le temps et se raye facilement. Déconseillé pour une bague de fiançailles portée au quotidien.</p>
                                                 <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mt-4">
                                                     <h4 className="text-red-400 font-bold mb-2">Attention aux allergies (Nickel)</h4>
                                                     <p className="text-xs">Certaines femmes sont allergiques au nickel contenu dans beaucoup d'alliages d'Or Blanc commercial. Si la cliente est sensible, orientez SYSTEMATIQUEMENT vers :</p>
@@ -760,7 +798,8 @@ function FormationContent() {
                                 </section>
                             )}
 
-                            {currentExpertiseStep === 9 && (
+                            {/* SECTION OR JAUNE */}
+                            {currentExpertiseStep === 10 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">⚖️</span> Différence Visuelle Or Jaune
