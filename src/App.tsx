@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: V2.4 Fixed Protected Route Location Hook
-console.log("App Version: V2.4 - Fixed Protected Route Location Hook");
+// Force new deployment: V2.5 Added Formation Guide
+console.log("App Version: V2.5 - Added Formation Guide");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
