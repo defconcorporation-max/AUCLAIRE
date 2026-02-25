@@ -80,6 +80,11 @@ function FormationContent() {
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
         objectives: true,
         cuts: true,
+        settings: true,
+        bandStyle: true,
+        bandSetting: true,
+        prongs: true,
+        hisHers: true,
         diamonds4c: true,
         anatomy: true,
         metals: true,
@@ -425,6 +430,162 @@ function FormationContent() {
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* SECTION TYPES DE SETTINGS */}
+                        <section>
+                            <SectionHeader id="settings" emoji="💍" title="Types de Settings (Montures)" expanded={expandedSections.settings} toggleSection={toggleSection} />
+                            {expandedSections.settings && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4">
+                                    {[
+                                        { title: 'Solitaire', imgs: ['https://images.openai.com/static-rsc-3/jLLpW5twc-nrlOekGSf8X7XYNrp0yl2m_g_3DVPldpgyE8B44bmLR_XxLpzGZTTacm5Onbu6AwgVLOPNDNtP74VbOiWPA3F4RQg1K8UBxtY?purpose=fullsize&v=1', 'https://eragem.com/media/catalog/product/cache/e4507427afc9429093d76362a19cfadc/7/5/75925a.jpg', 'https://i.etsystatic.com/8918992/r/il/d53bd8/3427360428/il_570xN.3427360428_6m39.jpg'], tags: ['une pierre centrale', 'accent sur diamant', 'intemporel'] },
+                                        { title: 'Halo', imgs: ['https://images.openai.com/static-rsc-3/RJ6e4JkTqds8DIGMLf8-l5ng8zXpryNYaXbpss6jZpaemUwKRKiiJmExE73FX5a74YfkeDNhdfOOn6qEo4CwY7pi7DAYcx-pfnTF8COdPZk?purpose=fullsize&v=1', 'https://i.etsystatic.com/10959784/r/il/5f7605/3397691302/il_fullxfull.3397691302_sgom.jpg', 'https://images.openai.com/static-rsc-3/OsQgxlKW7BCFrNCnxpZmpk0OeTc3E0BvQvVGkBFgQy8khDKlRq0VjAqBqY-UgvaoxOzU-kmxu5jsUiosnsJjPAql8QKD9QVqnSqgT-lFPXk?purpose=fullsize&v=1'], tags: ['petits diamants entourent pierre', 'illusion taille', 'brillance'] },
+                                        { title: 'Hidden Halo', imgs: ['https://www.kingofjewelry.com/cdn/shop/products/330ctroundwithhiddenhalosize475omidfriend-003_480x.jpg?v=1652139175', 'https://www.kingofjewelry.com/cdn/shop/products/DSC_0717_0002_1800x1800.jpg?v=1714585598', 'https://i.etsystatic.com/6659792/r/il/f4b5c7/5408917526/il_fullxfull.5408917526_8rcc.jpg'], tags: ['halo sous la pierre', 'luxe subtil'] },
+                                        { title: 'Pavé', imgs: ['https://images.openai.com/static-rsc-3/wI_AVGI4Xmqvb6GmSevcys37OcQbw_YkbzTaTcQyMDPH3tG7LAx0rThe1NYFieY3HzNnZ9oNTZpEoYeDGqT7adBYJ3GAukndvvIdtGopOTA?purpose=fullsize&v=1', 'https://www.goodstoneinc.com/cdn/shop/products/image_bf834f80-17b3-4ce7-84c3-339515eb7637_1200x.jpg?v=1737402864', 'https://www.laurenbjewelry.com/media/catalog/product/cache/1/image/720x720/9df78eab33525d08d6e5fb8d27136e95/r/o/round_diamond_yellow_gold_ring.jpg'], tags: ['diamants sur jonc', 'éclat continu'] },
+                                        { title: 'Three-Stone', imgs: ['https://bhjewelers.com/cdn/shop/products/3-50-carat-center-3-stone-round-brilliant-cut-diamond-engagement-ring.jpg?v=1605573760', 'https://www.goodstoneinc.com/cdn/shop/products/image_9b522719-5623-4dac-9b11-1af8fda8f8e0_1200x.jpg?v=1695308605', 'https://appelts.ca/cdn/shop/files/Gabriel-14K-Yellow-Gold-Round-Three-Stone-Diamond-Engagement-Ring_ER14745R4Y44JJ-1.webp?v=1717686368&width=2048'], tags: ['symbolique passé-présent-futur'] },
+                                    ].map(item => (
+                                        <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg flex flex-col">
+                                            <div className="flex h-32 overflow-hidden bg-black/50">
+                                                <ImageWithPreview src={item.imgs[0]} />
+                                                <ImageWithPreview src={item.imgs[1]} />
+                                                <ImageWithPreview src={item.imgs[2]} />
+                                            </div>
+                                            <div className="p-5 flex-1 flex flex-col">
+                                                <h3 className="text-xl font-serif text-white mb-4">{item.title}</h3>
+                                                <div className="flex flex-wrap gap-2 mt-auto">
+                                                    {item.tags.map(tag => (
+                                                        <span key={tag} className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">{tag}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        {/* SECTION TYPES DE JONC */}
+                        <section>
+                            <SectionHeader id="bandStyle" emoji="➖" title="Types de Jonc (Band Style)" expanded={expandedSections.bandStyle} toggleSection={toggleSection} />
+                            {expandedSections.bandStyle && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4">
+                                    {[
+                                        { title: 'Jonc classique', imgs: ['https://lilyarkwright.com/cdn/shop/files/PetitePlainWeddingRing1.65mm18kYellowGoldLilyArkwrightFront_1600x.webp?v=1716475838', 'https://i.etsystatic.com/15510683/r/il/b13cee/4604554620/il_1080xN.4604554620_t6gh.jpg', 'https://i.etsystatic.com/5121484/r/il/2b6481/5244534768/il_570xN.5244534768_mqer.jpg'], tags: ['minimaliste', 'intemporel'] },
+                                        { title: 'Pavé band', imgs: ['https://images.openai.com/static-rsc-3/wI_AVGI4Xmqvb6GmSevcys37OcQbw_YkbzTaTcQyMDPH3tG7LAx0rThe1NYFieY3HzNnZ9oNTZpEoYeDGqT7adBYJ3GAukndvvIdtGopOTA?purpose=fullsize&v=1', 'https://www.artemerstudio.com/cdn/shop/products/Arced-Diamond-Pave-Wedding-Band-CLOSEUP_2400x.jpg?v=1660653561', 'https://www.goodstoneinc.com/cdn/shop/products/image_bf834f80-17b3-4ce7-84c3-339515eb7637_1200x.jpg?v=1737402864'], tags: ['brillance', 'luxe'] },
+                                        { title: 'Tapered band', imgs: ['https://i.etsystatic.com/9792770/r/il/7cb61f/2445852991/il_1080xN.2445852991_lg2m.jpg', 'https://spencediamonds.com/assets/products/1596-A.jpg', 'https://i.etsystatic.com/15275469/r/il/cc3034/3994108020/il_1080xN.3994108020_ie14.jpg'], tags: ['accent pierre centrale'] },
+                                        { title: 'Split shank', imgs: ['https://rusticandmain.com/cdn/shop/files/Round-Diamond-Solitaire-Engagement-Ring-Art-Nouveau-Inspired-Split-Shank-Setting-The-Selwyn-Rustic-And-Main_9_800x.jpg?v=1747784784', 'https://berlingerjewelry.com/cdn/shop/files/SplitShankOvalDiamondSolitaire_0006_P2620545_1500x.jpg?v=1727475257', 'https://www.kingofjewelry.com/cdn/shop/products/101ctcushionhalogvs1c6799405DSC_0138_0001s9-ea2_1800x1800.jpg?v=1714585746'], tags: ['design moderne', 'originalité'] },
+                                    ].map(item => (
+                                        <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg flex flex-col">
+                                            <div className="flex h-32 overflow-hidden bg-black/50">
+                                                <ImageWithPreview src={item.imgs[0]} />
+                                                <ImageWithPreview src={item.imgs[1]} />
+                                                <ImageWithPreview src={item.imgs[2]} />
+                                            </div>
+                                            <div className="p-5 flex-1 flex flex-col">
+                                                <h3 className="text-xl font-serif text-white mb-4">{item.title}</h3>
+                                                <div className="flex flex-wrap gap-2 mt-auto">
+                                                    {item.tags.map(tag => (
+                                                        <span key={tag} className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">{tag}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        {/* SECTION TYPES DE SERTISSAGE DU JONC */}
+                        <section>
+                            <SectionHeader id="bandSetting" emoji="🛡️" title="Types de Sertissage du Jonc" expanded={expandedSections.bandSetting} toggleSection={toggleSection} />
+                            {expandedSections.bandSetting && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4">
+                                    {[
+                                        { title: 'Pavé serti', imgs: ['https://images.openai.com/static-rsc-3/cfN_HgiCnRv94cjCVljC3P3aAbcdOSIDXKa-as6MfVPDJgEWEv2XASN0MnRP3B_MXLjmXPCzKFhIeI5bag47qCHRjd_uiA3QlQK-SuPD04E?purpose=fullsize&v=1', 'https://images.openai.com/static-rsc-3/wI_AVGI4Xmqvb6GmSevcys37OcQbw_YkbzTaTcQyMDPH3tG7LAx0rThe1NYFieY3HzNnZ9oNTZpEoYeDGqT7adBYJ3GAukndvvIdtGopOTA?purpose=fullsize&v=1', 'https://images.openai.com/static-rsc-3/cFWTZW55KEkH_zjLqnTDV06LQ3VOpCnJExQBWUiTmMh44XripfGq2E_fuIdjTg8wnFP5GVZ6ZjSAf___6qSC5vPJ2-Dve7jdlBsClKW3qOE?purpose=fullsize&v=1'], tags: ['très rapprochés', 'effet continu'] },
+                                        { title: 'Channel setting', imgs: ['https://zoom.jewelryimages.net/edge/diamondsdirect/images/edge/110-00896-02.jpg', 'https://cavaliergastown.com/cdn/shop/files/Round_Diamond_Channel_Set_Band_2.7mm_5.jpg?v=1727892693&width=1080', 'https://media.tiffany.com/is/image/Tiffany/EcomItemL2/the-tiffany-setting-engagement-ring-with-a-channel-set-diamond-band-in-platinum-26208149_996005_ED_M.jpg?%24cropN=0.1%2C0.1%2C0.8%2C0.8&defaultImage=NoImageAvailableInternal&op_usm=1.75%2C1.0%2C6.0'], tags: ['encastrés', 'protection élevée'] },
+                                        { title: 'Bezel setting', imgs: ['https://www.goodstoneinc.com/cdn/shop/files/5stonehalfwaybezelweddingbandsovalsYG_1200x.png?v=1719003102', 'https://fluidjewellery.com/cdn/shop/files/Bezel-Solitaire-ring-yellow-gold.jpg?v=1712173656', 'https://www.goodstoneinc.com/cdn/shop/files/image_fcc79266-7ebe-4fc3-8ba6-645a07fa7e25_1200x.jpg?v=1740065395'], tags: ['entouré de métal', 'sécurité maximale'] },
+                                        { title: 'Shared prong band', imgs: ['https://www.starlingjewelry.com/cdn/shop/files/shared-prong-2.jpg?v=1684274030&width=1090', 'https://image.brilliantearth.com/media/product_new_images/7D/BE2PD14R40_white_top.jpg', 'https://ferkosfinejewelry.com/cdn/shop/files/R11646LS_1x1_2ef6c8d9-76ed-41e8-84a3-732f294d9604_635x_crop_center%402x.jpg?v=1699105555'], tags: ['maximise lumière'] },
+                                    ].map(item => (
+                                        <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg flex flex-col">
+                                            <div className="flex h-32 overflow-hidden bg-black/50">
+                                                <ImageWithPreview src={item.imgs[0]} />
+                                                <ImageWithPreview src={item.imgs[1]} />
+                                                <ImageWithPreview src={item.imgs[2]} />
+                                            </div>
+                                            <div className="p-5 flex-1 flex flex-col">
+                                                <h3 className="text-xl font-serif text-white mb-4">{item.title}</h3>
+                                                <div className="flex flex-wrap gap-2 mt-auto">
+                                                    {item.tags.map(tag => (
+                                                        <span key={tag} className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">{tag}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        {/* SECTION TYPES DE PRONGS */}
+                        <section>
+                            <SectionHeader id="prongs" emoji="🦅" title="Types de Prongs (Griffes)" expanded={expandedSections.prongs} toggleSection={toggleSection} />
+                            {expandedSections.prongs && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4">
+                                    {[
+                                        { title: '4 prongs', imgs: ['https://images.openai.com/static-rsc-3/16a7zUVD7iGVnNTb88znrb_nb8kF6wgsq7mczlkQ4C5nC-gxnKq2Y5U5yzUTFCEf7y1w5mdn4xth7rIJNmwZpfqdZKG3l1fgcD0e-dMfeLA?purpose=fullsize&v=1', 'https://assets.vrai.com/25216/1683871270-petite-4-prong-solitaire-ring-oval-1-50-ct-plain-upright-yellow.jpg?ar=1%253A1&auto=format%2C+compress&crop=focalpoint&fit=crop&q=60&w=1440', 'https://spencediamonds.com/assets/products/8082-B.jpg'], tags: ['expose plus pierre', 'minimaliste'] },
+                                        { title: '6 prongs', imgs: ['https://www.diamondmansion.com/media/catalog/product/design/SOL-6272/colorless/white/round/1573500246-Classic-Round-Cut-Knife-Edge-6-Prong-Solitaire-Diamond-Engagement-Ring-White-Gold-Platinum-Front-View.jpg', 'https://images.openai.com/static-rsc-3/X9kZ1qUDpFCOxVyQ5gfOPuH2B5rzpHU7cTQakXEzfTlbmlY92nQV3FJ4Sygs840Y196rMU2YikfLcbccf-xiAG-isdDR42YYJiXnj7pcP9g?purpose=fullsize&v=1', 'https://www.whiteflash.com/photos/2020/01/th500/Valoria-Petite-Six-Prong-Solitaire-Engagement-Ring_gi_11843_b-174662.jpg'], tags: ['sécurité maximale', 'look classique'] },
+                                        { title: 'Claw prongs', imgs: ['https://www.moissaniteco.com/cache/media/products-media-large/enr139ov_89765.jpg', 'https://i.etsystatic.com/19986056/r/il/e21290/5996294278/il_570xN.5996294278_kns0.jpg', 'https://www.whiteflash.com/articlefiles/prong-sample/whiteflash-4-prong-sample-petite-claw-prong.jpg'], tags: ['look luxueux', 'finesse'] },
+                                        { title: 'Double prongs', imgs: ['https://www.peoplesjewellers.com/productimages/processed/V-20300938_0_800.jpg', 'https://i.etsystatic.com/19986056/r/il/e21290/5996294278/il_1080xN.5996294278_kns0.jpg', 'https://www.geoffreysdiamonds.com/cdn/shop/products/84958.side_1080x.jpg?v=1677991605'], tags: ['design distinctif', 'sécurité & style'] },
+                                    ].map(item => (
+                                        <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg flex flex-col">
+                                            <div className="flex h-32 overflow-hidden bg-black/50">
+                                                <ImageWithPreview src={item.imgs[0]} />
+                                                <ImageWithPreview src={item.imgs[1]} />
+                                                <ImageWithPreview src={item.imgs[2]} />
+                                            </div>
+                                            <div className="p-5 flex-1 flex flex-col">
+                                                <h3 className="text-xl font-serif text-white mb-4">{item.title}</h3>
+                                                <div className="flex flex-wrap gap-2 mt-auto">
+                                                    {item.tags.map(tag => (
+                                                        <span key={tag} className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">{tag}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        {/* SECTION BAGUES HIS & HERS */}
+                        <section>
+                            <SectionHeader id="hisHers" emoji="🎎" title="Bagues His & Hers (Alliances)" expanded={expandedSections.hisHers} toggleSection={toggleSection} />
+                            {expandedSections.hisHers && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4">
+                                    {[
+                                        { title: 'Classique', imgs: ['https://i.etsystatic.com/12694725/r/il/8aea63/5443450830/il_570xN.5443450830_2eyu.jpg', 'https://images.openai.com/static-rsc-3/1yOnuSiYlq-VKerhtC6H5fE9EGYi8RkYEOixp-3awaO_AHTeO7JJGiLSzjYiNTyJEImB57BDzK3j3g091Zbvpb6QeRJOH7gpLB8ILadCu6I?purpose=fullsize&v=1', 'https://i.etsystatic.com/32363186/r/il/013421/3489083404/il_fullxfull.3489083404_mvs8.jpg'], tags: ['harmonie', 'intemporalité'] },
+                                        { title: 'Diamanté', imgs: ['https://m.media-amazon.com/images/I/712FpdCYeEL._AC_UY1000_.jpg', 'https://i.etsystatic.com/24547332/r/il/1f20b8/4157656731/il_570xN.4157656731_tkox.jpg', 'https://i.etsystatic.com/12694725/r/il/1ea40a/5389665711/il_fullxfull.5389665711_qhqe.jpg'], tags: ['luxe', 'cohérence couple'] },
+                                        { title: 'Personnalisé', imgs: ['https://rusticandmain.com/cdn/shop/files/apollo-luna-set-gold-hammered-rustic-and-main.jpg?v=1692722570', 'https://i.etsystatic.com/21424441/r/il/a453f2/5936826851/il_570xN.5936826851_ko2v.jpg', 'https://i.etsystatic.com/25935622/r/il/ed4dac/6555146818/il_570xN.6555146818_g9jm.jpg'], tags: ['unicité', 'storytelling'] },
+                                        { title: 'Mix métaux', imgs: ['https://i.etsystatic.com/12694725/r/il/5c5489/1529065680/il_fullxfull.1529065680_tgwp.jpg', 'https://i.etsystatic.com/40226048/r/il/9cda7b/5818823339/il_fullxfull.5818823339_7ri9.jpg', 'https://images.openai.com/static-rsc-3/BAzGpx5wTHFLbmIDAe2Ov7ip55i7SJhtih4jxOesjA9-3wy-LtQeiE2ftesPPrAMoqbKJDDtdkGMP0xLNNzPQUadTaY1eyEGh471_UYcT5A?purpose=fullsize&v=1'], tags: ['modernité', 'contraste'] },
+                                    ].map(item => (
+                                        <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg flex flex-col">
+                                            <div className="flex h-32 overflow-hidden bg-black/50">
+                                                <ImageWithPreview src={item.imgs[0]} />
+                                                <ImageWithPreview src={item.imgs[1]} />
+                                                <ImageWithPreview src={item.imgs[2]} />
+                                            </div>
+                                            <div className="p-5 flex-1 flex flex-col">
+                                                <h3 className="text-xl font-serif text-white mb-4">{item.title}</h3>
+                                                <div className="flex flex-wrap gap-2 mt-auto">
+                                                    {item.tags.map(tag => (
+                                                        <span key={tag} className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">{tag}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </section>
