@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight } from 'lucide-react';
+import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -165,7 +165,7 @@ function FormationContent() {
                 </header>
 
                 <Tabs defaultValue="processus" className="w-full">
-                    <TabsList className="w-full grid grid-cols-3 bg-black/40 border border-white/10 p-1 rounded-xl mb-12">
+                    <TabsList className="w-full grid grid-cols-4 bg-black/40 border border-white/10 p-1 rounded-xl mb-12">
                         <TabsTrigger value="processus" className="data-[state=active]:bg-[#D2B57B] data-[state=active]:text-black rounded-lg py-3">
                             <BookOpen className="w-4 h-4 mr-2" /> Processus & Accompagnement
                         </TabsTrigger>
@@ -175,7 +175,68 @@ function FormationContent() {
                         <TabsTrigger value="qcm" className="data-[state=active]:bg-[#D2B57B] data-[state=active]:text-black rounded-lg py-3">
                             <GraduationCap className="w-4 h-4 mr-2" /> QCM Officiel
                         </TabsTrigger>
+                        <TabsTrigger value="guides" className="data-[state=active]:bg-[#D2B57B] data-[state=active]:text-black rounded-lg py-3">
+                            <FileText className="w-4 h-4 mr-2" /> Guides & Ressources
+                        </TabsTrigger>
                     </TabsList>
+
+                    {/* ONGLET 4 : GUIDES ET RESSOURCES */}
+                    <TabsContent value="guides" className="space-y-16 animate-in fade-in zoom-in-95 duration-500">
+                        <section>
+                            <SectionHeader id="guides-op" emoji="📚" title="Guides Opérationnels Ambassadeurs" expanded={true} toggleSection={() => { }} />
+                            <div className="grid md:grid-cols-2 gap-6 mt-6 animate-in fade-in slide-in-from-top-4">
+                                <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden shadow-lg group hover:border-[#D2B57B]/60 transition-colors">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#D2B57B]/5 rounded-full blur-[30px] -mr-10 -mt-10 pointer-events-none"></div>
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="p-3 bg-black/50 rounded-xl border border-white/10 text-[#D2B57B]">
+                                            <FileText className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-serif text-white">Guide Opérationnel</h3>
+                                            <p className="text-xs text-[#D2B57B] uppercase tracking-widest mt-1">Ambassadeur Auclaire</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+                                        Le manuel complet pour représenter la marque, aborder les prospects et mener une consultation de joaillerie d'élite sans être un expert technique.
+                                    </p>
+                                    <div className="flex gap-4">
+                                        <a href="/docs/guide_operationnel_ambassadeur.pdf" target="_blank" rel="noopener noreferrer" className="flex-1 bg-[#D2B57B] hover:bg-[#D2B57B]/90 text-black py-3 rounded-lg font-bold text-sm tracking-wider uppercase transition-colors flex items-center justify-center gap-2">
+                                            <ArrowRight className="w-4 h-4" />
+                                            Consulter le Guide
+                                        </a>
+                                        <a href="/docs/guide_operationnel_ambassadeur.pdf" download className="bg-white/10 hover:bg-white/20 border border-white/10 text-white py-3 px-4 rounded-lg font-bold transition-colors flex items-center justify-center">
+                                            <Download className="w-4 h-4" />
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden shadow-lg group hover:border-[#D2B57B]/60 transition-colors">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#D2B57B]/5 rounded-full blur-[30px] -mr-10 -mt-10 pointer-events-none"></div>
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="p-3 bg-black/50 rounded-xl border border-white/10 text-[#D2B57B]">
+                                            <Target className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-serif text-white">Plan d'Action</h3>
+                                            <p className="text-xs text-[#D2B57B] uppercase tracking-widest mt-1">Acquisition & Partenariats</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+                                        Stratégies détaillées pour le démarchage LinkedIn, la mise en place de partenariats locaux B2B et l'utilisation optimale des réseaux sociaux.
+                                    </p>
+                                    <div className="flex gap-4">
+                                        <a href="/docs/plan_ambassadeurs.pdf" target="_blank" rel="noopener noreferrer" className="flex-1 bg-[#D2B57B] hover:bg-[#D2B57B]/90 text-black py-3 rounded-lg font-bold text-sm tracking-wider uppercase transition-colors flex items-center justify-center gap-2">
+                                            <ArrowRight className="w-4 h-4" />
+                                            Consulter le Plan
+                                        </a>
+                                        <a href="/docs/plan_ambassadeurs.pdf" download className="bg-white/10 hover:bg-white/20 border border-white/10 text-white py-3 px-4 rounded-lg font-bold transition-colors flex items-center justify-center">
+                                            <Download className="w-4 h-4" />
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </TabsContent>
 
                     {/* ONGLET 1 : PROCESSUS ET ACCOMPAGNEMENT */}
                     <TabsContent value="processus" className="space-y-16 animate-in fade-in zoom-in-95 duration-500">
