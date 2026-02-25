@@ -340,8 +340,8 @@ function FormationContent() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4">
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg group">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://images.openai.com/static-rsc-3/xp59ldulbErVwr1UHOWmLjJEgcTO4fwyjg6DgAUY5K6qHykOzcLHXIA4svHqkAi20_6lYqAOmkZ2Ad4-pR_-n2FlryQX_P47ii0vc1n_ack?purpose=fullsize&v=1" />
-                                                <ImageWithPreview src="https://images.openai.com/static-rsc-3/RJ6e4JkTqds8DIGMLf8-l5ng8zXpryNYaXbpss6jZpaemUwKRKiiJmExE73FX5a74YfkeDNhdfOOn6qEo4CwY7pi7DAYcx-pfnTF8COdPZk?purpose=fullsize&v=1" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/16544137/r/il/1ccc36/3168700913/il_1080xN.3168700913_tto5.jpg" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/16544137/r/il/1ccc36/3168700913/il_1080xN.3168700913_tto5.jpg" />
                                                 <ImageWithPreview src="https://i.etsystatic.com/16544137/r/il/1ccc36/3168700913/il_1080xN.3168700913_tto5.jpg" />
                                             </div>
                                             <div className="p-5">
@@ -375,8 +375,8 @@ function FormationContent() {
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
                                                 <ImageWithPreview src="https://sites.jewelfeed.com/si688/catalog/items/96d47101-0bdf-4bf4-8dbd-d175753af0a2.jpg.800x800_q85_background.jpg" />
-                                                <ImageWithPreview src="https://images.openai.com/static-rsc-3/M0PhtLnyhC6GRhYlnrZTmkDLfRwvMlUUCbTii1GJfawL0inTZitbMiEQfhSQhXeLthQPL27l8yw3kixaStuO9mivyLvEQOvvJ0t6quGQ2Bw?purpose=fullsize&v=1" />
                                                 <ImageWithPreview src="https://media.tiffany.com/is/image/Tiffany/EcomItemL2/tiffany-novo-princess-cut-engagement-ring-with-a-pav-set-diamond-band-in-platinum-60767173_996218_ED_M.jpg?%24cropN=0.1%2C0.1%2C0.8%2C0.8&defaultImage=NoImageAvailableInternal&op_usm=1.75%2C1.0%2C6.0" />
+                                                <ImageWithPreview src="https://sites.jewelfeed.com/si688/catalog/items/96d47101-0bdf-4bf4-8dbd-d175753af0a2.jpg.800x800_q85_background.jpg" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Princess <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Moderne structuré</span></h3>
@@ -392,8 +392,8 @@ function FormationContent() {
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
                                                 <ImageWithPreview src="https://i.etsystatic.com/28887394/r/il/006bab/5523396783/il_1080xN.5523396783_bick.jpg" />
-                                                <ImageWithPreview src="https://images.openai.com/static-rsc-3/OsQgxlKW7BCFrNCnxpZmpk0OeTc3E0BvQvVGkBFgQy8khDKlRq0VjAqBqY-UgvaoxOzU-kmxu5jsUiosnsJjPAql8QKD9QVqnSqgT-lFPXk?purpose=fullsize&v=1" />
                                                 <ImageWithPreview src="https://www.goodstoneinc.com/cdn/shop/files/DSC01022_1200x.jpg?v=1746540144" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/28887394/r/il/006bab/5523396783/il_1080xN.5523396783_bick.jpg" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Cushion <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Romantique vintage</span></h3>
@@ -408,8 +408,8 @@ function FormationContent() {
                                         </div>
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://images.openai.com/static-rsc-3/11AWox_-MO0DQva5018ge3MjqJaad5nTG9ae_z8fWfLGRWWkR4FlHwFyfFzU3Rr2Zusn-qGjfkUpUcQhXjCr1uVZyGBRneHZX0Z2_JAzgIU?purpose=fullsize&v=1" />
-                                                <ImageWithPreview src="https://images.openai.com/static-rsc-3/CYXPopbwiRSi3FlUy4V0buwh1ivy5nWKVoAg9SyKGxycFa4IiQqAWeCR1aeGNjUVIKo8AHhkooUAmDZKZhsuTrIndI-ZuGVbD4Unt2AHM1o?purpose=fullsize&v=1" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/32495a/4580417301/il_fullxfull.4580417301_8s0u.jpg" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/32495a/4580417301/il_fullxfull.4580417301_8s0u.jpg" />
                                                 <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/32495a/4580417301/il_fullxfull.4580417301_8s0u.jpg" />
                                             </div>
                                             <div className="p-5">
@@ -457,6 +457,60 @@ function FormationContent() {
                                                 <div className="flex flex-wrap gap-2">
                                                     <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Pétillant</span>
                                                     <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Moderne</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* MARQUISE CUT */}
+                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
+                                            <div className="flex h-32 overflow-hidden bg-black/50">
+                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/263abc/4183497103/il_fullxfull.4183497103_6xtw.jpg" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/263abc/4183497103/il_fullxfull.4183497103_6xtw.jpg" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/263abc/4183497103/il_fullxfull.4183497103_6xtw.jpg" />
+                                            </div>
+                                            <div className="p-5">
+                                                <h3 className="text-xl font-serif text-white mb-3">Marquise <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Royale et fine</span></h3>
+                                                <div className="mb-4">
+                                                    <p className="text-xs text-gray-400">Taille allongée avec deux pointes, créant l'illusion d'une pierre plus large sur le doigt.</p>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Vintage</span>
+                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Allongeant</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* ASSCHER CUT */}
+                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
+                                            <div className="flex h-32 overflow-hidden bg-black/50">
+                                                <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
+                                            </div>
+                                            <div className="p-5">
+                                                <h3 className="text-xl font-serif text-white mb-3">Asscher <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Art Déco</span></h3>
+                                                <div className="mb-4">
+                                                    <p className="text-xs text-gray-400">Coupe carrée avec des "steps" (marches) très géométriques à la manière de l'émeraude, mais carrée.</p>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Art Déco</span>
+                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Élégant</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* HEART CUT */}
+                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
+                                            <div className="flex h-32 overflow-hidden bg-black/50">
+                                                <ImageWithPreview src="https://i.etsystatic.com/22964177/r/il/a6b225/4650532298/il_1080xN.4650532298_j8y7.jpg" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/22964177/r/il/a6b225/4650532298/il_1080xN.4650532298_j8y7.jpg" />
+                                                <ImageWithPreview src="https://i.etsystatic.com/22964177/r/il/a6b225/4650532298/il_1080xN.4650532298_j8y7.jpg" />
+                                            </div>
+                                            <div className="p-5">
+                                                <h3 className="text-xl font-serif text-white mb-3">Heart <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Romance absolue</span></h3>
+                                                <div className="mb-4">
+                                                    <p className="text-xs text-gray-400">Le symbole ultime de l'amour, une taille brillante très complexe demandant une symétrie parfaite au lapidaire.</p>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Romantique</span>
+                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Unique</span>
                                                 </div>
                                             </div>
                                         </div>
