@@ -105,6 +105,10 @@ function FormationContent() {
     // Scénario interactif
     const [quizAnswered, setQuizAnswered] = useState<number | null>(null);
 
+    // Sélecteur interactif des métaux
+    const [selectedMetal, setSelectedMetal] = useState<string>('platine');
+    const [metalQuizAnswered, setMetalQuizAnswered] = useState<number | null>(null);
+
     // Baromètre de Confiance (Processus)
     const [completedProcessusSteps, setCompletedProcessusSteps] = useState<number[]>([]);
     const toggleStepCompletion = (stepIndex: number) => {
@@ -1162,42 +1166,197 @@ function FormationContent() {
                                 </section>
                             )}
 
-                            {/* SECTION METAUX AVANCES */}
+                            {/* SECTION METAUX AVANCES - INTERACTIF */}
                             {currentExpertiseStep === 9 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">✨</span> Expertise Métaux & Allergies
                                     </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4">
-                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                                            <h3 className="text-xl font-serif text-white mb-4 border-b border-white/10 pb-2">Platine vs Or Blanc</h3>
-                                            <ul className="space-y-4 text-sm text-gray-300">
-                                                <li>
-                                                    <strong className="text-[#D2B57B] block mb-1">Le Platine (Pt950) :</strong>
-                                                    Naturellement blanc, hypoallergénique, et extrêmement dense (lourd). Il ne perd pas sa couleur blanche, mais se "patine" avec le temps (devient légèrement gris mat). Il est idéal pour la sécurité des pierres.
-                                                </li>
-                                                <li>
-                                                    <strong className="text-[#D2B57B] block mb-1">L'Or Blanc (14K ou 18K) :</strong>
-                                                    L'or pur est jaune. Pour devenir blanc, il est allié à du nickel, zinc ou palladium, puis recouvert d'une fine couche de Rhodium (Rhodiage). Avec les frottements, l'or jaune réapparait et nécessite un entretien (re-rhodiage) tous les 1-2 ans.
-                                                </li>
-                                            </ul>
-                                        </div>
 
-                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                                            <h3 className="text-xl font-serif text-white mb-4 border-b border-white/10 pb-2">Alliages & Hypoallergénique</h3>
-                                            <div className="space-y-4 text-sm text-gray-300">
-                                                <p><strong className="text-white">Or Rose :</strong> Obtenu par l'ajout de cuivre. C'est l'alliage le plus robuste après le platine.</p>
-                                                <p><strong className="text-white">Or Jaune :</strong> Obtenu par un mélange d'argent et de cuivre avec l'or pur.</p>
-                                                <p><strong className="text-white">Argent (925) :</strong> Moins cher mais très malléable. S'oxyde (noircit) avec le temps et se raye facilement. Déconseillé pour une bague de fiançailles portée au quotidien.</p>
-                                                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mt-4">
-                                                    <h4 className="text-red-400 font-bold mb-2">Attention aux allergies (Nickel)</h4>
-                                                    <p className="text-xs">Certaines femmes sont allergiques au nickel contenu dans beaucoup d'alliages d'Or Blanc commercial. Si la cliente est sensible, orientez SYSTEMATIQUEMENT vers :</p>
-                                                    <ul className="list-disc pl-5 mt-2 space-y-1 text-xs">
-                                                        <li>Du Platine (Hypoallergénique total).</li>
-                                                        <li>De l'Or Jaune ou Or Rose 18K.</li>
-                                                    </ul>
+                                    {/* Sélecteur Interactif des Métaux */}
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+                                        {[
+                                            { id: 'platine', label: 'Platine', emoji: '⬜', color: 'from-gray-300 to-gray-500' },
+                                            { id: 'or-blanc', label: 'Or Blanc', emoji: '🤍', color: 'from-gray-200 to-white' },
+                                            { id: 'or-jaune', label: 'Or Jaune', emoji: '💛', color: 'from-yellow-400 to-amber-500' },
+                                            { id: 'or-rose', label: 'Or Rose', emoji: '🩷', color: 'from-pink-300 to-rose-500' },
+                                            { id: 'argent', label: 'Argent 925', emoji: '🩶', color: 'from-slate-300 to-slate-500' },
+                                        ].map(metal => (
+                                            <button
+                                                key={metal.id}
+                                                onClick={() => setSelectedMetal(metal.id)}
+                                                className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-center group ${selectedMetal === metal.id
+                                                        ? 'border-[#D2B57B] bg-[#D2B57B]/10 shadow-[0_0_20px_rgba(210,181,123,0.3)] scale-105'
+                                                        : 'border-white/10 bg-white/5 hover:border-white/30 hover:scale-102'
+                                                    }`}
+                                            >
+                                                <span className="text-2xl block mb-2">{metal.emoji}</span>
+                                                <span className={`text-sm font-semibold ${selectedMetal === metal.id ? 'text-[#D2B57B]' : 'text-gray-300'
+                                                    }`}>{metal.label}</span>
+                                                {selectedMetal === metal.id && (
+                                                    <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-gradient-to-r ${metal.color}`}></div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Détails du métal sélectionné */}
+                                    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 animate-in fade-in zoom-in-95 duration-300" key={selectedMetal}>
+                                        {selectedMetal === 'platine' && (
+                                            <div className="space-y-4">
+                                                <h3 className="text-2xl font-serif text-white flex items-center gap-3">⬜ Platine (Pt950)</h3>
+                                                <div className="grid md:grid-cols-3 gap-4">
+                                                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+                                                        <h4 className="text-green-400 font-bold text-sm mb-2">✅ Avantages</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• Naturellement blanc</li><li>• Hypoallergénique total</li><li>• Extrêmement dense et solide</li><li>• Ne nécessite aucun rhodiage</li></ul>
+                                                    </div>
+                                                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                                                        <h4 className="text-red-400 font-bold text-sm mb-2">⚠️ Inconvénients</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• Prix plus élevé</li><li>• "Patine" gris mat avec le temps</li><li>• Plus lourd sur le doigt</li></ul>
+                                                    </div>
+                                                    <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded-xl p-4">
+                                                        <h4 className="text-[#D2B57B] font-bold text-sm mb-2">💬 Pitch Vendeur</h4>
+                                                        <p className="text-xs text-gray-300 italic">"Le platine est le métal le plus noble et le plus sécuritaire pour les peaux sensibles. C'est le choix d'excellence."</p>
+                                                    </div>
                                                 </div>
                                             </div>
+                                        )}
+                                        {selectedMetal === 'or-blanc' && (
+                                            <div className="space-y-4">
+                                                <h3 className="text-2xl font-serif text-white flex items-center gap-3">🤍 Or Blanc (14K / 18K)</h3>
+                                                <div className="grid md:grid-cols-3 gap-4">
+                                                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+                                                        <h4 className="text-green-400 font-bold text-sm mb-2">✅ Avantages</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• Look moderne et brillant</li><li>• Plus abordable que le platine</li><li>• Très populaire en Amérique du Nord</li></ul>
+                                                    </div>
+                                                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                                                        <h4 className="text-red-400 font-bold text-sm mb-2">⚠️ Inconvénients</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• Re-rhodiage tous les 1-2 ans</li><li>• Or jaune réapparaît avec le temps</li><li>• Peut contenir du nickel (allergies)</li></ul>
+                                                    </div>
+                                                    <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded-xl p-4">
+                                                        <h4 className="text-[#D2B57B] font-bold text-sm mb-2">💬 Pitch Vendeur</h4>
+                                                        <p className="text-xs text-gray-300 italic">"L'or blanc offre cet éclat miroir grâce au rhodium. C'est notre option la plus populaire pour un look contemporain."</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {selectedMetal === 'or-jaune' && (
+                                            <div className="space-y-4">
+                                                <h3 className="text-2xl font-serif text-white flex items-center gap-3">💛 Or Jaune (10K / 14K / 18K)</h3>
+                                                <div className="grid md:grid-cols-3 gap-4">
+                                                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+                                                        <h4 className="text-green-400 font-bold text-sm mb-2">✅ Avantages</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• Classique intemporel</li><li>• Hypoallergénique (18K)</li><li>• Aucun entretien spécial requis</li><li>• Absorbe le ton chaud du diamant</li></ul>
+                                                    </div>
+                                                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                                                        <h4 className="text-red-400 font-bold text-sm mb-2">⚠️ Inconvénients</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• 10K plus pâle (moins de prestige)</li><li>• Se raye avec le temps</li></ul>
+                                                    </div>
+                                                    <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded-xl p-4">
+                                                        <h4 className="text-[#D2B57B] font-bold text-sm mb-2">💬 Pitch Vendeur</h4>
+                                                        <p className="text-xs text-gray-300 italic">"L'or jaune 18K offre une saturation riche et une teinte chaude qui sublime les diamants de couleur G-H. C'est le prestige européen."</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {selectedMetal === 'or-rose' && (
+                                            <div className="space-y-4">
+                                                <h3 className="text-2xl font-serif text-white flex items-center gap-3">🩷 Or Rose</h3>
+                                                <div className="grid md:grid-cols-3 gap-4">
+                                                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+                                                        <h4 className="text-green-400 font-bold text-sm mb-2">✅ Avantages</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• Look romantique et tendance</li><li>• Alliage robuste (cuivre)</li><li>• Couleur chaude unique</li></ul>
+                                                    </div>
+                                                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                                                        <h4 className="text-red-400 font-bold text-sm mb-2">⚠️ Inconvénients</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• Léger risque d'allergie au cuivre</li><li>• Moins traditionnel</li></ul>
+                                                    </div>
+                                                    <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded-xl p-4">
+                                                        <h4 className="text-[#D2B57B] font-bold text-sm mb-2">💬 Pitch Vendeur</h4>
+                                                        <p className="text-xs text-gray-300 italic">"L'or rose est le métal le plus en vogue. Il apporte une douceur romantique qui attire les personnalités modernes et audacieuses."</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {selectedMetal === 'argent' && (
+                                            <div className="space-y-4">
+                                                <h3 className="text-2xl font-serif text-white flex items-center gap-3">🩶 Argent Sterling 925</h3>
+                                                <div className="grid md:grid-cols-3 gap-4">
+                                                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+                                                        <h4 className="text-green-400 font-bold text-sm mb-2">✅ Avantages</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• Très abordable</li><li>• Éclat blanc brillant</li></ul>
+                                                    </div>
+                                                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                                                        <h4 className="text-red-400 font-bold text-sm mb-2">⚠️ Inconvénients</h4>
+                                                        <ul className="text-xs text-gray-300 space-y-1"><li>• S'oxyde et noircit</li><li>• Très malléable, se raye facilement</li><li>• Déconseillé pour fiançailles</li></ul>
+                                                    </div>
+                                                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                                                        <h4 className="text-red-400 font-bold text-sm mb-2">🚫 Recommandation</h4>
+                                                        <p className="text-xs text-gray-300 italic">Déconseillé pour une bague de fiançailles portée au quotidien. Réservé aux bijoux fantaisie.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Alerte Allergies */}
+                                    <div className="mt-6 bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
+                                        <h4 className="text-red-400 font-bold mb-3 flex items-center gap-2">
+                                            <AlertCircle className="w-5 h-5" /> Attention aux Allergies (Nickel)
+                                        </h4>
+                                        <p className="text-sm text-gray-300 mb-3">Certaines clientes sont allergiques au nickel (présent dans beaucoup d'Or Blanc commercial). Si la cliente est sensible, orientez <strong className="text-white">systématiquement</strong> vers :</p>
+                                        <div className="flex flex-wrap gap-3">
+                                            <span className="px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full text-xs text-green-400 font-medium">✅ Platine (Hypoallergénique total)</span>
+                                            <span className="px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full text-xs text-green-400 font-medium">✅ Or Jaune 18K</span>
+                                            <span className="px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full text-xs text-green-400 font-medium">✅ Or Rose 18K</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Mini Quiz : Lequel Choisir ? */}
+                                    <div className="mt-10 bg-black/40 border border-[#D2B57B]/30 rounded-2xl p-8">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <span className="text-3xl">🧠</span>
+                                            <div>
+                                                <h3 className="text-xl font-serif text-white">Quiz Express : Lequel choisir ?</h3>
+                                                <p className="text-xs text-gray-400 mt-1">Testez vos connaissances sur les métaux</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/5 rounded-xl p-5 mb-6 border border-white/10">
+                                            <p className="text-sm text-gray-200 italic">🎯 <strong className="text-white">Scénario :</strong> Une cliente vous dit qu'elle a la peau très sensible et qu'elle fait souvent des réactions allergiques aux bijoux. Elle veut une bague blanche et brillante. Quel métal lui recommandez-vous ?</p>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {[
+                                                { id: 1, text: "Or Blanc 14K — c'est le plus populaire et le plus brillant", isCorrect: false, feedback: "❌ Attention ! L'Or Blanc 14K contient souvent du nickel qui peut provoquer des réactions allergiques. C'est un piège fréquent." },
+                                                { id: 2, text: "Platine (Pt950) — naturellement blanc et hypoallergénique", isCorrect: true, feedback: "✅ Excellent ! Le Platine est le choix parfait : naturellement blanc (pas de rhodiage nécessaire) ET hypoallergénique. C'est la réponse d'un expert." },
+                                                { id: 3, text: "Argent Sterling 925 — abordable et blanc", isCorrect: false, feedback: "❌ L'Argent est trop fragile pour une bague de fiançailles quotidienne. Il s'oxyde et se raye facilement. Jamais recommandé pour cet usage." }
+                                            ].map(option => (
+                                                <button
+                                                    key={option.id}
+                                                    onClick={() => setMetalQuizAnswered(option.id)}
+                                                    disabled={metalQuizAnswered !== null}
+                                                    className={`w-full text-left p-4 rounded-xl border transition-all duration-300 ${metalQuizAnswered === option.id
+                                                            ? option.isCorrect
+                                                                ? 'bg-green-500/10 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+                                                                : 'bg-red-500/10 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                                                            : metalQuizAnswered !== null && option.isCorrect
+                                                                ? 'bg-green-500/5 border-green-500/30'
+                                                                : 'bg-black/50 border-white/10 hover:border-[#D2B57B]/50 hover:bg-white/5'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium text-gray-200 pr-4">{option.text}</span>
+                                                        {metalQuizAnswered === option.id && (
+                                                            <span className="text-lg shrink-0">{option.isCorrect ? '✅' : '❌'}</span>
+                                                        )}
+                                                        {metalQuizAnswered !== null && metalQuizAnswered !== option.id && option.isCorrect && (
+                                                            <span className="text-lg shrink-0">✅</span>
+                                                        )}
+                                                    </div>
+                                                    {metalQuizAnswered === option.id && (
+                                                        <p className="mt-3 text-xs text-gray-400 border-t border-white/5 pt-3">{option.feedback}</p>
+                                                    )}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
                                 </section>
