@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle, ShieldCheck, Scale, Award, Gem } from 'lucide-react';
+import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle, ShieldCheck, Scale, Award, Gem, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -92,26 +92,14 @@ function FormationContent() {
     ];
     const [currentExpertiseStep, setCurrentExpertiseStep] = useState(0);
 
-    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-        objectives: true,
-        cuts: true,
-        settings: true,
-        bandStyle: true,
-        bandSetting: true,
-        prongs: true,
-        hisHers: true,
-        diamonds4c: true,
-        anatomy: true,
-        metals: true,
-        gold: true,
-        consultation: true,
-        process: true,
-        rules: true
-    });
+    const processusSteps = [
+        { id: 'phases', title: 'Les 12 Phases', emoji: '🧭', fullTitle: 'Le Processus (12 Phases)' },
+        { id: 'consultation', title: 'Consultation', emoji: '🗣️', fullTitle: 'Diagnostic & Consultation' },
+        { id: 'mindset', title: 'Mindset & Règles', emoji: '📜', fullTitle: 'Objectifs & Règles d\'Or' }
+    ];
+    const [currentProcessusStep, setCurrentProcessusStep] = useState(0);
 
-    const toggleSection = (section: string) => {
-        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-    };
+
 
     const ImageWithPreview = ({ src }: { src: string }) => (
         <img
@@ -467,142 +455,168 @@ function FormationContent() {
                     </TabsContent>
 
                     {/* ONGLET 1 : PROCESSUS ET ACCOMPAGNEMENT */}
-                    <TabsContent value="processus" className="space-y-16 animate-in fade-in zoom-in-95 duration-500">
-                        {/* OBJECTIFS */}
-                        <section>
-                            <SectionHeader id="objectives" emoji="⭐" title="Objectifs du Document" expanded={expandedSections.objectives} toggleSection={toggleSection} />
-                            {expandedSections.objectives && (
-                                <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden shadow-lg animate-in fade-in slide-in-from-top-4">
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#D2B57B]/5 rounded-full blur-[50px] -mr-20 -mt-20 pointer-events-none"></div>
-                                    <p className="text-gray-300 mb-6 font-medium">Après cette formation, le closer doit être capable de :</p>
-                                    <div className="grid md:grid-cols-2 gap-4">
-                                        <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Reconnaître toutes les coupes</span></div>
-                                        <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Associer coupe à personnalité cliente</span></div>
-                                        <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Expliquer or & karatage visuellement</span></div>
-                                        <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Rassurer sur le budget</span></div>
-                                        <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Guider la consultation de bout en bout</span></div>
-                                        <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Agir comme consultant bague idéale</span></div>
-                                    </div>
-                                </div>
-                            )}
-                        </section>
+                    <TabsContent value="processus" className="animate-in fade-in zoom-in-95 duration-500">
+                        {/* Stepper Header */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-6 mb-8 no-scrollbar border-b border-white/5 snap-x">
+                            {processusSteps.map((step, idx) => (
+                                <button
+                                    key={step.id}
+                                    onClick={() => setCurrentProcessusStep(idx)}
+                                    className={`flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 border snap-start ${currentProcessusStep === idx ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_15px_rgba(210,181,123,0.3)]' : 'bg-black/40 text-gray-400 border-white/5 hover:text-white hover:border-white/20'}`}>
+                                    <span className="mr-2 opacity-80">{step.emoji}</span> {step.title}
+                                </button>
+                            ))}
+                        </div>
 
-                        {/* SECTION CONSULTATION CLIENT */}
-                        <section>
-                            <SectionHeader id="consultation" emoji="🗣️" title="Diagnostic & Consultation Patient" expanded={expandedSections.consultation} toggleSection={toggleSection} />
-                            {expandedSections.consultation && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4">
-                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors">
-                                        <h3 className="text-xl font-serif text-[#D2B57B] mb-4">Rassurer sur le budget</h3>
-                                        <ul className="space-y-3 text-sm text-gray-300">
-                                            <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Normaliser le budget du client sans jugement.</span></li>
-                                            <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Expliquer les compromis intelligents pour maximiser le rendu.</span></li>
-                                        </ul>
-                                    </div>
-                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors">
-                                        <h3 className="text-xl font-serif text-[#D2B57B] mb-4">Identifier le style de la partenaire</h3>
-                                        <ul className="space-y-3 text-sm text-gray-300">
-                                            <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Analyser ses bijoux actuels et son style vestimentaire.</span></li>
-                                            <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Comprendre sa personnalité et son lifestyle (sport, travail manuel).</span></li>
-                                        </ul>
-                                    </div>
-                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors">
-                                        <h3 className="text-xl font-serif text-[#D2B57B] mb-4">Vendre l'émotion</h3>
-                                        <ul className="space-y-3 text-sm text-gray-300">
-                                            <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Aider le client à se projeter dans le moment de la demande.</span></li>
-                                            <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Mettre en valeur la symbolique de l'engagement (héritage émotionnel).</span></li>
-                                        </ul>
-                                    </div>
-                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors">
-                                        <h3 className="text-xl font-serif text-[#D2B57B] mb-4">Guider vers la bague idéale</h3>
-                                        <ul className="space-y-3 text-sm text-gray-300">
-                                            <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Comprendre la partenaire et le budget pour identifier les priorités.</span></li>
-                                            <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Éduquer, proposer des options, rassurer et valider jusqu'au closing.</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            )}
-                        </section>
-
-                        {/* PROCESSUS 12 PHASES */}
-                        <section>
-                            <SectionHeader id="process" emoji="🧭" title="Processus & Accompagnement (12 Phases)" expanded={expandedSections.process} toggleSection={toggleSection} />
-                            {expandedSections.process && (
-                                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent animate-in fade-in slide-in-from-top-4">
-                                    {phases.map((phase) => (
-                                        <div key={phase.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                                            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white/10 bg-[#0a0a0a] group-hover:bg-[#D2B57B] transition-colors shadow-lg shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-[#D2B57B] group-hover:text-black font-serif font-bold text-sm">
-                                                {phase.id}
-                                            </div>
-                                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                                <h3 className="text-2xl font-serif text-white mb-1">Phase {phase.id} — {phase.title}</h3>
-                                                <p className="text-[#D2B57B] text-[10px] uppercase tracking-[0.2em] mb-4">{phase.subtitle}</p>
-                                                <div className="mb-4">
-                                                    <h5 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2"><Target className="w-3 h-3" /> Objectif</h5>
-                                                    <p className="text-sm text-gray-300">{phase.objectif}</p>
+                        <div className="min-h-[600px] pb-12">
+                            {currentProcessusStep === 0 && (
+                                <section className="animate-in fade-in slide-in-from-right-8 duration-500">
+                                    <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
+                                        <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">🧭</span> Processus & Accompagnement (12 Phases)
+                                    </h2>
+                                    <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
+                                        {phases.map((phase) => (
+                                            <div key={phase.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                                                <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white/10 bg-[#0a0a0a] group-hover:bg-[#D2B57B] transition-colors shadow-lg shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-[#D2B57B] group-hover:text-black font-serif font-bold text-sm">
+                                                    {phase.id}
                                                 </div>
-                                                {phase.mindset && (
+                                                <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/50 transition-colors shadow-lg">
+                                                    <h3 className="text-2xl font-serif text-white mb-1">Phase {phase.id} — {phase.title}</h3>
+                                                    <p className="text-[#D2B57B] text-[10px] uppercase tracking-[0.2em] mb-4">{phase.subtitle}</p>
                                                     <div className="mb-4">
-                                                        <h5 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2"><BrainCircuit className="w-3 h-3" /> Mindset Closer</h5>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {phase.mindset.map(m => <span key={m} className="px-2 py-1 bg-white/5 border border-white/10 rounded text-xs text-gray-300 capitalize">{m}</span>)}
+                                                        <h5 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2"><Target className="w-3 h-3" /> Objectif</h5>
+                                                        <p className="text-sm text-gray-300">{phase.objectif}</p>
+                                                    </div>
+                                                    {phase.mindset && (
+                                                        <div className="mb-4">
+                                                            <h5 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2"><BrainCircuit className="w-3 h-3" /> Mindset Closer</h5>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {phase.mindset.map(m => <span key={m} className="px-2 py-1 bg-white/5 border border-white/10 rounded text-xs text-gray-300 capitalize">{m}</span>)}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )}
-                                                {phase.questions && (
-                                                    <div className="bg-black/30 rounded-lg p-4 mb-2 border border-white/5">
-                                                        <h5 className="text-[10px] uppercase tracking-[0.2em] text-[#D2B57B] mb-2">💬 Questions clés suggérées</h5>
-                                                        <ul className="list-disc text-sm space-y-2 text-gray-300 ml-4">
-                                                            {phase.questions.map(q => <li key={q}>{q}</li>)}
-                                                        </ul>
-                                                    </div>
-                                                )}
-                                                {phase.hint && <p className="text-xs text-[#D2B57B] italic opacity-80 mt-3 pt-3 border-t border-white/5">👉 {phase.hint}</p>}
-                                                {phase.detection && (
-                                                    <div className="mt-4 pt-3 border-t border-white/5">
-                                                        <h5 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2"><Search className="w-3 h-3" /> À détecter absolument</h5>
-                                                        <div className="flex flex-wrap gap-2 text-xs">
-                                                            {phase.detection.map(d => <span key={d} className="text-gray-400">• {d}</span>)}
+                                                    )}
+                                                    {phase.questions && (
+                                                        <div className="bg-black/30 rounded-lg p-4 mb-2 border border-white/5">
+                                                            <h5 className="text-[10px] uppercase tracking-[0.2em] text-[#D2B57B] mb-2">💬 Questions clés suggérées</h5>
+                                                            <ul className="list-disc text-sm space-y-2 text-gray-300 ml-4">
+                                                                {phase.questions.map(q => <li key={q}>{q}</li>)}
+                                                            </ul>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                    {phase.hint && <p className="text-xs text-[#D2B57B] italic opacity-80 mt-3 pt-3 border-t border-white/5">👉 {phase.hint}</p>}
+                                                    {phase.detection && (
+                                                        <div className="mt-4 pt-3 border-t border-white/5">
+                                                            <h5 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2 flex items-center gap-2"><Search className="w-3 h-3" /> À détecter absolument</h5>
+                                                            <div className="flex flex-wrap gap-2 text-xs">
+                                                                {phase.detection.map(d => <span key={d} className="text-gray-400">• {d}</span>)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                </section>
                             )}
-                        </section>
 
-                        {/* RULES */}
-                        <section>
-                            <SectionHeader id="rules" emoji="📜" title="Règles d'Or Auclaire" expanded={expandedSections.rules} toggleSection={toggleSection} />
-                            {expandedSections.rules && (
-                                <div className="bg-gradient-to-r from-[#D2B57B]/20 to-[#D2B57B]/5 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden text-center shadow-[0_0_30px_rgba(210,181,123,0.15)] animate-in fade-in slide-in-from-top-4">
-                                    <div className="max-w-2xl mx-auto space-y-4 text-left">
-                                        <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B] transition-colors">
-                                            <span className="text-2xl">⚖️</span>
-                                            <p className="text-gray-200 font-medium">Toujours poser <span className="text-[#D2B57B]">1 question émotionnelle</span> pour <span className="text-[#D2B57B]">1 question technique</span></p>
+                            {currentProcessusStep === 1 && (
+                                <section className="animate-in fade-in slide-in-from-right-8 duration-500">
+                                    <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
+                                        <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">🗣️</span> Diagnostic & Consultation Patient
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors shadow-lg">
+                                            <h3 className="text-xl font-serif text-[#D2B57B] mb-4 flex items-center gap-2">
+                                                <Target className="w-5 h-5" /> Rassurer sur le budget
+                                            </h3>
+                                            <ul className="space-y-3 text-sm text-gray-300">
+                                                <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Normaliser le budget du client sans jugement.</span></li>
+                                                <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Expliquer les compromis intelligents pour maximiser le rendu.</span></li>
+                                            </ul>
                                         </div>
-                                        <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B] transition-colors">
-                                            <span className="text-2xl">🌟</span>
-                                            <p className="text-gray-200 font-medium">Toujours <span className="text-[#D2B57B]">sur-servir le client</span> avec une attention au détail extrème</p>
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors shadow-lg">
+                                            <h3 className="text-xl font-serif text-[#D2B57B] mb-4 flex items-center gap-2">
+                                                <Search className="w-5 h-5" /> Identifier le style de la partenaire
+                                            </h3>
+                                            <ul className="space-y-3 text-sm text-gray-300">
+                                                <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Analyser ses bijoux actuels et son style vestimentaire.</span></li>
+                                                <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Comprendre sa personnalité et son lifestyle (sport, travail manuel).</span></li>
+                                            </ul>
                                         </div>
-                                        <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B] transition-colors">
-                                            <span className="text-2xl">✅</span>
-                                            <p className="text-gray-200 font-medium">Toujours <span className="text-[#D2B57B]">valider la compréhension</span> à chaque étape cruciale</p>
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors shadow-lg">
+                                            <h3 className="text-xl font-serif text-[#D2B57B] mb-4 flex items-center gap-2">
+                                                <Heart className="w-5 h-5" /> Vendre l'émotion
+                                            </h3>
+                                            <ul className="space-y-3 text-sm text-gray-300">
+                                                <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Aider le client à se projeter dans le moment de la demande.</span></li>
+                                                <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Mettre en valeur la symbolique de l'engagement (héritage émotionnel).</span></li>
+                                            </ul>
                                         </div>
-                                        <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B] transition-colors">
-                                            <span className="text-2xl">🛡️</span>
-                                            <p className="text-gray-200 font-medium">Toujours <span className="text-[#D2B57B]">rassurer et soutenir</span>, l'achat diamantaire crée de l'anxiété</p>
-                                        </div>
-                                        <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B] transition-colors">
-                                            <span className="text-2xl">🧭</span>
-                                            <p className="text-gray-200 font-medium">Toujours <span className="text-[#D2B57B]">guider</span> - vous êtes le médecin, il est le patient</p>
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors shadow-lg">
+                                            <h3 className="text-xl font-serif text-[#D2B57B] mb-4 flex items-center gap-2">
+                                                <Gem className="w-5 h-5" /> Guider vers la bague idéale
+                                            </h3>
+                                            <ul className="space-y-3 text-sm text-gray-300">
+                                                <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Comprendre la partenaire et le budget pour identifier les priorités.</span></li>
+                                                <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Éduquer, proposer des options, rassurer et valider jusqu'au closing.</span></li>
+                                            </ul>
                                         </div>
                                     </div>
-                                </div>
+                                </section>
                             )}
-                        </section>
+
+                            {currentProcessusStep === 2 && (
+                                <section className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-12">
+                                    <div>
+                                        <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
+                                            <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">⭐</span> Objectifs du Document
+                                        </h2>
+                                        <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden shadow-lg">
+                                            <div className="absolute top-0 right-0 w-64 h-64 bg-[#D2B57B]/5 rounded-full blur-[50px] -mr-20 -mt-20 pointer-events-none"></div>
+                                            <p className="text-gray-300 mb-6 font-medium">Après cette formation, le closer doit être capable de :</p>
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                                <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Reconnaître toutes les coupes</span></div>
+                                                <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Associer coupe à personnalité cliente</span></div>
+                                                <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Expliquer or & karatage visuellement</span></div>
+                                                <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Rassurer sur le budget</span></div>
+                                                <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Guider la consultation de bout en bout</span></div>
+                                                <div className="flex items-center gap-3"><CheckCircle2 className="text-green-500 w-5 h-5 shrink-0" /><span className="text-gray-200">Agir comme consultant bague idéale</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
+                                            <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">📜</span> Règles d'Or Auclaire
+                                        </h2>
+                                        <div className="bg-gradient-to-r from-[#D2B57B]/20 to-[#D2B57B]/5 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden text-center shadow-[0_0_30px_rgba(210,181,123,0.15)]">
+                                            <div className="max-w-2xl mx-auto space-y-4 text-left">
+                                                <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B]/30 transition-colors">
+                                                    <span className="text-2xl">⚖️</span>
+                                                    <p className="text-gray-200 font-medium">Toujours poser <span className="text-[#D2B57B]">1 question émotionnelle</span> pour <span className="text-[#D2B57B]">1 question technique</span></p>
+                                                </div>
+                                                <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B]/30 transition-colors">
+                                                    <span className="text-2xl">🌟</span>
+                                                    <p className="text-gray-200 font-medium">Toujours <span className="text-[#D2B57B]">sur-servir le client</span> avec une attention au détail extrème</p>
+                                                </div>
+                                                <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B]/30 transition-colors">
+                                                    <span className="text-2xl">✅</span>
+                                                    <p className="text-gray-200 font-medium">Toujours <span className="text-[#D2B57B]">valider la compréhension</span> à chaque étape cruciale</p>
+                                                </div>
+                                                <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B]/30 transition-colors">
+                                                    <span className="text-2xl">🛡️</span>
+                                                    <p className="text-gray-200 font-medium">Toujours <span className="text-[#D2B57B]">rassurer et soutenir</span>, l'achat diamantaire crée de l'anxiété</p>
+                                                </div>
+                                                <div className="flex items-center gap-4 bg-black/40 p-4 rounded-xl border border-white/5 hover:border-[#D2B57B]/30 transition-colors">
+                                                    <span className="text-2xl">🧭</span>
+                                                    <p className="text-gray-200 font-medium">Toujours <span className="text-[#D2B57B]">guider</span> - vous êtes le médecin, il est le patient</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
+                        </div>
                     </TabsContent>
 
                     {/* ONGLET 2 : EXPERTISE */}
