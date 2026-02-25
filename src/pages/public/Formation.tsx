@@ -341,8 +341,6 @@ function FormationContent() {
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg group">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
                                                 <ImageWithPreview src="https://i.etsystatic.com/16544137/r/il/1ccc36/3168700913/il_1080xN.3168700913_tto5.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/16544137/r/il/1ccc36/3168700913/il_1080xN.3168700913_tto5.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/16544137/r/il/1ccc36/3168700913/il_1080xN.3168700913_tto5.jpg" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Round <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Brillance maximale</span></h3>
@@ -357,8 +355,6 @@ function FormationContent() {
                                         </div>
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://www.jewelove.in/cdn/shop/files/jewelove-30-pointer-oval-cut-solitaire-18k-rose-gold-ring-jl-au-19004r-women-s-band-only-vs-j-38879168725233_2000x.jpg?v=1685082593" />
-                                                <ImageWithPreview src="https://www.jared.com/productimages/processed/V-961438900_1_800.jpg?pristine=true" />
                                                 <ImageWithPreview src="https://i.etsystatic.com/36057419/r/il/3737b5/5387076943/il_fullxfull.5387076943_t3z7.jpg" />
                                             </div>
                                             <div className="p-5">
@@ -374,9 +370,7 @@ function FormationContent() {
                                         </div>
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://sites.jewelfeed.com/si688/catalog/items/96d47101-0bdf-4bf4-8dbd-d175753af0a2.jpg.800x800_q85_background.jpg" />
                                                 <ImageWithPreview src="https://media.tiffany.com/is/image/Tiffany/EcomItemL2/tiffany-novo-princess-cut-engagement-ring-with-a-pav-set-diamond-band-in-platinum-60767173_996218_ED_M.jpg?%24cropN=0.1%2C0.1%2C0.8%2C0.8&defaultImage=NoImageAvailableInternal&op_usm=1.75%2C1.0%2C6.0" />
-                                                <ImageWithPreview src="https://sites.jewelfeed.com/si688/catalog/items/96d47101-0bdf-4bf4-8dbd-d175753af0a2.jpg.800x800_q85_background.jpg" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Princess <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Moderne structuré</span></h3>
@@ -391,8 +385,6 @@ function FormationContent() {
                                         </div>
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/28887394/r/il/006bab/5523396783/il_1080xN.5523396783_bick.jpg" />
-                                                <ImageWithPreview src="https://www.goodstoneinc.com/cdn/shop/files/DSC01022_1200x.jpg?v=1746540144" />
                                                 <ImageWithPreview src="https://i.etsystatic.com/28887394/r/il/006bab/5523396783/il_1080xN.5523396783_bick.jpg" />
                                             </div>
                                             <div className="p-5">
@@ -409,8 +401,6 @@ function FormationContent() {
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
                                                 <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/32495a/4580417301/il_fullxfull.4580417301_8s0u.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/32495a/4580417301/il_fullxfull.4580417301_8s0u.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/32495a/4580417301/il_fullxfull.4580417301_8s0u.jpg" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Emerald <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Élégance minimaliste</span></h3>
@@ -425,8 +415,6 @@ function FormationContent() {
                                         </div>
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/6690489/r/il/1388ef/3911868638/il_570xN.3911868638_bpdn.jpg" />
-                                                <ImageWithPreview src="https://www.kingofjewelry.com/cdn/shop/products/Pearcuthalo120gvs1DSC_016223571s7-ea1_1800x1800.jpg?v=1714584870" />
                                                 <ImageWithPreview src="https://prouddiamond.com/cdn/shop/files/PearCutPaveRing_E.jpg?v=1700771323&width=1445" />
                                             </div>
                                             <div className="p-5">
@@ -446,8 +434,6 @@ function FormationContent() {
                                             </div>
                                             <div className="flex h-32 overflow-hidden bg-black/50">
                                                 <ImageWithPreview src="https://i.etsystatic.com/13550478/r/il/f53ebd/3052822471/il_1080xN.3052822471_b5y3.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/13550478/r/il/a765ea/3005118742/il_1080xN.3005118742_r41u.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Radiant <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Hybride Brillant</span></h3>
@@ -463,8 +449,6 @@ function FormationContent() {
                                         {/* MARQUISE CUT */}
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/263abc/4183497103/il_fullxfull.4183497103_6xtw.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/263abc/4183497103/il_fullxfull.4183497103_6xtw.jpg" />
                                                 <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/263abc/4183497103/il_fullxfull.4183497103_6xtw.jpg" />
                                             </div>
                                             <div className="p-5">
@@ -482,8 +466,6 @@ function FormationContent() {
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
                                                 <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Asscher <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Art Déco</span></h3>
@@ -499,8 +481,6 @@ function FormationContent() {
                                         {/* HEART CUT */}
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/22964177/r/il/a6b225/4650532298/il_1080xN.4650532298_j8y7.jpg" />
-                                                <ImageWithPreview src="https://i.etsystatic.com/22964177/r/il/a6b225/4650532298/il_1080xN.4650532298_j8y7.jpg" />
                                                 <ImageWithPreview src="https://i.etsystatic.com/22964177/r/il/a6b225/4650532298/il_1080xN.4650532298_j8y7.jpg" />
                                             </div>
                                             <div className="p-5">
@@ -526,16 +506,14 @@ function FormationContent() {
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4">
                                         {[
-                                            { title: 'Diamant', desc: "La pierre précieuse suprême. Note de 10/10 sur l'échelle de Mohs (la plus dure au monde). Brillance incomparable et durabilité parfaite pour le quotidien.", imgs: ['/images/education/diamond.jpg', 'https://www.brilliantearth.com/media/product_new_images/7D/BE1DPR14R_1_white_top.jpg', 'https://i.etsystatic.com/15510683/r/il/663c0f/4751474921/il_1080xN.4751474921_1g9h.jpg'], tags: ['Dureté 10', 'Éclat absolu'] },
-                                            { title: 'Saphir', desc: "Le saphir bleu est le plus populaire, mais existe dans toutes les couleurs sauf le rouge. Note de 9/10 sur l'échelle de Mohs. Très robuste et élégant.", imgs: ['/images/education/sapphire.jpg', 'https://i.etsystatic.com/11261314/r/il/a7b189/3419912065/il_fullxfull.3419912065_n0j4.jpg', 'https://i.etsystatic.com/8328114/r/il/3de80b/3782500135/il_570xN.3782500135_q2r4.jpg'], tags: ['Dureté 9', 'Royauté'] },
-                                            { title: 'Rubis', desc: "Même famille que le saphir (Corindon) mais de couleur rouge intense due au chrome. Note de 9/10 sur l'échelle de Mohs. Symbole de passion.", imgs: ['/images/education/ruby.jpg', 'https://www.capucinne.com/cdn/shop/products/ruby-engagement-ring-vintage-pave-ring-970364.jpg?v=1716301389', 'https://i.etsystatic.com/8328114/r/il/5b21ea/1987593281/il_570xN.1987593281_f9c2.jpg'], tags: ['Dureté 9', 'Passion'] },
-                                            { title: 'Émeraude', desc: "Magnifique couleur verte mais plus délicate (7.5 - 8/10 sur Mohs). Elle contient des 'jardins' (inclusions naturelles). Sensible aux chocs violents.", imgs: ['/images/education/emerald.jpg', 'https://www.gabrielny.com/media/catalog/product/E/R/ER15764R4W44JJ-1.jpg', 'https://i.etsystatic.com/14299479/r/il/c8abf8/2471616782/il_1080xN.2471616782_m9c9.jpg'], tags: ['Dureté 8', 'Délicat'] },
+                                            { title: 'Diamant', desc: "La pierre précieuse suprême. Note de 10/10 sur l'échelle de Mohs (la plus dure au monde). Brillance incomparable et durabilité parfaite pour le quotidien.", imgs: ['/images/education/diamond.jpg'], tags: ['Dureté 10', 'Éclat absolu'] },
+                                            { title: 'Saphir', desc: "Le saphir bleu est le plus populaire, mais existe dans toutes les couleurs sauf le rouge. Note de 9/10 sur l'échelle de Mohs. Très robuste et élégant.", imgs: ['/images/education/sapphire.jpg'], tags: ['Dureté 9', 'Royauté'] },
+                                            { title: 'Rubis', desc: "Même famille que le saphir (Corindon) mais de couleur rouge intense due au chrome. Note de 9/10 sur l'échelle de Mohs. Symbole de passion.", imgs: ['/images/education/ruby.jpg'], tags: ['Dureté 9', 'Passion'] },
+                                            { title: 'Émeraude', desc: "Magnifique couleur verte mais plus délicate (7.5 - 8/10 sur Mohs). Elle contient des 'jardins' (inclusions naturelles). Sensible aux chocs violents.", imgs: ['/images/education/emerald.jpg'], tags: ['Dureté 8', 'Délicat'] },
                                         ].map(item => (
                                             <div key={item.title} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg flex flex-col">
                                                 <div className="flex h-32 overflow-hidden bg-black/50">
                                                     <ImageWithPreview src={item.imgs[0]} />
-                                                    <ImageWithPreview src={item.imgs[1]} />
-                                                    <ImageWithPreview src={item.imgs[2]} />
                                                 </div>
                                                 <div className="p-5 flex-1 flex flex-col">
                                                     <h3 className="text-xl font-serif text-white mb-2">{item.title}</h3>
