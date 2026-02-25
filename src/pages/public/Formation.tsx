@@ -80,6 +80,9 @@ function FormationContent() {
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
         objectives: true,
         cuts: true,
+        diamonds4c: true,
+        anatomy: true,
+        metals: true,
         gold: true,
         consultation: true,
         process: true,
@@ -426,9 +429,118 @@ function FormationContent() {
                             )}
                         </section>
 
-                        {/* SECTION OR JAUNE */}
+                        {/* SECTION LES 4C DU DIAMANT */}
                         <section>
-                            <SectionHeader id="gold" emoji="✨" title="Métaux : Différence Visuelle Or Jaune" expanded={expandedSections.gold} toggleSection={toggleSection} />
+                            <SectionHeader id="diamonds4c" emoji="🔍" title="Les 4C du Diamant" expanded={expandedSections.diamonds4c} toggleSection={toggleSection} />
+                            {expandedSections.diamonds4c && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4">
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors">
+                                        <h3 className="text-xl font-serif text-white mb-2">Cut <span className="text-[#D2B57B] text-sm">(La Taille)</span></h3>
+                                        <p className="text-gray-400 text-sm mb-4">Le C le plus important. Il détermine la façon dont la lumière interagit avec le diamant (brillance, feu, scintillement). Une taille "Excellent" ou "Ideal" masquera souvent des défauts de pureté ou de couleur.</p>
+                                        <div className="bg-black/30 p-3 rounded-lg border border-white/5">
+                                            <p className="text-xs text-[#D2B57B]">💬 <b>Pitch Vendeur :</b> "Peu importe la taille ou la couleur, si la coupe est mauvaise, le diamant paraîtra terne. C'est ici qu'on ne fait aucun compromis."</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors">
+                                        <h3 className="text-xl font-serif text-white mb-2">Color <span className="text-[#D2B57B] text-sm">(La Couleur)</span></h3>
+                                        <p className="text-gray-400 text-sm mb-4">Classée de D (Incolore) à Z (Jaune clair). Pour l'œil nu, les diamants de la gamme G-H-I paraissent souvent incolores, surtout montés sur de l'or jaune qui absorbe le ton chaud.</p>
+                                        <div className="bg-black/30 p-3 rounded-lg border border-white/5">
+                                            <p className="text-xs text-[#D2B57B]">💬 <b>Pitch Vendeur :</b> "Au-delà de G-H, l'œil humain ne fait la différence que sous une loupe de gemmologue. Descendre un peu en couleur permet souvent de doubler la taille (Carat) pour le même budget."</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors">
+                                        <h3 className="text-xl font-serif text-white mb-2">Clarity <span className="text-[#D2B57B] text-sm">(La Pureté)</span></h3>
+                                        <p className="text-gray-400 text-sm mb-4">Les inclusions (flaws) sont les empreintes digitales du diamant. L'objectif est de trouver un diamant "Eye-Clean" (VS1/VS2 ou SI1 bien sélectionné) où les inclusions sont invisibles à l'œil nu.</p>
+                                        <div className="bg-black/30 p-3 rounded-lg border border-white/5">
+                                            <p className="text-xs text-[#D2B57B]">💬 <b>Pitch Vendeur :</b> "Un diamant VVS1 et un diamant VS2 auront exactement le même aspect à 30cm de distance. Seul votre microscope fera la différence."</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#D2B57B]/40 transition-colors">
+                                        <h3 className="text-xl font-serif text-white mb-2">Carat <span className="text-[#D2B57B] text-sm">(Le Poids)</span></h3>
+                                        <p className="text-gray-400 text-sm mb-4">Le Carat représente un poids et non une taille physique. Une coupe Oval ou Emerald d'1 Carat paraîtra plus grande qu'une coupe Round d'1 Carat en surface visible.</p>
+                                        <div className="bg-black/30 p-3 rounded-lg border border-white/5">
+                                            <p className="text-xs text-[#D2B57B]">💬 <b>Pitch Vendeur :</b> "Plutôt que de viser le chiffre rond de 1.00 Carat, visez 0.90 ou 0.95. Visuellement identique, mais le prix chute drastiquement sous le seuil psychologique du Carat."</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* SECTION ANATOMIE */}
+                        <section>
+                            <SectionHeader id="anatomy" emoji="💍" title="Anatomie d'une Bague" expanded={expandedSections.anatomy} toggleSection={toggleSection} />
+                            {expandedSections.anatomy && (
+                                <div className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-2xl p-8 animate-in fade-in slide-in-from-top-4">
+                                    <div className="grid md:grid-cols-2 gap-8 items-center">
+                                        <div className="space-y-6">
+                                            <div className="border-l-2 border-[#D2B57B] pl-4">
+                                                <h4 className="text-white font-serif text-lg mb-1">La Tête (Center Setting)</h4>
+                                                <p className="text-sm text-gray-400">La partie métallique qui maintient la pierre centrale. Elle impacte fortement la hauteur de la bague (High-profile vs Low-profile).</p>
+                                            </div>
+                                            <div className="border-l-2 border-[#D2B57B] pl-4">
+                                                <h4 className="text-white font-serif text-lg mb-1">Les Griffes (Prongs)</h4>
+                                                <p className="text-sm text-gray-400">Généralement au nombre de 4 ou 6. 4 griffes montrent plus de la pierre mais sont plus carrées visuellement. 6 griffes protègent mieux et gardent l'aspect rond.</p>
+                                            </div>
+                                            <div className="border-l-2 border-[#D2B57B] pl-4">
+                                                <h4 className="text-white font-serif text-lg mb-1">Le Pont (Gallery & Bridge)</h4>
+                                                <p className="text-sm text-gray-400">L'architecture sous la pierre centrale. C'est ici qu'on ajoute souvent un Hidden Halo (Halo caché) pour une touche de brillance latérale discrète.</p>
+                                            </div>
+                                            <div className="border-l-2 border-[#D2B57B] pl-4">
+                                                <h4 className="text-white font-serif text-lg mb-1">Le Corps de Bague (Shank / Band)</h4>
+                                                <p className="text-sm text-gray-400">L'anneau lui-même. Largeur recommandée : de 1.8mm à 2.2mm pour la solidité et l'esthétique finale.</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-black/50 border border-white/10 rounded-xl p-6 text-center">
+                                            <div className="w-full aspect-square bg-[#D2B57B]/5 rounded-xl border border-[#D2B57B]/20 flex items-center justify-center p-4">
+                                                <img src="https://i.ibb.co/3Wb0kC3/anatomy.png" alt="Anatomie Bague" className="max-h-full opacity-80 mix-blend-screen" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<span class="text-gray-500 text-sm">Schéma d\'anatomie (Tête, Griffes, Shank)</span>'; }} />
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-4 uppercase tracking-widest">Maîtriser ce lexique établit instantanément votre autorité d'expert joaillier.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* SECTION METAUX AVANCES */}
+                        <section>
+                            <SectionHeader id="metals" emoji="✨" title="Expertise Métaux & Allergies" expanded={expandedSections.metals} toggleSection={toggleSection} />
+                            {expandedSections.metals && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4">
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                                        <h3 className="text-xl font-serif text-white mb-4 border-b border-white/10 pb-2">Platine vs Or Blanc</h3>
+                                        <ul className="space-y-4 text-sm text-gray-300">
+                                            <li>
+                                                <strong className="text-[#D2B57B] block mb-1">Le Platine (Pt950) :</strong>
+                                                Naturellement blanc, hypoallergénique, et extrêmement dense (lourd). Il ne perd pas sa couleur blanche, mais se "patine" avec le temps (devient légèrement gris mat). Il est idéal pour la sécurité des pierres.
+                                            </li>
+                                            <li>
+                                                <strong className="text-[#D2B57B] block mb-1">L'Or Blanc (14K ou 18K) :</strong>
+                                                L'or pur est jaune. Pour devenir blanc, il est allié à du nickel, zinc ou palladium, puis recouvert d'une fine couche de Rhodium (Rhodiage). Avec les frottements, l'or jaune réapparait et nécessite un entretien (re-rhodiage) tous les 1-2 ans.
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                                        <h3 className="text-xl font-serif text-white mb-4 border-b border-white/10 pb-2">Alliages & Hypoallergénique</h3>
+                                        <div className="space-y-4 text-sm text-gray-300">
+                                            <p><strong className="text-white">Or Rose :</strong> Obtenu par l'ajout de cuivre. C'est l'alliage le plus robuste après le platine.</p>
+                                            <p><strong className="text-white">Or Jaune :</strong> Obtenu par un mélange d'argent et de cuivre avec l'or pur.</p>
+                                            <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mt-4">
+                                                <h4 className="text-red-400 font-bold mb-2">Attention aux allergies (Nickel)</h4>
+                                                <p className="text-xs">Certaines femmes sont allergiques au nickel contenu dans beaucoup d'alliages d'Or Blanc commercial. Si la cliente est sensible, orientez SYSTEMATIQUEMENT vers :</p>
+                                                <ul className="list-disc pl-5 mt-2 space-y-1 text-xs">
+                                                    <li>Du Platine (Hypoallergénique total).</li>
+                                                    <li>De l'Or Jaune ou Or Rose 18K.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+
+                        <section>
+                            <SectionHeader id="gold" emoji="⚖️" title="Différence Visuelle Or Jaune" expanded={expandedSections.gold} toggleSection={toggleSection} />
                             {expandedSections.gold && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4">
                                     {[
