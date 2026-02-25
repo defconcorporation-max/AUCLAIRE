@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, Download } from 'lucide-react';
+import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -182,56 +182,168 @@ function FormationContent() {
 
                     {/* ONGLET 4 : GUIDES ET RESSOURCES */}
                     <TabsContent value="guides" className="space-y-16 animate-in fade-in zoom-in-95 duration-500">
+                        {/* SECTION A : LE PLAN AMBASSADEURS */}
                         <section>
-                            <SectionHeader id="guides-op" emoji="📚" title="Guides Opérationnels Ambassadeurs" expanded={true} toggleSection={() => { }} />
-                            <div className="grid md:grid-cols-2 gap-6 mt-6 animate-in fade-in slide-in-from-top-4">
-                                <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden shadow-lg group hover:border-[#D2B57B]/60 transition-colors">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#D2B57B]/5 rounded-full blur-[30px] -mr-10 -mt-10 pointer-events-none"></div>
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="p-3 bg-black/50 rounded-xl border border-white/10 text-[#D2B57B]">
-                                            <FileText className="w-8 h-8" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-serif text-white">Guide Opérationnel</h3>
-                                            <p className="text-xs text-[#D2B57B] uppercase tracking-widest mt-1">Ambassadeur Auclaire</p>
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                                        Le manuel complet pour représenter la marque, aborder les prospects et mener une consultation de joaillerie d'élite sans être un expert technique.
+                            <SectionHeader id="plan-ambassadeur" emoji="💎" title="Plan Ambassadeurs (Vision Stratégique)" expanded={true} toggleSection={() => { }} />
+
+                            <div className="mt-8 space-y-8 animate-in fade-in slide-in-from-top-4">
+                                {/* Philosophie */}
+                                <div className="bg-[#D2B57B]/5 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#D2B57B]/10 rounded-full blur-[40px] -mr-10 -mt-10 pointer-events-none"></div>
+                                    <h3 className="text-xl font-serif text-[#D2B57B] mb-4 flex items-center gap-3">
+                                        <Handshake className="w-5 h-5" /> Philosophie Centrale
+                                    </h3>
+                                    <blockquote className="border-l-2 border-[#D2B57B] pl-6 py-2 my-6">
+                                        <p className="text-2xl font-serif text-white italic">"On mange tous à la même table."</p>
+                                    </blockquote>
+                                    <p className="text-gray-400 text-sm leading-relaxed">
+                                        Cette philosophie implique une réussite collective, une culture saine sans compétition toxique, des règles claires et un engagement mutuel. Les ambassadeurs gagnent bien parce que la marque gagne bien. Ce n'est pas un programme d'affiliation ouvert, c'est un levier de croissance maîtrisé.
                                     </p>
-                                    <div className="flex gap-4">
-                                        <a href="/docs/guide_operationnel_ambassadeur.pdf" target="_blank" rel="noopener noreferrer" className="flex-1 bg-[#D2B57B] hover:bg-[#D2B57B]/90 text-black py-3 rounded-lg font-bold text-sm tracking-wider uppercase transition-colors flex items-center justify-center gap-2">
-                                            <ArrowRight className="w-4 h-4" />
-                                            Consulter le Guide
-                                        </a>
-                                        <a href="/docs/guide_operationnel_ambassadeur.pdf" download className="bg-white/10 hover:bg-white/20 border border-white/10 text-white py-3 px-4 rounded-lg font-bold transition-colors flex items-center justify-center">
-                                            <Download className="w-4 h-4" />
-                                        </a>
+                                </div>
+
+                                {/* Profils */}
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="bg-white/5 border border-green-500/20 rounded-2xl p-6 shadow-lg relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent to-green-500/50"></div>
+                                        <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                            <CheckCircle2 className="w-5 h-5 text-green-500" /> Profil Recherché
+                                        </h4>
+                                        <ul className="space-y-3">
+                                            {[
+                                                "Image soignée et positionnement luxe discret",
+                                                "Communication respectueuse",
+                                                "Mentalité long terme",
+                                                "Crédibilité relationnelle"
+                                            ].map((item, i) => (
+                                                <li key={i} className="flex items-start gap-3">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0"></span>
+                                                    <span className="text-sm text-gray-300">{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="bg-white/5 border border-red-500/20 rounded-2xl p-6 shadow-lg relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent to-red-500/50"></div>
+                                        <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                            <AlertCircle className="w-5 h-5 text-red-500" /> Profils Exclus
+                                        </h4>
+                                        <ul className="space-y-3">
+                                            {[
+                                                "Spam massif sur Marketplace",
+                                                "Vente agressive ou pushy",
+                                                "Recherche de cash rapide au détriment de l'image",
+                                                "Négociation des règles de la Maison"
+                                            ].map((item, i) => (
+                                                <li key={i} className="flex items-start gap-3">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500/50 mt-2 shrink-0"></span>
+                                                    <span className="text-sm text-gray-300">{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
                                 </div>
 
-                                <div className="bg-[#D2B57B]/10 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden shadow-lg group hover:border-[#D2B57B]/60 transition-colors">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#D2B57B]/5 rounded-full blur-[30px] -mr-10 -mt-10 pointer-events-none"></div>
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="p-3 bg-black/50 rounded-xl border border-white/10 text-[#D2B57B]">
-                                            <Target className="w-8 h-8" />
+                                {/* Commissions */}
+                                <div>
+                                    <h3 className="text-xl font-serif text-white mb-6 border-b border-white/10 pb-4 flex items-center gap-3">
+                                        <Euro className="w-5 h-5 text-[#D2B57B]" /> Stades Commissionnels (Vente Complète)
+                                    </h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        {[
+                                            { title: "Starter", icon: "🥉", sales: "0 à 9 ventes", com: "10% à 14%", color: "border-orange-700/50" },
+                                            { title: "Confirmé", icon: "🥈", sales: "10 à 29 ventes", com: "12% à 16%", color: "border-gray-400/50" },
+                                            { title: "Élite", icon: "🥇", sales: "30 à 74 ventes", com: "15% à 18%", color: "border-yellow-500/50" },
+                                            { title: "Partenaire", icon: "💎", sales: "75+ ventes", com: "20% flat", color: "border-[#D2B57B]/80 bg-[#D2B57B]/10" }
+                                        ].map((tier, i) => (
+                                            <div key={i} className={`bg-black/50 border ${tier.color} rounded-xl p-5 text-center flex flex-col items-center justify-center relative overflow-hidden transition-transform hover:-translate-y-1`}>
+                                                <span className="text-3xl mb-2">{tier.icon}</span>
+                                                <h4 className="font-bold text-white text-lg">{tier.title}</h4>
+                                                <p className="text-xs text-gray-400 mt-1 mb-3 bg-white/5 px-2 py-1 rounded-full">{tier.sales}</p>
+                                                <p className="text-[#D2B57B] font-bold text-xl">{tier.com}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* SECTION B : GUIDE OPÉRATIONNEL */}
+                        <section>
+                            <SectionHeader id="guide-op" emoji="🗺️" title="Guide Opérationnel (Action Terrain)" expanded={true} toggleSection={() => { }} />
+
+                            <div className="mt-8 space-y-8 animate-in fade-in slide-in-from-top-4">
+                                {/* Roles */}
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 shadow-lg hover:border-[#D2B57B]/30 transition-colors">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <h4 className="text-2xl font-serif text-white">L'Apporteur</h4>
+                                            <span className="bg-white/10 text-white font-bold px-3 py-1 rounded-full text-sm">3% à 5%</span>
                                         </div>
-                                        <div>
-                                            <h3 className="text-xl font-serif text-white">Plan d'Action</h3>
-                                            <p className="text-xs text-[#D2B57B] uppercase tracking-widest mt-1">Acquisition & Partenariats</p>
+                                        <p className="text-sm text-[#D2B57B] uppercase tracking-widest mb-6">Le Connecteur</p>
+                                        <p className="text-gray-400 text-sm mb-6 h-10">Idéal si vous manquez de temps ou d'expertise technique. Transférez le lead, on gère le reste.</p>
+                                        <ol className="space-y-4 text-sm text-gray-300">
+                                            <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">1.</span> Le client est intéressé par vos contenus.</li>
+                                            <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">2.</span> Vous remplissez le formulaire "Nouveau Lead".</li>
+                                            <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">3.</span> L'équipe Auclaire prend le relais (Design, Devis, Closing).</li>
+                                            <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">4.</span> S'il achète, vous touchez votre commission.</li>
+                                        </ol>
+                                    </div>
+
+                                    <div className="bg-[#D2B57B]/5 border border-[#D2B57B]/30 rounded-2xl p-8 shadow-lg hover:border-[#D2B57B]/60 transition-colors relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#D2B57B]/10 rounded-full blur-[40px] -mr-10 -mt-10 pointer-events-none"></div>
+                                        <div className="flex justify-between items-start mb-4">
+                                            <h4 className="text-2xl font-serif text-[#D2B57B]">Vente Complète</h4>
+                                            <span className="bg-[#D2B57B] text-black font-bold px-3 py-1 rounded-full text-sm">Jusqu'à 18%+</span>
+                                        </div>
+                                        <p className="text-sm text-white uppercase tracking-widest mb-6 font-medium">Le Conseiller Expert</p>
+                                        <p className="text-gray-400 text-sm mb-6 h-10">Pour ceux qui veulent maximiser leurs revenus et maîtriser l'art de la vente sur-mesure de A à Z.</p>
+                                        <ol className="space-y-4 text-sm text-gray-300 relative z-10">
+                                            <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">1.</span> Vous configurez le bijou avec le client (Studio 3D).</li>
+                                            <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">2.</span> Vous confirmez les spécifications et les matériaux.</li>
+                                            <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">3.</span> Vous donnez l'estimation de prix précise au client.</li>
+                                            <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">4.</span> Vous validez la commande (Le Closing).</li>
+                                        </ol>
+                                    </div>
+                                </div>
+
+                                {/* Strategies d'acquisition */}
+                                <div>
+                                    <h3 className="text-xl font-serif text-white mb-6 border-b border-white/10 pb-4 flex items-center gap-3">
+                                        <TrendingUp className="w-5 h-5 text-[#D2B57B]" /> Tactiques d'Acquisition (La Méthode Concierge)
+                                    </h3>
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
+                                        <h4 className="text-lg font-bold text-white flex items-center gap-2 mb-3">
+                                            <Users className="w-5 h-5 text-[#D2B57B]" /> Partenariats Locaux (Salons de Manucure & Barbiers)
+                                        </h4>
+                                        <p className="text-gray-400 text-sm mb-4">
+                                            C'est une stratégie très lucrative. Dans un salon de manucure, les clientes regardent leurs mains pendant une heure. C'est le moment idéal pour leur faire essayer virtuellement ou voir des modèles de bagues.
+                                        </p>
+                                        <div className="bg-black/50 p-4 rounded-lg text-sm text-gray-300 border border-white/5">
+                                            <ul className="space-y-2">
+                                                <li><span className="text-[#D2B57B] mr-2">✓</span> Proposez au gérant de laisser un présentoir ou des cartes de visite luxe (QR Code).</li>
+                                                <li><span className="text-[#D2B57B] mr-2">✓</span> Offrez une commission de parrainage au gérant sur chaque vente (partage de commission).</li>
+                                                <li><span className="text-[#D2B57B] mr-2">✓</span> Le gérant devient votre apporteur d'affaires, vous devenez son joaillier partenaire.</li>
+                                            </ul>
                                         </div>
                                     </div>
-                                    <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                                        Stratégies détaillées pour le démarchage LinkedIn, la mise en place de partenariats locaux B2B et l'utilisation optimale des réseaux sociaux.
-                                    </p>
-                                    <div className="flex gap-4">
-                                        <a href="/docs/plan_ambassadeurs.pdf" target="_blank" rel="noopener noreferrer" className="flex-1 bg-[#D2B57B] hover:bg-[#D2B57B]/90 text-black py-3 rounded-lg font-bold text-sm tracking-wider uppercase transition-colors flex items-center justify-center gap-2">
-                                            <ArrowRight className="w-4 h-4" />
-                                            Consulter le Plan
-                                        </a>
-                                        <a href="/docs/plan_ambassadeurs.pdf" download className="bg-white/10 hover:bg-white/20 border border-white/10 text-white py-3 px-4 rounded-lg font-bold transition-colors flex items-center justify-center">
-                                            <Download className="w-4 h-4" />
-                                        </a>
+
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                                            <h4 className="text-lg font-bold text-white mb-3">📱 Réseaux Sociaux (TikTok/Insta)</h4>
+                                            <ul className="space-y-2 text-sm text-gray-400">
+                                                <li>• Montrez les designs 3D qui tournent en vidéo (effet Wahou).</li>
+                                                <li>• Partagez des témoignages ou des processus de création.</li>
+                                                <li>• Ciblez par tags: Votre ville + #Fiancailles #SurMesure #Luxe</li>
+                                            </ul>
+                                        </div>
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                                            <h4 className="text-lg font-bold text-white mb-3">🛒 Marketplaces (Kijiji/Facebook)</h4>
+                                            <ul className="space-y-2 text-sm text-gray-400">
+                                                <li>• Utilisez une localisation précise (quartiers aisés).</li>
+                                                <li>• Titre : "Bague de Fiançailles Sur-Mesure - Diamant Certifié".</li>
+                                                <li>• Dirigez rapidement la conversation texte vers un Call ou 3D Démo.</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
