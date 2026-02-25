@@ -407,9 +407,9 @@ function FormationContent() {
                                             <span className="text-[10px] uppercase font-bold text-[#D2B57B] tracking-wider">NEW</span>
                                         </div>
                                         <div className="flex h-32 overflow-hidden bg-black/50">
-                                            <ImageWithPreview src="https://cdn.shopify.com/s/files/1/0088/6646/3826/products/101-1-Radiant-cut-solitaire-engagement-ring_5b4b1a41-e9ed-4903-a4c8-479cd6b2dd9c_800x.jpg" />
-                                            <ImageWithPreview src="https://www.brilliance.com/images/engagement-rings/radiant-cut-solitaire-diamond-ring-white-gold/radiant-solitaire-diamond-engagement-ring-white-gold_1200x.jpg" />
-                                            <ImageWithPreview src="https://www.goodstoneinc.com/cdn/shop/products/Solitaire_Radiant_YG_1_1800x1800.jpg" />
+                                            <ImageWithPreview src="https://i.etsystatic.com/13550478/r/il/f53ebd/3052822471/il_1080xN.3052822471_b5y3.jpg" />
+                                            <ImageWithPreview src="https://i.etsystatic.com/13550478/r/il/a765ea/3005118742/il_1080xN.3005118742_r41u.jpg" />
+                                            <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
                                         </div>
                                         <div className="p-5">
                                             <h3 className="text-xl font-serif text-white mb-3">Radiant <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Hybride Brillant</span></h3>
@@ -477,6 +477,13 @@ function QCMSection() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [results, setResults] = useState<{ proc: number, exp: number } | null>(null);
 
+    const getGrade = (total: number) => {
+        if (total >= 190) return { title: "Expert Élite", color: "text-[#D2B57B]" };
+        if (total >= 160) return { title: "Closer Confirmé", color: "text-green-400" };
+        if (total >= 120) return { title: "Junior - À coacher", color: "text-yellow-400" };
+        return { title: "Novice - Formation requise", color: "text-red-400" };
+    };
+
     const handleStart = (e: React.FormEvent) => {
         e.preventDefault();
         if (salespersonName.trim()) setHasStarted(true);
@@ -514,7 +521,7 @@ function QCMSection() {
 
             if (error) {
                 console.error("Error saving QCM to Supabase:", error);
-                alert("Erreur lors de la sauvegarde. Veuillez réessayer.");
+                alert(`Erreur lors de la sauvegarde: ${error.message}\n\n⚠️ As-tu bien exécuté le script SQL dans Supabase pour créer la table "formation_results" ?`);
             } else {
                 setResults({ proc: processScore, exp: expertiseScore });
                 setIsSubmitted(true);
@@ -580,7 +587,11 @@ function QCMSection() {
                 </div>
 
                 <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                    <p className="text-2xl font-serif text-white">Score Total : {results.proc + results.exp} <span className="text-sm text-gray-400">/ 200</span></p>
+                    <p className="text-2xl font-serif text-white mb-2">Score Total : {results.proc + results.exp} <span className="text-sm text-gray-400">/ 200</span></p>
+                    {(() => {
+                        const grade = getGrade(results.proc + results.exp);
+                        return <p className={`text-xl font-bold uppercase tracking-widest ${grade.color}`}>{grade.title}</p>;
+                    })()}
                 </div>
             </div>
         );
