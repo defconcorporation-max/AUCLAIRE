@@ -113,6 +113,27 @@ function FormationContent() {
         );
     };
 
+    // Baromètre de Confiance (Expertise)
+    const [completedExpertiseSteps, setCompletedExpertiseSteps] = useState<number[]>([]);
+    const toggleExpertiseStepCompletion = (stepIndex: number) => {
+        setCompletedExpertiseSteps(prev =>
+            prev.includes(stepIndex) ? prev.filter(i => i !== stepIndex) : [...prev, stepIndex]
+        );
+    };
+
+    // Calcul de la Progression Globale
+    const totalSteps = 14; // 3 Processus + 11 Expertise
+    const completedSteps = completedProcessusSteps.length + completedExpertiseSteps.length;
+    const progressPercent = Math.round((completedSteps / totalSteps) * 100);
+
+    const getBadgeInfo = () => {
+        if (progressPercent === 100) return { title: "Expert Diamantaire", icon: "👑", color: "from-yellow-400 to-[#D2B57B]", glow: "shadow-[0_0_30px_rgba(210,181,123,0.6)]" };
+        if (progressPercent >= 70) return { title: "Closer Confirmé", icon: "💎", color: "from-blue-400 to-indigo-500", glow: "shadow-[0_0_20px_rgba(99,102,241,0.4)]" };
+        if (progressPercent >= 30) return { title: "Conseiller Junior", icon: "🌟", color: "from-emerald-400 to-green-600", glow: "shadow-[0_0_15px_rgba(16,185,129,0.3)]" };
+        return { title: "Novice", icon: "🌱", color: "from-gray-400 to-gray-600", glow: "shadow-none" };
+    };
+    const badge = getBadgeInfo();
+
     // Calcul de la commission
     const getCommissionRate = () => simType === 'apporteur' ? 0.05 : 0.15;
     const estimatedCommission = simPrice * getCommissionRate();
@@ -173,12 +194,33 @@ function FormationContent() {
             <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#D2B57B]/5 blur-[120px] rounded-full pointer-events-none"></div>
 
             <div className="max-w-6xl mx-auto px-6 py-16 relative z-10">
-                <header className="text-center mb-16 border-b border-white/10 pb-16">
+                <header className="text-center mb-16 border-b border-white/10 pb-16 relative">
+                    {/* Badge System */}
+                    <div className="absolute top-0 right-0 hidden md:flex flex-col items-end">
+                        <div className={`px-4 py-2 rounded-2xl bg-gradient-to-r ${badge.color} text-black font-bold flex items-center gap-2 ${badge.glow} transition-all duration-500`}>
+                            <span className="text-xl">{badge.icon}</span> {badge.title}
+                        </div>
+                    </div>
+
                     <h2 className="text-[#D2B57B] text-xs md:text-sm uppercase tracking-[0.3em] mb-6 font-semibold inline-block px-5 py-2 border border-[#D2B57B]/30 rounded-full bg-[#D2B57B]/10 shadow-[0_0_20px_rgba(210,181,123,0.2)]">Auclaire Academy</h2>
                     <h1 className="text-4xl md:text-7xl font-bold mb-6 bg-gradient-to-br from-white to-[#D2B57B] bg-clip-text text-transparent font-serif leading-tight">Formation Closer Expert</h1>
-                    <p className="text-gray-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed font-serif italic">
+                    <p className="text-gray-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed font-serif italic mb-8">
                         Bague de Fiançailles — L'art de l'accompagnement d'élite.
                     </p>
+
+                    {/* Progress Bar */}
+                    <div className="max-w-xl mx-auto bg-black/50 border border-white/10 rounded-2xl p-4 shadow-xl backdrop-blur-sm">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium text-gray-300">Progression Globale</span>
+                            <span className="text-sm font-bold text-[#D2B57B]">{progressPercent}%</span>
+                        </div>
+                        <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-[#D2B57B]/50 to-[#D2B57B] transition-all duration-1000 ease-out"
+                                style={{ width: `${progressPercent}%` }}
+                            ></div>
+                        </div>
+                    </div>
                 </header>
 
                 <Tabs defaultValue="processus" className="w-full">
@@ -595,19 +637,7 @@ function FormationContent() {
                                         ))}
                                     </div>
 
-                                    {/* Component UI pour valider la section */}
-                                    <div className="mt-16 flex justify-center pb-8 border-t border-white/5 pt-12">
-                                        <button
-                                            onClick={() => toggleStepCompletion(0)}
-                                            className={`flex items-center gap-3 px-8 py-4 rounded-full font-serif text-lg transition-all duration-300 border ${completedProcessusSteps.includes(0)
-                                                ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_20px_rgba(210,181,123,0.4)]'
-                                                : 'bg-black/50 text-gray-400 border-white/20 hover:border-[#D2B57B]/50 hover:text-white'
-                                                }`}
-                                        >
-                                            {completedProcessusSteps.includes(0) ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-current opacity-50"></div>}
-                                            J'ai assimilé cette partie
-                                        </button>
-                                    </div>
+
                                 </section>
                             )}
 
@@ -696,19 +726,7 @@ function FormationContent() {
                                         </div>
                                     </div>
 
-                                    {/* Component UI pour valider la section */}
-                                    <div className="mt-16 flex justify-center pb-8 border-t border-white/5 pt-12">
-                                        <button
-                                            onClick={() => toggleStepCompletion(1)}
-                                            className={`flex items-center gap-3 px-8 py-4 rounded-full font-serif text-lg transition-all duration-300 border ${completedProcessusSteps.includes(1)
-                                                ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_20px_rgba(210,181,123,0.4)]'
-                                                : 'bg-black/50 text-gray-400 border-white/20 hover:border-[#D2B57B]/50 hover:text-white'
-                                                }`}
-                                        >
-                                            {completedProcessusSteps.includes(1) ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-current opacity-50"></div>}
-                                            J'ai assimilé cette partie
-                                        </button>
-                                    </div>
+
                                 </section>
                             )}
 
@@ -761,22 +779,22 @@ function FormationContent() {
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Component UI pour valider la section */}
-                                    <div className="mt-16 flex justify-center pb-8 border-t border-white/5 pt-12">
-                                        <button
-                                            onClick={() => toggleStepCompletion(2)}
-                                            className={`flex items-center gap-3 px-8 py-4 rounded-full font-serif text-lg transition-all duration-300 border ${completedProcessusSteps.includes(2)
-                                                    ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_20px_rgba(210,181,123,0.4)]'
-                                                    : 'bg-black/50 text-gray-400 border-white/20 hover:border-[#D2B57B]/50 hover:text-white'
-                                                }`}
-                                        >
-                                            {completedProcessusSteps.includes(2) ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-current opacity-50"></div>}
-                                            J'ai assimilé cette partie
-                                        </button>
-                                    </div>
                                 </section>
                             )}
+
+                            {/* Component UI pour valider la section Processus courante */}
+                            <div className="mt-16 flex justify-center pb-8 border-t border-white/5 pt-12">
+                                <button
+                                    onClick={() => toggleStepCompletion(currentProcessusStep)}
+                                    className={`flex items-center gap-3 px-8 py-4 rounded-full font-serif text-lg transition-all duration-300 border ${completedProcessusSteps.includes(currentProcessusStep)
+                                        ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_20px_rgba(210,181,123,0.4)]'
+                                        : 'bg-black/50 text-gray-400 border-white/20 hover:border-[#D2B57B]/50 hover:text-white'
+                                        }`}
+                                >
+                                    {completedProcessusSteps.includes(currentProcessusStep) ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-current opacity-50"></div>}
+                                    J'ai assimilé cette partie
+                                </button>
+                            </div>
                         </div>
                     </TabsContent>
 
@@ -784,14 +802,28 @@ function FormationContent() {
                     <TabsContent value="expertise" className="animate-in fade-in zoom-in-95 duration-500">
                         {/* Stepper Header */}
                         <div className="flex items-center gap-2 overflow-x-auto pb-6 mb-8 no-scrollbar border-b border-white/5 snap-x">
-                            {expertiseSteps.map((step, idx) => (
-                                <button
-                                    key={step.id}
-                                    onClick={() => setCurrentExpertiseStep(idx)}
-                                    className={`flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 border snap-start ${currentExpertiseStep === idx ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_15px_rgba(210,181,123,0.3)]' : 'bg-black/40 text-gray-400 border-white/5 hover:text-white hover:border-white/20'}`}>
-                                    <span className="mr-2 opacity-80">{step.emoji}</span> {step.title}
-                                </button>
-                            ))}
+                            {expertiseSteps.map((step, idx) => {
+                                const isCompleted = completedExpertiseSteps.includes(idx);
+                                const isCurrent = currentExpertiseStep === idx;
+                                return (
+                                    <button
+                                        key={step.id}
+                                        onClick={() => setCurrentExpertiseStep(idx)}
+                                        className={`flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 border snap-start relative ${isCurrent
+                                            ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_15px_rgba(210,181,123,0.3)]'
+                                            : isCompleted
+                                                ? 'bg-[#D2B57B]/10 text-[#D2B57B] border-[#D2B57B]/50 hover:bg-[#D2B57B]/20'
+                                                : 'bg-black/40 text-gray-400 border-white/5 hover:text-white hover:border-white/20'
+                                            }`}
+                                    >
+                                        <div className="flex items-center">
+                                            <span className="mr-2 opacity-80">{step.emoji}</span>
+                                            {step.title}
+                                            {isCompleted && <CheckCircle2 className="w-4 h-4 ml-2 text-green-500 shrink-0 animate-in zoom-in" />}
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         <div className="min-h-[600px] pb-12">
@@ -1196,6 +1228,20 @@ function FormationContent() {
                                     </div>
                                 </section>
                             )}
+
+                            {/* Component UI pour valider la section Expertise courante */}
+                            <div className="mt-16 flex justify-center pb-8 border-t border-white/5 pt-12">
+                                <button
+                                    onClick={() => toggleExpertiseStepCompletion(currentExpertiseStep)}
+                                    className={`flex items-center gap-3 px-8 py-4 rounded-full font-serif text-lg transition-all duration-300 border ${completedExpertiseSteps.includes(currentExpertiseStep)
+                                        ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_20px_rgba(210,181,123,0.4)]'
+                                        : 'bg-black/50 text-gray-400 border-white/20 hover:border-[#D2B57B]/50 hover:text-white'
+                                        }`}
+                                >
+                                    {completedExpertiseSteps.includes(currentExpertiseStep) ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-current opacity-50"></div>}
+                                    J'ai assimilé cette partie
+                                </button>
+                            </div>
                         </div>
 
                         {/* Stepper Footer Navigation */}
