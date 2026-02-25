@@ -491,8 +491,8 @@ function FormationContent() {
                                             </div>
                                         </div>
                                         <div className="bg-black/50 border border-white/10 rounded-xl p-6 text-center">
-                                            <div className="w-full aspect-square bg-[#D2B57B]/5 rounded-xl border border-[#D2B57B]/20 flex items-center justify-center p-4">
-                                                <img src="https://i.ibb.co/3Wb0kC3/anatomy.png" alt="Anatomie Bague" className="max-h-full opacity-80 mix-blend-screen" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<span class="text-gray-500 text-sm">Schéma d\'anatomie (Tête, Griffes, Shank)</span>'; }} />
+                                            <div className="w-full rounded-xl border border-white/10 overflow-hidden cursor-zoom-in group" onClick={() => setSelectedImage('/anatomie-bague.png')}>
+                                                <img src="/anatomie-bague.png" alt="Anatomie Bague" className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<span class="text-gray-500 text-sm p-8 block">Image introuvable. Veuillez placer anatomie-bague.png dans le dossier public.</span>'; }} />
                                             </div>
                                             <p className="text-xs text-gray-500 mt-4 uppercase tracking-widest">Maîtriser ce lexique établit instantanément votre autorité d'expert joaillier.</p>
                                         </div>
