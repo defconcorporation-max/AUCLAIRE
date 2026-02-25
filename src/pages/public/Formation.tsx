@@ -99,7 +99,23 @@ function FormationContent() {
     ];
     const [currentProcessusStep, setCurrentProcessusStep] = useState(0);
 
+    const [simPrice, setSimPrice] = useState<number>(3000);
+    const [simType, setSimType] = useState<'apporteur' | 'vente_complete'>('vente_complete');
 
+    // Scénario interactif
+    const [quizAnswered, setQuizAnswered] = useState<number | null>(null);
+
+    // Baromètre de Confiance (Processus)
+    const [completedProcessusSteps, setCompletedProcessusSteps] = useState<number[]>([]);
+    const toggleStepCompletion = (stepIndex: number) => {
+        setCompletedProcessusSteps(prev =>
+            prev.includes(stepIndex) ? prev.filter(i => i !== stepIndex) : [...prev, stepIndex]
+        );
+    };
+
+    // Calcul de la commission
+    const getCommissionRate = () => simType === 'apporteur' ? 0.05 : 0.15;
+    const estimatedCommission = simPrice * getCommissionRate();
 
     const ImageWithPreview = ({ src }: { src: string }) => (
         <img
@@ -123,6 +139,19 @@ function FormationContent() {
         { id: 10, title: 'Suivi Production', subtitle: 'Maintenir l\'excitation', objectif: 'Maintenir l\'excitation.', questions: ['Comment te sens-tu dans l’attente ?', 'Veux-tu des updates réguliers ?', 'As-tu déjà planifié la demande ?'] },
         { id: 11, title: 'Livraison', subtitle: 'Amplifier le moment', objectif: 'Amplifier le moment final.', questions: ['As-tu imaginé comment présenter la bague ?', 'Veux-tu des conseils pour le moment de la demande ?'] },
         { id: 12, title: 'Post-Vente & Relation', subtitle: 'Relation long terme', objectif: 'Créer une relation long terme.', questions: ['Comment s’est passée la demande ?', 'Quelle a été sa réaction ?', 'Puis-je voir une photo du moment ?', 'As-tu besoin d’accompagnement pour alliances ?'] }
+    ];
+
+    const diamondCutsData = [
+        { name: "Round", subtitle: "Brillance maximale", desc: "La coupe ronde maximise la réflexion de la lumière grâce à une géométrie optimisée.", tags: ["Brillance maximale", "Intemporel"], img: "https://i.etsystatic.com/16544137/r/il/1ccc36/3168700913/il_1080xN.3168700913_tto5.jpg" },
+        { name: "Oval", subtitle: "Illusion taille", desc: "Forme allongée augmentant la surface visible du diamant.", tags: ["Effet carat+", "Doigt allongé"], img: "https://i.etsystatic.com/36057419/r/il/3737b5/5387076943/il_fullxfull.5387076943_t3z7.jpg" },
+        { name: "Princess", subtitle: "Moderne structuré", desc: "Forme carrée avec brillance importante.", tags: ["Look moderne", "Structure nette"], img: "https://media.tiffany.com/is/image/Tiffany/EcomItemL2/tiffany-novo-princess-cut-engagement-ring-with-a-pav-set-diamond-band-in-platinum-60767173_996218_ED_M.jpg?%24cropN=0.1%2C0.1%2C0.8%2C0.8&defaultImage=NoImageAvailableInternal&op_usm=1.75%2C1.0%2C6.0" },
+        { name: "Cushion", subtitle: "Romantique vintage", desc: "Coins arrondis et style antique.", tags: ["Romantique", "Douceur visuelle"], img: "https://i.etsystatic.com/28887394/r/il/006bab/5523396783/il_1080xN.5523396783_bick.jpg" },
+        { name: "Emerald", subtitle: "Élégance minimaliste", desc: "Facettes larges créant un effet miroir.", tags: ["Sophistication", "Chic"], img: "https://i.etsystatic.com/17551371/r/il/32495a/4580417301/il_fullxfull.4580417301_8s0u.jpg" },
+        { name: "Pear", subtitle: "Original féminin", desc: "Forme hybride ronde + marquise.", tags: ["Originalité"], img: "https://prouddiamond.com/cdn/shop/files/PearCutPaveRing_E.jpg?v=1700771323&width=1445" },
+        { name: "Radiant", subtitle: "Hybride Brillant", desc: "Mélange de la forme Emerald avec les facettes de la coupe Round, offrant un maximum d'éclat.", tags: ["Pétillant", "Moderne"], img: "/images/education/cuts/radiant.png", isNew: true },
+        { name: "Marquise", subtitle: "Royale et fine", desc: "Taille allongée avec deux pointes, créant l'illusion d'une pierre plus large sur le doigt.", tags: ["Vintage", "Allongeant"], img: "/images/education/cuts/marquise.png" },
+        { name: "Asscher", subtitle: "Art Déco", desc: "Coupe carrée avec des steps (marches) très géométriques à la manière de l'émeraude, mais carrée.", tags: ["Art Déco", "Élégant"], img: "/images/education/cuts/asscher.png" },
+        { name: "Heart", subtitle: "Romance absolue", desc: "Le symbole ultime de l'amour, diamant très complexe.", tags: ["Romantique", "Unique"], img: "/images/education/cuts/heart.png" }
     ];
 
     return (
@@ -279,36 +308,71 @@ function FormationContent() {
                                     </div>
                                 </div>
 
-                                {/* Scénarios de Performance */}
-                                <div>
-                                    <h3 className="text-xl font-serif text-white mb-6 border-b border-white/10 pb-4 flex items-center gap-3">
-                                        <TrendingUp className="w-5 h-5 text-[#D2B57B]" /> Projections de Revenus (Exemple : Prix moyen 2300$)
+                                {/* Simulateur Interactif */}
+                                <div className="mt-12 bg-black/60 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden shadow-[0_0_30px_rgba(210,181,123,0.1)]">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#D2B57B]/5 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none"></div>
+                                    <h3 className="text-2xl font-serif text-[#D2B57B] mb-2 flex items-center gap-3">
+                                        <TrendingUp className="w-6 h-6" /> Simulateur de Gains
                                     </h3>
-                                    <div className="grid md:grid-cols-3 gap-6">
-                                        <div className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-xl p-6">
-                                            <h4 className="text-white font-bold mb-2">Scénario A (Solide)</h4>
-                                            <p className="text-[#D2B57B] text-sm mb-4">3 ventes / semaine</p>
-                                            <div className="bg-black/40 rounded p-3 text-center border border-white/5">
-                                                <p className="text-xs text-gray-400 uppercase tracking-widest">Gains estimés</p>
-                                                <p className="text-2xl font-bold text-white mt-1">~ 4 100 $ <span className="text-sm font-normal text-gray-500">/ mois</span></p>
+                                    <p className="text-gray-400 text-sm mb-8">Découvrez combien vous pouvez gagner sur une seule vente selon votre niveau d'implication.</p>
+
+                                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                                        <div className="space-y-6">
+                                            {/* Input Prix */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-300 mb-2 uppercase tracking-wider">Prix de la bague vendue ($)</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#D2B57B] font-bold">$</span>
+                                                    <Input
+                                                        type="number"
+                                                        value={simPrice}
+                                                        onChange={(e) => setSimPrice(Number(e.target.value))}
+                                                        className="h-14 pl-10 bg-black/50 border-white/10 text-xl font-bold text-white focus:border-[#D2B57B] rounded-xl"
+                                                    />
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min="1500" max="25000" step="100"
+                                                    value={simPrice}
+                                                    onChange={(e) => setSimPrice(Number(e.target.value))}
+                                                    className="w-full mt-4 accent-[#D2B57B]"
+                                                />
+                                                <div className="flex justify-between text-xs text-gray-500 mt-2 font-medium">
+                                                    <span>Min (1 500 $)</span>
+                                                    <span>Moyenne (3 000 $)</span>
+                                                    <span>Max (25 000 $)</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Toggle Role */}
+                                            <div className="bg-black/40 p-1.5 rounded-xl border border-white/5 grid grid-cols-2 gap-1">
+                                                <button
+                                                    onClick={() => setSimType('apporteur')}
+                                                    className={`py-3 rounded-lg text-sm font-medium transition-all ${simType === 'apporteur' ? 'bg-white/10 text-white shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
+                                                >
+                                                    Apporteur (5%)
+                                                </button>
+                                                <button
+                                                    onClick={() => setSimType('vente_complete')}
+                                                    className={`py-3 rounded-lg text-sm font-medium transition-all ${simType === 'vente_complete' ? 'bg-[#D2B57B] text-black shadow-md shadow-[#D2B57B]/20' : 'text-gray-500 hover:text-gray-300'}`}
+                                                >
+                                                    Vente Complète (15%)
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="bg-gradient-to-br from-[#D2B57B]/10 to-transparent border border-[#D2B57B]/20 rounded-xl p-6">
-                                            <h4 className="text-white font-bold mb-2">Scénario B (Performant)</h4>
-                                            <p className="text-[#D2B57B] text-sm mb-4">5 ventes / semaine</p>
-                                            <div className="bg-black/40 rounded p-3 text-center border border-[#D2B57B]/20">
-                                                <p className="text-xs text-gray-400 uppercase tracking-widest">Gains estimés</p>
-                                                <p className="text-2xl font-bold text-white mt-1">~ 9 000 $ <span className="text-sm font-normal text-gray-500">/ mois</span></p>
+
+                                        {/* Resultat */}
+                                        <div className="flex flex-col items-center justify-center p-8 border border-white/5 rounded-2xl bg-gradient-to-br from-white/5 to-transparent relative">
+                                            <p className="text-gray-400 text-sm uppercase tracking-widest font-medium mb-4">Votre Commission Estimée</p>
+                                            <div className="flex items-baseline gap-2 mb-2">
+                                                <span className="text-5xl md:text-7xl font-bold font-serif text-white animate-in zoom-in duration-300" key={estimatedCommission}>
+                                                    {estimatedCommission.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 })}
+                                                </span>
                                             </div>
-                                        </div>
-                                        <div className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/30 rounded-xl p-6 relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 p-2"><Award className="w-6 h-6 text-yellow-500/50" /></div>
-                                            <h4 className="text-white font-bold mb-2">Scénario C (Élite)</h4>
-                                            <p className="text-yellow-500 text-sm mb-4">20 ventes / mois</p>
-                                            <div className="bg-black/40 rounded p-3 text-center border border-yellow-500/30">
-                                                <p className="text-xs text-gray-400 uppercase tracking-widest">Gains estimés</p>
-                                                <p className="text-2xl font-bold text-yellow-500 mt-1">~ 10 000 $ <span className="text-sm font-normal text-yellow-500/50">/ mois</span></p>
-                                            </div>
+                                            <p className="text-[#D2B57B] text-sm mt-4 flex items-center gap-2 bg-[#D2B57B]/10 px-4 py-2 rounded-full border border-[#D2B57B]/20">
+                                                <Award className="w-4 h-4" />
+                                                {simType === 'apporteur' ? "Rôle de connecteur sans effort technique" : "Vous gérez la vente de A à Z (Studio 3D)"}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -458,14 +522,28 @@ function FormationContent() {
                     <TabsContent value="processus" className="animate-in fade-in zoom-in-95 duration-500">
                         {/* Stepper Header */}
                         <div className="flex items-center gap-2 overflow-x-auto pb-6 mb-8 no-scrollbar border-b border-white/5 snap-x">
-                            {processusSteps.map((step, idx) => (
-                                <button
-                                    key={step.id}
-                                    onClick={() => setCurrentProcessusStep(idx)}
-                                    className={`flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 border snap-start ${currentProcessusStep === idx ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_15px_rgba(210,181,123,0.3)]' : 'bg-black/40 text-gray-400 border-white/5 hover:text-white hover:border-white/20'}`}>
-                                    <span className="mr-2 opacity-80">{step.emoji}</span> {step.title}
-                                </button>
-                            ))}
+                            {processusSteps.map((step, idx) => {
+                                const isCompleted = completedProcessusSteps.includes(idx);
+                                const isCurrent = currentProcessusStep === idx;
+                                return (
+                                    <button
+                                        key={step.id}
+                                        onClick={() => setCurrentProcessusStep(idx)}
+                                        className={`flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 border snap-start relative ${isCurrent
+                                            ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_15px_rgba(210,181,123,0.3)]'
+                                            : isCompleted
+                                                ? 'bg-[#D2B57B]/10 text-[#D2B57B] border-[#D2B57B]/50 hover:bg-[#D2B57B]/20'
+                                                : 'bg-black/40 text-gray-400 border-white/5 hover:text-white hover:border-white/20'
+                                            }`}
+                                    >
+                                        <div className="flex items-center">
+                                            <span className="mr-2 opacity-80">{step.emoji}</span>
+                                            {step.title}
+                                            {isCompleted && <CheckCircle2 className="w-4 h-4 ml-2 text-green-500 shrink-0 animate-in zoom-in" />}
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         <div className="min-h-[600px] pb-12">
@@ -516,6 +594,20 @@ function FormationContent() {
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Component UI pour valider la section */}
+                                    <div className="mt-16 flex justify-center pb-8 border-t border-white/5 pt-12">
+                                        <button
+                                            onClick={() => toggleStepCompletion(0)}
+                                            className={`flex items-center gap-3 px-8 py-4 rounded-full font-serif text-lg transition-all duration-300 border ${completedProcessusSteps.includes(0)
+                                                ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_20px_rgba(210,181,123,0.4)]'
+                                                : 'bg-black/50 text-gray-400 border-white/20 hover:border-[#D2B57B]/50 hover:text-white'
+                                                }`}
+                                        >
+                                            {completedProcessusSteps.includes(0) ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-current opacity-50"></div>}
+                                            J'ai assimilé cette partie
+                                        </button>
+                                    </div>
                                 </section>
                             )}
 
@@ -561,6 +653,61 @@ function FormationContent() {
                                                 <li className="flex items-start gap-2"><span className="text-[#D2B57B]/50 mt-1">▪</span><span>Éduquer, proposer des options, rassurer et valider jusqu'au closing.</span></li>
                                             </ul>
                                         </div>
+                                    </div>
+
+                                    {/* Mini Quiz de Rôle */}
+                                    <div className="mt-12 bg-black/40 border border-[#D2B57B]/30 rounded-2xl p-8 relative overflow-hidden shadow-[0_0_20px_rgba(210,181,123,0.1)]">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#D2B57B]/5 rounded-full blur-[40px] -mr-10 -mt-10 pointer-events-none"></div>
+                                        <h3 className="text-xl font-serif text-[#D2B57B] mb-4 flex items-center gap-3">
+                                            <BrainCircuit className="w-6 h-6" /> Test Express : Scénario Client
+                                        </h3>
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
+                                            <p className="text-gray-200 italic font-medium leading-relaxed">"Bonjour, je cherche une bague pour ma conjointe. Elle est infirmière, très active et sportive, mais elle adore les gros diamants qui brillent de mille feux. Quel style de bague devrais-je privilégier ?"</p>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {[
+                                                { id: 1, text: "Un gros diamant rond monté haut sur un solitaire fin pour maximiser la brillance.", isCorrect: false, feedback: "❌ Mauvais choix : Monté haut, le diamant va s'accrocher partout pendant son travail (risque de casse ou de gêne avec les gants)." },
+                                                { id: 2, text: "Un diamant taille Princesse avec des griffes très fines pour dégager la pierre.", isCorrect: false, feedback: "❌ Risqué : Les coins pointus de la taille Princesse sont très fragiles pour une personne active ou manuelle." },
+                                                { id: 3, text: "Un diamant rond brillant, mais en serti clos (bezel) ou serti bas pour la sécuriser.", isCorrect: true, feedback: "✅ Excellent ! Le serti clos ou bas protège la pierre des chocs tout en permettant à la coupe ronde d'exprimer toute sa brillance." }
+                                            ].map(option => (
+                                                <button
+                                                    key={option.id}
+                                                    onClick={() => setQuizAnswered(option.id)}
+                                                    className={`w-full text-left p-4 rounded-xl border transition-all ${quizAnswered === option.id
+                                                        ? option.isCorrect
+                                                            ? 'bg-green-500/10 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+                                                            : 'bg-red-500/10 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                                                        : 'bg-black/50 border-white/10 hover:border-[#D2B57B]/50 hover:bg-white/5'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium text-gray-200 pr-4">{option.text}</span>
+                                                        {quizAnswered === option.id && (
+                                                            option.isCorrect ? <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" /> : <X className="w-5 h-5 text-red-500 shrink-0" />
+                                                        )}
+                                                    </div>
+                                                    {quizAnswered === option.id && (
+                                                        <div className="mt-3 pt-3 border-t border-white/10 text-sm font-medium animate-in slide-in-from-top-2">
+                                                            <span className={option.isCorrect ? 'text-green-500' : 'text-red-500'}>{option.feedback}</span>
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Component UI pour valider la section */}
+                                    <div className="mt-16 flex justify-center pb-8 border-t border-white/5 pt-12">
+                                        <button
+                                            onClick={() => toggleStepCompletion(1)}
+                                            className={`flex items-center gap-3 px-8 py-4 rounded-full font-serif text-lg transition-all duration-300 border ${completedProcessusSteps.includes(1)
+                                                ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_20px_rgba(210,181,123,0.4)]'
+                                                : 'bg-black/50 text-gray-400 border-white/20 hover:border-[#D2B57B]/50 hover:text-white'
+                                                }`}
+                                        >
+                                            {completedProcessusSteps.includes(1) ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-current opacity-50"></div>}
+                                            J'ai assimilé cette partie
+                                        </button>
                                     </div>
                                 </section>
                             )}
@@ -614,6 +761,20 @@ function FormationContent() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Component UI pour valider la section */}
+                                    <div className="mt-16 flex justify-center pb-8 border-t border-white/5 pt-12">
+                                        <button
+                                            onClick={() => toggleStepCompletion(2)}
+                                            className={`flex items-center gap-3 px-8 py-4 rounded-full font-serif text-lg transition-all duration-300 border ${completedProcessusSteps.includes(2)
+                                                    ? 'bg-[#D2B57B] text-black border-[#D2B57B] shadow-[0_0_20px_rgba(210,181,123,0.4)]'
+                                                    : 'bg-black/50 text-gray-400 border-white/20 hover:border-[#D2B57B]/50 hover:text-white'
+                                                }`}
+                                        >
+                                            {completedProcessusSteps.includes(2) ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-current opacity-50"></div>}
+                                            J'ai assimilé cette partie
+                                        </button>
+                                    </div>
                                 </section>
                             )}
                         </div>
@@ -640,163 +801,40 @@ function FormationContent() {
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
                                         <span className="text-4xl bg-white/5 p-3 rounded-2xl border border-white/5">💎</span> Guide des Coupes (Diamants)
                                     </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4">
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg group">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/16544137/r/il/1ccc36/3168700913/il_1080xN.3168700913_tto5.jpg" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Round <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Brillance maximale</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">La coupe ronde maximise la réflexion de la lumière grâce à une géométrie optimisée.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2 mt-auto">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Brillance maximale</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Intemporel</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/36057419/r/il/3737b5/5387076943/il_fullxfull.5387076943_t3z7.jpg" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Oval <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Illusion taille</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Forme allongée augmentant la surface visible du diamant.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Effet carat+</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Doigt allongé</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://media.tiffany.com/is/image/Tiffany/EcomItemL2/tiffany-novo-princess-cut-engagement-ring-with-a-pav-set-diamond-band-in-platinum-60767173_996218_ED_M.jpg?%24cropN=0.1%2C0.1%2C0.8%2C0.8&defaultImage=NoImageAvailableInternal&op_usm=1.75%2C1.0%2C6.0" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Princess <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Moderne structuré</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Forme carrée avec brillance importante.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Look moderne</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Structure nette</span>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4">
+                                        {diamondCutsData.map((cut, idx) => (
+                                            <div key={idx} className="w-full h-80 group [perspective:1000px] cursor-pointer">
+                                                <div className="relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+
+                                                    {/* RECTO */}
+                                                    <div className="absolute inset-0 [backface-visibility:hidden] bg-white/5 border border-white/10 rounded-xl overflow-hidden flex flex-col items-center justify-center p-4">
+                                                        {cut.isNew && (
+                                                            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#D2B57B]/80 to-[#D2B57B] text-black px-2 py-0.5 rounded-md shadow-lg z-10">
+                                                                <span className="text-[10px] uppercase font-bold tracking-wider">NEW</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="w-32 h-32 mb-6 rounded-full overflow-hidden border border-[#D2B57B]/30 p-2 bg-black/60 shadow-[inset_0_0_20px_rgba(210,181,123,0.1)] flex items-center justify-center relative">
+                                                            <ImageWithPreview src={cut.img} />
+                                                        </div>
+                                                        <h3 className="text-2xl font-serif text-white">{cut.name}</h3>
+                                                        <p className="text-[10px] text-[#D2B57B] uppercase tracking-widest mt-3 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity"><ArrowRight className="w-3 h-3" /> Révéler les détails</p>
+                                                    </div>
+
+                                                    {/* VERSO */}
+                                                    <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-black/90 border border-[#D2B57B] rounded-xl p-5 flex flex-col items-center justify-center text-center shadow-[0_0_30px_rgba(210,181,123,0.2)]">
+                                                        <h3 className="text-xl font-serif text-white mb-2">{cut.name}</h3>
+                                                        <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mb-4 uppercase">{cut.subtitle}</span>
+                                                        <p className="text-sm text-gray-300 leading-relaxed mb-6">{cut.desc}</p>
+                                                        <div className="flex flex-wrap justify-center gap-2 mt-auto">
+                                                            {cut.tags.map((tag, i) => (
+                                                                <span key={i} className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">{tag}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/28887394/r/il/006bab/5523396783/il_1080xN.5523396783_bick.jpg" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Cushion <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Romantique vintage</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Coins arrondis et style antique.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Romantique</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Douceur visuelle</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/32495a/4580417301/il_fullxfull.4580417301_8s0u.jpg" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Emerald <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Élégance minimaliste</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Facettes larges créant un effet miroir.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Sophistication</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Chic</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://prouddiamond.com/cdn/shop/files/PearCutPaveRing_E.jpg?v=1700771323&width=1445" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Pear <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Original féminin</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Forme hybride ronde + marquise.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Originalité</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {/* RADIANT CUT */}
-                                        <div className="bg-gradient-to-br from-[#D2B57B]/20 to-transparent border border-[#D2B57B]/30 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-[0_0_15px_rgba(210,181,123,0.15)] group relative">
-                                            <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-md px-2 py-1 rounded-md border border-[#D2B57B]/50 z-10">
-                                                <span className="text-[10px] uppercase font-bold text-[#D2B57B] tracking-wider">NEW</span>
-                                            </div>
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="/images/education/cuts/radiant.png" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Radiant <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Hybride Brillant</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Mélange de la forme Emerald avec les facettes de la coupe Round, offrant un maximum d'éclat.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Pétillant</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Moderne</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {/* MARQUISE CUT */}
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="/images/education/cuts/marquise.png" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Marquise <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Royale et fine</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Taille allongée avec deux pointes, créant l'illusion d'une pierre plus large sur le doigt.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Vintage</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Allongeant</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {/* ASSCHER CUT */}
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="/images/education/cuts/asscher.png" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Asscher <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Art Déco</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Coupe carrée avec des "steps" (marches) très géométriques à la manière de l'émeraude, mais carrée.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Art Déco</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Élégant</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {/* HEART CUT */}
-                                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
-                                            <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="/images/education/cuts/heart.png" />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-xl font-serif text-white mb-3">Heart <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Romance absolue</span></h3>
-                                                <div className="mb-4">
-                                                    <p className="text-xs text-gray-400">Le symbole ultime de l'amour, une taille brillante très complexe demandant une symétrie parfaite au lapidaire.</p>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Romantique</span>
-                                                    <span className="px-2 py-1 bg-[#D2B57B]/10 border border-[#D2B57B]/20 rounded text-[10px] uppercase tracking-wider text-[#D2B57B]">Unique</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </section>
                             )}
@@ -1208,7 +1246,7 @@ function FormationContent() {
                     <p className="text-gray-600 text-xs uppercase tracking-widest">Le Guide Interne de Vente • Confidentiel</p>
                 </footer>
             </div>
-        </div>
+        </div >
     );
 }
 
