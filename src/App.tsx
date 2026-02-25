@@ -29,6 +29,7 @@ import AffiliatesList from './pages/affiliates/AffiliatesList';
 import AffiliateDashboard from './pages/affiliates/AffiliateDashboard';
 import AffiliateDetails from './pages/affiliates/AffiliateDetails';
 import Formation from './pages/public/Formation';
+import AdminQcmResults from './pages/admin/AdminQcmResults';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -99,6 +100,7 @@ function App() {
               <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>} />
               <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
+              <Route path="qcm" element={<ProtectedRoute allowedRoles={['admin']}><AdminQcmResults /></ProtectedRoute>} />
               <Route path="studio" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><Studio /></ProtectedRoute>} />
 
               {/* Affiliate Routes */}

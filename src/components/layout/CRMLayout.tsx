@@ -32,6 +32,7 @@ const navItems = [
     // Link back to the CAD tool
     { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'sales', 'manufacturer'] },
     { label: 'Formation', href: '/formation', icon: GraduationCap, roles: ['admin', 'sales', 'manufacturer', 'affiliate'] },
+    { label: 'QCM Academy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
     { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin'] },
 ]
 
