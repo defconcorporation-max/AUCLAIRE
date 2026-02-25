@@ -10,7 +10,8 @@ import {
     Gem,
     Menu,
     Settings,
-    Banknote
+    Banknote,
+    GraduationCap
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -30,6 +31,7 @@ const navItems = [
     { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
     // Link back to the CAD tool
     { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'sales', 'manufacturer'] },
+    { label: 'Formation', href: '/formation', icon: GraduationCap, roles: ['admin', 'sales', 'manufacturer', 'affiliate'] },
     { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin'] },
 ]
 
