@@ -899,15 +899,13 @@ function FormationContent() {
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4">
                                         {[
-                                            { k: '10K', pale: true, desc: 'Jaune plus pâle, durable, très économique', imgs: ['https://missfoxine.com/cdn/shop/files/Love-Bird-10k-Gold-Platinum-Diamond-Engagement-Ring-7.jpg?v=1739460326&width=554', 'https://i.etsystatic.com/7267337/r/il/6ce691/944946620/il_570xN.944946620_c8j2.jpg', 'https://i.shgcdn.com/ff732080-cdeb-48d6-a4a4-720eef4d8187/-/format/auto/-/preview/3000x3000/-/quality/lighter/'] },
-                                            { k: '14K', pale: false, desc: 'Jaune équilibré, standard luxe nord-américain', imgs: ['https://www.linjer.co/cdn/shop/files/graduated-diamond-ring-14k-yellow-gold-dahlia-linjer-jewelry_1080x.jpg?v=1761547368', 'https://www.miraljewelers.com/cdn/shop/files/130-0083201-_1.png?v=1752042191', 'https://www.linjer.co/cdn/shop/files/graduated-diamond-ring-14k-yellow-gold-dahlia-linjer-jewelry_1080x.jpg?v=1761547368'] },
-                                            { k: '18K', pale: false, desc: 'Jaune profond, saturation élevée, prestige européen', imgs: ['https://trumpetandhorn.com/cdn/shop/files/34622_3013624_2048x.jpg?v=1770447967', 'https://www.josephjewelry.com/images/rings-engagement/Custom-Two-Tone-Yellow-and-White-Diamond-Halo-Engagement-Ring-Y-3qtr-103270.jpg', 'https://trumpetandhorn.com/cdn/shop/files/34622_3013624_2048x.jpg?v=1770447967'] }
+                                            { k: '10K', pale: true, desc: 'Jaune plus pâle, durable, très économique', imgs: ['/images/education/metals/gold_10k.png'] },
+                                            { k: '14K', pale: false, desc: 'Jaune équilibré, standard luxe nord-américain', imgs: ['/images/education/metals/gold_14k.png'] },
+                                            { k: '18K', pale: false, desc: 'Jaune profond, saturation élevée, prestige européen', imgs: ['/images/education/metals/gold_18k.png'] }
                                         ].map(gold => (
                                             <div key={gold.k} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                                 <div className="flex h-32 overflow-hidden bg-black/50">
                                                     <ImageWithPreview src={gold.imgs[0]} />
-                                                    <ImageWithPreview src={gold.imgs[1]} />
-                                                    <ImageWithPreview src={gold.imgs[2]} />
                                                 </div>
                                                 <div className="p-5">
                                                     <h3 className="text-2xl font-serif text-white mb-2">Or <span className="text-[#D2B57B]">{gold.k}</span></h3>
