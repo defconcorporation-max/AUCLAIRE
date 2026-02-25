@@ -109,6 +109,12 @@ function FormationContent() {
     const [selectedMetal, setSelectedMetal] = useState<string>('platine');
     const [metalQuizAnswered, setMetalQuizAnswered] = useState<number | null>(null);
 
+    // Quiz contextuels pour chaque section Expertise
+    const [sectionQuizAnswers, setSectionQuizAnswers] = useState<Record<string, number | null>>({});
+    const answerSectionQuiz = (sectionId: string, answerId: number) => {
+        setSectionQuizAnswers(prev => ({ ...prev, [sectionId]: answerId }));
+    };
+
     // Baromètre de Confiance (Processus)
     const [completedProcessusSteps, setCompletedProcessusSteps] = useState<number[]>([]);
     const toggleStepCompletion = (stepIndex: number) => {
@@ -906,6 +912,33 @@ function FormationContent() {
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Astuce Vendeur Gemmes */}
+                                    <div className="mt-8 bg-[#D2B57B]/5 border border-[#D2B57B]/20 rounded-2xl p-6">
+                                        <h4 className="text-[#D2B57B] font-bold text-sm mb-3 flex items-center gap-2">
+                                            <Gem className="w-4 h-4" /> Astuce Closer : Gemmes
+                                        </h4>
+                                        <p className="text-xs text-gray-300 leading-relaxed">Le diamant est toujours le choix #1 pour les fiançailles (dureté 10/10 = quotidien sans stress). Si le client veut une <strong className="text-white">pierre de couleur</strong>, recommandez Saphir ou Rubis (dureté 9). L'Émeraude est magnifique mais fragile — mentionnez toujours le risque de chocs.</p>
+                                    </div>
+
+                                    {/* Quiz Gemmes */}
+                                    <div className="mt-6 bg-black/40 border border-[#D2B57B]/30 rounded-2xl p-6">
+                                        <h4 className="text-white font-serif text-lg mb-4">🧠 Quelle pierre recommander ?</h4>
+                                        <p className="text-sm text-gray-300 italic mb-4">Un client veut offrir une bague avec une pierre de couleur. Sa partenaire est infirmière et travaille avec ses mains. Que recommandez-vous ?</p>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: 1, text: "Émeraude — la plus jolie des pierres vertes", isCorrect: false, feedback: "❌ L'Émeraude (7.5-8 Mohs) est trop fragile pour un usage quotidien actif." },
+                                                { id: 2, text: "Saphir — dureté 9/10, disponible en plusieurs couleurs", isCorrect: true, feedback: "✅ Le Saphir (dureté 9/10) est le choix expert : résistant et disponible en bleu, rose, jaune..." },
+                                                { id: 3, text: "Diamant coloré de synthèse", isCorrect: false, feedback: "❌ Le client a demandé une pierre de couleur naturelle, pas un diamant de synthèse." }
+                                            ].map(o => (
+                                                <button key={o.id} onClick={() => answerSectionQuiz('gemmes', o.id)} disabled={sectionQuizAnswers['gemmes'] != null}
+                                                    className={`w-full text-left p-3 rounded-xl border transition-all text-sm ${sectionQuizAnswers['gemmes'] === o.id ? (o.isCorrect ? 'bg-green-500/10 border-green-500/50' : 'bg-red-500/10 border-red-500/50') : sectionQuizAnswers['gemmes'] != null && o.isCorrect ? 'bg-green-500/5 border-green-500/30' : 'bg-black/50 border-white/10 hover:border-[#D2B57B]/50'}`}>
+                                                    <span className="text-gray-200">{o.text}</span>
+                                                    {sectionQuizAnswers['gemmes'] === o.id && <p className="mt-2 text-xs text-gray-400 border-t border-white/5 pt-2">{o.feedback}</p>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </section>
                             )}
 
@@ -942,6 +975,33 @@ function FormationContent() {
                                                 </div>
                                             </div>
                                         ))}
+                                    </div>
+
+                                    {/* Astuce Vendeur Montures */}
+                                    <div className="mt-8 bg-[#D2B57B]/5 border border-[#D2B57B]/20 rounded-2xl p-6">
+                                        <h4 className="text-[#D2B57B] font-bold text-sm mb-3 flex items-center gap-2">
+                                            <Diamond className="w-4 h-4" /> Astuce Closer : Montures
+                                        </h4>
+                                        <p className="text-xs text-gray-300 leading-relaxed">Le <strong className="text-white">Halo</strong> est votre outil de closing : un diamant de 0.8ct en Halo paraît aussi gros qu'un 1.2ct en Solitaire. Le <strong className="text-white">Hidden Halo</strong> séduit les clientes qui veulent du luxe discret.</p>
+                                    </div>
+
+                                    {/* Quiz Montures */}
+                                    <div className="mt-6 bg-black/40 border border-[#D2B57B]/30 rounded-2xl p-6">
+                                        <h4 className="text-white font-serif text-lg mb-4">🧠 Quel setting recommander ?</h4>
+                                        <p className="text-sm text-gray-300 italic mb-4">Un client avec un budget serré veut que la bague paraisse la plus grosse possible. Quel setting ?</p>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: 1, text: "Three-Stone — trois pierres c'est plus gros", isCorrect: false, feedback: "❌ Le Three-Stone divise le budget et ne maximise pas l'apparence d'une seule pierre." },
+                                                { id: 2, text: "Halo — couronne de diamants agrandit la pierre", isCorrect: true, feedback: "✅ Le Halo maximise l'impact visuel. Un 0.8ct en Halo rivalise avec un 1.2ct solitaire." },
+                                                { id: 3, text: "Solitaire — classique et gros impact", isCorrect: false, feedback: "❌ Le Solitaire montre la pierre telle quelle. Avec un petit budget, pas d'illusion d'optique." }
+                                            ].map(o => (
+                                                <button key={o.id} onClick={() => answerSectionQuiz('montures', o.id)} disabled={sectionQuizAnswers['montures'] != null}
+                                                    className={`w-full text-left p-3 rounded-xl border transition-all text-sm ${sectionQuizAnswers['montures'] === o.id ? (o.isCorrect ? 'bg-green-500/10 border-green-500/50' : 'bg-red-500/10 border-red-500/50') : sectionQuizAnswers['montures'] != null && o.isCorrect ? 'bg-green-500/5 border-green-500/30' : 'bg-black/50 border-white/10 hover:border-[#D2B57B]/50'}`}>
+                                                    <span className="text-gray-200">{o.text}</span>
+                                                    {sectionQuizAnswers['montures'] === o.id && <p className="mt-2 text-xs text-gray-400 border-t border-white/5 pt-2">{o.feedback}</p>}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </section>
                             )}
@@ -1087,6 +1147,33 @@ function FormationContent() {
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Astuce Vendeur Alliances */}
+                                    <div className="mt-8 bg-[#D2B57B]/5 border border-[#D2B57B]/20 rounded-2xl p-6">
+                                        <h4 className="text-[#D2B57B] font-bold text-sm mb-3 flex items-center gap-2">
+                                            <Heart className="w-4 h-4" /> Astuce Closer : Alliances
+                                        </h4>
+                                        <p className="text-xs text-gray-300 leading-relaxed">Les alliances sont une <strong className="text-white">vente croisée naturelle</strong>. Mentionnez-les dès le closing de la bague. C'est souvent un <strong className="text-white">+30%</strong> sur la commande.</p>
+                                    </div>
+
+                                    {/* Quiz Alliances */}
+                                    <div className="mt-6 bg-black/40 border border-[#D2B57B]/30 rounded-2xl p-6">
+                                        <h4 className="text-white font-serif text-lg mb-4">🧠 Stratégie de vente croisée</h4>
+                                        <p className="text-sm text-gray-300 italic mb-4">À quel moment idéal proposez-vous les alliances au client ?</p>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: 1, text: "Dès le début, avant même la bague de fiançailles", isCorrect: false, feedback: "❌ Trop tôt ! Le client sera submergé et risque de repousser la décision." },
+                                                { id: 2, text: "Après le closing de la bague, quand le client est engagé", isCorrect: true, feedback: "✅ L'euphorie du closing est le moment parfait. Le client est déjà mentalement engagé et ouvert à compléter le set." },
+                                                { id: 3, text: "Jamais — les alliances se vendent séparément plus tard", isCorrect: false, feedback: "❌ Opportunité manquée ! La plupart des couples achètent rarement les alliances eux-mêmes sans qu'on leur propose." }
+                                            ].map(o => (
+                                                <button key={o.id} onClick={() => answerSectionQuiz('alliances', o.id)} disabled={sectionQuizAnswers['alliances'] != null}
+                                                    className={`w-full text-left p-3 rounded-xl border transition-all text-sm ${sectionQuizAnswers['alliances'] === o.id ? (o.isCorrect ? 'bg-green-500/10 border-green-500/50' : 'bg-red-500/10 border-red-500/50') : sectionQuizAnswers['alliances'] != null && o.isCorrect ? 'bg-green-500/5 border-green-500/30' : 'bg-black/50 border-white/10 hover:border-[#D2B57B]/50'}`}>
+                                                    <span className="text-gray-200">{o.text}</span>
+                                                    {sectionQuizAnswers['alliances'] === o.id && <p className="mt-2 text-xs text-gray-400 border-t border-white/5 pt-2">{o.feedback}</p>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </section>
                             )}
 
@@ -1126,10 +1213,43 @@ function FormationContent() {
                                             </div>
                                         </div>
                                     </div>
-                                </section>
-                            )}
 
-                            {/* SECTION ANATOMIE */}
+                                    {/* Stratégie Closer Les 4C */}
+                                    <div className="mt-8 bg-[#D2B57B]/5 border border-[#D2B57B]/20 rounded-2xl p-6">
+                                        <h4 className="text-[#D2B57B] font-bold text-sm mb-3 flex items-center gap-2">
+                                            <Search className="w-4 h-4" /> Stratégie Closer : Les 4C
+                                        </h4>
+                                        <p className="text-xs text-gray-300 leading-relaxed mb-3">Priorité pour maximiser le visuel à budget fixe : <strong className="text-white">Cut &gt; Carat &gt; Color &gt; Clarity</strong>. Ne sacrifiez JAMAIS la coupe.</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            <span className="px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full text-xs text-green-400">#1 Cut — Non-négociable</span>
+                                            <span className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs text-blue-400">#2 Carat — Impact visuel</span>
+                                            <span className="px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-xs text-yellow-400">#3 Color — Flexible</span>
+                                            <span className="px-3 py-1.5 bg-gray-500/10 border border-gray-500/20 rounded-full text-xs text-gray-400">#4 Clarity — Très flexible</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Quiz Les 4C */}
+                                    <div className="mt-6 bg-black/40 border border-[#D2B57B]/30 rounded-2xl p-6">
+                                        <h4 className="text-white font-serif text-lg mb-4">🧠 Challenge Les 4C</h4>
+                                        <p className="text-sm text-gray-300 italic mb-4">Client budget 5 000$ veut le plus gros diamant possible avec max de brillance. Votre stratégie ?</p>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: 1, text: "Gros Carat (1.5ct) quitte à réduire le Cut", isCorrect: false, feedback: "❌ Jamais sacrifier le Cut ! Un gros diamant mal taillé paraîtra terne." },
+                                                { id: 2, text: "Excellent Cut, Color H, Clarity SI1, Carat 0.90ct", isCorrect: true, feedback: "✅ Parfait ! Excellent Cut = brillance max. H quasi-incolore, SI1 eye-clean. 0.90ct évite le palier de prix du 1ct." },
+                                                { id: 3, text: "Diamant IF/D même si 0.5ct", isCorrect: false, feedback: "❌ Un D/IF de 0.5ct sera microscopique. La pureté extrême est invisible à l'œil nu." }
+                                            ].map(o => (
+                                                <button key={o.id} onClick={() => answerSectionQuiz('4c', o.id)} disabled={sectionQuizAnswers['4c'] != null}
+                                                    className={`w-full text-left p-3 rounded-xl border transition-all text-sm ${sectionQuizAnswers['4c'] === o.id ? (o.isCorrect ? 'bg-green-500/10 border-green-500/50' : 'bg-red-500/10 border-red-500/50') : sectionQuizAnswers['4c'] != null && o.isCorrect ? 'bg-green-500/5 border-green-500/30' : 'bg-black/50 border-white/10 hover:border-[#D2B57B]/50'}`}>
+                                                    <span className="text-gray-200">{o.text}</span>
+                                                    {sectionQuizAnswers['4c'] === o.id && <p className="mt-2 text-xs text-gray-400 border-t border-white/5 pt-2">{o.feedback}</p>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
+                            )
+
+                            }
                             {currentExpertiseStep === 8 && (
                                 <section className="animate-in fade-in slide-in-from-right-8 duration-500">
                                     <h2 className="text-3xl font-serif text-white mb-8 border-b border-white/5 pb-6 flex items-center gap-4">
@@ -1186,8 +1306,8 @@ function FormationContent() {
                                                 key={metal.id}
                                                 onClick={() => setSelectedMetal(metal.id)}
                                                 className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-center group ${selectedMetal === metal.id
-                                                        ? 'border-[#D2B57B] bg-[#D2B57B]/10 shadow-[0_0_20px_rgba(210,181,123,0.3)] scale-105'
-                                                        : 'border-white/10 bg-white/5 hover:border-white/30 hover:scale-102'
+                                                    ? 'border-[#D2B57B] bg-[#D2B57B]/10 shadow-[0_0_20px_rgba(210,181,123,0.3)] scale-105'
+                                                    : 'border-white/10 bg-white/5 hover:border-white/30 hover:scale-102'
                                                     }`}
                                             >
                                                 <span className="text-2xl block mb-2">{metal.emoji}</span>
@@ -1335,12 +1455,12 @@ function FormationContent() {
                                                     onClick={() => setMetalQuizAnswered(option.id)}
                                                     disabled={metalQuizAnswered !== null}
                                                     className={`w-full text-left p-4 rounded-xl border transition-all duration-300 ${metalQuizAnswered === option.id
-                                                            ? option.isCorrect
-                                                                ? 'bg-green-500/10 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
-                                                                : 'bg-red-500/10 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
-                                                            : metalQuizAnswered !== null && option.isCorrect
-                                                                ? 'bg-green-500/5 border-green-500/30'
-                                                                : 'bg-black/50 border-white/10 hover:border-[#D2B57B]/50 hover:bg-white/5'
+                                                        ? option.isCorrect
+                                                            ? 'bg-green-500/10 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+                                                            : 'bg-red-500/10 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                                                        : metalQuizAnswered !== null && option.isCorrect
+                                                            ? 'bg-green-500/5 border-green-500/30'
+                                                            : 'bg-black/50 border-white/10 hover:border-[#D2B57B]/50 hover:bg-white/5'
                                                         }`}
                                                 >
                                                     <div className="flex items-center justify-between">
