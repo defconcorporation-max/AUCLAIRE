@@ -433,7 +433,7 @@ function FormationContent() {
                                                 <span className="text-[10px] uppercase font-bold text-[#D2B57B] tracking-wider">NEW</span>
                                             </div>
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/13550478/r/il/f53ebd/3052822471/il_1080xN.3052822471_b5y3.jpg" />
+                                                <ImageWithPreview src="/images/education/cuts/radiant.png" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Radiant <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Hybride Brillant</span></h3>
@@ -449,7 +449,7 @@ function FormationContent() {
                                         {/* MARQUISE CUT */}
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/17551371/r/il/263abc/4183497103/il_fullxfull.4183497103_6xtw.jpg" />
+                                                <ImageWithPreview src="/images/education/cuts/marquise.png" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Marquise <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Royale et fine</span></h3>
@@ -465,7 +465,7 @@ function FormationContent() {
                                         {/* ASSCHER CUT */}
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/26422736/r/il/3decc6/3792617658/il_1080xN.3792617658_4ty5.jpg" />
+                                                <ImageWithPreview src="/images/education/cuts/asscher.png" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Asscher <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Art Déco</span></h3>
@@ -481,7 +481,7 @@ function FormationContent() {
                                         {/* HEART CUT */}
                                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#D2B57B]/50 transition-colors shadow-lg">
                                             <div className="flex h-32 overflow-hidden bg-black/50">
-                                                <ImageWithPreview src="https://i.etsystatic.com/22964177/r/il/a6b225/4650532298/il_1080xN.4650532298_j8y7.jpg" />
+                                                <ImageWithPreview src="/images/education/cuts/heart.png" />
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-xl font-serif text-white mb-3">Heart <span className="text-[10px] font-sans tracking-widest text-[#D2B57B] block mt-1 uppercase">Romance absolue</span></h3>
