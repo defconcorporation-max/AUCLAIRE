@@ -28,6 +28,7 @@ import { RingProvider } from "./context/RingContext";
 import AffiliatesList from './pages/affiliates/AffiliatesList';
 import AffiliateDashboard from './pages/affiliates/AffiliateDashboard';
 import AffiliateDetails from './pages/affiliates/AffiliateDetails';
+import Formation from './pages/public/Formation';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -73,6 +74,9 @@ function App() {
 
             {/* Public Shared Project View */}
             <Route path="/shared/:token" element={<SharedProjectView />} />
+
+            {/* Public Formation Guide View */}
+            <Route path="/formation" element={<Formation />} />
 
             <Route path="/dashboard" element={
               <ProtectedRoute>
