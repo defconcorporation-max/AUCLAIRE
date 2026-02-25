@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle } from 'lucide-react';
+import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle, ShieldCheck, Scale, Award, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -264,6 +264,66 @@ function FormationContent() {
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Rôles & Engagements Mutuels */}
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg">
+                                    <h3 className="text-xl font-serif text-white mb-6 border-b border-white/10 pb-4 flex items-center gap-3">
+                                        <Scale className="w-5 h-5 text-[#D2B57B]" /> Rôles & Engagements Mutuels
+                                    </h3>
+                                    <div className="grid md:grid-cols-2 gap-8">
+                                        <div>
+                                            <h4 className="text-[#D2B57B] font-bold mb-4 flex items-center gap-2"><Users className="w-4 h-4" /> Rôle de l'Ambassadeur</h4>
+                                            <ul className="space-y-3">
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-[#D2B57B] mt-1">•</span> La prospection (Réseau, Facebook, DM).</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-[#D2B57B] mt-1">•</span> La qualification du besoin et du budget.</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-[#D2B57B] mt-1">•</span> La transmission du lead ou la configuration 3D.</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300 italic max-w-sm">Vous représentez la marque, mais vous n'êtes pas obligé d'être un expert technique.</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white font-bold mb-4 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-[#D2B57B]" /> L'Engagement d'Auclaire</h4>
+                                            <ul className="space-y-3">
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-[#D2B57B] mt-1">•</span> Fourniture des visuels officiels et du cadre d'image Luxe.</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-[#D2B57B] mt-1">•</span> Accès aux outils : site web, studio 3D.</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-[#D2B57B] mt-1">•</span> Prise en charge intégrale de la fabrication, livraison, garanties, closing.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Scénarios de Performance */}
+                                <div>
+                                    <h3 className="text-xl font-serif text-white mb-6 border-b border-white/10 pb-4 flex items-center gap-3">
+                                        <TrendingUp className="w-5 h-5 text-[#D2B57B]" /> Projections de Revenus (Exemple : Prix moyen 2300$)
+                                    </h3>
+                                    <div className="grid md:grid-cols-3 gap-6">
+                                        <div className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-xl p-6">
+                                            <h4 className="text-white font-bold mb-2">Scénario A (Solide)</h4>
+                                            <p className="text-[#D2B57B] text-sm mb-4">3 ventes / semaine</p>
+                                            <div className="bg-black/40 rounded p-3 text-center border border-white/5">
+                                                <p className="text-xs text-gray-400 uppercase tracking-widest">Gains estimés</p>
+                                                <p className="text-2xl font-bold text-white mt-1">~ 4 100 $ <span className="text-sm font-normal text-gray-500">/ mois</span></p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-[#D2B57B]/10 to-transparent border border-[#D2B57B]/20 rounded-xl p-6">
+                                            <h4 className="text-white font-bold mb-2">Scénario B (Performant)</h4>
+                                            <p className="text-[#D2B57B] text-sm mb-4">5 ventes / semaine</p>
+                                            <div className="bg-black/40 rounded p-3 text-center border border-[#D2B57B]/20">
+                                                <p className="text-xs text-gray-400 uppercase tracking-widest">Gains estimés</p>
+                                                <p className="text-2xl font-bold text-white mt-1">~ 9 000 $ <span className="text-sm font-normal text-gray-500">/ mois</span></p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/30 rounded-xl p-6 relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-2"><Award className="w-6 h-6 text-yellow-500/50" /></div>
+                                            <h4 className="text-white font-bold mb-2">Scénario C (Élite)</h4>
+                                            <p className="text-yellow-500 text-sm mb-4">20 ventes / mois</p>
+                                            <div className="bg-black/40 rounded p-3 text-center border border-yellow-500/30">
+                                                <p className="text-xs text-gray-400 uppercase tracking-widest">Gains estimés</p>
+                                                <p className="text-2xl font-bold text-yellow-500 mt-1">~ 10 000 $ <span className="text-sm font-normal text-yellow-500/50">/ mois</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </section>
 
@@ -272,6 +332,54 @@ function FormationContent() {
                             <SectionHeader id="guide-op" emoji="🗺️" title="Guide Opérationnel (Action Terrain)" expanded={true} toggleSection={() => { }} />
 
                             <div className="mt-8 space-y-8 animate-in fade-in slide-in-from-top-4">
+                                {/* Incarner l'excellence : Règles d'or */}
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 lg:p-10 shadow-lg">
+                                    <h3 className="text-xl font-serif text-[#D2B57B] mb-6 flex items-center gap-3">
+                                        <Diamond className="w-5 h-5" /> Incarner l'Excellence Auclaire
+                                    </h3>
+                                    <p className="text-gray-300 text-sm mb-8 leading-relaxed">
+                                        Être Ambassadeur Auclaire, ce n'est pas seulement vendre des bijoux. C'est représenter une Maison de joaillerie qui prône le sur-mesure, le luxe accessible et la qualité intransigeante. <span className="text-white italic font-serif">"Nous ne vendons pas des produits, nous créons des héritages."</span>
+                                    </p>
+
+                                    <div className="grid md:grid-cols-2 gap-8">
+                                        <div>
+                                            <h4 className="font-bold text-white mb-4 flex items-center gap-2 border-b border-green-500/30 pb-2">
+                                                <CheckCircle2 className="w-4 h-4 text-green-500" /> Les Règles d'Or (À Faire)
+                                            </h4>
+                                            <ul className="space-y-3">
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-green-500">✓</span> Utiliser les visuels officiels haute définition.</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-green-500">✓</span> Adopter un ton professionnel, courtois et expert.</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-green-500">✓</span> Mettre en avant la personnalisation ultime (Studio 3D).</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-green-500">✓</span> Être transparent sur les délais de fabrication (Artisanat).</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-white mb-4 flex items-center gap-2 border-b border-red-500/30 pb-2">
+                                                <AlertCircle className="w-4 h-4 text-red-500" /> Les Interdits (À Éviter)
+                                            </h4>
+                                            <ul className="space-y-3">
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-red-500">⨯</span> Spammer les groupes Facebook sans contexte.</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-red-500">⨯</span> Utiliser des photos floues ou non professionnelles.</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-red-500">⨯</span> Promettre des délais irréalistes (ex: "Livré demain").</li>
+                                                <li className="flex items-start gap-2 text-sm text-gray-300"><span className="text-red-500">⨯</span> Dévaloriser la marque par des négociations agressives.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {/* Atout 3D & Avantage Ambassadeur */}
+                                    <div className="grid md:grid-cols-2 gap-6 mt-8">
+                                        <div className="bg-black/30 border border-white/5 rounded-xl p-5">
+                                            <h5 className="font-bold text-[#D2B57B] mb-2 flex items-center gap-2">💻 Votre Atout Majeur : Le Studio 3D</h5>
+                                            <p className="text-xs text-gray-400">Contrairement aux bijouteries classiques, vous avez accès à notre outil de configuration 3D. Utilisez-le pour prouver au client qu'il peut créer sa pièce unique en temps réel.</p>
+                                        </div>
+                                        <div className="bg-black/30 border border-[#D2B57B]/20 rounded-xl p-5 relative overflow-hidden">
+                                            <div className="absolute -right-4 -bottom-4"><Gem className="w-16 h-16 text-[#D2B57B]/10" /></div>
+                                            <h5 className="font-bold text-white mb-2 flex items-center gap-2">🎁 L'Avantage Ambassadeur Privé</h5>
+                                            <p className="text-xs text-gray-400">Accès au <strong>Prix Ambassadeur</strong> préférentiel pour un usage purement personnel. Effet de levier énorme pour votre propre bague (Ex: Bague à 2500$ au public → 1650$ pour vous).</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Roles */}
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div className="bg-white/5 border border-white/10 rounded-2xl p-8 shadow-lg hover:border-[#D2B57B]/30 transition-colors">
@@ -287,6 +395,10 @@ function FormationContent() {
                                             <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">3.</span> L'équipe Auclaire prend le relais (Design, Devis, Closing).</li>
                                             <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">4.</span> S'il achète, vous touchez votre commission.</li>
                                         </ol>
+                                        <div className="mt-8 pt-4 border-t border-white/10 hidden md:block">
+                                            <p className="text-xs text-gray-500 uppercase tracking-widest">Exemple (Bague à 3000$)</p>
+                                            <p className="text-lg font-bold text-white mt-1">Vous gagnez ~ <span className="text-[#D2B57B]">150 $</span></p>
+                                        </div>
                                     </div>
 
                                     <div className="bg-[#D2B57B]/5 border border-[#D2B57B]/30 rounded-2xl p-8 shadow-lg hover:border-[#D2B57B]/60 transition-colors relative overflow-hidden">
@@ -303,6 +415,10 @@ function FormationContent() {
                                             <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">3.</span> Vous donnez l'estimation de prix précise au client.</li>
                                             <li className="flex gap-3"><span className="text-[#D2B57B] font-bold">4.</span> Vous validez la commande (Le Closing).</li>
                                         </ol>
+                                        <div className="mt-8 pt-4 border-t border-[#D2B57B]/20 relative z-10 hidden md:block">
+                                            <p className="text-xs text-gray-500 uppercase tracking-widest">Exemple (Bague à 3000$)</p>
+                                            <p className="text-lg font-bold text-white mt-1">Vous gagnez ~ <span className="text-[#D2B57B]">450 $</span></p>
+                                        </div>
                                     </div>
                                 </div>
 
