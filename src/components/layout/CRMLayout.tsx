@@ -11,7 +11,8 @@ import {
     Menu,
     Settings,
     Banknote,
-    GraduationCap
+    GraduationCap,
+    PhoneCall
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -23,6 +24,7 @@ import { Sun, Moon } from 'lucide-react'
 const navItems = [
     { label: 'Tableau de Bord', href: '/dashboard/affiliate', icon: LayoutDashboard, roles: ['affiliate'] },
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'sales'] },
+    { label: 'Leads & CRM', href: '/dashboard/leads', icon: PhoneCall, roles: ['admin', 'sales'] },
     { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'sales', 'client'] },
     { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'sales'] },
     { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'sales'] },

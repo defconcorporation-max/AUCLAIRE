@@ -30,6 +30,8 @@ import AffiliateDashboard from './pages/affiliates/AffiliateDashboard';
 import AffiliateDetails from './pages/affiliates/AffiliateDetails';
 import Formation from './pages/public/Formation';
 import AdminQcmResults from './pages/admin/AdminQcmResults';
+import LeadsDashboard from './pages/crm/LeadsDashboard';
+import LeadDetails from './pages/crm/LeadDetails';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -91,6 +93,8 @@ function App() {
               <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer']}><ProjectsList /></ProtectedRoute>} />
               <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateProject /></ProtectedRoute>} />
               <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales', 'manufacturer', 'affiliate']}><ProjectDetails /></ProtectedRoute>} />
+              <Route path="leads" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><LeadsDashboard /></ProtectedRoute>} />
+              <Route path="leads/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><LeadDetails /></ProtectedRoute>} />
               <Route path="clients" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientsList /></ProtectedRoute>} />
               <Route path="clients/new" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><CreateClient /></ProtectedRoute>} />
               <Route path="clients/:id" element={<ProtectedRoute allowedRoles={['admin', 'sales']}><ClientDetails /></ProtectedRoute>} />
