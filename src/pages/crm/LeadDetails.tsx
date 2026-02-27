@@ -67,6 +67,10 @@ export default function LeadDetails() {
         onSuccess: () => {
             setNewMessage('');
             queryClient.invalidateQueries({ queryKey: ['messages', id] });
+        },
+        onError: (err) => {
+            console.error('Failed to send message:', err);
+            alert('Erreur lors de l\'envoi du message. Vérifie la console ou tes permissions.');
         }
     });
 
