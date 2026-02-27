@@ -1,35 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Phone, Mail, Facebook, Filter, LayoutGrid, List as ListIcon } from 'lucide-react';
-
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'won' | 'lost';
-
-export interface Lead {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    status: LeadStatus;
-    source: 'facebook' | 'manual' | 'website';
-    created_at: string;
-    value?: number;
-}
-
-export const initialMockLeads: Lead[] = [
-    { id: '1', name: 'Alice Dupont', email: 'alice@example.com', phone: '+33 6 12 34 56 78', status: 'new', source: 'facebook', created_at: '2026-02-26T10:00:00Z', value: 1500 },
-    { id: '2', name: 'Jean Martin', email: 'jean@example.com', phone: '+33 6 98 76 54 32', status: 'contacted', source: 'website', created_at: '2026-02-25T14:30:00Z', value: 2500 },
-    { id: '3', name: 'Sophie Bernard', email: 'sophie@example.com', phone: '+33 6 11 22 33 44', status: 'qualified', source: 'manual', created_at: '2026-02-20T09:15:00Z', value: 3000 },
-    { id: '4', name: 'Luc Petit', email: 'luc@example.com', phone: '+33 6 55 44 33 22', status: 'won', source: 'facebook', created_at: '2026-02-15T16:45:00Z', value: 1750 },
-    { id: '5', name: 'Emma Roux', email: 'emma@example.com', phone: '+33 6 99 88 77 66', status: 'new', source: 'website', created_at: '2026-02-26T11:20:00Z' },
-    { id: '6', name: 'Louis Moreau', email: 'louis@example.com', phone: '+33 6 11 11 11 11', status: 'contacted', source: 'facebook', created_at: '2026-02-26T12:00:00Z', value: 4500 },
-];
-// Global mutable state for mock
-export let mockLeads = [...initialMockLeads];
-
+import { Search, Plus, Phone, Mail, Facebook, Filter, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react';
+import { apiLeads, Lead, LeadStatus } from '@/services/apiLeads';
+import { supabase } from '@/lib/supabase';
 
 const parseSourceIcon = (source: string) => {
     switch (source) {
@@ -51,7 +29,7 @@ const LeadCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
                         <h3 className="font-serif text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-luxury-gold transition-colors truncate pr-2">
                             {lead.name}
                         </h3>
-                        {lead.value && (
+                        {lead.value > 0 && (
                             <p className="text-xs font-semibold text-luxury-gold mt-0.5">${lead.value.toLocaleString()}</p>
                         )}
                     </div>
@@ -62,14 +40,18 @@ const LeadCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
                 </div>
 
                 <div className="mt-4 flex flex-col gap-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>{lead.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                        <Mail className="w-3.5 h-3.5" />
-                        <span className="truncate">{lead.email}</span>
-                    </div>
+                    {lead.phone && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>{lead.phone}</span>
+                        </div>
+                    )}
+                    {lead.email && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <Mail className="w-3.5 h-3.5" />
+                            <span className="truncate">{lead.email}</span>
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
@@ -77,17 +59,44 @@ const LeadCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
 };
 
 export default function LeadsDashboard() {
-    const [leadsData, setLeadsData] = useState<Lead[]>(mockLeads);
+    const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const navigate = useNavigate();
+
+    const { data: leads = [], isLoading, error } = useQuery({
+        queryKey: ['leads'],
+        queryFn: apiLeads.getAll
+    });
+
+    // Realtime subscription
+    useEffect(() => {
+        const channel = supabase
+            .channel('leads-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+                queryClient.invalidateQueries({ queryKey: ['leads'] });
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [queryClient]);
+
+    const updateStatusMutation = useMutation({
+        mutationFn: ({ id, status }: { id: string, status: LeadStatus }) =>
+            apiLeads.update(id, { status }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['leads'] });
+        }
+    });
 
     const columns: LeadStatus[] = ['new', 'contacted', 'qualified', 'won', 'lost'];
 
-    const filteredLeads = leadsData.filter(lead => {
+    const filteredLeads = leads.filter(lead => {
         const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            lead.phone.includes(searchTerm);
+            (lead.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (lead.phone?.includes(searchTerm));
         return matchesSearch;
     });
 
@@ -100,18 +109,32 @@ export default function LeadsDashboard() {
             return;
         }
 
-        const newLeads = Array.from(leadsData);
-        const leadIndex = newLeads.findIndex(l => l.id === draggableId);
+        const newStatus = destination.droppableId as LeadStatus;
 
-        if (leadIndex > -1) {
-            newLeads[leadIndex] = {
-                ...newLeads[leadIndex],
-                status: destination.droppableId as LeadStatus
-            };
-            setLeadsData(newLeads);
-            mockLeads = newLeads; // Update global mock so details page sees it
-        }
+        // Optimistic update
+        queryClient.setQueryData(['leads'], (old: Lead[] | undefined) => {
+            if (!old) return [];
+            return old.map(l => l.id === draggableId ? { ...l, status: newStatus } : l);
+        });
+
+        updateStatusMutation.mutate({ id: draggableId, status: newStatus });
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex-1 flex items-center justify-center text-red-500">
+                Error loading leads. Please try again later.
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 h-full flex flex-col">
@@ -133,22 +156,18 @@ export default function LeadsDashboard() {
                     </div>
 
                     <div className="bg-muted p-1 rounded-md flex">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`h-7 w-8 p-0 ${viewMode === 'grid' ? 'bg-background shadow-sm' : ''}`}
+                        <button
+                            className={`h-7 w-8 flex items-center justify-center rounded-sm transition-all ${viewMode === 'grid' ? 'bg-background shadow-sm' : 'opacity-50 hover:opacity-100'}`}
                             onClick={() => setViewMode('grid')}
                         >
                             <LayoutGrid className="w-4 h-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`h-7 w-8 p-0 ${viewMode === 'list' ? 'bg-background shadow-sm' : ''}`}
+                        </button>
+                        <button
+                            className={`h-7 w-8 flex items-center justify-center rounded-sm transition-all ${viewMode === 'list' ? 'bg-background shadow-sm' : 'opacity-50 hover:opacity-100'}`}
                             onClick={() => setViewMode('list')}
                         >
                             <ListIcon className="w-4 h-4" />
-                        </Button>
+                        </button>
                     </div>
                     <Button className="bg-luxury-gold text-black hover:bg-luxury-gold/90 transition-all shadow-md ml-2 h-9">
                         <Plus className="w-4 h-4 mr-2" />
@@ -161,8 +180,7 @@ export default function LeadsDashboard() {
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="flex-1 flex gap-4 overflow-x-auto pb-8 snap-x min-h-[500px]">
                         {columns.map(status => {
-                            // Sort by created_at desc within columns
-                            const columnLeads = filteredLeads.filter(l => l.status === status).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                            const columnLeads = filteredLeads.filter(l => l.status === status);
                             return (
                                 <div key={status} className="min-w-[280px] w-[280px] flex-shrink-0 snap-start flex flex-col">
                                     <div className="flex items-center justify-between px-1 pb-2 border-b border-black/10 dark:border-white/10 mb-2">

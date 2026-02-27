@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Phone, Mail, Clock, Calendar, MessageSquare, Play, PhoneIncoming, PhoneOutgoing, Edit, Save, X } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, Clock, Calendar, MessageSquare, Play, PhoneIncoming, PhoneOutgoing, Edit, Save, X, Loader2 } from 'lucide-react';
 import Dialer from '@/components/crm/Dialer';
-import { mockLeads } from './LeadsDashboard';
+import { apiLeads, Lead } from '@/services/apiLeads';
 
-// Mock Call History Data
+// Mock Call History Data (This will be moved to a real API in Phase 4)
 const mockCallHistory = [
     { id: 1, type: 'outgoing', duration: '5m 23s', timestamp: '2026-02-26T10:30:00Z', notes: 'Discussed the 2ct Radiant Cut. Client is very interested.', hasRecording: true },
     { id: 2, type: 'incoming', duration: '2m 10s', timestamp: '2026-02-25T14:15:00Z', notes: 'Missed call. Left a voicemail.', hasRecording: false },
@@ -15,17 +16,49 @@ const mockCallHistory = [
 ];
 
 export default function LeadDetails() {
-    const { id } = useParams();
+    const { id = '' } = useParams();
     const navigate = useNavigate();
-    // Using a simple state based on mock data to allow local editing
-    const [lead, setLead] = useState(mockLeads.find(l => l.id === id));
+    const queryClient = useQueryClient();
     const [isDialerOpen, setIsDialerOpen] = useState(false);
-
-    // Edit mode state
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState(lead ? { name: lead.name, email: lead.email, phone: lead.phone, value: lead.value?.toString() || '' } : null);
 
-    if (!lead || !editForm) {
+    const { data: lead, isLoading, error } = useQuery({
+        queryKey: ['lead', id],
+        queryFn: () => apiLeads.getById(id),
+        enabled: !!id
+    });
+
+    const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', value: '' });
+
+    useEffect(() => {
+        if (lead) {
+            setEditForm({
+                name: lead.name,
+                email: lead.email || '',
+                phone: lead.phone || '',
+                value: lead.value?.toString() || '0'
+            });
+        }
+    }, [lead]);
+
+    const updateLeadMutation = useMutation({
+        mutationFn: (updates: Partial<Lead>) => apiLeads.update(id, updates),
+        onSuccess: (updatedLead) => {
+            queryClient.setQueryData(['lead', id], updatedLead);
+            queryClient.invalidateQueries({ queryKey: ['leads'] });
+            setIsEditing(false);
+        }
+    });
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
+            </div>
+        );
+    }
+
+    if (error || !lead) {
         return (
             <div className="text-center py-20">
                 <h2 className="text-2xl font-serif text-red-500">Lead Not Found</h2>
@@ -39,31 +72,21 @@ export default function LeadDetails() {
     };
 
     const handleSave = () => {
-        // In a real app we would call the DB API here
-        setLead({
-            ...lead,
+        updateLeadMutation.mutate({
             name: editForm.name,
             email: editForm.email,
             phone: editForm.phone,
-            value: editForm.value ? parseInt(editForm.value) : undefined
+            value: parseFloat(editForm.value) || 0
         });
-
-        // Also update the global mock so Dashboard sees it
-        const leadIndex = mockLeads.findIndex(l => l.id === lead.id);
-        if (leadIndex > -1) {
-            mockLeads[leadIndex] = {
-                ...mockLeads[leadIndex],
-                name: editForm.name,
-                email: editForm.email,
-                phone: editForm.phone,
-                value: editForm.value ? parseInt(editForm.value) : undefined
-            }
-        }
-        setIsEditing(false);
     };
 
     const handleCancel = () => {
-        setEditForm({ name: lead.name, email: lead.email, phone: lead.phone, value: lead.value?.toString() || '' });
+        setEditForm({
+            name: lead.name,
+            email: lead.email || '',
+            phone: lead.phone || '',
+            value: lead.value?.toString() || '0'
+        });
         setIsEditing(false);
     };
 
@@ -116,7 +139,13 @@ export default function LeadDetails() {
                             <CardTitle className="text-lg font-serif">Contact Information</CardTitle>
                             {isEditing ? (
                                 <div className="flex gap-1">
-                                    <Button variant="ghost" size="icon" onClick={handleSave} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleSave}
+                                        disabled={updateLeadMutation.isPending}
+                                        className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    >
                                         <Save className="w-4 h-4" />
                                     </Button>
                                     <Button variant="ghost" size="icon" onClick={handleCancel} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
@@ -143,7 +172,7 @@ export default function LeadDetails() {
                                             className="h-7 mt-1 text-sm bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
                                         />
                                     ) : (
-                                        <p className="text-sm font-medium truncate">{lead.phone}</p>
+                                        <p className="text-sm font-medium truncate">{lead.phone || 'N/A'}</p>
                                     )}
                                 </div>
                             </div>
@@ -161,7 +190,7 @@ export default function LeadDetails() {
                                             className="h-7 mt-1 text-sm bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
                                         />
                                     ) : (
-                                        <p className="text-sm font-medium truncate">{lead.email}</p>
+                                        <p className="text-sm font-medium truncate">{lead.email || 'N/A'}</p>
                                     )}
                                 </div>
                             </div>
@@ -195,7 +224,7 @@ export default function LeadDetails() {
                                 </div>
                             ) : (
                                 <div className="text-4xl font-serif text-luxury-gold tracking-tight">
-                                    ${lead.value ? lead.value.toLocaleString() : 'N/A'}
+                                    ${lead.value ? lead.value.toLocaleString() : '0'}
                                 </div>
                             )}
                             <p className="text-xs text-muted-foreground mt-2">Estimated Deal Value</p>
@@ -203,7 +232,7 @@ export default function LeadDetails() {
                     </Card>
                 </div>
 
-                {/* Right Column: Communication History (Calls, Notes, SMS, Emails, FB Msgs) */}
+                {/* Right Column: Communication History */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card className="h-full bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-md flex flex-col">
                         <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
@@ -255,27 +284,29 @@ export default function LeadDetails() {
                                 </div>
                             ))}
 
-                            {/* Mock FB Message */}
-                            <div className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20">
-                                <div className="absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] bg-blue-100 text-blue-600 dark:bg-blue-900/30">
-                                    <MessageSquare className="w-3 h-3" />
-                                </div>
-                                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-500/20 shadow-sm">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <h4 className="font-semibold text-sm flex items-center gap-2">
-                                                Facebook Lead Form Submitted
-                                            </h4>
-                                            <p className="text-xs text-muted-foreground mt-0.5">
-                                                {new Date(lead.created_at).toLocaleString()}
-                                            </p>
-                                        </div>
+                            {/* FB Submission Record */}
+                            {lead.source === 'facebook' && (
+                                <div className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20">
+                                    <div className="absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] bg-blue-100 text-blue-600 dark:bg-blue-900/30">
+                                        <MessageSquare className="w-3 h-3" />
                                     </div>
-                                    <p className="text-sm italic text-gray-700 dark:text-gray-300 mt-2">
-                                        "I'm interested in the 2ct Radiant Cut Ring."
-                                    </p>
+                                    <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-500/20 shadow-sm">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h4 className="font-semibold text-sm flex items-center gap-2">
+                                                    Facebook Lead Form Submitted
+                                                </h4>
+                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                    {new Date(lead.created_at).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm italic text-gray-700 dark:text-gray-300 mt-2">
+                                            {lead.notes || "New lead captured via Facebook Ads."}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                         </CardContent>
                     </Card>
@@ -286,7 +317,7 @@ export default function LeadDetails() {
                 isOpen={isDialerOpen}
                 onClose={() => setIsDialerOpen(false)}
                 contactName={lead.name}
-                phoneNumber={lead.phone}
+                phoneNumber={lead.phone || ''}
             />
         </div>
     );
