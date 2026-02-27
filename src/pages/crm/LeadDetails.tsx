@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Phone, Mail, Clock, Calendar, MessageSquare, Play, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Phone, Mail, Clock, Calendar, MessageSquare, Play, PhoneIncoming, PhoneOutgoing, Edit, Save, X } from 'lucide-react';
 import Dialer from '@/components/crm/Dialer';
 import { mockLeads } from './LeadsDashboard';
 
@@ -16,10 +17,15 @@ const mockCallHistory = [
 export default function LeadDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const lead = mockLeads.find(l => l.id === id);
+    // Using a simple state based on mock data to allow local editing
+    const [lead, setLead] = useState(mockLeads.find(l => l.id === id));
     const [isDialerOpen, setIsDialerOpen] = useState(false);
 
-    if (!lead) {
+    // Edit mode state
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState(lead ? { name: lead.name, email: lead.email, phone: lead.phone, value: lead.value?.toString() || '' } : null);
+
+    if (!lead || !editForm) {
         return (
             <div className="text-center py-20">
                 <h2 className="text-2xl font-serif text-red-500">Lead Not Found</h2>
@@ -32,6 +38,35 @@ export default function LeadDetails() {
         setIsDialerOpen(true);
     };
 
+    const handleSave = () => {
+        // In a real app we would call the DB API here
+        setLead({
+            ...lead,
+            name: editForm.name,
+            email: editForm.email,
+            phone: editForm.phone,
+            value: editForm.value ? parseInt(editForm.value) : undefined
+        });
+
+        // Also update the global mock so Dashboard sees it
+        const leadIndex = mockLeads.findIndex(l => l.id === lead.id);
+        if (leadIndex > -1) {
+            mockLeads[leadIndex] = {
+                ...mockLeads[leadIndex],
+                name: editForm.name,
+                email: editForm.email,
+                phone: editForm.phone,
+                value: editForm.value ? parseInt(editForm.value) : undefined
+            }
+        }
+        setIsEditing(false);
+    };
+
+    const handleCancel = () => {
+        setEditForm({ name: lead.name, email: lead.email, phone: lead.phone, value: lead.value?.toString() || '' });
+        setIsEditing(false);
+    };
+
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
             <div className="flex items-center justify-between">
@@ -40,12 +75,20 @@ export default function LeadDetails() {
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
                     <div>
-                        <h2 className="text-3xl font-serif font-bold tracking-tight text-luxury-gold flex items-center gap-3">
-                            {lead.name}
-                            <span className="text-[10px] bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20 px-2 py-1 rounded-full uppercase tracking-widest font-sans font-semibold">
-                                {lead.status}
-                            </span>
-                        </h2>
+                        {isEditing ? (
+                            <Input
+                                value={editForm.name}
+                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                className="text-xl font-serif font-bold text-luxury-gold h-10 w-64 bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
+                            />
+                        ) : (
+                            <h2 className="text-3xl font-serif font-bold tracking-tight text-luxury-gold flex items-center gap-3">
+                                {lead.name}
+                                <span className="text-[10px] bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20 px-2 py-1 rounded-full uppercase tracking-widest font-sans font-semibold">
+                                    {lead.status}
+                                </span>
+                            </h2>
+                        )}
                         <p className="text-muted-foreground mt-1 text-sm bg-black/5 dark:bg-white/5 px-3 py-1 rounded-md inline-block">
                             Source: <span className="capitalize">{lead.source}</span>
                         </p>
@@ -69,27 +112,57 @@ export default function LeadDetails() {
                 {/* Left Column: Contact Info & Quick Actions */}
                 <div className="space-y-6">
                     <Card className="bg-gradient-to-br from-white to-gray-50/50 dark:from-black dark:to-[#050505] shadow-sm border-black/5 dark:border-white/5">
-                        <CardHeader>
+                        <CardHeader className="pb-4 flex flex-row items-center justify-between">
                             <CardTitle className="text-lg font-serif">Contact Information</CardTitle>
+                            {isEditing ? (
+                                <div className="flex gap-1">
+                                    <Button variant="ghost" size="icon" onClick={handleSave} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
+                                        <Save className="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={handleCancel} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-8 text-muted-foreground hover:text-luxury-gold">
+                                    <Edit className="w-3.5 h-3.5 mr-1" /> Edit
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                            <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5 transition-all">
+                                <div className="w-10 h-10 shrink-0 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
                                     <Phone className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Phone</p>
-                                    <p className="text-sm font-medium truncate">{lead.phone}</p>
+                                    {isEditing ? (
+                                        <Input
+                                            value={editForm.phone}
+                                            onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                            className="h-7 mt-1 text-sm bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
+                                        />
+                                    ) : (
+                                        <p className="text-sm font-medium truncate">{lead.phone}</p>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5">
-                                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                            <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5 transition-all">
+                                <div className="w-10 h-10 shrink-0 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
                                     <Mail className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Email</p>
-                                    <p className="text-sm font-medium truncate">{lead.email}</p>
+                                    {isEditing ? (
+                                        <Input
+                                            value={editForm.email}
+                                            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                            className="h-7 mt-1 text-sm bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
+                                        />
+                                    ) : (
+                                        <p className="text-sm font-medium truncate">{lead.email}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -110,9 +183,21 @@ export default function LeadDetails() {
                             <CardTitle className="text-lg font-serif">Pipeline Value</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-4xl font-serif text-luxury-gold tracking-tight">
-                                ${lead.value ? lead.value.toLocaleString() : 'N/A'}
-                            </div>
+                            {isEditing ? (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl font-serif text-luxury-gold">$</span>
+                                    <Input
+                                        type="number"
+                                        value={editForm.value}
+                                        onChange={(e) => setEditForm({ ...editForm, value: e.target.value })}
+                                        className="text-2xl font-serif text-luxury-gold h-12 w-32 bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="text-4xl font-serif text-luxury-gold tracking-tight">
+                                    ${lead.value ? lead.value.toLocaleString() : 'N/A'}
+                                </div>
+                            )}
                             <p className="text-xs text-muted-foreground mt-2">Estimated Deal Value</p>
                         </CardContent>
                     </Card>

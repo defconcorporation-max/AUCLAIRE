@@ -17,7 +17,8 @@ export interface Expense {
 
 export const apiExpenses = {
     async getAll() {
-        const { data, error } = await supabase
+        // Fetch explicit expenses
+        const { data: explicitExpenses, error } = await supabase
             .from('expenses')
             .select(`
                 *,
@@ -30,8 +31,48 @@ export const apiExpenses = {
             console.error('Error fetching expenses:', error);
             throw error;
         }
-        console.log('Fetched Expenses:', data);
-        return data as Expense[];
+
+        // Fetch projects to synthesize production costs
+        const { data: projects, error: projectsError } = await supabase
+            .from('projects')
+            .select('id, title, created_at, financials, status')
+            .neq('status', 'cancelled'); // Don't show costs for cancelled projects unless you want to
+
+        if (projectsError) console.error('Error fetching projects for expenses:', projectsError);
+
+        let synthesizedExpenses: Expense[] = [];
+
+        if (projects) {
+            projects.forEach(p => {
+                if (!p.financials) return;
+
+                const pushSyntheticExpense = (amount: number, typeLabel: string, category: Expense['category']) => {
+                    if (amount > 0) {
+                        synthesizedExpenses.push({
+                            id: `synth-${p.id}-${typeLabel.toLowerCase().replace(' ', '-')}`,
+                            created_at: p.created_at,
+                            date: p.created_at.split('T')[0], // Approximation of when the expense occurred
+                            category: category,
+                            description: `Project: ${p.title} - ${typeLabel}`,
+                            amount: amount,
+                            project_id: p.id,
+                            project: { title: p.title },
+                            status: 'paid', // Assuming production costs entered are already paid or committed
+                        });
+                    }
+                };
+
+                // Add individual costs
+                pushSyntheticExpense(Number(p.financials.supplier_cost) || 0, 'Production / Supplier Cost', 'material');
+                pushSyntheticExpense(Number(p.financials.shipping_cost) || 0, 'Shipping Cost', 'operational');
+                pushSyntheticExpense(Number(p.financials.customs_fee) || 0, 'Customs Fee', 'operational');
+            });
+        }
+
+        const combinedData = [...(explicitExpenses as Expense[]), ...synthesizedExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        console.log('Fetched Combined Expenses:', combinedData);
+        return combinedData;
     },
 
     async create(expense: Partial<Expense>) {

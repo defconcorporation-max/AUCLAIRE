@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +19,7 @@ export interface Lead {
     value?: number;
 }
 
-// Mock Data
-export const mockLeads: Lead[] = [
+export const initialMockLeads: Lead[] = [
     { id: '1', name: 'Alice Dupont', email: 'alice@example.com', phone: '+33 6 12 34 56 78', status: 'new', source: 'facebook', created_at: '2026-02-26T10:00:00Z', value: 1500 },
     { id: '2', name: 'Jean Martin', email: 'jean@example.com', phone: '+33 6 98 76 54 32', status: 'contacted', source: 'website', created_at: '2026-02-25T14:30:00Z', value: 2500 },
     { id: '3', name: 'Sophie Bernard', email: 'sophie@example.com', phone: '+33 6 11 22 33 44', status: 'qualified', source: 'manual', created_at: '2026-02-20T09:15:00Z', value: 3000 },
@@ -27,6 +27,8 @@ export const mockLeads: Lead[] = [
     { id: '5', name: 'Emma Roux', email: 'emma@example.com', phone: '+33 6 99 88 77 66', status: 'new', source: 'website', created_at: '2026-02-26T11:20:00Z' },
     { id: '6', name: 'Louis Moreau', email: 'louis@example.com', phone: '+33 6 11 11 11 11', status: 'contacted', source: 'facebook', created_at: '2026-02-26T12:00:00Z', value: 4500 },
 ];
+// Global mutable state for mock
+export let mockLeads = [...initialMockLeads];
 
 
 const parseSourceIcon = (source: string) => {
@@ -46,7 +48,7 @@ const LeadCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
             <CardContent className="p-4 relative">
                 <div className="flex justify-between items-start mb-2 relative">
                     <div>
-                        <h3 className="font-serif text-base font-medium text-gray-900 dark:text-gray-100 group-hover:text-luxury-gold transition-colors">
+                        <h3 className="font-serif text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-luxury-gold transition-colors truncate pr-2">
                             {lead.name}
                         </h3>
                         {lead.value && (
@@ -75,18 +77,41 @@ const LeadCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
 };
 
 export default function LeadsDashboard() {
+    const [leadsData, setLeadsData] = useState<Lead[]>(mockLeads);
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const navigate = useNavigate();
 
     const columns: LeadStatus[] = ['new', 'contacted', 'qualified', 'won', 'lost'];
 
-    const filteredLeads = mockLeads.filter(lead => {
+    const filteredLeads = leadsData.filter(lead => {
         const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             lead.phone.includes(searchTerm);
         return matchesSearch;
     });
+
+    const onDragEnd = (result: DropResult) => {
+        const { destination, source, draggableId } = result;
+
+        if (!destination) return;
+
+        if (destination.droppableId === source.droppableId && destination.index === source.index) {
+            return;
+        }
+
+        const newLeads = Array.from(leadsData);
+        const leadIndex = newLeads.findIndex(l => l.id === draggableId);
+
+        if (leadIndex > -1) {
+            newLeads[leadIndex] = {
+                ...newLeads[leadIndex],
+                status: destination.droppableId as LeadStatus
+            };
+            setLeadsData(newLeads);
+            mockLeads = newLeads; // Update global mock so details page sees it
+        }
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 h-full flex flex-col">
@@ -133,39 +158,64 @@ export default function LeadsDashboard() {
             </div>
 
             {viewMode === 'grid' && (
-                <div className="flex-1 flex gap-6 overflow-x-auto pb-8 snap-x min-h-[500px]">
-                    {columns.map(status => {
-                        const columnLeads = filteredLeads.filter(l => l.status === status);
-                        return (
-                            <div key={status} className="min-w-[320px] w-[320px] flex-shrink-0 snap-start space-y-4">
-                                <div className="flex items-center justify-between px-1 pb-2 border-b border-black/10 dark:border-white/10">
-                                    <h3 className="font-semibold text-xs text-luxury-gold uppercase tracking-[0.2em]">
-                                        {status === 'new' ? 'New Lead' : status}
-                                    </h3>
-                                    <span className="text-[10px] font-mono bg-luxury-gold/10 text-luxury-gold px-2.5 py-1 rounded-full ring-1 ring-luxury-gold/20">
-                                        {columnLeads.length}
-                                    </span>
-                                </div>
+                <DragDropContext onDragEnd={onDragEnd}>
+                    <div className="flex-1 flex gap-4 overflow-x-auto pb-8 snap-x min-h-[500px]">
+                        {columns.map(status => {
+                            // Sort by created_at desc within columns
+                            const columnLeads = filteredLeads.filter(l => l.status === status).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                            return (
+                                <div key={status} className="min-w-[280px] w-[280px] flex-shrink-0 snap-start flex flex-col">
+                                    <div className="flex items-center justify-between px-1 pb-2 border-b border-black/10 dark:border-white/10 mb-2">
+                                        <h3 className="font-semibold text-xs text-luxury-gold uppercase tracking-[0.2em]">
+                                            {status === 'new' ? 'New Lead' : status}
+                                        </h3>
+                                        <span className="text-[10px] font-mono bg-luxury-gold/10 text-luxury-gold px-2.5 py-1 rounded-full ring-1 ring-luxury-gold/20">
+                                            {columnLeads.length}
+                                        </span>
+                                    </div>
 
-                                <div className="space-y-4 pt-2">
-                                    {columnLeads.map(lead => (
-                                        <LeadCard
-                                            key={lead.id}
-                                            lead={lead}
-                                            onClick={() => navigate(`/dashboard/leads/${lead.id}`)}
-                                        />
-                                    ))}
+                                    <Droppable droppableId={status}>
+                                        {(provided, snapshot) => (
+                                            <div
+                                                ref={provided.innerRef}
+                                                {...provided.droppableProps}
+                                                className={`flex-1 space-y-3 p-1 rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-black/5 dark:bg-white/5' : ''}`}
+                                            >
+                                                {columnLeads.map((lead, index) => (
+                                                    <Draggable key={lead.id} draggableId={lead.id} index={index}>
+                                                        {(provided, snapshot) => (
+                                                            <div
+                                                                ref={provided.innerRef}
+                                                                {...provided.draggableProps}
+                                                                {...provided.dragHandleProps}
+                                                                style={{
+                                                                    ...provided.draggableProps.style,
+                                                                    opacity: snapshot.isDragging ? 0.8 : 1,
+                                                                }}
+                                                            >
+                                                                <LeadCard
+                                                                    lead={lead}
+                                                                    onClick={() => navigate(`/dashboard/leads/${lead.id}`)}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </Draggable>
+                                                ))}
+                                                {provided.placeholder}
 
-                                    {columnLeads.length === 0 && (
-                                        <div className="h-24 rounded-lg border-2 border-dashed border-black/5 dark:border-white/5 flex items-center justify-center">
-                                            <span className="text-xs text-muted-foreground uppercase tracking-wider">No Leads</span>
-                                        </div>
-                                    )}
+                                                {columnLeads.length === 0 && !snapshot.isDraggingOver && (
+                                                    <div className="h-24 rounded-lg border-2 border-dashed border-black/5 dark:border-white/5 flex items-center justify-center">
+                                                        <span className="text-xs text-muted-foreground uppercase tracking-wider">Empty</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </Droppable>
                                 </div>
-                            </div>
-                        )
-                    })}
-                </div>
+                            )
+                        })}
+                    </div>
+                </DragDropContext>
             )}
 
             {viewMode === 'list' && (
