@@ -56,7 +56,7 @@ export default function LeadDetails() {
         }
     });
 
-    if (isLoading) {
+    if (isLeadLoading) {
         return (
             <div className="flex items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
@@ -64,7 +64,7 @@ export default function LeadDetails() {
         );
     }
 
-    if (error || !lead) {
+    if (leadError || !lead) {
         return (
             <div className="text-center py-20">
                 <h2 className="text-2xl font-serif text-red-500">Lead Not Found</h2>
