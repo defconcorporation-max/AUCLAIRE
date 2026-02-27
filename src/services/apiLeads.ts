@@ -69,5 +69,37 @@ export const apiLeads = {
             .eq('id', id);
 
         if (error) throw error;
+    },
+
+    async getMessages(leadId: string) {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('lead_id', leadId)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        return data as Message[];
+    },
+
+    async createMessage(message: Partial<Message>) {
+        const { data, error } = await supabase
+            .from('messages')
+            .insert([message])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data as Message;
     }
 };
+
+export interface Message {
+    id: string;
+    created_at: string;
+    lead_id: string;
+    content: string;
+    sender_type: 'lead' | 'agent';
+    platform: 'facebook' | 'instagram' | 'whatsapp';
+    fb_message_id: string | null;
+}

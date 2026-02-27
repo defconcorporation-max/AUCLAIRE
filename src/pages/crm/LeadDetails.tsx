@@ -22,9 +22,15 @@ export default function LeadDetails() {
     const [isDialerOpen, setIsDialerOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
-    const { data: lead, isLoading, error } = useQuery({
+    const { data: lead, isLoading: isLeadLoading, error: leadError } = useQuery({
         queryKey: ['lead', id],
         queryFn: () => apiLeads.getById(id),
+        enabled: !!id
+    });
+
+    const { data: messages = [] } = useQuery({
+        queryKey: ['messages', id],
+        queryFn: () => apiLeads.getMessages(id),
         enabled: !!id
     });
 
@@ -279,6 +285,30 @@ export default function LeadDetails() {
                                         </div>
                                         <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 bg-black/5 dark:bg-white/5 p-3 rounded-lg border-l-2 border-luxury-gold">
                                             {call.notes}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Messenger/Omnichannel Messages */}
+                            {messages.map((msg: any) => (
+                                <div key={msg.id} className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20">
+                                    <div className={`absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] ${msg.sender_type === 'agent' ? 'bg-luxury-gold text-white' : 'bg-pink-100 text-pink-600 dark:bg-pink-900/30'}`}>
+                                        <MessageSquare className="w-3 h-3" />
+                                    </div>
+                                    <div className={`rounded-xl p-4 border shadow-sm ${msg.sender_type === 'agent' ? 'bg-luxury-gold/5 border-luxury-gold/20' : 'bg-gray-50 dark:bg-white/5 border-black/5 dark:border-white/5'}`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h4 className="font-semibold text-sm flex items-center gap-2">
+                                                    {msg.sender_type === 'agent' ? 'Reponse CRM' : `Message ${msg.platform}`}
+                                                </h4>
+                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                    {new Date(msg.created_at).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                                            {msg.content}
                                         </p>
                                     </div>
                                 </div>

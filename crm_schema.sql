@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS public.leads (
     value NUMERIC(10, 2) DEFAULT 0,
     notes TEXT,
     metadata JSONB DEFAULT '{}'::jsonb,
-    fb_leadgen_id TEXT UNIQUE -- To prevent duplicate webhook inserts
+    fb_leadgen_id TEXT UNIQUE, -- To prevent duplicate webhook inserts
+    fb_psid TEXT UNIQUE -- To link Messenger/Instagram conversations
 );
 
 -- 2. Create CALLS/INTERACTIONS table
@@ -30,9 +31,21 @@ CREATE TABLE IF NOT EXISTS public.calls (
     twilio_call_sid TEXT UNIQUE
 );
 
+-- 3. Create MESSAGES table for Omnichannel inbox
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    lead_id UUID REFERENCES public.leads(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    sender_type TEXT CHECK (sender_type IN ('lead', 'agent')),
+    platform TEXT CHECK (platform IN ('facebook', 'instagram', 'whatsapp')),
+    fb_message_id TEXT UNIQUE -- To prevent duplicates
+);
+
 -- Enable RLS
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.calls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for Leads
 DROP POLICY IF EXISTS "Admins and Sales can do everything on leads" ON public.leads;
@@ -49,6 +62,18 @@ CREATE POLICY "Admins and Sales can do everything on leads" ON public.leads
 -- RLS Policies for Calls
 DROP POLICY IF EXISTS "Admins and Sales can do everything on calls" ON public.calls;
 CREATE POLICY "Admins and Sales can do everything on calls" ON public.calls
+    FOR ALL
+    USING (
+      EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid()
+        AND profiles.role IN ('admin', 'sales')
+      )
+    );
+
+-- RLS Policies for Messages
+DROP POLICY IF EXISTS "Admins and Sales can do everything on messages" ON public.messages;
+CREATE POLICY "Admins and Sales can do everything on messages" ON public.messages
     FOR ALL
     USING (
       EXISTS (
@@ -77,5 +102,13 @@ BEGIN
         AND tablename = 'calls'
     ) THEN
         ALTER PUBLICATION supabase_realtime ADD TABLE public.calls;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'messages'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
     END IF;
 END $$;
