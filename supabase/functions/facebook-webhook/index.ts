@@ -1,126 +1,109 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const FB_VERIFY_TOKEN = Deno.env.get('FB_VERIFY_TOKEN')
-const FB_PAGE_ACCESS_TOKEN = Deno.env.get('FB_PAGE_ACCESS_TOKEN')
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
-
-console.log("Edge Function 'facebook-webhook' initialized")
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
-  const url = new URL(req.url)
-  console.log(`>>> Incoming Request: ${req.method} ${url.pathname}`)
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
-  // 1. Webhook Verification (GET request during setup)
-  if (req.method === 'GET') {
+  const { method } = req
+  const url = new URL(req.url)
+
+  // 1. HANDLE META WEBHOOK VERIFICATION (GET)
+  if (method === 'GET') {
     const mode = url.searchParams.get('hub.mode')
     const token = url.searchParams.get('hub.verify_token')
     const challenge = url.searchParams.get('hub.challenge')
 
-    console.log(`Verification request: mode=${mode}, token=${token}`)
+    // You will set this same token in Meta Developer Portal
+    const VERIFY_TOKEN = Deno.env.get('FB_VERIFY_TOKEN') || 'auclaire_secret_2026'
 
-    if (mode === 'subscribe' && token === FB_VERIFY_TOKEN) {
-      console.log('WEBHOOK_VERIFIED')
-      return new Response(challenge, { status: 200 })
-    } else {
-      console.error('Forbidden: Verify token mismatch or missing')
-      return new Response('Forbidden', { status: 403 })
+    if (mode && token) {
+      if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+        console.log('WEBHOOK_VERIFIED')
+        return new Response(challenge, { status: 200 })
+      } else {
+        return new Response('Verification failed', { status: 403 })
+      }
     }
   }
 
-  // 2. Lead Generation Webhook (POST request)
-  if (req.method === 'POST') {
+  // 2. HANDLE INCOMING MESSAGES (POST)
+  if (method === 'POST') {
     try {
       const body = await req.json()
-      console.log("RAW WEBHOOK BODY:", JSON.stringify(body, null, 2))
+      console.log('Incoming Webhook:', JSON.stringify(body, null, 2))
 
       if (body.object === 'page') {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        )
+
         for (const entry of body.entry) {
-          if (!entry.changes) continue;
+          const messaging = entry.messaging[0]
+          if (messaging && messaging.message) {
+            const psid = messaging.sender.id
+            const text = messaging.message.text
+            const mid = messaging.message.mid
 
-          for (const change of entry.changes) {
-            console.log(`Processing change field: ${change.field}`)
+            if (!text) continue; // Ignore attachments for now to keep it simple
 
-            if (change.field === 'leadgen') {
-              const leadgenId = change.value.leadgen_id
-              const formId = change.value.form_id
+            // A. Find or Create Lead
+            let { data: lead, error: leadError } = await supabase
+              .from('leads')
+              .select('id')
+              .eq('fb_psid', psid)
+              .single()
 
-              console.log(`New Lead detected: leadgen_id=${leadgenId}, form_id=${formId}`)
-
-              let email = "test@example.com"
-              let phone = "+123456789"
-              let fullName = "Test Lead (Facebook)"
-
-              // If it's a real numeric ID, try to fetch from Facebook
-              if (/^\d+$/.test(leadgenId)) {
-                console.log(`Fetching lead details for ID ${leadgenId}...`)
-                try {
-                  const fbResponse = await fetch(`https://graph.facebook.com/v18.0/${leadgenId}?access_token=${FB_PAGE_ACCESS_TOKEN}`)
-                  const leadData = await fbResponse.json()
-                  console.log("FB GRAPH API RESPONSE:", JSON.stringify(leadData, null, 2))
-
-                  if (!leadData.error && leadData.field_data) {
-                    leadData.field_data.forEach((field: any) => {
-                      if (field.name === 'email') email = field.values[0]
-                      if (field.name === 'phone_number') phone = field.values[0]
-                      if (field.name === 'full_name') fullName = field.values[0]
-                      if (field.name === 'first_name' && !fullName) fullName = field.values[0]
-                      if (field.name === 'last_name' && fullName && !fullName.includes(field.values[0])) fullName += " " + field.values[0]
-                    })
-                  } else {
-                    console.warn("FB API Error or no data, using placeholder for visibility.")
-                    fullName = `FB Error Lead (${leadgenId})`
-                  }
-                } catch (err) {
-                  console.error("Fetch failed:", err)
-                  fullName = `Fetch Error Lead (${leadgenId})`
-                }
-              } else {
-                console.log("Test/Manual ID detected, using placeholder data.")
-                fullName = `Manual Test (${leadgenId})`
-              }
-
-              fullName = fullName.trim() || 'Facebook Lead'
-              console.log(`Final Mapping -> Name: ${fullName}, Email: ${email}`)
-
-              // Insert into database
-              const { data, error } = await supabase
+            if (!lead && !leadError) {
+              // Create a new lead if not found
+              const { data: newLead, error: createError } = await supabase
                 .from('leads')
-                .insert([{
-                  name: fullName,
-                  email: email,
-                  phone: phone,
+                .insert({
+                  name: `Prospect Messenger ${psid.slice(-4)}`,
+                  fb_psid: psid,
                   source: 'facebook',
-                  status: 'new',
-                  fb_leadgen_id: leadgenId,
-                  notes: `Form ID: ${formId} (Log: ${new Date().toISOString()})`
-                }])
+                  status: 'new'
+                })
                 .select()
+                .single()
 
-              if (error) {
-                if (error.code === '23505') {
-                  console.log(`Lead ${leadgenId} already exists.`)
-                } else {
-                  console.error("Supabase Error:", JSON.stringify(error))
-                }
-              } else {
-                console.log(`✅ SUCCESS: Lead inserted.`, JSON.stringify(data))
-              }
+              if (createError) throw createError
+              lead = newLead
+            }
+
+            // B. Insert Message
+            if (lead) {
+              const { error: msgError } = await supabase
+                .from('messages')
+                .insert({
+                  lead_id: lead.id,
+                  content: text,
+                  sender_type: 'lead',
+                  platform: 'facebook',
+                  fb_message_id: mid
+                })
+
+              if (msgError) console.error('Error inserting message:', msgError)
             }
           }
         }
         return new Response('EVENT_RECEIVED', { status: 200 })
       } else {
-        return new Response('Handled', { status: 200 })
+        return new Response('Not a page object', { status: 404 })
       }
-    } catch (e: any) {
-      console.error("CRITICAL ERROR:", e.message)
+    } catch (error) {
+      console.error('Error processing webhook:', error)
       return new Response('Error', { status: 500 })
     }
   }
 
-  return new Response('Method Not Allowed', { status: 405 })
+  return new Response('Not found', { status: 404 })
 })

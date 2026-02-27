@@ -99,11 +99,11 @@ export default function Dashboard() {
             (p.financials?.customs_fee || 0);
     }, 0) || 0;
 
-    // Actual Profit = Collected - Real Expenses (Table) - Production Costs (Projects)
-    // Note: This assumes 'Expenses' table tracks overhead/commissions and 'Projects' tracks COGS. 
-    // If user duplicates data, this will double count. But better to show lower profit than fake high profit.
-    const totalProfit = totalCollected - totalRealExpenses - totalProductionCost;
-    const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost;
+    // Actual Profit = Collected - Real Expenses ONLY (no double-counting with production costs)
+    // The expenses table is the single source of truth for all costs (supplier, shipping, overhead, etc.)
+    // Production costs from project financials are used ONLY for projected profit when expenses aren't tracked yet.
+    const totalProfit = totalCollected - totalRealExpenses - totalCommissions;
+    const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost - totalCommissions;
 
     console.log("--- Dashboard Financial Debug ---");
     console.log("Projects:", projects?.length, "Value:", totalProjectValue);
