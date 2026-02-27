@@ -88,9 +88,8 @@ export default function Dashboard() {
 
     // 1. Calculate Production Costs (Estimated from Projects)
     const totalProductionCost = projects?.reduce((sum, p) => {
-        // If still in design phase, cost is just an estimate, not incurred yet? 
-        // Let's count it if status implies production/completion to be safe/conservative
-        const COST_RELEVANT_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
+        // Production costs are only "incurred" once production is officially launched
+        const COST_RELEVANT_STATUSES = ['production', 'delivery', 'completed'];
         if (!COST_RELEVANT_STATUSES.includes(p.status)) return sum;
 
         return sum +
