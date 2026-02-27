@@ -21,6 +21,7 @@ export default function LeadDetails() {
     const queryClient = useQueryClient();
     const [isDialerOpen, setIsDialerOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [newMessage, setNewMessage] = useState('');
 
     const { data: lead, isLoading: isLeadLoading, error: leadError } = useQuery({
         queryKey: ['lead', id],
@@ -55,6 +56,25 @@ export default function LeadDetails() {
             setIsEditing(false);
         }
     });
+
+    const sendMessageMutation = useMutation({
+        mutationFn: (content: string) => apiLeads.createMessage({
+            lead_id: id,
+            content,
+            sender_type: 'agent',
+            platform: lead?.source === 'facebook' ? 'facebook' : 'whatsapp'
+        }),
+        onSuccess: () => {
+            setNewMessage('');
+            queryClient.invalidateQueries({ queryKey: ['messages', id] });
+        }
+    });
+
+    const handleSendMessage = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim() || sendMessageMutation.isPending) return;
+        sendMessageMutation.mutate(newMessage);
+    };
 
     if (isLeadLoading) {
         return (
@@ -314,7 +334,7 @@ export default function LeadDetails() {
                                 </div>
                             ))}
 
-                            {/* FB Submission Record */}
+                            {/* FB Submission Record (Keep at bottom of initial history) */}
                             {lead.source === 'facebook' && (
                                 <div className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20">
                                     <div className="absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] bg-blue-100 text-blue-600 dark:bg-blue-900/30">
@@ -357,6 +377,28 @@ export default function LeadDetails() {
                             )}
 
                         </CardContent>
+
+                        {/* Chat Input Footer */}
+                        <div className="p-4 border-t border-black/5 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
+                            <form onSubmit={handleSendMessage} className="flex gap-2">
+                                <Input
+                                    placeholder={`Reply to ${lead.name} via ${lead.source}...`}
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    className="bg-white dark:bg-black border-black/10 dark:border-white/10"
+                                />
+                                <Button
+                                    type="submit"
+                                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                                    className="bg-luxury-gold hover:bg-luxury-gold/90 text-black font-semibold"
+                                >
+                                    {sendMessageMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send'}
+                                </Button>
+                            </form>
+                            <p className="text-[10px] text-muted-foreground mt-2 text-center">
+                                Direct reply via Business Messenger (Facebook/Instagram/WhatsApp)
+                            </p>
+                        </div>
                     </Card>
                 </div>
             </div>
