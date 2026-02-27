@@ -301,9 +301,27 @@ export default function LeadDetails() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <p className="text-sm italic text-gray-700 dark:text-gray-300 mt-2">
-                                            {lead.notes || "New lead captured via Facebook Ads."}
-                                        </p>
+
+                                        {lead.notes && (
+                                            <p className="text-sm italic text-gray-700 dark:text-gray-300 mt-2">
+                                                {lead.notes}
+                                            </p>
+                                        )}
+
+                                        {lead.metadata && typeof lead.metadata === 'object' && Object.keys(lead.metadata).length > 0 && (
+                                            <div className="mt-4 space-y-3 pt-3 border-t border-blue-500/10">
+                                                {Object.entries(lead.metadata).map(([key, value]) => (
+                                                    <div key={key} className="space-y-1">
+                                                        <p className="text-[10px] uppercase tracking-wider font-bold text-blue-600 dark:text-blue-400">
+                                                            {key.replace(/_/g, ' ')}
+                                                        </p>
+                                                        <p className="text-sm font-medium">
+                                                            {String(value)}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

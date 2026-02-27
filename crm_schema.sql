@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.leads (
     source TEXT DEFAULT 'manual' CHECK (source IN ('facebook', 'website', 'manual')),
     value NUMERIC(10, 2) DEFAULT 0,
     notes TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb,
     fb_leadgen_id TEXT UNIQUE -- To prevent duplicate webhook inserts
 );
 
