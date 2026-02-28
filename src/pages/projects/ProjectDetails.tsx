@@ -724,7 +724,64 @@ export default function ProjectDetails() {
                                 </div>
 
                                 {/* Manual Invoice Control */}
-                                <div className="pt-2 border-t mt-2 flex justify-end">
+                                <div className="pt-2 border-t mt-2 flex justify-between items-center">
+                                    {/* Export to Expenses Button */}
+                                    {(!project.financials?.exported_to_expenses) ? (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-xs text-red-500 border-red-200 hover:bg-red-50"
+                                            onClick={async () => {
+                                                const totalCost = (project.financials?.supplier_cost || 0) +
+                                                    (project.financials?.shipping_cost || 0) +
+                                                    (project.financials?.customs_fee || 0);
+
+                                                if (totalCost <= 0) {
+                                                    alert("No costs to export (Supplier + Shipping + Customs = 0)");
+                                                    return;
+                                                }
+
+                                                if (confirm(`Export $${totalCost.toLocaleString()} to Expenses?`)) {
+                                                    try {
+                                                        await apiExpenses.create({
+                                                            date: new Date().toISOString().split('T')[0],
+                                                            category: 'material',
+                                                            amount: totalCost,
+                                                            description: `Production Costs: ${project.title}`,
+                                                            project_id: project.id,
+                                                            status: 'paid'
+                                                        });
+
+                                                        // Mark project as exported
+                                                        await apiProjects.updateFinancials(project.id, {
+                                                            exported_to_expenses: true
+                                                        });
+
+                                                        apiActivities.log({
+                                                            project_id: project.id,
+                                                            user_id: 'admin',
+                                                            user_name: 'Admin User',
+                                                            action: 'update',
+                                                            details: `Exported $${totalCost.toLocaleString()} to global expenses`
+                                                        });
+
+                                                        queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                        queryClient.invalidateQueries({ queryKey: ['expenses'] });
+                                                        alert("Exported successfully!");
+                                                    } catch (err: any) {
+                                                        alert("Export failed: " + err.message);
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            🚀 Send to Expenses
+                                        </Button>
+                                    ) : (
+                                        <div className="text-xs text-zinc-400 flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" /> Exported
+                                        </div>
+                                    )}
+
                                     {(() => {
                                         const hasInvoice = invoices?.some(i => i.project_id === project.id);
                                         if (!hasInvoice) {

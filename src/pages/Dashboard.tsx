@@ -92,6 +92,10 @@ export default function Dashboard() {
         const COST_RELEVANT_STATUSES = ['production', 'delivery', 'completed'];
         if (!COST_RELEVANT_STATUSES.includes(p.status)) return sum;
 
+        // IMPORTANT: If the cost was already manually exported to the 'expenses' table, 
+        // we don't count it here to avoid double-counting in projectedProfit.
+        if (p.financials?.exported_to_expenses) return sum;
+
         return sum +
             (p.financials?.supplier_cost || 0) +
             (p.financials?.shipping_cost || 0) +

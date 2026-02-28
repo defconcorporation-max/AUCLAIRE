@@ -48,6 +48,7 @@ export interface Project {
         customs_fee?: number;   // Import duties
         selling_price?: number; // Usually same as budget, but tracked separately
         paid_amount?: number;   // Total amount paid by client
+        exported_to_expenses?: boolean; // Flag to skip double-counting in dashboard
     };
     affiliate_id?: string;
     affiliate?: { full_name: string };
