@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiProjects, ProjectStatus } from '@/services/apiProjects';
+import { apiExpenses } from '@/services/apiExpenses';
 import { apiInvoices } from '@/services/apiInvoices';
 import { apiClients } from '@/services/apiClients';
 import { apiNotifications } from '@/services/apiNotifications';
