@@ -17,7 +17,8 @@ export default function SalesProcess() {
                 "Il est assigné à un vendeur."
             ],
             hint: "👉 À partir de là, le vendeur prend le contrôle.",
-            emoji: "👋"
+            emoji: "👋",
+            images: ["/images/process/phase-1.png"]
         },
         {
             id: 2,
@@ -30,7 +31,8 @@ export default function SalesProcess() {
                 "Valide que le projet est sérieux."
             ],
             objective: "S’assurer que le client est prêt à avancer vers un design et donner une estimation du prix final, valider le design et le budget.",
-            emoji: "🎯"
+            emoji: "🎯",
+            images: ["/images/process/phase-2.png"]
         },
         {
             id: 3,
@@ -43,7 +45,8 @@ export default function SalesProcess() {
                 "Faire la fiche dans les task de GHL, assigné aux client et secretaire."
             ],
             hint: "👉 La fiche passe ensuite à la secrétaire.",
-            emoji: "📝"
+            emoji: "📝",
+            images: ["/images/process/phase-3.png"]
         },
         {
             id: 4,
@@ -57,7 +60,8 @@ export default function SalesProcess() {
                 "Il renvoie le CAD + prix à la secrétaire."
             ],
             hint: "👉 La secrétaire renvoie ensuite au vendeur.",
-            emoji: "💻"
+            emoji: "💻",
+            images: ["/images/process/phase-4-1.png", "/images/process/phase-4-2.png"]
         },
         {
             id: 5,
@@ -70,7 +74,8 @@ export default function SalesProcess() {
                 "Envoie le devis."
             ],
             objective: "Closer la vente.",
-            emoji: "🤝"
+            emoji: "🤝",
+            images: ["/images/process/phase-5.png"]
         },
         {
             id: 6,
@@ -82,7 +87,8 @@ export default function SalesProcess() {
                 "La secrétaire confirme le paiement.",
                 "Elle envoie le projet en production au manufacturier."
             ],
-            emoji: "💳"
+            emoji: "💳",
+            images: ["/images/process/phase-6.png"]
         },
         {
             id: 7,
@@ -94,7 +100,8 @@ export default function SalesProcess() {
                 "Une fois terminé, il informe la secrétaire.",
                 "La secrétaire informe le vendeur."
             ],
-            emoji: "🔨"
+            emoji: "🔨",
+            images: ["/images/process/phase-7.png"]
         },
         {
             id: 8,
@@ -200,6 +207,16 @@ export default function SalesProcess() {
                             {step.hint && (
                                 <div className="mt-4 text-sm font-medium text-luxury-gold italic bg-luxury-gold/5 px-4 py-3 rounded-xl inline-block border border-luxury-gold/10">
                                     {step.hint}
+                                </div>
+                            )}
+
+                            {step.images && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                                    {step.images.map((img, idx) => (
+                                        <div key={idx} className="relative rounded-xl overflow-hidden border border-black/10 dark:border-white/10 shadow-lg">
+                                            <img src={img} alt={`Illustration Phase ${step.id}`} className="w-full h-auto object-cover" />
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
