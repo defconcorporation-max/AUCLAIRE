@@ -91,31 +91,23 @@ export const apiProjects = {
         loadMockData();
 
         // Primary Query: Try with Affiliate Join
+        // Using left join for both to be safe
         const { data, error } = await supabase
             .from('projects')
-            .select('*, client:clients(full_name), affiliate:profiles!projects_affiliate_id_fkey(full_name)')
+            .select('*, client:clients(full_name), affiliate:profiles(full_name)')
             .order('updated_at', { ascending: false });
 
-        if (!error && data) {
-            return data as Project[];
+        if (error) {
+            console.error("Project Fetching Failed:", error);
+            // Only fallback to mock if the table itself seems missing or serious auth error
+            if (error.code === '42P01' || error.message.includes('permission denied')) {
+                console.warn("Using Mock Data for Projects due to critical database error");
+                return [...mockProjects];
+            }
+            throw error;
         }
 
-        console.warn("Primary Project Query failed (likely schema mismatch). Attempting fallback...", error);
-
-        // Fallback Query: Without Affiliate Join (Pre-migration compatibility)
-        const { data: fallbackData, error: fallbackError } = await supabase
-            .from('projects')
-            .select('*, client:clients(full_name)')
-            .order('updated_at', { ascending: false });
-
-        if (!fallbackError && fallbackData) {
-            console.log("Fallback query successful. Returning projects without affiliate data.");
-            return fallbackData as Project[];
-        }
-
-        console.error("All Project Fetching Failed. Falling back to Mock.", fallbackError);
-        console.warn("Using Mock Data for Projects");
-        return [...mockProjects];
+        return data as Project[];
     },
 
     async getStats() {

@@ -72,8 +72,10 @@ export default function Dashboard() {
         return sum + (i.amount - paid);
     }, 0);
 
-    // 2. Calculate Affiliate Commissions
+    // 2. Calculate Affiliate Commissions (Estimated)
     const totalCommissions = filteredProjects.reduce((sum, p) => {
+        // Skip projects where commission was already exported to real expenses to avoid double counting
+        if (p.financials?.commission_exported_to_expenses) return sum;
         if (!p.affiliate_id && !p.sales_agent_id) return sum;
 
         let comm = 0;
