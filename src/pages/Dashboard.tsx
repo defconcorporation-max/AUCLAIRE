@@ -72,70 +72,65 @@ export default function Dashboard() {
     const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready');
     const recentProjects = filteredProjects.slice(0, 5);
 
-    // Financial calculations (using filtered data)
-    const totalProjectValue = filteredProjects.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0);
+    // ─── Financial Source of Truth ──────────────────────────────────────────────
+    // RULE: selling_price is the canonical sale price. budget is the legacy fallback.
+    const getSalePrice = (p: any) => Number(p.financials?.selling_price || p.budget || 0);
 
-    // Collected (Invoices)
+    // RULE: Commission for a project is always calculated the same way everywhere.
+    const getCommission = (p: any) => {
+        if (!p.affiliate_id && !p.sales_agent_id) return 0;
+        if (p.affiliate_commission_type === 'fixed') return Number(p.affiliate_commission_rate || 0);
+        return (getSalePrice(p) * Number(p.affiliate_commission_rate || 0)) / 100;
+    };
+    // ────────────────────────────────────────────────────────────────────────────
+
+    // Total Pipeline Value
+    const totalProjectValue = filteredProjects.reduce((sum, p) => sum + getSalePrice(p), 0);
+
+    // Collected: amount_paid is the exact field; if status=paid and amount_paid=0, use the full invoice amount.
     const totalCollected = filteredInvoices.reduce((sum, i) => {
-        const paid = i.amount_paid || (i.status === 'paid' ? i.amount : 0);
+        const paid = (i.amount_paid && i.amount_paid > 0) ? i.amount_paid : (i.status === 'paid' ? i.amount : 0);
         return sum + paid;
     }, 0);
 
-    // Pending (Invoices)
+    // Pending = invoice total minus what is already collected
     const totalPending = filteredInvoices.reduce((sum, i) => {
-        const paid = i.amount_paid || (i.status === 'paid' ? i.amount : 0);
-        return sum + (i.amount - paid);
+        const paid = (i.amount_paid && i.amount_paid > 0) ? i.amount_paid : (i.status === 'paid' ? i.amount : 0);
+        return sum + Math.max(0, i.amount - paid);
     }, 0);
 
-    // 2. Calculate Affiliate Commissions (Estimated)
+    // Estimated Commissions (for projects NOT yet exported to expenses)
     const totalCommissions = filteredProjects.reduce((sum, p) => {
         // Skip projects where commission was already exported to real expenses to avoid double counting
         if (p.financials?.commission_exported_to_expenses) return sum;
-        if (!p.affiliate_id && !p.sales_agent_id) return sum;
-
-        let comm = 0;
-        if (p.affiliate_commission_type === 'fixed') {
-            comm = p.affiliate_commission_rate || 0;
-        } else {
-            // Percent of Budget
-            const budget = p.financials?.selling_price || p.budget || 0;
-            const rate = p.affiliate_commission_rate || 0;
-            comm = (budget * rate) / 100;
-        }
-        return sum + comm;
+        return sum + getCommission(p);
     }, 0);
 
-    // Expenses Calculation (Only PAID expenses count towards actual costs for now, or maybe all?)
-    // Usually Profit = Income - Expenses. Let's subtract all PAID expenses.
+    // Real Expenses from the expenses table (all statuses except cancelled)
+    // We include ALL expense categories here — commissions that were exported already appear here.
     const totalRealExpenses = (filteredExpenses as any[])
-        ?.filter(e => e.status === 'paid')
+        ?.filter(e => e.status !== 'cancelled')
         .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
-    // 1. Calculate Production Costs (Estimated from Projects) - OPTIONAL: We might want to replace this with REAL expenses if they are tracked?
-    // For now, let's keep the project-based estimation as "COGS" maybe? Or just use the Real Expenses?
-    // User asked: "expense should be taken in consideration in the financial data".
-    // Let's use Real Expenses as the "Total Expenses" line item.
-
-    // 1. Calculate Production Costs (Estimated from Projects)
-    const totalProductionCost = projects?.reduce((sum, p) => {
-        // Production costs are only "incurred" once production is officially launched
-        const COST_RELEVANT_STATUSES = ['production', 'delivery', 'completed'];
-        if (!COST_RELEVANT_STATUSES.includes(p.status)) return sum;
-
-        // IMPORTANT: If the cost was already manually exported to the 'expenses' table, 
-        // we don't count it here to avoid double-counting in projectedProfit.
-        if (p.financials?.exported_to_expenses) return sum;
-
+    // Production Costs from project financials (only for projects NOT yet exported to expenses)
+    const totalProductionCost = filteredProjects.reduce((sum, p) => {
+        const COST_STATUSES = ['production', 'delivery', 'completed'];
+        if (!COST_STATUSES.includes(p.status)) return sum;
+        if (p.financials?.exported_to_expenses) return sum; // already in real expenses
         return sum +
-            (p.financials?.supplier_cost || 0) +
-            (p.financials?.shipping_cost || 0) +
-            (p.financials?.customs_fee || 0);
-    }, 0) || 0;
+            Number(p.financials?.supplier_cost || 0) +
+            Number(p.financials?.shipping_cost || 0) +
+            Number(p.financials?.customs_fee || 0);
+    }, 0);
 
-    // Actual Profit = Collected - Real Expenses ONLY (no double-counting with production costs)
-    // The expenses table is the single source of truth for all costs (supplier, shipping, overhead, etc.)
-    // Production costs from project financials are used ONLY for projected profit when expenses aren't tracked yet.
+    // ── Profit Calculations ───────────────────────────────────────────────────────
+    // Actual Profit = Cash Collected - Real Expenses (which already include exported commissions)
+    //                - Estimated Commissions (for projects not yet exported)
+    // Note: we do NOT subtract totalCommissions if they were already in totalRealExpenses.
     const totalProfit = totalCollected - totalRealExpenses - totalCommissions;
+
+    // Projected Profit = Total Pipeline Value - Real Expenses - Non-exported production costs
+    //                  - Estimated Commissions on remaining projects
     const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost - totalCommissions;
 
     console.log("--- Dashboard Financial Debug ---");
