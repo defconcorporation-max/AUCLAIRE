@@ -1,7 +1,7 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiAffiliates, AffiliateProfile } from '@/services/apiAffiliates';
+import { supabase } from '@/lib/supabase';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,15 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, CheckCircle, Clock } from 'lucide-react';
 
 export default function AffiliateDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [affiliate, setAffiliate] = useState<AffiliateProfile | null>(null);
     const [stats, setStats] = useState<any>(null);
+    const [pendingCommissions, setPendingCommissions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isPayingId, setIsPayingId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     // Editable Fields
@@ -47,7 +49,6 @@ export default function AffiliateDetails() {
             if (found) {
                 setAffiliate(found);
                 setFullName(found.full_name || '');
-                // setEmail(found.email || ''); // If we had it
                 setStatus(found.affiliate_status || 'pending');
                 setLevel(found.affiliate_level || 'starter');
                 setRate(found.commission_rate || 10);
@@ -56,6 +57,15 @@ export default function AffiliateDetails() {
                 // 2. Fetch Stats
                 const statsData = await apiAffiliates.getAffiliateStats(id!);
                 setStats(statsData);
+
+                // 3. Fetch Pending Commissions from expenses table
+                const { data: commData } = await supabase
+                    .from('expenses')
+                    .select('id, amount, description, date, status, project:projects(title)')
+                    .eq('recipient_id', id!)
+                    .eq('category', 'commission')
+                    .order('date', { ascending: false });
+                setPendingCommissions(commData || []);
             }
         } catch (error: any) {
             console.error("Failed to load affiliate", error);
@@ -99,7 +109,21 @@ export default function AffiliateDetails() {
         }
     };
 
-    const { totalSales = 0, totalCommission = 0, activeProjectsCount = 0, projects = [] } = stats || {};
+    const handlePayCommission = async (commissionId: string, amount: number) => {
+        if (!confirm(`Marquer cette commission de ${new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(Number(amount))} comme PAYÉE ?`)) return;
+        setIsPayingId(commissionId);
+        try {
+            await supabase
+                .from('expenses')
+                .update({ status: 'paid' })
+                .eq('id', commissionId);
+            await loadData();
+        } catch (err: any) {
+            alert('Échec du paiement : ' + err.message);
+        } finally {
+            setIsPayingId(null);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -131,31 +155,35 @@ export default function AffiliateDetails() {
                 {/* Stats Cards */}
                 <Card className="bg-zinc-900 text-white border-zinc-800">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Total Lifetime Commission</CardTitle>
+                        <CardTitle className="text-sm font-medium text-zinc-400">Commission totale estimée</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-luxury-gold">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(totalCommission)}
+                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(stats?.commissionEarned || 0)}
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Total Sales Volume</CardTitle>
+                        <CardTitle className="text-sm font-medium text-amber-700">En attente de paiement</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-serif">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(totalSales)}
+                        <div className="text-2xl font-bold font-serif text-amber-600">
+                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(
+                                pendingCommissions.filter(c => c.status === 'pending').reduce((s: number, c: any) => s + Number(c.amount), 0)
+                            )}
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Active Projects</CardTitle>
+                        <CardTitle className="text-sm font-medium text-green-700">Déjà payé</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-serif">
-                            {activeProjectsCount}
+                        <div className="text-2xl font-bold font-serif text-green-600">
+                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(
+                                pendingCommissions.filter(c => c.status === 'paid').reduce((s: number, c: any) => s + Number(c.amount), 0)
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -231,61 +259,68 @@ export default function AffiliateDetails() {
                     </CardContent>
                 </Card>
 
-                {/* Assigned Projects List */}
+                {/* Pending Commissions Panel */}
                 <Card className="md:col-span-2">
                     <CardHeader>
-                        <CardTitle>Assigned Projects</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-500" />
+                            Commissions
+                        </CardTitle>
+                        <CardDescription>Cliquez sur "Payer" pour marquer une commission comme réglée.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Project</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Sale</TableHead>
-                                        <TableHead className="text-right text-luxury-gold">Commission</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {projects.length === 0 ? (
+                        {pendingCommissions.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">Aucune commission enregistrée.</p>
+                        ) : (
+                            <div className="rounded-md border overflow-hidden">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                                                No projects assigned.
-                                            </TableCell>
+                                            <TableHead>Description</TableHead>
+                                            <TableHead>Montant</TableHead>
+                                            <TableHead>Statut</TableHead>
+                                            <TableHead className="text-right">Action</TableHead>
                                         </TableRow>
-                                    ) : (
-                                        projects.map((p: any) => {
-                                            const price = Number(p.budget) || 0;
-                                            let com = 0;
-                                            if (p.affiliate_commission_type === 'fixed') {
-                                                com = Number(p.affiliate_commission_rate) || 0;
-                                            } else {
-                                                com = (price * (Number(p.affiliate_commission_rate) || 0)) / 100;
-                                            }
-
-                                            return (
-                                                <TableRow key={p.id} className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900" onClick={() => navigate(`/dashboard/projects/${p.id}`)}>
-                                                    <TableCell className="font-medium">
-                                                        <div>{p.title || 'Untitled Project'}</div>
-                                                        <div className="text-xs text-muted-foreground">ID: {p.id.slice(0, 8)} • {p.client?.full_name || 'Client'}</div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className="capitalize">{p.status.replace('_', ' ')}</Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(price)}
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-bold text-luxury-gold">
-                                                        {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(com)}
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {pendingCommissions.map((c: any) => (
+                                            <TableRow key={c.id}>
+                                                <TableCell className="text-sm">
+                                                    <div>{c.description}</div>
+                                                    <div className="text-xs text-muted-foreground">{new Date(c.date).toLocaleDateString('fr-CA')}</div>
+                                                </TableCell>
+                                                <TableCell className="font-mono font-bold text-luxury-gold">
+                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(Number(c.amount))}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge className={c.status === 'paid'
+                                                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                                                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
+                                                    }>
+                                                        {c.status === 'paid' ? <><CheckCircle className="w-3 h-3 inline mr-1" />Payé</> : '⏳ En attente'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {c.status === 'pending' ? (
+                                                        <Button
+                                                            size="sm"
+                                                            className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white gap-1"
+                                                            disabled={isPayingId === c.id}
+                                                            onClick={() => handlePayCommission(c.id, c.amount)}
+                                                        >
+                                                            {isPayingId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                                                            Payer
+                                                        </Button>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">✓ Réglé</span>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
