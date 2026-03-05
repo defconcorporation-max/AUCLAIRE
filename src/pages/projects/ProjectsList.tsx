@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiProjects, ProjectStatus, Project } from '@/services/apiProjects'
 import { ProjectCard } from '@/components/ui/ProjectCard'
@@ -10,6 +11,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 export default function ProjectsList() {
     const queryClient = useQueryClient()
     const navigate = useNavigate()
+    const { role } = useAuth()
     const containerRef = useRef<HTMLDivElement>(null)
     const topScrollRef = useRef<HTMLDivElement>(null)
 
@@ -143,9 +145,11 @@ export default function ProjectsList() {
                                                 <h3 className="font-semibold text-[10px] text-luxury-gold uppercase tracking-[0.2em] mb-1">
                                                     {status.replace(/_/g, ' ')}
                                                 </h3>
-                                                <p className="text-sm font-serif text-white/90">
-                                                    {columnTotal > 0 ? `$${columnTotal.toLocaleString()}` : '-'}
-                                                </p>
+                                                {role !== 'manufacturer' && (
+                                                    <p className="text-sm font-serif text-white/90">
+                                                        {columnTotal > 0 ? `$${columnTotal.toLocaleString()}` : '-'}
+                                                    </p>
+                                                )}
                                             </div>
                                             <span className="text-[10px] font-mono bg-luxury-gold/10 text-luxury-gold px-2.5 py-1 rounded-full ring-1 ring-luxury-gold/20">
                                                 {columnProjects.length}
