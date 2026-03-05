@@ -37,9 +37,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoadingSession, setIsLoadingSession] = useState(true);
 
-    // Shared Mode State
-    const [isSharedMode, setIsSharedMode] = useState(false);
-    const [demoRole, setDemoRole] = useState<UserRole>('admin');
+    // Shared Mode State (Persisted)
+    const [isSharedMode, setIsSharedMode] = useState(() => {
+        return localStorage.getItem('isSharedMode') === 'true';
+    });
+    const [demoRole, setDemoRole] = useState<UserRole>(() => {
+        return (localStorage.getItem('demoRole') as UserRole) || 'admin';
+    });
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -57,6 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return () => subscription.unsubscribe();
     }, []);
+
+    // Persist Shared Mode
+    useEffect(() => {
+        localStorage.setItem('isSharedMode', isSharedMode.toString());
+        localStorage.setItem('demoRole', demoRole);
+    }, [isSharedMode, demoRole]);
 
     // Fetch profile only if user exists OR in Shared Mode
     const { data: profile, isLoading: isLoadingProfile } = useQuery({

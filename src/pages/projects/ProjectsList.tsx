@@ -1,24 +1,84 @@
-
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { apiProjects, ProjectStatus } from '@/services/apiProjects'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiProjects, ProjectStatus, Project } from '@/services/apiProjects'
 import { ProjectCard } from '@/components/ui/ProjectCard'
 import { Button } from '@/components/ui/button'
-import { Plus, LayoutGrid, List as ListIcon } from 'lucide-react'
+import { Plus, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
 export default function ProjectsList() {
+    const queryClient = useQueryClient()
+    const navigate = useNavigate()
+    const containerRef = useRef<HTMLDivElement>(null)
+    const topScrollRef = useRef<HTMLDivElement>(null)
+
     const { data: projects, isLoading } = useQuery({
         queryKey: ['projects'],
         queryFn: apiProjects.getAll
     })
-    const navigate = useNavigate()
+
+    const updateStatusMutation = useMutation({
+        mutationFn: ({ id, status }: { id: string, status: ProjectStatus }) =>
+            apiProjects.updateStatus(id, status),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] })
+        }
+    })
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
     const columns: ProjectStatus[] = ['designing', '3d_model', 'design_ready', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed']
 
-    if (isLoading) return <div>Loading...</div>
+    // Sync scrollbars
+    useEffect(() => {
+        const topScroll = topScrollRef.current
+        const mainContainer = containerRef.current
+
+        if (!topScroll || !mainContainer) return
+
+        const handleTopScroll = () => {
+            if (mainContainer.scrollLeft !== topScroll.scrollLeft) {
+                mainContainer.scrollLeft = topScroll.scrollLeft
+            }
+        }
+
+        const handleMainScroll = () => {
+            if (topScroll.scrollLeft !== mainContainer.scrollLeft) {
+                topScroll.scrollLeft = mainContainer.scrollLeft
+            }
+        }
+
+        topScroll.addEventListener('scroll', handleTopScroll)
+        mainContainer.addEventListener('scroll', handleMainScroll)
+
+        return () => {
+            topScroll.removeEventListener('scroll', handleTopScroll)
+            mainContainer.removeEventListener('scroll', handleMainScroll)
+        }
+    }, [projects, viewMode])
+
+    const onDragEnd = (result: DropResult) => {
+        const { destination, source, draggableId } = result
+        if (!destination) return
+        if (destination.droppableId === source.droppableId && destination.index === source.index) return
+
+        const newStatus = destination.droppableId as ProjectStatus
+
+        // Optimistic update
+        queryClient.setQueryData(['projects'], (old: Project[] | undefined) => {
+            if (!old) return []
+            return old.map(p => p.id === draggableId ? { ...p, status: newStatus } : p)
+        })
+
+        updateStatusMutation.mutate({ id: draggableId, status: newStatus })
+    }
+
+    if (isLoading) return (
+        <div className="flex-1 flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
+        </div>
+    )
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -58,30 +118,80 @@ export default function ProjectsList() {
 
             {/* Kanban View */}
             {viewMode === 'grid' && (
-                <div className="flex gap-6 overflow-x-auto pb-8 snap-x">
-                    {columns.map(status => {
-                        const columnProjects = projects?.filter(p => p.status === status);
-                        return (
-                            <div key={status} className="min-w-[320px] w-[320px] flex-shrink-0 snap-start space-y-4">
-                                <div className="flex items-center justify-between px-1 pb-2 border-b border-white/10">
-                                    <h3 className="font-semibold text-xs text-luxury-gold uppercase tracking-[0.2em]">{status.replace(/_/g, ' ')}</h3>
-                                    <span className="text-[10px] font-mono bg-luxury-gold/10 text-luxury-gold px-2.5 py-1 rounded-full ring-1 ring-luxury-gold/20">
-                                        {columnProjects?.length || 0}
-                                    </span>
-                                </div>
+                <div className="flex flex-col min-h-0">
+                    {/* Top Scrollbar Mirror */}
+                    <div
+                        ref={topScrollRef}
+                        className="overflow-x-auto overflow-y-hidden h-4 mb-2 scrollbar-thin scrollbar-thumb-luxury-gold/20"
+                    >
+                        <div style={{ width: `${columns.length * 344}px` }} className="h-1" />
+                    </div>
 
-                                <div className="space-y-4 pt-2">
-                                    {columnProjects?.map(project => (
-                                        <ProjectCard
-                                            key={project.id}
-                                            project={project}
-                                            onClick={() => navigate(`/dashboard/projects/${project.id}`)}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )
-                    })}
+                    <DragDropContext onDragEnd={onDragEnd}>
+                        <div
+                            ref={containerRef}
+                            className="flex gap-6 overflow-x-auto pb-8 snap-x scrollbar-thin scrollbar-thumb-luxury-gold/50"
+                        >
+                            {columns.map(status => {
+                                const columnProjects = projects?.filter(p => p.status === status) || [];
+                                const columnTotal = columnProjects.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0);
+
+                                return (
+                                    <div key={status} className="min-w-[320px] w-[320px] flex-shrink-0 snap-start flex flex-col h-full">
+                                        <div className="flex items-center justify-between px-1 pb-3 border-b border-white/10 mb-4 h-12">
+                                            <div>
+                                                <h3 className="font-semibold text-[10px] text-luxury-gold uppercase tracking-[0.2em] mb-1">
+                                                    {status.replace(/_/g, ' ')}
+                                                </h3>
+                                                <p className="text-sm font-serif text-white/90">
+                                                    {columnTotal > 0 ? `$${columnTotal.toLocaleString()}` : '-'}
+                                                </p>
+                                            </div>
+                                            <span className="text-[10px] font-mono bg-luxury-gold/10 text-luxury-gold px-2.5 py-1 rounded-full ring-1 ring-luxury-gold/20">
+                                                {columnProjects.length}
+                                            </span>
+                                        </div>
+
+                                        <Droppable droppableId={status}>
+                                            {(provided, snapshot) => (
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.droppableProps}
+                                                    className={`flex-1 space-y-4 min-h-[500px] p-1 rounded-xl transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-white/5' : ''
+                                                        }`}
+                                                >
+                                                    {columnProjects.map((project, index) => (
+                                                        <Draggable key={project.id} draggableId={project.id} index={index}>
+                                                            {(provided, snapshot) => (
+                                                                <div
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    style={{
+                                                                        ...provided.draggableProps.style,
+                                                                        transform: snapshot.isDragging
+                                                                            ? provided.draggableProps.style?.transform
+                                                                            : 'none'
+                                                                    }}
+                                                                    className={`${snapshot.isDragging ? 'z-50' : ''}`}
+                                                                >
+                                                                    <ProjectCard
+                                                                        project={project}
+                                                                        onClick={() => navigate(`/dashboard/projects/${project.id}`)}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </Draggable>
+                                                    ))}
+                                                    {provided.placeholder}
+                                                </div>
+                                            )}
+                                        </Droppable>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </DragDropContext>
                 </div>
             )}
 
