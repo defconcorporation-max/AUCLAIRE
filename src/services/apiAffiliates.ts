@@ -27,7 +27,7 @@ export const apiAffiliates = {
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .in('role', ['affiliate', 'ambassador', 'admin', 'sales']); // Include others who might be affiliates? sticking to affiliate/ambassador primarily but let's be broad if legacy used it.
+            .in('role', ['affiliate', 'ambassador', 'admin']);
         // Actually, keep it simple:
         // .in('role', ['affiliate', 'ambassador']);
 

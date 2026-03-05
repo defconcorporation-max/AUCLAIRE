@@ -8,7 +8,7 @@ export function RoleSwitcher() {
 
     // if (!user) return null; // Removed check to force visibility
 
-    const roles: UserRole[] = ['admin', 'sales', 'manufacturer', 'affiliate', 'client'];
+    const roles: UserRole[] = ['admin', 'manufacturer', 'client', 'affiliate'];
 
     return (
         <div className="fixed bottom-4 right-4 bg-background border rounded-lg shadow-lg p-2 flex gap-2 z-50">

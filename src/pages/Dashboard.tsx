@@ -37,31 +37,44 @@ export default function Dashboard() {
 
     if (projectsLoading || invoicesLoading || expensesLoading) return <div>Loading dashboard...</div>;
 
-    // ... (filters)
-    const manufacturerDesignRequests = projects?.filter(p => p.status === 'designing' || p.status === 'design_modification' || p.status === '3d_model') || [];
-    const manufacturerPendingProduction = projects?.filter(p => p.status === 'approved_for_production') || [];
-    const manufacturerOngoingProduction = projects?.filter(p => p.status === 'production') || [];
-    const adminDesignReady = projects?.filter(p => p.status === 'design_ready') || [];
-    const recentProjects = projects?.slice(0, 5) || [];
+    const filteredProjects = projects?.filter(p => {
+        if (role === 'admin' || role === 'manufacturer') return true;
+        if (role === 'affiliate') {
+            return p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
+        }
+        return false;
+    }) || [];
 
-    // Financial calculations
-    const totalProjectValue = projects?.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0) || 0;
+    const projectIds = new Set(filteredProjects.map(p => p.id));
+    const filteredInvoices = invoices?.filter(i => projectIds.has(i.project_id)) || [];
+
+    // Expenses are usually admin-only, but let's be safe
+    const filteredExpenses = role === 'admin' ? expenses : [];
+
+    const manufacturerDesignRequests = filteredProjects.filter(p => p.status === 'designing' || p.status === 'design_modification' || p.status === '3d_model');
+    const manufacturerPendingProduction = filteredProjects.filter(p => p.status === 'approved_for_production');
+    const manufacturerOngoingProduction = filteredProjects.filter(p => p.status === 'production');
+    const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready');
+    const recentProjects = filteredProjects.slice(0, 5);
+
+    // Financial calculations (using filtered data)
+    const totalProjectValue = filteredProjects.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0);
 
     // Collected (Invoices)
-    const totalCollected = invoices?.reduce((sum, i) => {
+    const totalCollected = filteredInvoices.reduce((sum, i) => {
         const paid = i.amount_paid || (i.status === 'paid' ? i.amount : 0);
         return sum + paid;
-    }, 0) || 0;
+    }, 0);
 
     // Pending (Invoices)
-    const totalPending = invoices?.reduce((sum, i) => {
+    const totalPending = filteredInvoices.reduce((sum, i) => {
         const paid = i.amount_paid || (i.status === 'paid' ? i.amount : 0);
         return sum + (i.amount - paid);
-    }, 0) || 0;
+    }, 0);
 
     // 2. Calculate Affiliate Commissions
-    const totalCommissions = projects?.reduce((sum, p) => {
-        if (!p.affiliate_id) return sum;
+    const totalCommissions = filteredProjects.reduce((sum, p) => {
+        if (!p.affiliate_id && !p.sales_agent_id) return sum;
 
         let comm = 0;
         if (p.affiliate_commission_type === 'fixed') {
@@ -73,11 +86,11 @@ export default function Dashboard() {
             comm = (budget * rate) / 100;
         }
         return sum + comm;
-    }, 0) || 0;
+    }, 0);
 
     // Expenses Calculation (Only PAID expenses count towards actual costs for now, or maybe all?)
     // Usually Profit = Income - Expenses. Let's subtract all PAID expenses.
-    const totalRealExpenses = expenses
+    const totalRealExpenses = (filteredExpenses as any[])
         ?.filter(e => e.status === 'paid')
         .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
@@ -291,22 +304,38 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-gradient-to-br from-luxury-gold/10 to-black/40 backdrop-blur-xl border-luxury-gold/30 shadow-[0_4px_20px_rgba(210,181,123,0.1)] relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-tl from-luxury-gold/10 to-transparent opacity-50" />
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                <CardTitle className="text-xs font-bold uppercase tracking-widest text-luxury-gold">Actual Profit</CardTitle>
-                                <TrendingUp className="h-4 w-4 text-luxury-gold" />
-                            </CardHeader>
-                            <CardContent className="relative z-10">
-                                <div className="text-3xl font-serif text-black dark:text-white">
-                                    ${totalProfit.toLocaleString()}
-                                </div>
-                                <div className="text-[10px] text-luxury-gold/70 uppercase tracking-widest mt-1 flex justify-between gap-2 font-medium">
-                                    <span>Net Income</span>
-                                    <span title="Potential profit if all invoices are paid" className="opacity-70">/ ${projectedProfit.toLocaleString()} Proj.</span>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {role === 'admin' && (
+                            <Card className="bg-gradient-to-br from-luxury-gold/10 to-black/40 backdrop-blur-xl border-luxury-gold/30 shadow-[0_4px_20px_rgba(210,181,123,0.1) relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-gradient-to-tl from-luxury-gold/10 to-transparent opacity-50" />
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                    <CardTitle className="text-xs font-bold uppercase tracking-widest text-luxury-gold">Actual Profit</CardTitle>
+                                    <TrendingUp className="h-4 w-4 text-luxury-gold" />
+                                </CardHeader>
+                                <CardContent className="relative z-10">
+                                    <div className="text-3xl font-serif text-black dark:text-white">
+                                        ${totalProfit.toLocaleString()}
+                                    </div>
+                                    <div className="text-[10px] text-luxury-gold/70 uppercase tracking-widest mt-1 flex justify-between gap-2 font-medium">
+                                        <span>Net Income</span>
+                                        <span title="Potential profit if all invoices are paid" className="opacity-70">/ ${projectedProfit.toLocaleString()} Proj.</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                        {(role as string) === 'affiliate' && (
+                            <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Total Projects</CardTitle>
+                                    <TrendingUp className="h-4 w-4 text-luxury-gold" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-3xl font-serif text-black dark:text-white">
+                                        {filteredProjects.length}
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Managed Clients</p>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
                     {adminDesignReady.length > 0 && (
@@ -341,7 +370,7 @@ export default function Dashboard() {
             )}
 
             {/* SHARED / DEFAULT DASHBOARD (Recent Projects) */}
-            {(role === 'admin' || role === 'sales') && (
+            {((role as string) === 'admin' || (role as string) === 'affiliate') && (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {/* Revenue Overview */}
                     <Card className="col-span-2 lg:col-span-2 bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 shadow-xl">

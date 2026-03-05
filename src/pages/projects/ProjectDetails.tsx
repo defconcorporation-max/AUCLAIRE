@@ -226,7 +226,7 @@ export default function ProjectDetails() {
                                 {isSharing ? "Copying..." : "Share Link"}
                             </Button>
                         )}
-                        {(role === 'admin' || role === 'sales') && (
+                        {(role === 'admin' || role === 'affiliate') && (
                             <Button variant="outline" size="sm" onClick={() => setIsEditingClient(true)} className="gap-2 border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10">
                                 <Pencil className="w-4 h-4" />
                                 Edit Client
@@ -238,7 +238,7 @@ export default function ProjectDetails() {
                             {!isEditingClient ? (
                                 <div className="flex items-center gap-2">
                                     <span>Client: {project.client?.full_name}</span>
-                                    {(role === 'admin' || role === 'sales') && (
+                                    {(role === 'admin' || role === 'affiliate') && (
                                         <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
                                             setSelectedClientId(project.client_id);
                                             setIsEditingClient(true);
@@ -525,7 +525,7 @@ export default function ProjectDetails() {
                     </CardHeader>
                     <CardContent className="space-y-5 pt-6">
                         {/* Affiliate Section */}
-                        {(role === 'admin' || role === 'sales' || project.affiliate_id) && (
+                        {(role === 'admin' || role === 'affiliate' || project.affiliate_id) && (
                             <>
                                 <div className="flex items-center justify-between border-b pb-2">
                                     <span className="text-sm text-muted-foreground flex items-center gap-2">
@@ -582,41 +582,109 @@ export default function ProjectDetails() {
                                     )}
                                 </div>
                                 {/* Commission Controls (Editable) */}
-                                {project.affiliate_id && (role === 'admin' || role === 'sales') && (
-                                    <div className="flex items-center justify-between mt-2 pl-5">
-                                        <span className="text-xs text-muted-foreground">Commission</span>
-                                        <div className="flex items-center gap-1">
-                                            <input
-                                                type="number"
-                                                className="w-16 text-right border rounded px-1 py-0.5 text-xs bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                                                defaultValue={project.affiliate_commission_rate || 0}
-                                                onBlur={(e) => {
-                                                    const val = parseFloat(e.target.value);
-                                                    if (!isNaN(val)) {
-                                                        apiProjects.update(project.id, { affiliate_commission_rate: val })
+                                {project.affiliate_id && (role === 'admin' || role === 'affiliate') && (
+                                    <>
+                                        <div className="flex items-center justify-between mt-2 pl-5">
+                                            <span className="text-xs text-muted-foreground">Commission</span>
+                                            <div className="flex items-center gap-1">
+                                                <input
+                                                    type="number"
+                                                    className="w-16 text-right border rounded px-1 py-0.5 text-xs bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                                                    defaultValue={project.affiliate_commission_rate || 0}
+                                                    onBlur={(e) => {
+                                                        const val = parseFloat(e.target.value);
+                                                        if (!isNaN(val)) {
+                                                            apiProjects.update(project.id, { affiliate_commission_rate: val })
+                                                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
+                                                                .catch(err => alert(err.message));
+                                                        }
+                                                    }}
+                                                />
+                                                <select
+                                                    className="h-6 rounded border border-input bg-background text-xs px-1"
+                                                    value={project.affiliate_commission_type || 'percent'}
+                                                    onChange={(e) => {
+                                                        apiProjects.update(project.id, { affiliate_commission_type: e.target.value as any })
                                                             .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
                                                             .catch(err => alert(err.message));
-                                                    }
-                                                }}
-                                            />
-                                            <select
-                                                className="h-6 rounded border border-input bg-background text-xs px-1"
-                                                value={project.affiliate_commission_type || 'percent'}
-                                                onChange={(e) => {
-                                                    apiProjects.update(project.id, { affiliate_commission_type: e.target.value as any })
-                                                        .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
-                                                        .catch(err => alert(err.message));
-                                                }}
-                                            >
-                                                <option value="percent">%</option>
-                                                <option value="fixed">$</option>
-                                            </select>
+                                                    }}
+                                                >
+                                                    <option value="percent">%</option>
+                                                    <option value="fixed">$</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
+                                        <div className="flex items-center justify-between mt-3 pl-5">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Calculated</span>
+                                                <span className="text-sm font-bold text-luxury-gold">
+                                                    ${(() => {
+                                                        if (project.affiliate_commission_type === 'fixed') return (project.affiliate_commission_rate || 0).toLocaleString();
+                                                        return (((project.budget || 0) * (project.affiliate_commission_rate || 0)) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                    })()}
+                                                </span>
+                                            </div>
+                                            {(!project.financials?.commission_exported_to_expenses) ? (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-[10px] h-7 gap-1 text-luxury-gold border-luxury-gold/30 hover:bg-luxury-gold hover:text-black transition-colors"
+                                                    onClick={async () => {
+                                                        const amount = project.affiliate_commission_type === 'fixed'
+                                                            ? (project.affiliate_commission_rate || 0)
+                                                            : ((project.budget || 0) * (project.affiliate_commission_rate || 0) / 100);
+
+                                                        if (amount <= 0) {
+                                                            alert("Commission amount must be greater than 0.");
+                                                            return;
+                                                        }
+
+                                                        if (confirm(`Export $${amount.toLocaleString()} commission for ${project.affiliate?.full_name} to Expenses?`)) {
+                                                            try {
+                                                                await apiExpenses.create({
+                                                                    date: new Date().toISOString().split('T')[0],
+                                                                    category: 'commission',
+                                                                    amount: amount,
+                                                                    description: `Commission: ${project.title} (${project.affiliate?.full_name})`,
+                                                                    recipient_id: project.affiliate_id,
+                                                                    project_id: project.id,
+                                                                    status: 'pending'
+                                                                });
+
+                                                                await apiProjects.updateFinancials(project.id, {
+                                                                    commission_exported_to_expenses: true
+                                                                });
+
+                                                                apiActivities.log({
+                                                                    project_id: project.id,
+                                                                    user_id: 'admin',
+                                                                    user_name: 'Admin User',
+                                                                    action: 'update',
+                                                                    details: `Exported commission ($${amount.toLocaleString()}) for ${project.affiliate?.full_name} to expenses.`
+                                                                });
+
+                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                                queryClient.invalidateQueries({ queryKey: ['expenses'] });
+                                                                alert("Commission exported successfully!");
+                                                            } catch (err: any) {
+                                                                alert("Export failed: " + err.message);
+                                                            }
+                                                        }
+                                                    }}
+                                                >
+                                                    🚀 Send to Commission
+                                                </Button>
+                                            ) : (
+                                                <div className="text-[10px] text-zinc-400 flex items-center gap-1">
+                                                    <CheckCircle2 className="w-3 h-3 text-green-500" /> Commission Sent
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
                                 )}
                             </>
                         )}
-                        {/* Budget & Profit - Hidden for Clients & Suppliers (partially) */}
+                        {/* Budget & Profit - Hidden for Clients, Manufacturers, Sales & Affiliates (partially) */}
 
                         {role !== 'client' && role !== 'manufacturer' && (
                             <>
@@ -687,7 +755,7 @@ export default function ProjectDetails() {
                             <span className="font-medium">{project.deadline ? new Date(project.deadline).toLocaleDateString() : 'None'}</span>
                         </div>
 
-                        {/* Admin Financials */}
+                        {/* Admin Financials - Strictly for Admin */}
                         {role === 'admin' && (
                             <div className="bg-zinc-50 dark:bg-zinc-900 p-3 rounded-md space-y-2">
                                 <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">

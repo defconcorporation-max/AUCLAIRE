@@ -49,6 +49,7 @@ export interface Project {
         selling_price?: number; // Usually same as budget, but tracked separately
         paid_amount?: number;   // Total amount paid by client
         exported_to_expenses?: boolean; // Flag to skip double-counting in dashboard
+        commission_exported_to_expenses?: boolean; // Flag for affiliate commission
     };
     affiliate_id?: string;
     affiliate?: { full_name: string };

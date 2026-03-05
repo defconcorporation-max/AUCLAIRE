@@ -23,18 +23,17 @@ import { useTheme } from '@/components/ThemeProvider'
 import { Sun, Moon } from 'lucide-react'
 
 const navItems = [
-    { label: 'Tableau de Bord', href: '/dashboard/affiliate', icon: LayoutDashboard, roles: ['affiliate'] },
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'sales'] },
-    { label: 'Leads & CRM', href: '/dashboard/leads', icon: PhoneCall, roles: ['admin', 'sales'] },
-    { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'sales', 'client'] },
-    { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'sales'] },
-    { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'sales'] },
+    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate'] },
+    { label: 'Leads & CRM', href: '/dashboard/leads', icon: PhoneCall, roles: ['admin', 'affiliate'] },
+    { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'client', 'affiliate'] },
+    { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate'] },
+    { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate'] },
     { label: 'Expenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin'] },
     { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin'] },
     { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
     // Link back to the CAD tool
-    { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'sales', 'manufacturer'] },
-    { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'sales', 'manufacturer', 'affiliate'] },
+    { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate'] },
+    { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate'] },
     { label: 'QCM Academy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
     { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin'] },
 ]

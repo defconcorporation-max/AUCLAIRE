@@ -11,14 +11,22 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 export default function ProjectsList() {
     const queryClient = useQueryClient()
     const navigate = useNavigate()
-    const { role } = useAuth()
+    const { role, profile } = useAuth()
     const containerRef = useRef<HTMLDivElement>(null)
     const topScrollRef = useRef<HTMLDivElement>(null)
 
-    const { data: projects, isLoading } = useQuery({
+    const { data: allProjects, isLoading } = useQuery({
         queryKey: ['projects'],
         queryFn: apiProjects.getAll
     })
+
+    const projects = allProjects?.filter(p => {
+        if (role === 'admin' || role === 'manufacturer') return true;
+        if (role === 'affiliate') {
+            return p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
+        }
+        return false;
+    }) || [];
 
     const updateStatusMutation = useMutation({
         mutationFn: ({ id, status }: { id: string, status: ProjectStatus }) =>
@@ -145,7 +153,7 @@ export default function ProjectsList() {
                                                 <h3 className="font-semibold text-[10px] text-luxury-gold uppercase tracking-[0.2em] mb-1">
                                                     {status.replace(/_/g, ' ')}
                                                 </h3>
-                                                {role !== 'manufacturer' && (
+                                                {role === 'admin' && (
                                                     <p className="text-sm font-serif text-white/90">
                                                         {columnTotal > 0 ? `$${columnTotal.toLocaleString()}` : '-'}
                                                     </p>
