@@ -91,15 +91,26 @@ export const apiProjects = {
         loadMockData();
 
         // Primary Query: Try with Affiliate Join
-        // Using left join for both to be safe
+        // We use the specific FK constraint name to avoid ambiguity if multiple FKs exist
         const { data, error } = await supabase
             .from('projects')
-            .select('*, client:clients(full_name), affiliate:profiles(full_name)')
+            .select('*, client:clients(full_name), affiliate:profiles!projects_affiliate_id_fkey(full_name)')
             .order('updated_at', { ascending: false });
 
         if (error) {
             console.error("Project Fetching Failed:", error);
-            // Only fallback to mock if the table itself seems missing or serious auth error
+            // Check for explicit "no such column" or ambiguity error
+            // If the join fails, try falling back to a query without the affiliate join
+            if (error.code === 'PGRST201' || error.message.includes('ambiguous')) {
+                console.warn("Ambiguous join detected, attempting fallback without affiliate join...");
+                const { data: fallback, error: fallbackError } = await supabase
+                    .from('projects')
+                    .select('*, client:clients(full_name)')
+                    .order('updated_at', { ascending: false });
+
+                if (!fallbackError) return fallback as Project[];
+            }
+
             if (error.code === '42P01' || error.message.includes('permission denied')) {
                 console.warn("Using Mock Data for Projects due to critical database error");
                 return [...mockProjects];

@@ -29,6 +29,14 @@ export const apiExpenses = {
 
         if (error) {
             console.error('Error fetching expenses:', error);
+            // If join fails due to ambiguity or missing columns, try a simpler fetch
+            if (error.code === 'PGRST201' || error.message.includes('ambiguous')) {
+                const { data: simple, error: simpleError } = await supabase
+                    .from('expenses')
+                    .select('*')
+                    .order('date', { ascending: false });
+                if (!simpleError) return simple as Expense[];
+            }
             throw error;
         }
 

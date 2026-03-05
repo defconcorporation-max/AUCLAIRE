@@ -19,23 +19,38 @@ export default function Dashboard() {
     const { profile, role } = useAuth();
 
     // Fetch all projects
-    const { data: projects, isLoading: projectsLoading } = useQuery({
+    const { data: projects, isLoading: projectsLoading, error: projectsError } = useQuery({
         queryKey: ['projects'],
         queryFn: apiProjects.getAll
     });
 
-    const { data: invoices, isLoading: invoicesLoading } = useQuery({
+    const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useQuery({
         queryKey: ['invoices'],
         queryFn: apiInvoices.getAll
     });
 
     // NEW: Fetch all expenses to subtract from profit
-    const { data: expenses, isLoading: expensesLoading } = useQuery({
+    const { data: expenses, isLoading: expensesLoading, error: expensesError } = useQuery({
         queryKey: ['expenses'],
         queryFn: apiExpenses.getAll
     });
 
     if (projectsLoading || invoicesLoading || expensesLoading) return <div>Loading dashboard...</div>;
+
+    const hasError = projectsError || invoicesError || expensesError || !projects || !invoices || !expenses;
+
+    if (hasError) {
+        console.error("Dashboard Data Error:", projectsError, invoicesError, expensesError);
+        return (
+            <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-md" role="alert">
+                <strong className="font-bold">Error!</strong>
+                <span className="block sm:inline ml-2">Failed to load dashboard data. Please try again later.</span>
+                {projectsError && <p className="text-sm">Projects Error: {projectsError.message}</p>}
+                {invoicesError && <p className="text-sm">Invoices Error: {invoicesError.message}</p>}
+                {expensesError && <p className="text-sm">Expenses Error: {expensesError.message}</p>}
+            </div>
+        );
+    }
 
     const filteredProjects = projects?.filter(p => {
         if (role === 'admin' || role === 'manufacturer') return true;
