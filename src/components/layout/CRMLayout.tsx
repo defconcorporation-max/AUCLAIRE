@@ -13,7 +13,8 @@ import {
     Banknote,
     GraduationCap,
     PhoneCall,
-    BookOpen
+    BookOpen,
+    Hammer
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -25,6 +26,7 @@ import { Sun, Moon } from 'lucide-react'
 const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate'] },
     { label: 'Leads & CRM', href: '/dashboard/leads', icon: PhoneCall, roles: ['admin', 'affiliate'] },
+    { label: 'Atelier', href: '/dashboard/atelier', icon: Hammer, roles: ['admin', 'manufacturer'] },
     { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'client', 'affiliate'] },
     { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate'] },
     { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate'] },

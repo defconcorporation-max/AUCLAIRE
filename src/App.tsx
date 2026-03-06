@@ -33,6 +33,7 @@ import LeadsDashboard from './pages/crm/LeadsDashboard';
 import LeadDetails from './pages/crm/LeadDetails';
 import ResourcesHub from './pages/resources/ResourcesHub';
 import SalesProcess from './pages/resources/SalesProcess';
+import ManufacturerDashboard from './pages/manufacturer/ManufacturerDashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -104,6 +105,7 @@ function App() {
               <Route path="studio" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><Studio /></ProtectedRoute>} />
               <Route path="resources" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><ResourcesHub /></ProtectedRoute>} />
               <Route path="resources/sales-process" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><SalesProcess /></ProtectedRoute>} />
+              <Route path="atelier" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer']}><ManufacturerDashboard /></ProtectedRoute>} />
 
               <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin']}><AffiliateDetails /></ProtectedRoute>} />
 
