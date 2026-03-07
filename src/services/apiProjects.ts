@@ -10,6 +10,7 @@ export interface Project {
     description?: string;
     budget?: number;
     deadline?: string;
+    priority?: 'normal' | 'rush';
     created_at: string;
     reference_number?: string;
     client?: { full_name: string }; // joined
@@ -95,7 +96,10 @@ export const apiProjects = {
         // We use the specific FK constraint name to avoid ambiguity if multiple FKs exist
         const { data, error } = await supabase
             .from('projects')
-            .select('*, client:clients(full_name), affiliate:profiles!projects_affiliate_id_fkey(full_name)')
+            .select(`
+        *,
+        client:profiles!projects_client_id_fkey(full_name)
+      `)
             .order('updated_at', { ascending: false });
 
         if (error) {

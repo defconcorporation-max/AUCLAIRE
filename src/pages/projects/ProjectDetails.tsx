@@ -310,6 +310,23 @@ export default function ProjectDetails() {
                     )}
                 </div>
                 <div className="flex items-center gap-3">
+                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Priority:</span>
+                    <select
+                        className={`h-8 px-2 rounded-md border border-input font-medium text-sm capitalize ${project.priority === 'rush' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-background'}`}
+                        value={project.priority || 'normal'}
+                        onChange={(e) => {
+                            const newPriority = e.target.value as 'normal' | 'rush';
+                            apiProjects.update(project.id, { priority: newPriority })
+                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
+                                .catch(err => alert(err.message));
+                        }}
+                        disabled={role === 'client' || role === 'affiliate' || role === 'manufacturer'}
+                    >
+                        <option value="normal">Normal</option>
+                        <option value="rush">Rush 🚨</option>
+                    </select>
+                </div>
+                <div className="flex items-center gap-3">
                     <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Status:</span>
                     <select
                         className="h-8 px-2 rounded-md border border-input bg-background font-medium text-sm capitalize"

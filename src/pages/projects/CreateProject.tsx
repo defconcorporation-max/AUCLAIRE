@@ -29,6 +29,7 @@ export default function CreateProject() {
         client_id: '',
         budget: '',
         deadline: '',
+        priority: 'normal',
         description: ''
     });
 
@@ -42,6 +43,7 @@ export default function CreateProject() {
         try {
             const newProject = await apiProjects.create({
                 ...formData,
+                priority: formData.priority as 'normal' | 'rush',
                 deadline: formData.deadline ? formData.deadline : null, // Fix: Send null if empty string
                 budget: formData.budget ? parseFloat(formData.budget) : undefined,
                 status: 'designing'
@@ -178,6 +180,18 @@ export default function CreateProject() {
                                         onChange={handleChange}
                                     />
                                 </div>
+                            </div>
+                            <div className="space-y-2 col-span-2">
+                                <label className="text-sm font-medium">Priority</label>
+                                <select
+                                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+                                    name="priority"
+                                    value={formData.priority}
+                                    onChange={handleChange}
+                                >
+                                    <option value="normal">Normal</option>
+                                    <option value="rush">Rush 🚨</option>
+                                </select>
                             </div>
                         </div>
 

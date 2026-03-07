@@ -9,7 +9,11 @@ import { RecentActivityList } from "@/components/RecentActivityList";
 import { RevenueChart } from "@/components/RevenueChart";
 import { Link } from 'react-router-dom';
 
-import { Clock, AlertCircle, Banknote, TrendingUp, CalendarDays, BarChart3, Activity, Trophy, Briefcase } from 'lucide-react';
+import {
+    Users, DollarSign, Activity, FileText, CheckCircle, TrendingUp,
+    Download, Calendar, AlertCircle, Search, Clock, Plus, BarChart3,
+    ArrowUpRight, ArrowDownRight, Gem, Briefcase, Package, Banknote, Trophy, CalendarDays
+} from 'lucide-react';
 
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers } from '@/services/apiUsers';
@@ -75,6 +79,7 @@ export default function Dashboard() {
     const manufacturerDesignRequests = filteredProjects.filter(p => p.status === 'design_modification' || p.status === '3d_model');
     const manufacturerPendingProduction = filteredProjects.filter(p => p.status === 'approved_for_production');
     const manufacturerOngoingProduction = filteredProjects.filter(p => p.status === 'production');
+    const manufacturerInDelivery = filteredProjects.filter(p => p.status === 'delivery');
     const manufacturerCompleted = filteredProjects.filter(p => p.status === 'completed');
     const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready');
     const recentProjects = filteredProjects.slice(0, 5);
@@ -305,7 +310,12 @@ export default function Dashboard() {
                                         {manufacturerDesignRequests.map(project => (
                                             <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-blue-500/30 transition-colors">
                                                 <div>
-                                                    <div className="font-serif text-lg group-hover:text-blue-500 transition-colors">{project.title}</div>
+                                                    <div className="font-serif text-lg group-hover:text-blue-500 transition-colors flex items-center gap-2">
+                                                        {project.title}
+                                                        {project.priority === 'rush' && (
+                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5">RUSH</Badge>
+                                                        )}
+                                                    </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Status: <span className="capitalize">{project.status.replace('_', ' ')}</span>
                                                     </div>
@@ -337,25 +347,35 @@ export default function Dashboard() {
                                         {manufacturerPendingProduction.map(project => (
                                             <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-green-500/30 transition-colors">
                                                 <div>
-                                                    <div className="font-serif text-lg group-hover:text-green-500 transition-colors">{project.title}</div>
+                                                    <div className="font-serif text-lg group-hover:text-green-500 transition-colors flex items-center gap-2">
+                                                        {project.title}
+                                                        {project.priority === 'rush' && (
+                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5">RUSH</Badge>
+                                                        )}
+                                                    </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Pending Production
                                                         {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
                                                     </div>
                                                 </div>
 
-                                                <Button
-                                                    size="sm"
-                                                    className="bg-green-600 hover:bg-green-700 shadow border-green-700/50 text-white"
-                                                    onClick={async () => {
-                                                        if (confirm("Start production for this project?")) {
-                                                            await apiProjects.updateStatus(project.id, 'production');
-                                                            window.location.reload();
-                                                        }
-                                                    }}
-                                                >
-                                                    Start Production
-                                                </Button>
+                                                <div className="flex items-center gap-2">
+                                                    <Button size="sm" variant="outline" className="border-green-500/50 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" asChild>
+                                                        <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        className="bg-green-600 hover:bg-green-700 shadow border-green-700/50 text-white"
+                                                        onClick={async () => {
+                                                            if (confirm("Start production for this project?")) {
+                                                                await apiProjects.updateStatus(project.id, 'production');
+                                                                window.location.reload();
+                                                            }
+                                                        }}
+                                                    >
+                                                        Start Production
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -363,7 +383,7 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
 
-                        {/* 2. ONGOING PRODUCTION */}
+                        {/* 3. ONGOING PRODUCTION */}
                         <Card className="border-l-4 border-l-purple-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 font-serif">
@@ -380,14 +400,71 @@ export default function Dashboard() {
                                         {manufacturerOngoingProduction.map(project => (
                                             <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-purple-500/30 transition-colors">
                                                 <div>
-                                                    <div className="font-serif text-lg group-hover:text-purple-500 transition-colors">{project.title}</div>
+                                                    <div className="font-serif text-lg group-hover:text-purple-500 transition-colors flex items-center gap-2">
+                                                        {project.title}
+                                                        {project.priority === 'rush' && (
+                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5">RUSH</Badge>
+                                                        )}
+                                                    </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Production Started
                                                         {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
                                                     </div>
                                                 </div>
 
-                                                <Button size="sm" variant="outline" className="border-purple-500/50 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20" asChild>
+                                                <div className="flex items-center gap-2">
+                                                    <Button size="sm" variant="outline" className="border-purple-500/50 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20" asChild>
+                                                        <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        className="bg-purple-600 hover:bg-purple-700 shadow border-purple-700/50 text-white"
+                                                        onClick={async () => {
+                                                            if (confirm("Production finished? Send to delivery?")) {
+                                                                await apiProjects.updateStatus(project.id, 'delivery');
+                                                                window.location.reload();
+                                                            }
+                                                        }}
+                                                    >
+                                                        Mark as Delivery
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* 4. IN DELIVERY */}
+                        <Card className="border-l-4 border-l-amber-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 font-serif">
+                                    <Package className="w-5 h-5 text-amber-500" />
+                                    In Delivery
+                                </CardTitle>
+                                <CardDescription className="uppercase tracking-widest text-[10px]">Finished rings awaiting client delivery.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {manufacturerInDelivery.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg">No projects currently in delivery.</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {manufacturerInDelivery.map(project => (
+                                            <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-amber-500/30 transition-colors">
+                                                <div>
+                                                    <div className="font-serif text-lg group-hover:text-amber-500 transition-colors flex items-center gap-2">
+                                                        {project.title}
+                                                        {project.priority === 'rush' && (
+                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5">RUSH</Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                        Shipment Pending
+                                                    </div>
+                                                </div>
+
+                                                <Button size="sm" variant="outline" className="border-amber-500/50 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" asChild>
                                                     <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
                                                 </Button>
                                             </div>
