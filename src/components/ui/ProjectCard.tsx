@@ -21,9 +21,16 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
             <CardHeader className="pb-3 pt-4 px-4 bg-black/[0.02] dark:bg-white/[0.02]">
                 <div className="flex justify-between items-start gap-4">
                     <div className="space-y-1.5 min-w-0">
-                        <CardTitle className="text-base font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors truncate">
-                            {project.reference_number && <span className="text-luxury-gold/70 text-sm mr-2 font-mono">[{project.reference_number}]</span>}
-                            {project.title}
+                        <CardTitle className="text-base font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors truncate flex items-center flex-wrap gap-2">
+                            <span>
+                                {project.reference_number && <span className="text-luxury-gold/70 text-sm mr-2 font-mono">[{project.reference_number}]</span>}
+                                {project.title}
+                            </span>
+                            {role === 'admin' && Number(project.financials?.supplier_cost || 0) === 0 && (
+                                <span className="text-[9px] font-bold uppercase tracking-widest text-red-600 bg-red-100 dark:bg-red-950/40 dark:text-red-400 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                    No Mfg Cost
+                                </span>
+                            )}
                         </CardTitle>
                         <CardDescription className="text-xs uppercase tracking-widest text-[#A68A56] truncate">
                             {project.client?.full_name || 'No Client'}
