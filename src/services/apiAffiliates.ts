@@ -53,7 +53,7 @@ export const apiAffiliates = {
     },
 
     async getStats(affiliateId: string): Promise<AffiliateStats> {
-        // 1. Get Projects Stats (Sales & Earned Commission)
+        // 1. Get Projects Stats (Sales & Active count)
         const { data: projects, error: projectsError } = await supabase
             .from('projects')
             .select('id, title, client_id, budget, financials, status, affiliate_commission_rate, affiliate_commission_type')
@@ -63,49 +63,43 @@ export const apiAffiliates = {
         if (projectsError) throw projectsError;
 
         let totalSales = 0;
-        let commissionEarned = 0;
         let activeProjects = 0;
 
         projects?.forEach(p => {
             if (p.status !== 'completed' && p.status !== 'delivered') {
                 activeProjects++;
             }
-
-            // Sales Volume — use selling_price as canonical, budget as fallback
             const price = Number(p.financials?.selling_price || p.budget || 0);
             totalSales += price;
-
-            // Commission Earned Calculation
-            let comm = 0;
-            if (p.affiliate_commission_type === 'fixed') {
-                comm = p.affiliate_commission_rate || 0;
-            } else {
-                // Percentage
-                const rate = p.affiliate_commission_rate || 0;
-                comm = (price * rate) / 100;
-            }
-            commissionEarned += comm;
         });
 
-        // 2. Get Expenses Stats (Commission Paid)
+        // 2. Get Expenses Stats — commissionEarned is the source of truth
         const { data: expenses, error: expensesError } = await supabase
             .from('expenses')
             .select('amount, status')
             .eq('recipient_id', affiliateId)
-            .eq('category', 'commission'); // Ensure we only count commission payouts
+            .eq('category', 'commission');
 
         if (expensesError) throw expensesError;
 
-        // Sum up PAID expenses
+        // Total = ALL non-cancelled commission expenses (pending + paid)
+        const commissionEarned = expenses
+            ?.filter(e => e.status !== 'cancelled')
+            .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+
         const commissionPaid = expenses
             ?.filter(e => e.status === 'paid')
+            .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+
+        const commissionPending = expenses
+            ?.filter(e => e.status === 'pending')
             .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
         return {
             totalSales,
             commissionEarned,
             commissionPaid,
-            commissionPending: commissionEarned - commissionPaid,
+            commissionPending,
             activeProjects,
             projects: projects || []
         };
