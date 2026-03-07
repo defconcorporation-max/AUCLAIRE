@@ -33,6 +33,17 @@ export default function UsersList() {
         }
     });
 
+    const updateMonthlyGoalMutation = useMutation({
+        mutationFn: ({ id, goal }: { id: string; goal: number }) => apiUsers.updateMonthlyGoal(id, goal),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+        },
+        onError: (error: any) => {
+            alert(`Failed to update monthly goal: ${error.message}`);
+            console.error(error);
+        }
+    });
+
     if (isLoading) return <div>Loading users...</div>;
 
     const getRoleIcon = (role: string) => {
@@ -77,44 +88,69 @@ export default function UsersList() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-muted-foreground mr-2">Role:</span>
-                                    <select
-                                        className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                                        value={user.role || 'client'}
-                                        onChange={(e) => {
-                                            if (user.id === currentProfile?.id) {
-                                                alert("You cannot change your own role here.");
-                                                return;
-                                            }
-                                            if (confirm(`Change ${user.full_name}'s role to ${e.target.value}?`)) {
-                                                updateRoleMutation.mutate({ id: user.id, role: e.target.value });
-                                            }
-                                        }}
-                                        disabled={user.id === currentProfile?.id}
-                                    >
-                                        <option value="pending">Pending Approval</option>
-                                        <option value="client">Client</option>
-                                        <option value="manufacturer">Manufacturer</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="sales">Sales Agent</option>
-                                        <option value="affiliate">Ambassador (Affiliate)</option>
-                                    </select>
+                                <div className="flex flex-col items-end gap-2 pr-4">
+                                    {user.role === 'affiliate' && (
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-xs text-muted-foreground uppercase tracking-widest">Goal:</span>
+                                            <div className="relative">
+                                                <span className="absolute left-2 top-1.5 text-xs text-muted-foreground">$</span>
+                                                <input
+                                                    type="number"
+                                                    className="h-8 w-24 rounded-md border border-input bg-background pl-5 pr-2 py-1 text-xs shadow-sm font-mono"
+                                                    defaultValue={user.monthly_goal || 50000}
+                                                    onBlur={(e) => {
+                                                        const newVal = Number(e.target.value);
+                                                        if (!isNaN(newVal) && newVal !== user.monthly_goal) {
+                                                            if (confirm(`Change monthly goal for ${user.full_name} to $${newVal.toLocaleString()}?`)) {
+                                                                updateMonthlyGoalMutation.mutate({ id: user.id, goal: newVal });
+                                                            } else {
+                                                                e.target.value = String(user.monthly_goal || 50000);
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-muted-foreground mr-2">Role:</span>
+                                        <select
+                                            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                                            value={user.role || 'client'}
+                                            onChange={(e) => {
+                                                if (user.id === currentProfile?.id) {
+                                                    alert("You cannot change your own role here.");
+                                                    return;
+                                                }
+                                                if (confirm(`Change ${user.full_name}'s role to ${e.target.value}?`)) {
+                                                    updateRoleMutation.mutate({ id: user.id, role: e.target.value });
+                                                }
+                                            }}
+                                            disabled={user.id === currentProfile?.id}
+                                        >
+                                            <option value="pending">Pending Approval</option>
+                                            <option value="client">Client</option>
+                                            <option value="manufacturer">Manufacturer</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="sales">Sales Agent</option>
+                                            <option value="affiliate">Ambassador (Affiliate)</option>
+                                        </select>
 
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
-                                        onClick={() => {
-                                            if (user.id === currentProfile?.id) return;
-                                            if (confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) {
-                                                deleteUserMutation.mutate(user.id);
-                                            }
-                                        }}
-                                        disabled={user.id === currentProfile?.id}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
+                                            onClick={() => {
+                                                if (user.id === currentProfile?.id) return;
+                                                if (confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) {
+                                                    deleteUserMutation.mutate(user.id);
+                                                }
+                                            }}
+                                            disabled={user.id === currentProfile?.id}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         ))}

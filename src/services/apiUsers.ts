@@ -7,6 +7,7 @@ export interface UserProfile {
     role: UserRole;
     email?: string; // Optional, might not be available in profiles table, but useful if we join
     created_at: string;
+    monthly_goal?: number;
 }
 
 export const apiUsers = {
@@ -19,7 +20,7 @@ export const apiUsers = {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, role, email, created_at')
+            .select('id, full_name, role, email, created_at, monthly_goal')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -31,6 +32,18 @@ export const apiUsers = {
         const { data, error } = await supabase
             .from('profiles')
             .update({ role })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async updateMonthlyGoal(id: string, monthly_goal: number) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ monthly_goal })
             .eq('id', id)
             .select()
             .single();

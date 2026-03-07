@@ -15,6 +15,7 @@ interface Profile {
     affiliate_level?: 'starter' | 'confirmed' | 'elite' | 'partner';
     commission_rate?: number;
     commission_type?: 'percent' | 'fixed';
+    monthly_goal?: number;
 }
 
 interface AuthContextType {

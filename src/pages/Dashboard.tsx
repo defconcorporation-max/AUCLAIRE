@@ -470,14 +470,14 @@ export default function Dashboard() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-serif text-black dark:text-white">
-                                    ${Math.min(stats.month.volume, 50000).toLocaleString()}
+                                    ${Math.min(stats.month.volume, profile?.monthly_goal || 50000).toLocaleString()}
                                 </div>
                                 <div className="mt-2 w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
-                                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${Math.min((stats.month.volume / 50000) * 100, 100)}%` }} />
+                                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${Math.min((stats.month.volume / (profile?.monthly_goal || 50000)) * 100, 100)}%` }} />
                                 </div>
                                 <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 flex justify-between">
-                                    <span>Palier: 50k$</span>
-                                    <span>{Math.round(Math.min((stats.month.volume / 50000) * 100, 100))}%</span>
+                                    <span>Palier: {(profile?.monthly_goal || 50000) / 1000}k$</span>
+                                    <span>{Math.round(Math.min((stats.month.volume / (profile?.monthly_goal || 50000)) * 100, 100))}%</span>
                                 </p>
                             </CardContent>
                         </Card>
