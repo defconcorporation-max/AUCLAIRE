@@ -19,9 +19,13 @@ export default function AnalyticsDashboard() {
         return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">Loading Analytics Data...</div>;
     }
 
+    // Helpers to prevent string concatenation
+    const getSalePrice = (p: any) => Number(p.financials?.selling_price || p.budget || 0);
+    const getPaidAmount = (inv: any) => Number((inv.amount_paid && inv.amount_paid > 0) ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0));
+
     // 1. Global KPIs
-    const totalVolume = projects.reduce((sum, p) => sum + (p.financials?.selling_price || p.budget || 0), 0);
-    const totalCollected = invoices.reduce((sum, i) => sum + ((i.amount_paid && i.amount_paid > 0) ? i.amount_paid : (i.status === 'paid' ? i.amount : 0)), 0);
+    const totalVolume = projects.reduce((sum, p) => sum + getSalePrice(p), 0);
+    const totalCollected = invoices.reduce((sum, i) => sum + getPaidAmount(i), 0);
     const activeClients = clients.length;
 
     // 2. Monthly Revenue Chart (Paid Invoices)
@@ -34,7 +38,7 @@ export default function AnalyticsDashboard() {
         const date = new Date(dateStr);
         // Cast inv as any or check valid statuses since types differ slightly per query
         if (date.getFullYear() === currentYear && (inv as any).status !== 'cancelled') {
-            const paid = (inv.amount_paid && inv.amount_paid > 0) ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0);
+            const paid = getPaidAmount(inv);
             if (paid > 0) monthlyData[date.getMonth()].collected += paid;
         }
     });
@@ -42,7 +46,7 @@ export default function AnalyticsDashboard() {
     projects.forEach(p => {
         const date = new Date(p.created_at);
         if (date.getFullYear() === currentYear) {
-            monthlyData[date.getMonth()].volume += (p.financials?.selling_price || p.budget || 0);
+            monthlyData[date.getMonth()].volume += getSalePrice(p);
         }
     });
 
@@ -57,8 +61,8 @@ export default function AnalyticsDashboard() {
     projects.forEach(p => {
         const responsibleId = p.sales_agent_id || p.affiliate_id;
         if (responsibleId && sellerStats[responsibleId]) {
-            const salePrice = p.financials?.selling_price || p.budget || 0;
-            const comRate = p.affiliate_commission_rate || 0;
+            const salePrice = getSalePrice(p);
+            const comRate = Number(p.affiliate_commission_rate || 0);
             const commission = p.affiliate_commission_type === 'fixed' ? comRate : (salePrice * comRate) / 100;
 
             sellerStats[responsibleId].projectCount++;
