@@ -714,12 +714,18 @@ export default function ProjectDetails() {
                                                                         commission_exported_to_expenses: false
                                                                     });
 
+                                                                    // Reset the commission rate
+                                                                    await apiProjects.update(project.id, {
+                                                                        affiliate_commission_rate: 0,
+                                                                        affiliate_commission_type: 'percent'
+                                                                    });
+
                                                                     apiActivities.log({
                                                                         project_id: project.id,
                                                                         user_id: 'admin',
                                                                         user_name: 'Admin User',
                                                                         action: 'update',
-                                                                        details: `Reverted commission export for ${project.affiliate?.full_name}. Expense deleted.`
+                                                                        details: `Reverted and reset commission export for ${project.affiliate?.full_name}. Expense deleted.`
                                                                     });
 
                                                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
