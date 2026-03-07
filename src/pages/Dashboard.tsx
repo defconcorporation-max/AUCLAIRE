@@ -9,7 +9,7 @@ import { RecentActivityList } from "@/components/RecentActivityList";
 import { RevenueChart } from "@/components/RevenueChart";
 import { Link } from 'react-router-dom';
 
-import { Clock, AlertCircle, Banknote, TrendingUp } from 'lucide-react';
+import { Clock, AlertCircle, Banknote, TrendingUp, CalendarDays, BarChart3, Activity } from 'lucide-react';
 
 import { apiExpenses } from '@/services/apiExpenses';
 
@@ -132,6 +132,51 @@ export default function Dashboard() {
     // Projected Profit = Total Pipeline Value - Real Expenses - Non-exported production costs
     //                  - Estimated Commissions on remaining projects
     const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost - totalCommissions;
+
+    // ─── Time-Based Statistics ────────────────────────────────────────────────────
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Start of week (Monday)
+    const currentDay = now.getDay();
+    const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - distanceToMonday);
+
+    // Start of Month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const isToday = (dateStr: string) => new Date(dateStr) >= today;
+    const isThisWeek = (dateStr: string) => new Date(dateStr) >= startOfWeek;
+    const isThisMonth = (dateStr: string) => new Date(dateStr) >= startOfMonth;
+
+    const stats = {
+        today: { count: 0, volume: 0, collected: 0 },
+        week: { count: 0, volume: 0, collected: 0 },
+        month: { count: 0, volume: 0, collected: 0 }
+    };
+
+    filteredProjects.forEach(p => {
+        const val = getSalePrice(p);
+        if (isToday(p.created_at)) { stats.today.count++; stats.today.volume += val; }
+        if (isThisWeek(p.created_at)) { stats.week.count++; stats.week.volume += val; }
+        if (isThisMonth(p.created_at)) { stats.month.count++; stats.month.volume += val; }
+    });
+
+    filteredInvoices.forEach(i => {
+        // Use paid_at if available, otherwise created_at for recent payments gauge
+        const dateStr = i.paid_at || i.created_at;
+        const paidAmount = (i.amount_paid && i.amount_paid > 0) ? i.amount_paid : (i.status === 'paid' ? i.amount : 0);
+
+        // Only count actual payments that happened in the period
+        if (paidAmount > 0) {
+            // If the invoice was paid, and the status was updated in this timeframe
+            if (isToday(dateStr)) stats.today.collected += paidAmount;
+            if (isThisWeek(dateStr)) stats.week.collected += paidAmount;
+            if (isThisMonth(dateStr)) stats.month.collected += paidAmount;
+        }
+    });
+    // ────────────────────────────────────────────────────────────────────────────
 
     console.log("--- Dashboard Financial Debug ---");
     console.log("Projects:", projects?.length, "Value:", totalProjectValue);
@@ -349,6 +394,84 @@ export default function Dashboard() {
                             </Card>
                         )}
                     </div>
+
+                    {/* TIME-BASED STATISTICS COMPONENT */}
+                    {(role === 'admin' || role === 'affiliate') && (
+                        <Card className="bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-2xl relative overflow-hidden mt-2">
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/50 to-transparent opacity-50" />
+                            <CardContent className="p-0">
+                                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/5 dark:divide-white/5">
+
+                                    {/* TODAY */}
+                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                            <Activity className="w-5 h-5" />
+                                            <h3 className="font-serif text-lg tracking-wide">Aujourd'hui</h3>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">{stats.today.count}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">${stats.today.volume.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.today.collected.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* THIS WEEK */}
+                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                            <BarChart3 className="w-5 h-5" />
+                                            <h3 className="font-serif text-lg tracking-wide">Cette Semaine</h3>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">{stats.week.count}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">${stats.week.volume.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.week.collected.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* THIS MONTH */}
+                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                            <CalendarDays className="w-5 h-5" />
+                                            <h3 className="font-serif text-lg tracking-wide">Ce Mois</h3>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">{stats.month.count}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">${stats.month.volume.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.month.collected.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {adminDesignReady.length > 0 && (
                         <Card className="border-l-2 border-l-luxury-gold bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 mb-6 shadow-xl">
