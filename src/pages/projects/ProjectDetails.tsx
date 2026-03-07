@@ -232,7 +232,10 @@ export default function ProjectDetails() {
                                 Edit Client
                             </Button>
                         )}
-                        <h1 className="text-3xl font-serif font-bold text-black dark:text-white tracking-wide ml-2">{project.title}</h1>
+                        <h1 className="text-3xl font-serif font-bold text-black dark:text-white tracking-wide ml-2">
+                            {project.reference_number && <span className="text-luxury-gold/80 font-mono mr-3 text-2xl">[{project.reference_number}]</span>}
+                            {project.title}
+                        </h1>
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 ml-4 border-l border-black/10 dark:border-white/10 pl-6">
                             <User className="w-4 h-4 text-luxury-gold/70" />
                             {!isEditingClient ? (

@@ -22,6 +22,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                 <div className="flex justify-between items-start gap-4">
                     <div className="space-y-1.5 min-w-0">
                         <CardTitle className="text-base font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors truncate">
+                            {project.reference_number && <span className="text-luxury-gold/70 text-sm mr-2 font-mono">[{project.reference_number}]</span>}
                             {project.title}
                         </CardTitle>
                         <CardDescription className="text-xs uppercase tracking-widest text-[#A68A56] truncate">

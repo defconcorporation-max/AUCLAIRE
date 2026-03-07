@@ -11,6 +11,7 @@ export interface Project {
     budget?: number;
     deadline?: string;
     created_at: string;
+    reference_number?: string;
     client?: { full_name: string }; // joined
     sales_agent_id?: string;
     stage_details?: {
