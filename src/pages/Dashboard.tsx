@@ -94,8 +94,9 @@ export default function Dashboard() {
     // RULE: selling_price is the canonical sale price. budget is the legacy fallback.
     const getSalePrice = (p: any) => Number(p.financials?.selling_price || p.budget || 0);
 
-    // RULE: Commission for a project is always calculated the same way everywhere.
-    const getCommission = (p: any) => {
+    // RULE: Commission for a project is estimated from its rate fields.
+    //       Once exported to expenses, the expense row IS the real commission.
+    const getCommissionEstimate = (p: any) => {
         if (!p.affiliate_id && !p.sales_agent_id) return 0;
         if (p.affiliate_commission_type === 'fixed') return Number(p.affiliate_commission_rate || 0);
         return (getSalePrice(p) * Number(p.affiliate_commission_rate || 0)) / 100;
@@ -117,18 +118,17 @@ export default function Dashboard() {
         return sum + Math.max(0, i.amount - paid);
     }, 0);
 
-    // Estimated Commissions (for projects NOT yet exported to expenses)
-    const totalCommissions = filteredProjects.reduce((sum, p) => {
-        // Skip projects where commission was already exported to real expenses to avoid double counting
-        if (p.financials?.commission_exported_to_expenses) return sum;
-        return sum + getCommission(p);
-    }, 0);
-
     // Real Expenses from the expenses table (all statuses except cancelled)
-    // We include ALL expense categories here — commissions that were exported already appear here.
+    // This already includes commissions that were exported.
     const totalRealExpenses = (filteredExpenses as any[])
         ?.filter(e => e.status !== 'cancelled')
         .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+
+    // Estimated Commissions (ONLY for projects NOT yet exported — these don't appear in expenses yet)
+    const totalPendingCommissions = filteredProjects.reduce((sum, p) => {
+        if (p.financials?.commission_exported_to_expenses) return sum; // already counted in totalRealExpenses
+        return sum + getCommissionEstimate(p);
+    }, 0);
 
     // Production Costs from project financials (only for projects NOT yet exported to expenses)
     const totalProductionCost = filteredProjects.reduce((sum, p) => {
@@ -142,32 +142,38 @@ export default function Dashboard() {
     }, 0);
 
     // ── Profit Calculations ───────────────────────────────────────────────────────
-    // Actual Profit = Cash Collected - Real Expenses (which already include exported commissions)
-    //                - Estimated Commissions (for projects not yet exported)
-    // Note: we do NOT subtract totalCommissions if they were already in totalRealExpenses.
-    const totalProfit = totalCollected - totalRealExpenses - totalCommissions;
+    // Actual Profit = Cash Collected - Real Expenses (already includes exported commissions)
+    // We do NOT subtract pending commissions here since they aren't paid yet.
+    const totalProfit = totalCollected - totalRealExpenses;
 
-    // Projected Profit = Total Pipeline Value - Real Expenses - Non-exported production costs
-    //                  - Estimated Commissions on remaining projects
-    const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost - totalCommissions;
+    // Projected Profit = Total Pipeline Value - All costs (real + production + pending commissions)
+    const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost - totalPendingCommissions;
+
+    // Keep this alias for UI referencing totalCommissions
+    const totalCommissions = totalPendingCommissions;
 
     // ─── Affiliate (Sales) Specific Calculations ──────────────────────────────────
+    // Commission leaderboard uses expense rows as source of truth (same as apiAffiliates.getStats)
     const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number }> = {};
     if (users) {
         users.filter(u => u.role === 'affiliate' || u.role === 'admin').forEach(u => {
             sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0 };
         });
 
-        // Calculate everyone's stats to determine rank
+        // Volume is still from projects
         projects?.forEach(p => {
             const responsibleId = p.sales_agent_id || p.affiliate_id;
             if (responsibleId && sellerStats[responsibleId]) {
-                const salePrice = getSalePrice(p);
-                const comRate = Number(p.affiliate_commission_rate || 0);
-                const commission = p.affiliate_commission_type === 'fixed' ? comRate : (salePrice * comRate) / 100;
                 sellerStats[responsibleId].projectCount++;
-                sellerStats[responsibleId].volume += salePrice;
-                sellerStats[responsibleId].commissions += commission;
+                sellerStats[responsibleId].volume += getSalePrice(p);
+            }
+        });
+
+        // Commissions come from expense rows (pending + paid), matching apiAffiliates.getStats
+        expenses?.filter(e => e.category === 'commission' && e.status !== 'cancelled').forEach((e: any) => {
+            const recipientId = e.recipient_id;
+            if (recipientId && sellerStats[recipientId]) {
+                sellerStats[recipientId].commissions += Number(e.amount);
             }
         });
     }

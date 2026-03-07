@@ -3,6 +3,7 @@ import { apiProjects } from '@/services/apiProjects';
 import { apiClients } from '@/services/apiClients';
 import { apiInvoices } from '@/services/apiInvoices';
 import { apiUsers } from '@/services/apiUsers';
+import { apiExpenses } from '@/services/apiExpenses';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -14,8 +15,9 @@ export default function AnalyticsDashboard() {
     const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
     const { data: users = [], isLoading: uLoad } = useQuery({ queryKey: ['users'], queryFn: apiUsers.getAll });
+    const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
 
-    if (pLoad || cLoad || iLoad || uLoad) {
+    if (pLoad || cLoad || iLoad || uLoad || eLoad) {
         return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">Loading Analytics Data...</div>;
     }
 
@@ -55,28 +57,32 @@ export default function AnalyticsDashboard() {
     });
 
     // 3. Seller/Affiliate Leaderboard
-    // We attribute project volume and commissions to either sales_agent_id or affiliate_id
+    // Commission totals come from expense rows (same source of truth as apiAffiliates.getStats)
     const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number }> = {};
 
     users.filter(u => u.role === 'affiliate' || u.role === 'admin').forEach(u => {
         sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0 };
     });
 
+    // Volume and project count from projects
     projects.forEach(p => {
         const responsibleId = p.sales_agent_id || p.affiliate_id;
         if (responsibleId && sellerStats[responsibleId]) {
-            const salePrice = getSalePrice(p);
-            const comRate = Number(p.affiliate_commission_rate || 0);
-            const commission = p.affiliate_commission_type === 'fixed' ? comRate : (salePrice * comRate) / 100;
-
             sellerStats[responsibleId].projectCount++;
-            sellerStats[responsibleId].volume += salePrice;
-            sellerStats[responsibleId].commissions += commission;
+            sellerStats[responsibleId].volume += getSalePrice(p);
+        }
+    });
+
+    // Commissions come from expense rows (pending + paid), matching apiAffiliates.getStats
+    (expenses as any[]).filter(e => (e as any).category === 'commission' && (e as any).status !== 'cancelled').forEach((e: any) => {
+        const recipientId = e.recipient_id;
+        if (recipientId && sellerStats[recipientId]) {
+            sellerStats[recipientId].commissions += Number(e.amount);
         }
     });
 
     const leaderboard = Object.values(sellerStats)
-        .filter(s => s.projectCount > 0) // Only show active sellers
+        .filter(s => s.projectCount > 0)
         .sort((a, b) => b.volume - a.volume);
 
     return (
