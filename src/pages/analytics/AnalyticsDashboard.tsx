@@ -24,9 +24,13 @@ export default function AnalyticsDashboard() {
     const getPaidAmount = (inv: any) => Number((inv.amount_paid && inv.amount_paid > 0) ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0));
 
     // 1. Global KPIs
-    const totalVolume = projects.reduce((sum, p) => sum + getSalePrice(p), 0);
     const totalCollected = invoices.reduce((sum, i) => sum + getPaidAmount(i), 0);
     const activeClients = clients.length;
+
+    // Calculate Average Order Value (Panier Moyen) based on created invoices
+    const validInvoices = invoices.filter(i => (i as any).status !== 'cancelled' && (i as any).status !== 'void');
+    const totalInvoiced = validInvoices.reduce((sum, i) => sum + i.amount, 0);
+    const averageOrderValue = validInvoices.length > 0 ? Math.round(totalInvoiced / validInvoices.length) : 0;
 
     // 2. Monthly Revenue Chart (Paid Invoices)
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -88,11 +92,11 @@ export default function AnalyticsDashboard() {
             <div className="grid gap-6 md:grid-cols-3">
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Volume Généré Total</CardTitle>
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Panier Moyen</CardTitle>
                         <Briefcase className="h-4 w-4 text-luxury-gold" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif text-black dark:text-white">${totalVolume.toLocaleString()}</div>
+                        <div className="text-3xl font-serif text-black dark:text-white">${averageOrderValue.toLocaleString()}</div>
                     </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
