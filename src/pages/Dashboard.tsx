@@ -287,22 +287,22 @@ export default function Dashboard() {
                         </Card>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                        {/* 1. DESIGN REQUESTS & PENDING PRODUCTION */}
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {/* 1. DESIGN REQUESTS */}
                         <Card className="border-l-4 border-l-blue-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 font-serif">
                                     <Clock className="w-5 h-5 text-blue-500" />
-                                    Action Required
+                                    Design Requests
                                 </CardTitle>
-                                <CardDescription className="uppercase tracking-widest text-[10px]">Requests & designs awaiting your action.</CardDescription>
+                                <CardDescription className="uppercase tracking-widest text-[10px]">New ideas needing 3D design & cost estimation.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {manufacturerDesignRequests.length === 0 && manufacturerPendingProduction.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg">No pending requests.</p>
+                                {manufacturerDesignRequests.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg">No pending design requests.</p>
                                 ) : (
                                     <div className="space-y-4">
-                                        {[...manufacturerDesignRequests, ...manufacturerPendingProduction].map(project => (
+                                        {manufacturerDesignRequests.map(project => (
                                             <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-blue-500/30 transition-colors">
                                                 <div>
                                                     <div className="font-serif text-lg group-hover:text-blue-500 transition-colors">{project.title}</div>
@@ -312,6 +312,49 @@ export default function Dashboard() {
                                                 </div>
                                                 <Button size="sm" variant="outline" className="border-blue-500/50 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" asChild>
                                                     <Link to={`/dashboard/projects/${project.id}`}>View Request</Link>
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* 2. PENDING PRODUCTION */}
+                        <Card className="border-l-4 border-l-green-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 font-serif">
+                                    <AlertCircle className="w-5 h-5 text-green-500" />
+                                    Pending Production
+                                </CardTitle>
+                                <CardDescription className="uppercase tracking-widest text-[10px]">Approved designs ready to be manufactured.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {manufacturerPendingProduction.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg">No approved production tasks.</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {manufacturerPendingProduction.map(project => (
+                                            <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-green-500/30 transition-colors">
+                                                <div>
+                                                    <div className="font-serif text-lg group-hover:text-green-500 transition-colors">{project.title}</div>
+                                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                        Pending Production
+                                                        {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-green-600 hover:bg-green-700 shadow border-green-700/50 text-white"
+                                                    onClick={async () => {
+                                                        if (confirm("Start production for this project?")) {
+                                                            await apiProjects.updateStatus(project.id, 'production');
+                                                            window.location.reload();
+                                                        }
+                                                    }}
+                                                >
+                                                    Start Production
                                                 </Button>
                                             </div>
                                         ))}
