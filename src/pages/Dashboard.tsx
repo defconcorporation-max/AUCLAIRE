@@ -76,10 +76,16 @@ export default function Dashboard() {
     // Expenses are usually admin-only, but let's be safe
     const filteredExpenses = role === 'admin' ? expenses : [];
 
-    const manufacturerDesignRequests = filteredProjects.filter(p => p.status === 'design_modification' || p.status === '3d_model');
-    const manufacturerPendingProduction = filteredProjects.filter(p => p.status === 'approved_for_production');
-    const manufacturerOngoingProduction = filteredProjects.filter(p => p.status === 'production');
-    const manufacturerInDelivery = filteredProjects.filter(p => p.status === 'delivery');
+    const sortByRush = (a: any, b: any) => {
+        if (a.priority === 'rush' && b.priority !== 'rush') return -1;
+        if (a.priority !== 'rush' && b.priority === 'rush') return 1;
+        return 0;
+    };
+
+    const manufacturerDesignRequests = filteredProjects.filter(p => p.status === 'design_modification' || p.status === '3d_model').sort(sortByRush);
+    const manufacturerPendingProduction = filteredProjects.filter(p => p.status === 'approved_for_production').sort(sortByRush);
+    const manufacturerOngoingProduction = filteredProjects.filter(p => p.status === 'production').sort(sortByRush);
+    const manufacturerInDelivery = filteredProjects.filter(p => p.status === 'delivery').sort(sortByRush);
     const manufacturerCompleted = filteredProjects.filter(p => p.status === 'completed');
     const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready');
     const recentProjects = filteredProjects.slice(0, 5);
@@ -308,21 +314,23 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {manufacturerDesignRequests.map(project => (
-                                            <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-blue-500/30 transition-colors">
-                                                <div>
-                                                    <div className="font-serif text-lg group-hover:text-blue-500 transition-colors flex items-center gap-2">
+                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-blue-500/30'}`}>
+                                                <div className="flex-1 min-w-[200px]">
+                                                    <div className="font-serif text-lg group-hover:text-blue-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5">RUSH</Badge>
+                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
                                                         )}
                                                     </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Status: <span className="capitalize">{project.status.replace('_', ' ')}</span>
                                                     </div>
                                                 </div>
-                                                <Button size="sm" variant="outline" className="border-blue-500/50 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" asChild>
-                                                    <Link to={`/dashboard/projects/${project.id}`}>View Request</Link>
-                                                </Button>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <Button size="sm" variant="outline" className="border-blue-500/50 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" asChild>
+                                                        <Link to={`/dashboard/projects/${project.id}`}>View Request</Link>
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -345,12 +353,12 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {manufacturerPendingProduction.map(project => (
-                                            <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-green-500/30 transition-colors">
-                                                <div>
-                                                    <div className="font-serif text-lg group-hover:text-green-500 transition-colors flex items-center gap-2">
+                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-green-500/30'}`}>
+                                                <div className="flex-1 min-w-[200px]">
+                                                    <div className="font-serif text-lg group-hover:text-green-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5">RUSH</Badge>
+                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
                                                         )}
                                                     </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
@@ -359,7 +367,7 @@ export default function Dashboard() {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <Button size="sm" variant="outline" className="border-green-500/50 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" asChild>
                                                         <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
                                                     </Button>
@@ -398,12 +406,12 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {manufacturerOngoingProduction.map(project => (
-                                            <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-purple-500/30 transition-colors">
-                                                <div>
-                                                    <div className="font-serif text-lg group-hover:text-purple-500 transition-colors flex items-center gap-2">
+                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-purple-500/30'}`}>
+                                                <div className="flex-1 min-w-[200px]">
+                                                    <div className="font-serif text-lg group-hover:text-purple-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5">RUSH</Badge>
+                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
                                                         )}
                                                     </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
@@ -412,7 +420,7 @@ export default function Dashboard() {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <Button size="sm" variant="outline" className="border-purple-500/50 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20" asChild>
                                                         <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
                                                     </Button>
@@ -451,12 +459,12 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {manufacturerInDelivery.map(project => (
-                                            <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-amber-500/30 transition-colors">
-                                                <div>
-                                                    <div className="font-serif text-lg group-hover:text-amber-500 transition-colors flex items-center gap-2">
+                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-amber-500/30'}`}>
+                                                <div className="flex-1 min-w-[200px]">
+                                                    <div className="font-serif text-lg group-hover:text-amber-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5">RUSH</Badge>
+                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
                                                         )}
                                                     </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
@@ -464,9 +472,11 @@ export default function Dashboard() {
                                                     </div>
                                                 </div>
 
-                                                <Button size="sm" variant="outline" className="border-amber-500/50 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" asChild>
-                                                    <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
-                                                </Button>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <Button size="sm" variant="outline" className="border-amber-500/50 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" asChild>
+                                                        <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
