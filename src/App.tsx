@@ -87,6 +87,7 @@ function App() {
               </ProtectedRoute>
             }>
               <Route index element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><Dashboard /></ProtectedRoute>} />
+              <Route path="analytics" element={<ProtectedRoute allowedRoles={['admin']}><AnalyticsDashboard /></ProtectedRoute>} />
               <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><ProjectsList /></ProtectedRoute>} />
               <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate']}><CreateProject /></ProtectedRoute>} />
               <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><ProjectDetails /></ProtectedRoute>} />
