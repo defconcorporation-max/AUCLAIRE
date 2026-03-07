@@ -298,7 +298,7 @@ export default function Dashboard() {
                         </Card>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         {/* 1. DESIGN REQUESTS */}
                         <Card className="border-l-4 border-l-blue-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
                             <CardHeader>
@@ -314,9 +314,9 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {manufacturerDesignRequests.map(project => (
-                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-blue-500/30'}`}>
-                                                <div className="flex-1 min-w-[200px]">
-                                                    <div className="font-serif text-lg group-hover:text-blue-500 transition-colors flex items-center gap-2 flex-wrap">
+                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-blue-500/30'}`}>
+                                                <div className="flex-1 min-w-[150px]">
+                                                    <div className="font-serif text-base group-hover:text-blue-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
                                                             <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
@@ -353,9 +353,9 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {manufacturerPendingProduction.map(project => (
-                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-green-500/30'}`}>
-                                                <div className="flex-1 min-w-[200px]">
-                                                    <div className="font-serif text-lg group-hover:text-green-500 transition-colors flex items-center gap-2 flex-wrap">
+                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-green-500/30'}`}>
+                                                <div className="flex-1 min-w-[150px]">
+                                                    <div className="font-serif text-base group-hover:text-green-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
                                                             <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
@@ -406,9 +406,9 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {manufacturerOngoingProduction.map(project => (
-                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-purple-500/30'}`}>
-                                                <div className="flex-1 min-w-[200px]">
-                                                    <div className="font-serif text-lg group-hover:text-purple-500 transition-colors flex items-center gap-2 flex-wrap">
+                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-purple-500/30'}`}>
+                                                <div className="flex-1 min-w-[150px]">
+                                                    <div className="font-serif text-base group-hover:text-purple-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
                                                             <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
@@ -459,9 +459,9 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {manufacturerInDelivery.map(project => (
-                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-amber-500/30'}`}>
-                                                <div className="flex-1 min-w-[200px]">
-                                                    <div className="font-serif text-lg group-hover:text-amber-500 transition-colors flex items-center gap-2 flex-wrap">
+                                            <div key={project.id} className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg shadow-sm border transition-colors group ${project.priority === 'rush' ? 'bg-red-50 dark:bg-red-950/40 border-red-500/50 hover:border-red-500' : 'bg-zinc-50 dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-amber-500/30'}`}>
+                                                <div className="flex-1 min-w-[150px]">
+                                                    <div className="font-serif text-base group-hover:text-amber-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
                                                             <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>

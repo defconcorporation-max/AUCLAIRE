@@ -143,7 +143,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
                     </header>
 
                     <main className="flex-1 overflow-auto p-6 lg:p-10 lg:pt-4 z-10 scroll-smooth">
-                        <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+                        <div className="max-w-[1800px] w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
                             {children}
                         </div>
                     </main>
