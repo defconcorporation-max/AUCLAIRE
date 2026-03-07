@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Save, Loader2, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, CheckCircle, Clock, Trash2 } from 'lucide-react';
+import { apiProjects } from '@/services/apiProjects';
 
 export default function AffiliateDetails() {
     const { id } = useParams<{ id: string }>();
@@ -61,7 +62,7 @@ export default function AffiliateDetails() {
                 // 3. Fetch Pending Commissions from expenses table
                 const { data: commData } = await supabase
                     .from('expenses')
-                    .select('id, amount, description, date, status, project:projects(title)')
+                    .select('id, amount, description, date, status, project_id, project:projects(title)')
                     .eq('recipient_id', id!)
                     .eq('category', 'commission')
                     .order('date', { ascending: false });
@@ -122,6 +123,25 @@ export default function AffiliateDetails() {
             alert('Échec du paiement : ' + err.message);
         } finally {
             setIsPayingId(null);
+        }
+    };
+
+    const handleDeleteExpense = async (expenseId: string, projectId?: string) => {
+        if (!confirm(`Êtes-vous sûr de vouloir ANNULER et SUPPRIMER cette commission ?\nCela réinitialisera également la commission du projet à 0%.`)) return;
+        try {
+            // Delete the expense record
+            await supabase.from('expenses').delete().eq('id', expenseId);
+
+            // If it was linked to a project, reset the project financials
+            if (projectId) {
+                await apiProjects.updateFinancials(projectId, { commission_exported_to_expenses: false });
+                await apiProjects.update(projectId, { affiliate_commission_rate: 0, affiliate_commission_type: 'percent' });
+            }
+
+            alert('Commission annulée avec succès.');
+            await loadData();
+        } catch (err: any) {
+            alert('Erreur lors de la suppression : ' + err.message);
         }
     };
 
@@ -302,15 +322,26 @@ export default function AffiliateDetails() {
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     {c.status === 'pending' ? (
-                                                        <Button
-                                                            size="sm"
-                                                            className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white gap-1"
-                                                            disabled={isPayingId === c.id}
-                                                            onClick={() => handlePayCommission(c.id, c.amount)}
-                                                        >
-                                                            {isPayingId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                                                            Payer
-                                                        </Button>
+                                                        <div className="flex justify-end items-center gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="h-7 text-xs text-red-500 hover:bg-red-50"
+                                                                onClick={() => handleDeleteExpense(c.id, c.project_id)}
+                                                            >
+                                                                <Trash2 className="w-3 h-3 mr-1" />
+                                                                Annuler
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white gap-1"
+                                                                disabled={isPayingId === c.id}
+                                                                onClick={() => handlePayCommission(c.id, c.amount)}
+                                                            >
+                                                                {isPayingId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                                                                Payer
+                                                            </Button>
+                                                        </div>
                                                     ) : (
                                                         <span className="text-xs text-muted-foreground">✓ Réglé</span>
                                                     )}
