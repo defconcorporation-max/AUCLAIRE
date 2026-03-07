@@ -24,6 +24,7 @@ import { Sun, Moon } from 'lucide-react'
 
 const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate'] },
+    { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin'] },
     { label: 'Leads & CRM', href: '/dashboard/leads', icon: PhoneCall, roles: ['admin', 'affiliate'] },
     { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'client', 'affiliate'] },
     { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate'] },

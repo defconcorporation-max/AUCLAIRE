@@ -124,7 +124,12 @@ export default function InvoicesList() {
                                     {(invoice.amount_paid || 0) > 0 && invoice.status !== 'paid' && (
                                         <p className="text-xs text-green-600 font-medium">Paid: ${invoice.amount_paid?.toLocaleString()}</p>
                                     )}
-                                    <p className="text-xs text-muted-foreground">Due {invoice.due_date || 'N/A'}</p>
+                                    {invoice.status === 'paid' && (
+                                        <p className="text-[10px] text-green-600/70 font-medium uppercase tracking-widest mt-1">
+                                            Payé le: {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date(invoice.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-muted-foreground mt-1">Due {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</p>
                                 </div>
                                 <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'} className={
                                     invoice.status === 'paid' ? 'bg-green-100 text-green-800' :

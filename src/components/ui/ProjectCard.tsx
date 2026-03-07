@@ -35,9 +35,15 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                 <StatusBadge status={project.status} />
 
                 <div className="flex items-center justify-between gap-4 text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-4 pt-3 border-t border-black/5 dark:border-white/5">
-                    <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-luxury-gold/80 dark:text-luxury-gold/50" />
-                        <span>Due {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'TBD'}</span>
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                        <div className="flex items-center gap-1.5 text-black/60 dark:text-white/60">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Créé: {new Date(project.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-luxury-gold/80 dark:text-luxury-gold/50">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Due: {project.deadline ? new Date(project.deadline).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : 'TBD'}</span>
+                        </div>
                     </div>
                     {project.budget && role !== 'manufacturer' && role !== 'client' && (
                         <div className="font-mono text-black/90 dark:text-white/90 font-medium bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded text-xs">

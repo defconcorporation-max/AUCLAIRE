@@ -33,6 +33,7 @@ import LeadsDashboard from './pages/crm/LeadsDashboard';
 import LeadDetails from './pages/crm/LeadDetails';
 import ResourcesHub from './pages/resources/ResourcesHub';
 import SalesProcess from './pages/resources/SalesProcess';
+import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
