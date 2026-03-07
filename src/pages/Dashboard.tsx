@@ -483,7 +483,7 @@ export default function Dashboard() {
                         </Card>
 
                         {/* TIME-BASED STATISTICS COMPONENT */}
-                        {(role === 'admin' || role === 'affiliate') && (
+                        {((role as string) === 'admin' || (role as string) === 'affiliate') && (
                             <Card className="bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-2xl relative overflow-hidden mt-2">
                                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/50 to-transparent opacity-50" />
                                 <CardContent className="p-0">
