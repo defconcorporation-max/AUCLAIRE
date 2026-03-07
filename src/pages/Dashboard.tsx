@@ -9,9 +9,10 @@ import { RecentActivityList } from "@/components/RecentActivityList";
 import { RevenueChart } from "@/components/RevenueChart";
 import { Link } from 'react-router-dom';
 
-import { Clock, AlertCircle, Banknote, TrendingUp, CalendarDays, BarChart3, Activity } from 'lucide-react';
+import { Clock, AlertCircle, Banknote, TrendingUp, CalendarDays, BarChart3, Activity, Trophy, Briefcase } from 'lucide-react';
 
 import { apiExpenses } from '@/services/apiExpenses';
+import { apiUsers } from '@/services/apiUsers';
 
 // ... (imports)
 
@@ -35,9 +36,14 @@ export default function Dashboard() {
         queryFn: apiExpenses.getAll
     });
 
-    if (projectsLoading || invoicesLoading || expensesLoading) return <div>Loading dashboard...</div>;
+    const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
+        queryKey: ['users'],
+        queryFn: apiUsers.getAll
+    });
 
-    const hasError = projectsError || invoicesError || expensesError || !projects || !invoices || !expenses;
+    if (projectsLoading || invoicesLoading || expensesLoading || usersLoading) return <div>Loading dashboard...</div>;
+
+    const hasError = projectsError || invoicesError || expensesError || usersError || !projects || !invoices || !expenses;
 
     if (hasError) {
         console.error("Dashboard Data Error:", projectsError, invoicesError, expensesError);
@@ -132,6 +138,36 @@ export default function Dashboard() {
     // Projected Profit = Total Pipeline Value - Real Expenses - Non-exported production costs
     //                  - Estimated Commissions on remaining projects
     const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost - totalCommissions;
+
+    // ─── Affiliate (Sales) Specific Calculations ──────────────────────────────────
+    const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number }> = {};
+    if (users) {
+        users.filter(u => u.role === 'affiliate' || u.role === 'admin').forEach(u => {
+            sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0 };
+        });
+
+        // Calculate everyone's stats to determine rank
+        projects?.forEach(p => {
+            const responsibleId = p.sales_agent_id || p.affiliate_id;
+            if (responsibleId && sellerStats[responsibleId]) {
+                const salePrice = getSalePrice(p);
+                const comRate = Number(p.affiliate_commission_rate || 0);
+                const commission = p.affiliate_commission_type === 'fixed' ? comRate : (salePrice * comRate) / 100;
+                sellerStats[responsibleId].projectCount++;
+                sellerStats[responsibleId].volume += salePrice;
+                sellerStats[responsibleId].commissions += commission;
+            }
+        });
+    }
+
+    const leaderboard = Object.values(sellerStats)
+        .filter(s => s.projectCount > 0)
+        .sort((a, b) => b.volume - a.volume);
+
+    // Find current affiliate user's rank
+    const myRankIndex = leaderboard.findIndex(s => s.id === profile?.id);
+    const myRank = myRankIndex !== -1 ? myRankIndex + 1 : '-';
+    const myStats = profile ? sellerStats[profile.id] : null;
 
     // ─── Time-Based Statistics ────────────────────────────────────────────────────
     const now = new Date();
@@ -379,128 +415,180 @@ export default function Dashboard() {
                                 </CardContent>
                             </Card>
                         )}
-                        {(role as string) === 'affiliate' && (
-                            <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Total Projects</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-luxury-gold" />
+                    </div>
+                </div>
+            )}
+
+            {/* AFFILIATE DASHBOARD - SPECIFIC KPIs */}
+            {role === 'affiliate' && (
+                <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-luxury-gold transition-colors">Mes Commissions</CardTitle>
+                                <Banknote className="h-4 w-4 text-luxury-gold/70" />
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors duration-500">
+                                    ${(myStats?.commissions || 0).toLocaleString()}
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Gagnées sur {myStats?.projectCount || 0} projets</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-luxury-gold transition-colors">Volume Généré</CardTitle>
+                                <Briefcase className="h-4 w-4 text-luxury-gold/70" />
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors duration-500">
+                                    ${(myStats?.volume || 0).toLocaleString()}
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Chiffre d'Affaires Apporté</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Classement Leaderboard</CardTitle>
+                                <Trophy className="h-4 w-4 text-amber-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-serif text-black dark:text-white flex items-baseline gap-1">
+                                    <span className="text-lg text-luxury-gold/50">#</span>{myRank}
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Sur {leaderboard.length} Ambassadeurs actifs</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Objectif Mensuel</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-blue-500/70" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-serif text-black dark:text-white">
+                                    ${Math.min(stats.month.volume, 50000).toLocaleString()}
+                                </div>
+                                <div className="mt-2 w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
+                                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${Math.min((stats.month.volume / 50000) * 100, 100)}%` }} />
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 flex justify-between">
+                                    <span>Palier: 50k$</span>
+                                    <span>{Math.round(Math.min((stats.month.volume / 50000) * 100, 100))}%</span>
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        {/* TIME-BASED STATISTICS COMPONENT */}
+                        {(role === 'admin' || role === 'affiliate') && (
+                            <Card className="bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-2xl relative overflow-hidden mt-2">
+                                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/50 to-transparent opacity-50" />
+                                <CardContent className="p-0">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/5 dark:divide-white/5">
+
+                                        {/* TODAY */}
+                                        <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                            <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                                <Activity className="w-5 h-5" />
+                                                <h3 className="font-serif text-lg tracking-wide">Aujourd'hui</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                    <span className="font-serif text-xl text-black dark:text-white">{stats.today.count}</span>
+                                                </div>
+                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                    <span className="font-serif text-xl text-black dark:text-white">${stats.today.volume.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                    <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.today.collected.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* THIS WEEK */}
+                                        <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                            <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                                <BarChart3 className="w-5 h-5" />
+                                                <h3 className="font-serif text-lg tracking-wide">Cette Semaine</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                    <span className="font-serif text-xl text-black dark:text-white">{stats.week.count}</span>
+                                                </div>
+                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                    <span className="font-serif text-xl text-black dark:text-white">${stats.week.volume.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                    <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.week.collected.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* THIS MONTH */}
+                                        <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                            <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                                <CalendarDays className="w-5 h-5" />
+                                                <h3 className="font-serif text-lg tracking-wide">Ce Mois</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                    <span className="font-serif text-xl text-black dark:text-white">{stats.month.count}</span>
+                                                </div>
+                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                    <span className="font-serif text-xl text-black dark:text-white">${stats.month.volume.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                    <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.month.collected.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {adminDesignReady.length > 0 && (
+                            <Card className="border-l-2 border-l-luxury-gold bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 mb-6 shadow-xl">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-luxury-gold font-serif text-xl">
+                                        <AlertCircle className="w-5 h-5" />
+                                        Designs Pending Approval
+                                    </CardTitle>
+                                    <CardDescription className="uppercase tracking-widest text-[10px]">Manufacturer has submitted these for review.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-3xl font-serif text-black dark:text-white">
-                                        {filteredProjects.length}
+                                    <div className="space-y-3">
+                                        {adminDesignReady.map(project => (
+                                            <div key={project.id} className="group flex items-center justify-between p-4 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors shadow-sm rounded-lg border border-black/5 dark:border-white/5">
+                                                <div>
+                                                    <div className="font-serif text-lg text-black dark:text-white group-hover:text-luxury-gold transition-colors">{project.title}</div>
+                                                    <div className="text-xs text-gray-600 dark:text-gray-300 uppercase tracking-wider mt-1">Submitted by Manufacturer</div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button size="sm" variant="outline" className="border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black" asChild>
+                                                        <Link to={`/dashboard/projects/${project.id}`}>Review Design</Link>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Managed Clients</p>
                                 </CardContent>
                             </Card>
                         )}
                     </div>
-
-                    {/* TIME-BASED STATISTICS COMPONENT */}
-                    {(role === 'admin' || role === 'affiliate') && (
-                        <Card className="bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-2xl relative overflow-hidden mt-2">
-                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/50 to-transparent opacity-50" />
-                            <CardContent className="p-0">
-                                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/5 dark:divide-white/5">
-
-                                    {/* TODAY */}
-                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
-                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
-                                            <Activity className="w-5 h-5" />
-                                            <h3 className="font-serif text-lg tracking-wide">Aujourd'hui</h3>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
-                                                <span className="font-serif text-xl text-black dark:text-white">{stats.today.count}</span>
-                                            </div>
-                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
-                                                <span className="font-serif text-xl text-black dark:text-white">${stats.today.volume.toLocaleString()}</span>
-                                            </div>
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
-                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.today.collected.toLocaleString()}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* THIS WEEK */}
-                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
-                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
-                                            <BarChart3 className="w-5 h-5" />
-                                            <h3 className="font-serif text-lg tracking-wide">Cette Semaine</h3>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
-                                                <span className="font-serif text-xl text-black dark:text-white">{stats.week.count}</span>
-                                            </div>
-                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
-                                                <span className="font-serif text-xl text-black dark:text-white">${stats.week.volume.toLocaleString()}</span>
-                                            </div>
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
-                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.week.collected.toLocaleString()}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* THIS MONTH */}
-                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
-                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
-                                            <CalendarDays className="w-5 h-5" />
-                                            <h3 className="font-serif text-lg tracking-wide">Ce Mois</h3>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
-                                                <span className="font-serif text-xl text-black dark:text-white">{stats.month.count}</span>
-                                            </div>
-                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
-                                                <span className="font-serif text-xl text-black dark:text-white">${stats.month.volume.toLocaleString()}</span>
-                                            </div>
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
-                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.month.collected.toLocaleString()}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {adminDesignReady.length > 0 && (
-                        <Card className="border-l-2 border-l-luxury-gold bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 mb-6 shadow-xl">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-luxury-gold font-serif text-xl">
-                                    <AlertCircle className="w-5 h-5" />
-                                    Designs Pending Approval
-                                </CardTitle>
-                                <CardDescription className="uppercase tracking-widest text-[10px]">Manufacturer has submitted these for review.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {adminDesignReady.map(project => (
-                                        <div key={project.id} className="group flex items-center justify-between p-4 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors shadow-sm rounded-lg border border-black/5 dark:border-white/5">
-                                            <div>
-                                                <div className="font-serif text-lg text-black dark:text-white group-hover:text-luxury-gold transition-colors">{project.title}</div>
-                                                <div className="text-xs text-gray-600 dark:text-gray-300 uppercase tracking-wider mt-1">Submitted by Manufacturer</div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" variant="outline" className="border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black" asChild>
-                                                    <Link to={`/dashboard/projects/${project.id}`}>Review Design</Link>
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
             )}
 
