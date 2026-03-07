@@ -66,7 +66,7 @@ export default function Dashboard() {
     // Expenses are usually admin-only, but let's be safe
     const filteredExpenses = role === 'admin' ? expenses : [];
 
-    const manufacturerDesignRequests = filteredProjects.filter(p => p.status === 'designing' || p.status === 'design_modification' || p.status === '3d_model');
+    const manufacturerDesignRequests = filteredProjects.filter(p => p.status === 'design_modification' || p.status === '3d_model');
     const manufacturerPendingProduction = filteredProjects.filter(p => p.status === 'approved_for_production');
     const manufacturerOngoingProduction = filteredProjects.filter(p => p.status === 'production');
     const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready');
