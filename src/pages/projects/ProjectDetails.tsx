@@ -697,8 +697,42 @@ export default function ProjectDetails() {
                                                     🚀 Send to Commission
                                                 </Button>
                                             ) : (
-                                                <div className="text-[10px] text-zinc-400 flex items-center gap-1">
-                                                    <CheckCircle2 className="w-3 h-3 text-green-500" /> Commission Sent
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-[10px] text-zinc-400 flex items-center gap-1">
+                                                        <CheckCircle2 className="w-3 h-3 text-green-500" /> Commission Sent
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="text-[10px] h-7 px-2 text-red-500 hover:bg-red-500/10 transition-colors"
+                                                        onClick={async () => {
+                                                            if (confirm(`Are you sure you want to REVERT this commission export? This will delete the matching expense.`)) {
+                                                                try {
+                                                                    await apiExpenses.deleteByProjectAndCategory(project.id, 'commission');
+
+                                                                    await apiProjects.updateFinancials(project.id, {
+                                                                        commission_exported_to_expenses: false
+                                                                    });
+
+                                                                    apiActivities.log({
+                                                                        project_id: project.id,
+                                                                        user_id: 'admin',
+                                                                        user_name: 'Admin User',
+                                                                        action: 'update',
+                                                                        details: `Reverted commission export for ${project.affiliate?.full_name}. Expense deleted.`
+                                                                    });
+
+                                                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                                    queryClient.invalidateQueries({ queryKey: ['expenses'] });
+                                                                    alert("Commission export reverted successfully!");
+                                                                } catch (err: any) {
+                                                                    alert("Revert failed: " + err.message);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        Undo Export
+                                                    </Button>
                                                 </div>
                                             )}
                                         </div>

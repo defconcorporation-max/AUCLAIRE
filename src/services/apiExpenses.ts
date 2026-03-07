@@ -75,6 +75,15 @@ export const apiExpenses = {
         if (error) throw error;
     },
 
+    async deleteByProjectAndCategory(projectId: string, category: string) {
+        const { error } = await supabase
+            .from('expenses')
+            .delete()
+            .match({ project_id: projectId, category: category });
+
+        if (error) throw error;
+    },
+
     async getStats() {
         // Fetch simple stats locally for now (can be optimized with RPC later)
         const { data, error } = await supabase
