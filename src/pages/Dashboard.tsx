@@ -153,27 +153,23 @@ export default function Dashboard() {
     const totalCommissions = totalPendingCommissions;
 
     // ─── Affiliate (Sales) Specific Calculations ──────────────────────────────────
-    // Commission leaderboard uses expense rows as source of truth (same as apiAffiliates.getStats)
+    // The dashboard leaderboard shows ESTIMATED commissions (project rates, including pre-export).
+    // The AffiliateDetails profile page shows ACTUAL commissions from expense rows.
     const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number }> = {};
     if (users) {
         users.filter(u => u.role === 'affiliate' || u.role === 'admin').forEach(u => {
             sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0 };
         });
 
-        // Volume is still from projects
         projects?.forEach(p => {
             const responsibleId = p.sales_agent_id || p.affiliate_id;
             if (responsibleId && sellerStats[responsibleId]) {
+                const salePrice = getSalePrice(p);
+                const comRate = Number(p.affiliate_commission_rate || 0);
+                const commission = p.affiliate_commission_type === 'fixed' ? comRate : (salePrice * comRate) / 100;
                 sellerStats[responsibleId].projectCount++;
-                sellerStats[responsibleId].volume += getSalePrice(p);
-            }
-        });
-
-        // Commissions come from expense rows (pending + paid), matching apiAffiliates.getStats
-        expenses?.filter(e => e.category === 'commission' && e.status !== 'cancelled').forEach((e: any) => {
-            const recipientId = e.recipient_id;
-            if (recipientId && sellerStats[recipientId]) {
-                sellerStats[recipientId].commissions += Number(e.amount);
+                sellerStats[responsibleId].volume += salePrice;
+                sellerStats[responsibleId].commissions += commission;
             }
         });
     }
