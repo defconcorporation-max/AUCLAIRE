@@ -10,9 +10,9 @@ import { RevenueChart } from "@/components/RevenueChart";
 import { Link } from 'react-router-dom';
 
 import {
-    Users, DollarSign, Activity, FileText, CheckCircle, TrendingUp,
-    Download, Calendar, AlertCircle, Search, Clock, Plus, BarChart3,
-    ArrowUpRight, ArrowDownRight, Gem, Briefcase, Package, Banknote, Trophy, CalendarDays
+    Activity, TrendingUp,
+    AlertCircle, Clock, BarChart3,
+    Briefcase, Package, Banknote, Trophy, CalendarDays
 } from 'lucide-react';
 
 import { apiExpenses } from '@/services/apiExpenses';
