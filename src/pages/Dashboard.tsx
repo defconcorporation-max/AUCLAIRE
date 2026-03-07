@@ -75,6 +75,7 @@ export default function Dashboard() {
     const manufacturerDesignRequests = filteredProjects.filter(p => p.status === 'design_modification' || p.status === '3d_model');
     const manufacturerPendingProduction = filteredProjects.filter(p => p.status === 'approved_for_production');
     const manufacturerOngoingProduction = filteredProjects.filter(p => p.status === 'production');
+    const manufacturerCompleted = filteredProjects.filter(p => p.status === 'completed');
     const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready');
     const recentProjects = filteredProjects.slice(0, 5);
 
@@ -238,115 +239,121 @@ export default function Dashboard() {
 
             {/* MANUFACTURER DASHBOARD */}
             {role === 'manufacturer' && (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {/* 1. DESIGN REQUESTS */}
-                    <Card className="border-l-4 border-l-blue-500">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-blue-500" />
-                                Design Requests
-                            </CardTitle>
-                            <CardDescription>New ideas needing 3D design & cost estimation.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {manufacturerDesignRequests.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No pending design requests.</p>
-                            ) : (
-                                <div className="space-y-4">
-                                    {manufacturerDesignRequests.map(project => (
-                                        <div key={project.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                                            <div>
-                                                <div className="font-medium text-sm">{project.title}</div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    Status: <span className="capitalize">{project.status.replace('_', ' ')}</span>
-                                                </div>
-                                            </div>
-                                            <Button size="sm" variant="outline" asChild>
-                                                <Link to={`/dashboard/projects/${project.id}`}>View Request</Link>
-                                            </Button>
-                                        </div>
-                                    ))}
+                <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* KPI 1: Design Ready */}
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-blue-500/30 transition-colors duration-500 overflow-hidden relative group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-blue-500 transition-colors">Design Ready</CardTitle>
+                                <Clock className="h-4 w-4 text-blue-500/70" />
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-blue-500 transition-colors duration-500">
+                                    {manufacturerDesignRequests.length}
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">À Démarrer</p>
+                            </CardContent>
+                        </Card>
 
-                    {/* 2. PENDING PRODUCTION */}
-                    <Card className="border-l-4 border-l-green-500">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5 text-green-500" />
-                                Pending Production
-                            </CardTitle>
-                            <CardDescription>Approved designs ready for manufacturing.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {manufacturerPendingProduction.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No approved production tasks.</p>
-                            ) : (
-                                <div className="space-y-4">
-                                    {manufacturerPendingProduction.map(project => (
-                                        <div key={project.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                                            <div>
-                                                <div className="font-medium text-sm">{project.title}</div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    Pending Production
-                                                    {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
-                                                </div>
-                                            </div>
-
-                                            <Button
-                                                size="sm"
-                                                className="bg-green-600 hover:bg-green-700"
-                                                onClick={async () => {
-                                                    if (confirm("Start production for this project?")) {
-                                                        await apiProjects.updateStatus(project.id, 'production');
-                                                        window.location.reload();
-                                                    }
-                                                }}
-                                            >
-                                                Start Production
-                                            </Button>
-                                        </div>
-                                    ))}
+                        {/* KPI 2: Ongoing Production */}
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-purple-500/30 transition-colors duration-500 overflow-hidden relative group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-500 transition-colors">En Cours (Ongoing)</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-purple-500/70" />
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-500 transition-colors duration-500">
+                                    {manufacturerOngoingProduction.length}
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">En Fabrication</p>
+                            </CardContent>
+                        </Card>
 
-                    {/* 3. ONGOING PRODUCTION */}
-                    <Card className="border-l-4 border-l-purple-500">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5 text-purple-500" />
-                                Ongoing Production
-                            </CardTitle>
-                            <CardDescription>Projects currently being manufactured.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {manufacturerOngoingProduction.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">No projects currently in production.</p>
-                            ) : (
-                                <div className="space-y-4">
-                                    {manufacturerOngoingProduction.map(project => (
-                                        <div key={project.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                                            <div>
-                                                <div className="font-medium text-sm">{project.title}</div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    Production Started
-                                                    {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
-                                                </div>
-                                            </div>
-
-                                            <Button size="sm" variant="outline" asChild>
-                                                <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
-                                            </Button>
-                                        </div>
-                                    ))}
+                        {/* KPI 3: Completed Projects */}
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-green-500/30 transition-colors duration-500 overflow-hidden relative group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-500 transition-colors">Total Fabriqué</CardTitle>
+                                <Briefcase className="h-4 w-4 text-green-500/70" />
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-500 transition-colors duration-500">
+                                    {manufacturerCompleted.length}
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Projets historiques achevés</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+                        {/* 1. DESIGN REQUESTS & PENDING PRODUCTION */}
+                        <Card className="border-l-4 border-l-blue-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 font-serif">
+                                    <Clock className="w-5 h-5 text-blue-500" />
+                                    Action Required
+                                </CardTitle>
+                                <CardDescription className="uppercase tracking-widest text-[10px]">Requests & designs awaiting your action.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {manufacturerDesignRequests.length === 0 && manufacturerPendingProduction.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg">No pending requests.</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {[...manufacturerDesignRequests, ...manufacturerPendingProduction].map(project => (
+                                            <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-blue-500/30 transition-colors">
+                                                <div>
+                                                    <div className="font-serif text-lg group-hover:text-blue-500 transition-colors">{project.title}</div>
+                                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                        Status: <span className="capitalize">{project.status.replace('_', ' ')}</span>
+                                                    </div>
+                                                </div>
+                                                <Button size="sm" variant="outline" className="border-blue-500/50 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" asChild>
+                                                    <Link to={`/dashboard/projects/${project.id}`}>View Request</Link>
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* 2. ONGOING PRODUCTION */}
+                        <Card className="border-l-4 border-l-purple-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 font-serif">
+                                    <TrendingUp className="w-5 h-5 text-purple-500" />
+                                    Ongoing Production
+                                </CardTitle>
+                                <CardDescription className="uppercase tracking-widest text-[10px]">Projects currently being manufactured.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {manufacturerOngoingProduction.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg">No projects currently in production.</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {manufacturerOngoingProduction.map(project => (
+                                            <div key={project.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg shadow-sm border border-black/5 dark:border-white/5 group hover:border-purple-500/30 transition-colors">
+                                                <div>
+                                                    <div className="font-serif text-lg group-hover:text-purple-500 transition-colors">{project.title}</div>
+                                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                        Production Started
+                                                        {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
+                                                    </div>
+                                                </div>
+
+                                                <Button size="sm" variant="outline" className="border-purple-500/50 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20" asChild>
+                                                    <Link to={`/dashboard/projects/${project.id}`}>View Details</Link>
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             )}
 
