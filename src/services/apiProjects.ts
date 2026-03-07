@@ -98,7 +98,8 @@ export const apiProjects = {
             .from('projects')
             .select(`
         *,
-        client:profiles!projects_client_id_fkey(full_name)
+        client:clients(full_name),
+        affiliate:profiles!projects_affiliate_id_fkey(full_name)
       `)
             .order('updated_at', { ascending: false });
 
