@@ -481,17 +481,17 @@ export default function RingModel({ config }: { config: RingConfig }) {
             {/* SIDE STONES (Pave / Eternity / Half-Eternity) */}
             {paveStones.length > 0 && (
                 <group>
-                    {paveStones.map(({ x, y, rx, ry, rz, stoneDiam, stoneR, crown, pavilion }, i) => (
-                        <group key={`pave-${i}`} position={[x, y, 0]} rotation={[rx, ry, rz]}>
-                            <group scale={stoneDiam}>
+                    {paveStones.map(({ x, y, z, rx, ry, rz, stoneDiam, stoneR, crown, pavilion }, i) => (
+                        <group key={`pave-${i}`} position={[x, y, z]} rotation={[rx, ry, rz]}>
+                            <group scale={stoneDiam} position={[0, stoneR * 0.4, 0]}>
                                 <mesh geometry={crown} material={baseDiamondMaterial} castShadow />
                                 <mesh geometry={pavilion} material={baseDiamondMaterial} />
                             </group>
-                            <mesh position={[0, stoneR * 0.45, -stoneR * 0.7]} material={metalMaterial}>
-                                <sphereGeometry args={[stoneR * 0.3, 5, 5]} />
+                            <mesh position={[0, stoneR * 0.75, -stoneR * 0.8]} material={metalMaterial}>
+                                <sphereGeometry args={[stoneR * 0.35, 8, 8]} />
                             </mesh>
-                            <mesh position={[0, stoneR * 0.45, stoneR * 0.7]} material={metalMaterial}>
-                                <sphereGeometry args={[stoneR * 0.3, 5, 5]} />
+                            <mesh position={[0, stoneR * 0.75, stoneR * 0.8]} material={metalMaterial}>
+                                <sphereGeometry args={[stoneR * 0.35, 8, 8]} />
                             </mesh>
                         </group>
                     ))}
