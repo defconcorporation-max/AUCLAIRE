@@ -29,6 +29,9 @@ interface AuthContextType {
     unlockApp: () => void;
     signInAsDev: () => void; // Deprecated
     switchRole: (role: UserRole) => void;
+    impersonate: (profile: Profile) => void;
+    stopImpersonating: () => void;
+    impersonatedProfile: Profile | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -111,27 +114,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Admin Preview Mode State
     const [overrideRole, setOverrideRole] = useState<UserRole | null>(null);
 
+    // Impersonation: override profile with a real user's profile
+    const [impersonatedProfile, setImpersonatedProfile] = useState<Profile | null>(null);
+
     // Effective Role: Shared Mode -> demoRole, Admin Preview -> overrideRole, Normal -> profile.role
     // Security Fallback: If profile is missing (deleted), default to 'pending'
-    const effectiveRole = isSharedMode ? demoRole : (overrideRole ?? (profile?.role || 'pending'));
+    const activeProfile = impersonatedProfile ?? (profile ?? null);
+    const effectiveRole = isSharedMode
+        ? (impersonatedProfile ? impersonatedProfile.role : demoRole)
+        : (overrideRole ?? (activeProfile?.role || 'pending'));
 
     const value = {
         session,
         user,
-        profile: profile ?? null,
+        profile: activeProfile,
         role: effectiveRole as UserRole,
         // isAdmin should be false if we are simulating another role
         isAdmin: effectiveRole === 'admin',
         isLoading: isLoadingSession || (!!user && isLoadingProfile),
         isInSharedMode: isSharedMode,
+        impersonatedProfile,
+        impersonate: (p: Profile) => setImpersonatedProfile(p),
+        stopImpersonating: () => setImpersonatedProfile(null),
         signOut: async () => {
             setIsSharedMode(false);
             setUser(null);
+            setImpersonatedProfile(null);
             await supabase.auth.signOut();
         },
         signInAsDev: unlockApp, // Alias for compatibility during refactor
         unlockApp,
         switchRole: (role: UserRole) => {
+            setImpersonatedProfile(null); // clear impersonation when switching role
             if (isSharedMode) {
                 setDemoRole(role);
             } else if (profile?.role === 'admin') {
