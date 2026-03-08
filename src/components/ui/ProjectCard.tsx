@@ -1,86 +1,117 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "./StatusBadge"
-import { Calendar, Factory, Handshake } from "lucide-react"
+import { Calendar, Factory, Handshake, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
 interface ProjectCardProps {
-    project: any // Type this properly later
+    project: any
     onClick?: () => void
 }
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
     const { role } = useAuth()
+    const isRush = project.priority === 'rush'
+    const hasNoMfgCost = role === 'admin' && Number(project.financials?.supplier_cost || 0) === 0
+
     return (
         <Card
-            className="cursor-pointer bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 hover:border-luxury-gold/50 dark:hover:border-luxury-gold/50 transition-all duration-300 group shadow-lg hover:shadow-[0_0_15px_rgba(210,181,123,0.15)] overflow-hidden relative"
             onClick={onClick}
+            className={`
+                cursor-pointer relative overflow-hidden transition-all duration-300 group
+                bg-white/5 dark:bg-white/[0.03]
+                border
+                ${isRush
+                    ? 'border-red-500/60 shadow-[0_0_12px_rgba(239,68,68,0.15)]'
+                    : 'border-white/10 hover:border-luxury-gold/40 shadow-md hover:shadow-[0_0_16px_rgba(210,181,123,0.12)]'
+                }
+                backdrop-blur-sm rounded-xl
+            `}
         >
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* Rush accent bar */}
+            {isRush && (
+                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-red-500 via-red-400 to-red-500" />
+            )}
+            {/* Hover gold accent bar */}
+            {!isRush && (
+                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-luxury-gold/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            )}
 
-            <CardHeader className="pb-3 pt-4 px-4 bg-black/[0.02] dark:bg-white/[0.02]">
-                <div className="flex justify-between items-start gap-4">
-                    <div className="space-y-1.5 min-w-0">
-                        <CardTitle className="text-base font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors truncate flex items-center flex-wrap gap-2">
-                            <span>
-                                {project.reference_number && <span className="text-luxury-gold/70 text-sm mr-2 font-mono">[{project.reference_number}]</span>}
-                                {project.title}
+            <CardContent className="p-4 space-y-3">
+
+                {/* Top row: ref + title + badges */}
+                <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                        {project.reference_number && (
+                            <span className="text-[10px] font-mono text-luxury-gold/60 tracking-wider">
+                                {project.reference_number}
                             </span>
-                            {role === 'admin' && Number(project.financials?.supplier_cost || 0) === 0 && (
-                                <span className="text-[9px] font-bold uppercase tracking-widest text-red-600 bg-red-100 dark:bg-red-950/40 dark:text-red-400 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                    No Mfg Cost
-                                </span>
-                            )}
-                            {project.priority === 'rush' && (
-                                <span className="text-[9px] font-bold uppercase tracking-widest text-white bg-red-600 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                    RUSH
-                                </span>
-                            )}
-                        </CardTitle>
-                        <CardDescription className="text-xs uppercase tracking-widest text-[#A68A56] truncate">
-                            {project.client?.full_name || 'No Client'}
-                        </CardDescription>
+                        )}
+                        <h3 className={`font-serif text-[15px] font-semibold leading-tight truncate mt-0.5
+                            ${isRush ? 'text-red-400' : 'text-white group-hover:text-luxury-gold transition-colors duration-200'}
+                        `}>
+                            {project.title}
+                        </h3>
+                        <p className="text-[11px] text-white/40 uppercase tracking-widest mt-0.5 truncate">
+                            {project.client?.full_name || '—'}
+                        </p>
                     </div>
+
+                    {/* Right side: price */}
+                    {project.budget && role !== 'manufacturer' && role !== 'client' && (
+                        <div className="shrink-0 font-mono text-sm font-semibold text-luxury-gold/90 bg-luxury-gold/8 border border-luxury-gold/15 px-2.5 py-1 rounded-lg">
+                            ${Number(project.financials?.selling_price || project.budget).toLocaleString()}
+                        </div>
+                    )}
                 </div>
-            </CardHeader>
-            <CardContent className="px-4 py-3">
+
+                {/* Status */}
                 <StatusBadge status={project.status} />
 
-                {/* Affiliate & Manufacturer tags — admin only */}
-                {role === 'admin' && (project.affiliate?.full_name || project.manufacturer?.full_name) && (
-                    <div className="flex flex-wrap gap-2 mt-2">
+                {/* Admin tags row */}
+                {role === 'admin' && (project.affiliate?.full_name || project.manufacturer?.full_name || isRush || hasNoMfgCost) && (
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {isRush && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-white bg-red-600 px-2 py-0.5 rounded-full">
+                                ⚡ Rush
+                            </span>
+                        )}
+                        {hasNoMfgCost && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 rounded-full">
+                                <AlertTriangle className="w-2.5 h-2.5" /> No Cost
+                            </span>
+                        )}
                         {project.affiliate?.full_name && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/40 px-2 py-0.5 rounded-full">
-                                <Handshake className="w-2.5 h-2.5" />
-                                {project.affiliate.full_name}
+                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-purple-300 bg-purple-500/15 border border-purple-500/20 px-2 py-0.5 rounded-full max-w-[100px] truncate">
+                                <Handshake className="w-2.5 h-2.5 shrink-0" />
+                                <span className="truncate">{project.affiliate.full_name.split(' ')[0]}</span>
                             </span>
                         )}
                         {project.manufacturer?.full_name && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/40 px-2 py-0.5 rounded-full">
-                                <Factory className="w-2.5 h-2.5" />
-                                {project.manufacturer.full_name}
+                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-sky-300 bg-sky-500/15 border border-sky-500/20 px-2 py-0.5 rounded-full max-w-[110px] truncate">
+                                <Factory className="w-2.5 h-2.5 shrink-0" />
+                                <span className="truncate">{project.manufacturer.full_name.split(' ')[0]}</span>
                             </span>
                         )}
                     </div>
                 )}
 
-                <div className="flex items-center justify-between gap-4 text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-4 pt-3 border-t border-black/5 dark:border-white/5">
-                    <div className="flex flex-col gap-1.5 min-w-0">
-                        <div className="flex items-center gap-1.5 text-black/60 dark:text-white/60">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>Créé: {new Date(project.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-luxury-gold/80 dark:text-luxury-gold/50">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>Due: {project.deadline ? new Date(project.deadline).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : 'TBD'}</span>
-                        </div>
+                {/* Footer: dates */}
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">
+                    <div className="flex items-center gap-3 text-[10px] text-white/30">
+                        <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(project.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </span>
+                        {project.deadline && (
+                            <span className="flex items-center gap-1 text-luxury-gold/40">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(project.deadline).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            </span>
+                        )}
                     </div>
-                    {project.budget && role !== 'manufacturer' && role !== 'client' && (
-                        <div className="font-mono text-black/90 dark:text-white/90 font-medium bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded text-xs">
-                            ${project.budget.toLocaleString()}
-                        </div>
-                    )}
                 </div>
+
             </CardContent>
         </Card>
     )
