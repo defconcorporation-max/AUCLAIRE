@@ -165,6 +165,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: any, i
     const [prongStyle, setProngStyle] = useState("Round")
     const [bandMode, setBandMode] = useState<BandMode>('solitaire')
     const [paveShape, setPaveShape] = useState("Round")
+    const [paveSize, setPaveSize] = useState(1.5) // 0.3 – 2.8
 
     const sideActive = bandMode !== 'solitaire'
     const sideLength = bandMode === 'eternity' ? 1.0 : 0.5
@@ -173,7 +174,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: any, i
         ...config,
         shank: { ...config.shank, profile },
         head: { ...config.head, prongStyle },
-        sideStones: { ...config.sideStones, active: sideActive, length: sideLength, shape: paveShape }
+        sideStones: { ...config.sideStones, active: sideActive, length: sideLength, shape: paveShape, size: paveSize }
     }
 
     const metalColor = { 'Yellow Gold': '#c8a848', 'Rose Gold': '#d4907a', 'White Gold': '#b0b0c0', 'Platinum': '#a0a0b0' }[config.metal] || '#c8a848'
@@ -197,17 +198,34 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: any, i
                     ))}
                 </div>
 
-                {/* Pave Stone Shape — only visible when eternity mode is active */}
+                {/* Pave Stone Shape + Size — visible when eternity mode active */}
                 {sideActive && (
-                    <div className="bg-black/60 backdrop-blur-md px-3 py-2 rounded-full shadow-lg pointer-events-auto flex gap-2 border border-amber-500/30 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <span className="text-[10px] font-bold text-amber-400/70 uppercase tracking-widest py-1 pl-1">Pavé:</span>
-                        {PAVE_SHAPES.map(s => (
-                            <button key={s} onClick={() => setPaveShape(s)}
-                                className={`px-3 py-1 text-[10px] font-bold tracking-wider rounded-full transition-all ${paveShape === s ? 'bg-amber-600 text-white shadow-md' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
-                            >
-                                {s}
-                            </button>
-                        ))}
+                    <div className="bg-black/60 backdrop-blur-md px-3 py-2 rounded-xl shadow-lg pointer-events-auto flex flex-wrap gap-x-4 gap-y-2 items-center border border-amber-500/30 animate-in fade-in slide-in-from-top-2 duration-300">
+                        {/* Shape picker */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-amber-400/70 uppercase tracking-widest">Pavé:</span>
+                            {PAVE_SHAPES.map(s => (
+                                <button key={s} onClick={() => setPaveShape(s)}
+                                    className={`px-3 py-1 text-[10px] font-bold tracking-wider rounded-full transition-all ${paveShape === s ? 'bg-amber-600 text-white shadow-md' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
+                                >
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
+                        {/* Size slider */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-amber-400/70 uppercase tracking-widest whitespace-nowrap">Taille:</span>
+                            <input
+                                type="range"
+                                min={0.3}
+                                max={2.8}
+                                step={0.05}
+                                value={paveSize}
+                                onChange={e => setPaveSize(parseFloat(e.target.value))}
+                                className="w-24 accent-amber-500 cursor-pointer"
+                            />
+                            <span className="text-[10px] font-mono text-amber-300/80 w-10">{(paveSize * 0.55).toFixed(1)}mm</span>
+                        </div>
                     </div>
                 )}
 

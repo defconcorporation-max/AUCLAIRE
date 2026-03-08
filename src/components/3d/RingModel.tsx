@@ -358,44 +358,66 @@ export default function RingModel({ config }: { config: RingConfig }) {
                 {config.sideStones?.active && (() => {
                     const paveShape = config.sideStones?.shape || 'Round'
                     const paveGeom = getGemGeometry(paveShape)
-                    const arcFraction = config.sideStones?.length ?? 0.5 // 0.5 = half, 1.0 = full
-                    const totalAngle = arcFraction * Math.PI * 2
-                    const stoneCount = Math.round(arcFraction * 28) // ~28 stones for full eternity
-                    const ringRadius = 0.825
-                    const stoneSize = (config.sideStones?.size || 1.5) * 0.045
-                    const stoneYOffset = (shankThickness * 0.1) * 0.5 // Sit on top of band
+                    const arcFraction = config.sideStones?.length ?? 0.5   // 0.5 = half, 1.0 = full
+                    const totalArcAngle = arcFraction * Math.PI * 2
 
-                    // Center the arc front-facing (start at -half, end at +half)
-                    const halfAngle = totalAngle / 2
-                    const startAngle = -halfAngle + Math.PI / 2
+                    // Stone size in scene units — clamped so it fits the band width
+                    const sizeParam = config.sideStones?.size || 1.5        // 0.5 – 3.0 from slider
+                    const bandWidth = shankWidth * 0.1                       // band width in scene units
+                    const stoneDiam = Math.min(sizeParam * 0.055, bandWidth * 0.92) // diameter
+                    const stoneRadius = stoneDiam / 2
+
+                    // Ring outer surface: center-line radius + half band thickness
+                    const ringCenterRadius = 0.825
+                    const bandThick = shankThickness * 0.1
+                    const stoneOuterRadius = ringCenterRadius + bandThick / 2 // sits on outer edge
+
+                    // Pack stones tight: count = arc length / stone diameter
+                    const arcLength = totalArcAngle * stoneOuterRadius
+                    const stoneCount = Math.max(1, Math.round(arcLength / stoneDiam))
+                    const actualAngleStep = totalArcAngle / stoneCount
+
+                    // Arc starts facing front (z+), centered
+                    const startAngle = Math.PI / 2 - totalArcAngle / 2
 
                     const stones = []
                     for (let i = 0; i < stoneCount; i++) {
-                        const t = stoneCount > 1 ? i / (stoneCount - 1) : 0.5
-                        const angle = startAngle + t * totalAngle
-                        const x = Math.cos(angle) * ringRadius
-                        const z = Math.sin(angle) * ringRadius
-                        const y = stoneYOffset
+                        const angle = startAngle + (i + 0.5) * actualAngleStep
+
+                        // Position: ON the outer ring surface
+                        const x = Math.cos(angle) * stoneOuterRadius
+                        const z = Math.sin(angle) * stoneOuterRadius
+                        const y = 0  // Mid-band height (group is already offset to shank top)
 
                         stones.push(
                             <group
                                 key={`pave-${i}`}
                                 position={[x, y, z]}
-                                rotation={[0, -angle + Math.PI / 2, 0]}
+                                // Rotate so stone faces outward from ring center
+                                rotation={[0, -(angle - Math.PI / 2), 0]}
                             >
-                                <group scale={stoneSize} rotation={[-Math.PI / 2, 0, 0]}>
-                                    <mesh geometry={paveGeom.crown} material={baseDiamondMaterial} />
+                                {/* Stone faces up (table up), scale to diameter */}
+                                <group scale={stoneRadius} rotation={[-Math.PI / 2, 0, 0]}>
+                                    <mesh geometry={paveGeom.crown} material={baseDiamondMaterial} castShadow />
                                     <mesh geometry={paveGeom.pavilion} material={baseDiamondMaterial} />
                                 </group>
-                                {/* Micro prong dot */}
-                                <mesh position={[0, stoneSize * 0.8, 0]} material={metalMaterial}>
-                                    <sphereGeometry args={[stoneSize * 0.18, 6, 6]} />
-                                </mesh>
+                                {/* 4 micro prong dots at cardinal points */}
+                                {[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((r, pi) => {
+                                    const px = Math.sin(r) * stoneRadius * 0.88
+                                    const pz = Math.cos(r) * stoneRadius * 0.88
+                                    return (
+                                        <mesh key={pi} position={[px, stoneRadius * 0.4, pz]} material={metalMaterial}>
+                                            <sphereGeometry args={[stoneRadius * 0.15, 5, 5]} />
+                                        </mesh>
+                                    )
+                                })}
                             </group>
                         )
                     }
                     return <group>{stones}</group>
                 })()}
+
+
 
 
                 {/* ENGRAVING */}
