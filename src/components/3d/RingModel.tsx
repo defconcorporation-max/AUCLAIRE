@@ -284,9 +284,9 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
         // The ring is a torus at R=0.825. 
         // The metal's radial thickness extends from 0.825 - (thickness/2) to 0.825 + (thickness/2).
-        // Place the stones exactly at the outer boundary so the crown sticks out and the pavilion embeds.
+        // Place the stones slightly outside the outer boundary so they are visible and don't get completely swallowed.
         const bandHalfThick = (shankThickness * 0.1) / 2
-        const placeR = 0.825 + bandHalfThick
+        const placeR = 0.825 + bandHalfThick + (stoneDiam * 0.1)
 
         const count = Math.max(2, Math.round((totalArc * placeR) / stoneDiam))
         const step = totalArc / count
@@ -316,14 +316,25 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
             if (distToTop < 0.4) continue // Skip rendering stone here
 
+            const z = 0 // Center of the band exactly on the XY plane for torus
             const x = Math.cos(angle) * placeR
             const y = Math.sin(angle) * placeR
-            const outward = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0)
+
+            // Outward normal vector from center of ring to the surface
+            const outward = new THREE.Vector3(x, y, 0).normalize()
+
+            // The default gem geometry faces +Y. We want its flat table (top surface) 
+            // to point outward from the ring along `outward`.
+            // Because our geometry is +Y up, we rotate +Y to map to `outward`.
             const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward)
+
+            // We must also rotate the stone 45 degrees around the outward axis so it sits nicely (optional, but standard for round paved)
+            // or we just leave it.
+
             const e = new THREE.Euler().setFromQuaternion(q)
 
             result.push({
-                x, y,
+                x, y, z,
                 rx: e.x, ry: e.y, rz: e.z,
                 stoneDiam, stoneR,
                 crown: geom.crown, pavilion: geom.pavilion
