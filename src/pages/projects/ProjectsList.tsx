@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiProjects, ProjectStatus, Project } from '@/services/apiProjects'
+import { apiUsers } from '@/services/apiUsers'
 import { ProjectCard } from '@/components/ui/ProjectCard'
 import { Button } from '@/components/ui/button'
-import { Plus, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react'
+import { Plus, LayoutGrid, List as ListIcon, Loader2, Filter, X } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
 export default function ProjectsList() {
@@ -20,13 +21,36 @@ export default function ProjectsList() {
         queryFn: apiProjects.getAll
     })
 
-    const projects = allProjects?.filter(p => {
-        if (role === 'admin' || role === 'manufacturer') return true;
+    const { data: users = [] } = useQuery({
+        queryKey: ['users'],
+        queryFn: apiUsers.getAll,
+        enabled: role === 'admin'
+    })
+
+    const affiliates = (users as any[]).filter(u => u.role === 'affiliate' || u.role === 'admin')
+    const manufacturers = (users as any[]).filter(u => u.role === 'manufacturer')
+
+    const [filterAffiliate, setFilterAffiliate] = useState('')
+    const [filterManufacturer, setFilterManufacturer] = useState('')
+
+    // Role-based base filter
+    const baseProjects = allProjects?.filter(p => {
+        if (role === 'admin') return true;
+        if (role === 'manufacturer') return (p as any).manufacturer_id === profile?.id;
         if (role === 'affiliate') {
             return p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
         }
         return false;
-    }) || [];
+    }) || []
+
+    // Admin-only secondary filters
+    const projects = role === 'admin' ? baseProjects.filter(p => {
+        if (filterAffiliate && p.affiliate_id !== filterAffiliate) return false;
+        if (filterManufacturer && (p as any).manufacturer_id !== filterManufacturer) return false;
+        return true;
+    }) : baseProjects;
+
+    const hasActiveFilter = !!filterAffiliate || !!filterManufacturer;
 
     const updateStatusMutation = useMutation({
         mutationFn: ({ id, status }: { id: string, status: ProjectStatus }) =>
@@ -91,7 +115,7 @@ export default function ProjectsList() {
     )
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-serif font-bold text-white tracking-wide">Projects</h2>
@@ -125,6 +149,54 @@ export default function ProjectsList() {
                     </Button>
                 </div>
             </div>
+
+            {/* Filters — admin only */}
+            {role === 'admin' && (
+                <div className="flex flex-wrap items-center gap-3 p-3 bg-black/20 border border-white/10 rounded-xl">
+                    <Filter className="w-4 h-4 text-gray-400 shrink-0" />
+                    <div className="flex flex-wrap gap-3 flex-1">
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">Ambassador</label>
+                            <select
+                                className="h-7 rounded border border-white/10 bg-black/40 text-xs text-white px-2 min-w-[150px]"
+                                value={filterAffiliate}
+                                onChange={e => setFilterAffiliate(e.target.value)}
+                            >
+                                <option value="">All</option>
+                                {affiliates.map((a: any) => (
+                                    <option key={a.id} value={a.id}>{a.full_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">Manufacturer</label>
+                            <select
+                                className="h-7 rounded border border-white/10 bg-black/40 text-xs text-white px-2 min-w-[150px]"
+                                value={filterManufacturer}
+                                onChange={e => setFilterManufacturer(e.target.value)}
+                            >
+                                <option value="">All</option>
+                                {manufacturers.map((m: any) => (
+                                    <option key={m.id} value={m.id}>{m.full_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    {hasActiveFilter && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-gray-400 hover:text-white gap-1 h-7 px-2"
+                            onClick={() => { setFilterAffiliate(''); setFilterManufacturer(''); }}
+                        >
+                            <X className="w-3 h-3" /> Clear
+                        </Button>
+                    )}
+                    <span className="text-xs text-gray-500 ml-auto">
+                        {projects.length} project{projects.length !== 1 ? 's' : ''}
+                    </span>
+                </div>
+            )}
 
             {/* Kanban View */}
             {viewMode === 'grid' && (

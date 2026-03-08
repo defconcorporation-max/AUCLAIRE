@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "./StatusBadge"
-import { Calendar } from "lucide-react"
+import { Calendar, Factory, Handshake } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
 interface ProjectCardProps {
@@ -31,6 +31,11 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                                     No Mfg Cost
                                 </span>
                             )}
+                            {project.priority === 'rush' && (
+                                <span className="text-[9px] font-bold uppercase tracking-widest text-white bg-red-600 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                    RUSH
+                                </span>
+                            )}
                         </CardTitle>
                         <CardDescription className="text-xs uppercase tracking-widest text-[#A68A56] truncate">
                             {project.client?.full_name || 'No Client'}
@@ -40,6 +45,24 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
             </CardHeader>
             <CardContent className="px-4 py-3">
                 <StatusBadge status={project.status} />
+
+                {/* Affiliate & Manufacturer tags — admin only */}
+                {role === 'admin' && (project.affiliate?.full_name || project.manufacturer?.full_name) && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {project.affiliate?.full_name && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/40 px-2 py-0.5 rounded-full">
+                                <Handshake className="w-2.5 h-2.5" />
+                                {project.affiliate.full_name}
+                            </span>
+                        )}
+                        {project.manufacturer?.full_name && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/40 px-2 py-0.5 rounded-full">
+                                <Factory className="w-2.5 h-2.5" />
+                                {project.manufacturer.full_name}
+                            </span>
+                        )}
+                    </div>
+                )}
 
                 <div className="flex items-center justify-between gap-4 text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-4 pt-3 border-t border-black/5 dark:border-white/5">
                     <div className="flex flex-col gap-1.5 min-w-0">
