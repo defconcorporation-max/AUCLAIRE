@@ -126,6 +126,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
     // --- PRONG & HEAD LOGIC ---
     const prongStyle = config.head.prongStyle || 'Claw'
+    const prongCount = config.head.prongCount || 4
 
     // Calculate Prong Positions
     const prongMeshes = useMemo(() => {
@@ -133,53 +134,96 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
         const meshes: JSX.Element[] = []
 
-        // Base angles for 4 prongs
-        const baseAngles = [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4]
-        // Compass rotates by 45deg
-        const angles = prongStyle === 'Compass' ? [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2] : baseAngles
+        // Base angles for prongs
+        let angles: number[] = []
+        if (prongCount === 4) {
+            const baseAngles = [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4]
+            angles = prongStyle === 'Compass' ? [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2] : baseAngles
+        } else if (prongCount === 6) {
+            angles = [0, Math.PI / 3, 2 * Math.PI / 3, Math.PI, 4 * Math.PI / 3, 5 * Math.PI / 3]
+        }
 
-        // Trellis / Cathedral Curves
+        // Tapered curve points for the stems
+        const stemPoints = []
+        const segments = 16
+        for (let j = 0; j <= segments; j++) {
+            const t = j / segments
+            // x defines the radius (thickness) at height y. 
+            // We want thicker at base (0.045), thinner at top (0.025).
+            const r = 0.045 - (t * 0.02)
+            // y goes from 0 to 1 (we scale later)
+            stemPoints.push(new THREE.Vector2(r, t))
+        }
+
+        // Lathed shape forms the beautifully tapered vertical prong
+        const taperedGeom = new THREE.LatheGeometry(stemPoints, 16)
+
+        // Elegant Prong Tips
+        // A polished teardrop claw that curves over the diamond girdle
+        // `LatheGeometry` used sideways to make a teardrop
+        const clawPoints = []
+        for (let j = 0; j <= 16; j++) {
+            const t = (j / 16) * Math.PI
+            // Sine makes it fat in the middle, `(1 - j/16)` squishes the back end to a point.
+            const r = Math.sin(t) * 0.035 * (1 + (16 - j) / 16 * 0.5)
+            clawPoints.push(new THREE.Vector2(r, (j / 16) * 0.15))
+        }
+        const clawGeom = new THREE.LatheGeometry(clawPoints, 16)
+        clawGeom.rotateX(Math.PI / 2) // point it forward 
+
         angles.forEach((angle, i) => {
-            const x = Math.sin(angle) * 0.35 * finalGemScale
-            const z = Math.cos(angle) * 0.35 * finalGemScale
+            const girdleR = 0.35 * finalGemScale
+            const x = Math.sin(angle) * girdleR
+            const z = Math.cos(angle) * girdleR
 
             // Dynamic Curve Points
             // Start low on shank, curve up to girdle
-            const startY = -0.2 // Below shank top
-            const midY = 0.2 * finalGemScale
-            const endY = 0.5 * finalGemScale // Top of prong
+            const startY = -0.15 // Higher, blending inside shank
+            const endY = 0.45 * finalGemScale // Top of prong holding girdle
 
-            // Curve Path for "Trellis" style
-            const curve = new THREE.CatmullRomCurve3([
-                new THREE.Vector3(x * 0.5, startY, z * 0.5), // Base rooted in shank
-                new THREE.Vector3(x * 0.9, midY * 0.5, z * 0.9), // Bulge out
-                new THREE.Vector3(x, endY, z) // Tip
-            ], false, 'catmullrom', 0.5)
+            // Calculate stem height and angle
+            const height = endY - startY
 
-            const tubeGeom = new THREE.TubeGeometry(curve, 16, 0.045, 8, false)
+            // To make a curved prong, we could manipulate vertices.
+            // For a perfectly elegant clean prong, a straight tapering wire angled in looks best:
+            // We place it at (x, startY, z) but the bottom roots in (x*0.6, startY, z*0.6)
+
+            // Vector math for the slant:
+            const bottom = new THREE.Vector3(x * 0.6, startY, z * 0.6)
+            const top = new THREE.Vector3(x * 0.96, endY, z * 0.96) // Slightly inside girdle
+            const direction = new THREE.Vector3().subVectors(top, bottom)
+            const dist = direction.length()
+
+            const position = new THREE.Vector3().addVectors(bottom, top).multiplyScalar(0.5)
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize())
+
+            // Clone and scale the Lathe to match height
+            const customStem = taperedGeom.clone()
+            customStem.scale(1, dist, 1) // Stretch Y only
+            customStem.translate(0, -dist / 2, 0) // shift center
 
             meshes.push(
-                <mesh key={`stem-${i}`} geometry={tubeGeom} material={metalMaterial} />
+                <mesh key={`stem-${i}`} position={position} quaternion={quaternion} geometry={customStem} material={metalMaterial} castShadow />
             )
 
             // TIPS
-            const tipPos = new THREE.Vector3(x, endY, z)
-            if (prongStyle === 'Round') {
+            // Positioned exactly at the top of the prong stem
+            if (prongStyle === 'Round' || prongStyle === 'Compass') {
                 meshes.push(
-                    <mesh key={`tip-${i}`} position={tipPos} material={metalMaterial}>
-                        <sphereGeometry args={[0.048, 16, 16]} />
+                    <mesh key={`tip-${i}`} position={top} material={metalMaterial}>
+                        <sphereGeometry args={[0.035, 16, 16]} />
                     </mesh>
                 )
-            } else if (prongStyle === 'Claw' || prongStyle === 'Compass') {
+            } else if (prongStyle === 'Claw') {
+                // Point inward towards the origin (0, height, 0)
+                const inwardAngle = angle + Math.PI // Pointing directly away from the outward angle
                 meshes.push(
-                    <mesh key={`tip-${i}`} position={tipPos} rotation={[0.4, angle, 0]} material={metalMaterial}>
-                        <coneGeometry args={[0.042, 0.15, 16]} />
-                    </mesh>
+                    <mesh key={`tip-${i}`} position={[top.x, top.y + 0.02, top.z]} rotation={[-0.2, inwardAngle, 0]} geometry={clawGeom} material={metalMaterial} castShadow />
                 )
             } else if (prongStyle === 'Tab') {
                 meshes.push(
-                    <mesh key={`tip-${i}`} position={tipPos} rotation={[0, angle, Math.PI / 4]} material={metalMaterial}>
-                        <boxGeometry args={[0.08, 0.12, 0.03]} />
+                    <mesh key={`tip-${i}`} position={top} rotation={[0, angle, Math.PI / 4]} material={metalMaterial}>
+                        <boxGeometry args={[0.06, 0.08, 0.025]} />
                     </mesh>
                 )
             }
@@ -188,76 +232,62 @@ export default function RingModel({ config }: { config: RingConfig }) {
         // --- GALLERY / UNDERCARRIAGE ---
         const galleryStyle = config.head.gallery || 'Rail'
         const railRadius = 0.3 * finalGemScale
-        const railHeight = 0.2 * finalGemScale
+        const railHeight = 0.15 * finalGemScale // Lower, tighter basket
 
-        if (galleryStyle === 'Rail') {
+        if (galleryStyle === 'Rail' || galleryStyle === 'Basket') {
             meshes.push(
                 <mesh key="rail" position={[0, railHeight, 0]} rotation={[Math.PI / 2, 0, 0]} material={metalMaterial}>
-                    <torusGeometry args={[railRadius, 0.035, 8, 32]} />
+                    <torusGeometry args={[railRadius, 0.025, 12, 48]} />
                 </mesh>
             )
-        } else if (galleryStyle === 'Basket') {
-            // Rail + Vertical Struts
-            meshes.push(
-                <mesh key="rail" position={[0, railHeight, 0]} rotation={[Math.PI / 2, 0, 0]} material={metalMaterial}>
-                    <torusGeometry args={[railRadius, 0.035, 8, 32]} />
-                </mesh>
-            )
-            // Vertical Struts (between prongs)
-            const strutCount = prongCount
-            for (let i = 0; i < strutCount; i++) {
-                const angle = (i / strutCount) * Math.PI * 2 + (Math.PI / strutCount) // Offset to be between prongs
-                const x = Math.sin(angle) * railRadius
-                const z = Math.cos(angle) * railRadius
-                meshes.push(
-                    <mesh key={`strut-${i}`} position={[x, railHeight / 2, z]} material={metalMaterial}>
-                        <cylinderGeometry args={[0.03, 0.03, railHeight, 8]} />
-                    </mesh>
-                )
+
+            if (galleryStyle === 'Basket') {
+                // Delicate Vertical Struts (between prongs)
+                for (let i = 0; i < prongCount; i++) {
+                    const angle = (i / prongCount) * Math.PI * 2 + (Math.PI / prongCount) // Offset to be between prongs
+                    const x = Math.sin(angle) * railRadius
+                    const z = Math.cos(angle) * railRadius
+                    meshes.push(
+                        <mesh key={`strut-${i}`} position={[x, railHeight / 2, z]} material={metalMaterial}>
+                            <cylinderGeometry args={[0.02, 0.02, railHeight, 12]} />
+                        </mesh>
+                    )
+                }
             }
         } else if (galleryStyle === 'Trellis') {
-            // Interwoven Curves (X-shape)
-            // Ideally we use TubeGeometry with a curve
-            const strutCount = prongCount
-            for (let i = 0; i < strutCount; i++) {
-                const angle = (i / strutCount) * Math.PI * 2
-                // Curve from Prong Base (Bottom) to Next Prong Top?
-                // Or easier: Just X shapes between prongs.
-                // Let's do simple diagonals for now.
-                const nextAngle = ((i + 1) / strutCount) * Math.PI * 2
+            // Elegant Trellis Swoops
+            for (let i = 0; i < prongCount; i++) {
+                const angle = (i / prongCount) * Math.PI * 2
+                const nextAngle = ((i + 1) / prongCount) * Math.PI * 2
 
-                const r = railRadius * 0.9
-                const h = railHeight
+                const r = railRadius * 0.95
+                const h = 0.25 * finalGemScale
 
-                // Point A (Bottom of i)
-                const ax = Math.sin(angle) * r * 0.6
-                const az = Math.cos(angle) * r * 0.6
-                // Point B (Top of next)
+                const ax = Math.sin(angle) * r * 0.5
+                const az = Math.cos(angle) * r * 0.5
                 const bx = Math.sin(nextAngle) * r
                 const bz = Math.cos(nextAngle) * r
 
-                // Midpoint
-                const mx = (ax + bx) / 2
-                const mz = (az + bz) / 2
-
-                // Curve logic is complex for procedural. 
-                // Let's use simple straight bars for "X" effect for now.
                 const dist = Math.sqrt((bx - ax) ** 2 + (bz - az) ** 2 + h ** 2)
                 const midPos = new THREE.Vector3((ax + bx) / 2, h / 2, (az + bz) / 2)
-                const orientation = new THREE.Vector3(bx - ax, h, bz - az).normalize()
-                const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), orientation)
+
+                // Slightly curved tube
+                const curve = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(ax, 0, az),
+                    new THREE.Vector3(midPos.x * 1.1, midPos.y * 0.8, midPos.z * 1.1), // outward swoop
+                    new THREE.Vector3(bx, h, bz)
+                ], false)
+
+                const trellisGeom = new THREE.TubeGeometry(curve, 16, 0.022, 8, false)
 
                 meshes.push(
-                    <mesh key={`trellis-${i}`} position={midPos} quaternion={quat} material={metalMaterial}>
-                        <cylinderGeometry args={[0.03, 0.03, dist, 8]} />
-                    </mesh>
+                    <mesh key={`trellis-${i}`} geometry={trellisGeom} material={metalMaterial} />
                 )
-                // We need the other diagonal for a true X, but let's stick to this "Swoop" for now.
             }
         }
 
         return meshes
-    }, [prongStyle, finalGemScale, config.head.style, metalMaterial])
+    }, [prongStyle, finalGemScale, config.head.style, config.head.gallery, prongCount, metalMaterial])
 
     // --- HALO LOGIC ---
     const haloItems = useMemo(() => {
