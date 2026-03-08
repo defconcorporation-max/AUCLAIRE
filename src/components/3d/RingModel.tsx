@@ -71,11 +71,9 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
     // Gem Geometry
     const currentGemGeom = useMemo(() => getGemGeometry(gemShape as any), [gemShape])
-    // Side / Pave stone geometry (driven by shape selector)
-    const paveShape = config.sideStones?.shape || 'Round'
-    const paveGemGeom = useMemo(() => getGemGeometry(paveShape as any), [paveShape])
-    // Halo / side gem (round, fixed)
+    // Halo side gem (fixed round)
     const sideGemGeom = useMemo(() => getGemGeometry('Round'), [])
+
 
     // --- MATERIALS ---
     const metalColor = METALS[config.metal] || METALS["Yellow Gold"]
@@ -271,49 +269,46 @@ export default function RingModel({ config }: { config: RingConfig }) {
     }, [config.head.style, gemDims, gemShape])
 
 
-    // --- PAVE STONE DATA (computed once) ---
-    // Ring geometry: XY plane, center at origin, radius 0.825.
-    // Gem position is at (0, 0.825, 0) = top of ring (angle = PI/2).
+    // --- PAVE STONE DATA ---
+    // Ring torus is in XY plane. Gem at (0, +0.825, 0) = top of ring.
+    // Outer surface is at placeR = 0.825 + bandThickness*0.3.
     const paveStones = useMemo(() => {
         if (!config.sideStones?.active) return []
 
         const arcFraction = config.sideStones?.length ?? 0.5
         const totalArc = arcFraction * Math.PI * 2
-        const sizeParam = config.sideStones?.size || 1.5
+        const sizeParam = Number(config.sideStones?.size) || 1.5
         const bandW = shankWidth * 0.1
         const stoneDiam = Math.min(sizeParam * 0.055, bandW * 0.88)
-        const stoneR = Math.max(0.005, stoneDiam / 2)
-
-        // Place stones on outer surface of ring band
+        const stoneR = Math.max(0.01, stoneDiam / 2)
         const placeR = 0.825 + (shankThickness * 0.1) * 0.3
-
-        // Pack tight: count derived from circumference
         const count = Math.max(2, Math.round((totalArc * placeR) / stoneDiam))
         const step = totalArc / count
 
-        // Arc placement:
-        // Half eternity → bottom half of ring (centered at -PI/2, opposite gem at PI/2)
-        // Full eternity → full 360°
+        // Half eternity: bottom arc (center at -PI/2, opposite gem at +PI/2)
         const startAngle = arcFraction < 1.0
-            ? (-Math.PI / 2) - totalArc / 2   // bottom-centered
-            : 0                                 // full ring
+            ? -(Math.PI / 2) - totalArc / 2
+            : 0
 
-        const result: Array<{ position: [number, number, number]; rotation: [number, number, number]; stoneR: number }> = []
-        for (let i = 0; i < count; i++) {
+        // Create ONE fresh geometry for this pave shape (avoid shared mutation)
+        const shapeKey = config.sideStones?.shape || 'Round'
+        const geom = getGemGeometry(shapeKey as any)
+
+        return Array.from({ length: count }, (_, i) => {
             const angle = startAngle + (i + 0.5) * step
             const x = Math.cos(angle) * placeR
-            const y = Math.sin(angle) * placeR // XY plane: y varies, z=0
-
-            // Quaternion: crown (local Y+) faces radially outward in XY plane
+            const y = Math.sin(angle) * placeR
             const outward = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0)
             const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward)
             const e = new THREE.Euler().setFromQuaternion(q)
-            result.push({ position: [x, y, 0], rotation: [e.x, e.y, e.z], stoneR })
-        }
-        return result
+            return { x, y, rx: e.x, ry: e.y, rz: e.z, stoneR, crown: geom.crown, pavilion: geom.pavilion }
+        })
     }, [
-        config.sideStones?.active, config.sideStones?.length,
-        config.sideStones?.size, shankWidth, shankThickness
+        config.sideStones?.active,
+        config.sideStones?.length,
+        config.sideStones?.size,
+        config.sideStones?.shape,
+        shankWidth, shankThickness
     ])
 
     // --- RENDERING ---
@@ -448,18 +443,17 @@ export default function RingModel({ config }: { config: RingConfig }) {
             {/* SIDE STONES (Pave / Eternity / Half-Eternity) */}
             {paveStones.length > 0 && (
                 <group>
-                    {paveStones.map(({ position, rotation, stoneR }, i) => (
-                        <group key={`pave-${i}`} position={position} rotation={rotation}>
+                    {paveStones.map(({ x, y, rx, ry, rz, stoneR, crown, pavilion }, i) => (
+                        <group key={`pave-${i}`} position={[x, y, 0]} rotation={[rx, ry, rz]}>
                             <group scale={stoneR}>
-                                <mesh geometry={paveGemGeom.crown} material={baseDiamondMaterial} castShadow />
-                                <mesh geometry={paveGemGeom.pavilion} material={baseDiamondMaterial} />
+                                <mesh geometry={crown} material={baseDiamondMaterial} castShadow />
+                                <mesh geometry={pavilion} material={baseDiamondMaterial} />
                             </group>
-                            {/* Prongs along Z axis (band width) */}
-                            <mesh position={[0, stoneR * 0.4, -stoneR * 0.7]} material={metalMaterial}>
-                                <sphereGeometry args={[stoneR * 0.15, 5, 5]} />
+                            <mesh position={[0, stoneR * 0.45, -stoneR * 0.7]} material={metalMaterial}>
+                                <sphereGeometry args={[stoneR * 0.14, 5, 5]} />
                             </mesh>
-                            <mesh position={[0, stoneR * 0.4, stoneR * 0.7]} material={metalMaterial}>
-                                <sphereGeometry args={[stoneR * 0.15, 5, 5]} />
+                            <mesh position={[0, stoneR * 0.45, stoneR * 0.7]} material={metalMaterial}>
+                                <sphereGeometry args={[stoneR * 0.14, 5, 5]} />
                             </mesh>
                         </group>
                     ))}

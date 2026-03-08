@@ -150,7 +150,8 @@ const CameraController = () => {
 }
 
 const PROFILES = ["Court", "D-Shape", "Flat", "Knife-Edge"]
-const PAVE_SHAPES = ["Round", "Princess", "Baguette", "Marquise"]
+const PAVE_SHAPES = ["Round", "Princess", "Emerald", "Marquise"]
+
 
 type BandMode = 'solitaire' | 'half-eternity' | 'eternity'
 
