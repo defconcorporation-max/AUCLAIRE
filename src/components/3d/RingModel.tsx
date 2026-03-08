@@ -114,8 +114,14 @@ export default function RingModel({ config }: { config: RingConfig }) {
     }, [config.gem.type])
 
     const baseDiamondMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
-        color: "white", metalness: 0.0, roughness: 0.0, transmission: 0.98, ior: 2.4,
-        thickness: 0.5, clearcoat: 1.0
+        color: 0xffffff,
+        metalness: 0.2,
+        roughness: 0.05,
+        transmission: 0.5,
+        ior: 2.4,
+        thickness: 0.2,
+        clearcoat: 1.0,
+        envMapIntensity: 2.5
     }), [])
 
     // --- PRONG & HEAD LOGIC ---
