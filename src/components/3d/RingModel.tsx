@@ -291,24 +291,45 @@ export default function RingModel({ config }: { config: RingConfig }) {
         const count = Math.max(2, Math.round((totalArc * placeR) / stoneDiam))
         const step = totalArc / count
 
-        // Half eternity: bottom arc (center at -PI/2, opposite gem at +PI/2)
+        // Half eternity: Top arc (center at +PI/2, where the gem is)
         const startAngle = arcFraction < 1.0
-            ? -(Math.PI / 2) - totalArc / 2
+            ? (Math.PI / 2) - totalArc / 2
             : 0
 
         // Create ONE fresh geometry for this pave shape (avoid shared mutation)
         const shapeKey = config.sideStones?.shape || 'Round'
         const geom = getGemGeometry(shapeKey as any)
 
-        return Array.from({ length: count }, (_, i) => {
+        const result = []
+        for (let i = 0; i < count; i++) {
             const angle = startAngle + (i + 0.5) * step
+
+            // Overlapping check - skip stones that would clip into the center stone head
+            let normalizedAngle = angle % (Math.PI * 2)
+            if (normalizedAngle < 0) normalizedAngle += Math.PI * 2
+
+            // The head covers roughly an angle of 0.4 radians on each side of PI/2
+            const distToTop = Math.min(
+                Math.abs(normalizedAngle - Math.PI / 2),
+                Math.abs(normalizedAngle - (Math.PI / 2 + Math.PI * 2))
+            )
+
+            if (distToTop < 0.4) continue // Skip rendering stone here
+
             const x = Math.cos(angle) * placeR
             const y = Math.sin(angle) * placeR
             const outward = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0)
             const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward)
             const e = new THREE.Euler().setFromQuaternion(q)
-            return { x, y, rx: e.x, ry: e.y, rz: e.z, stoneR, crown: geom.crown, pavilion: geom.pavilion }
-        })
+
+            result.push({
+                x, y,
+                rx: e.x, ry: e.y, rz: e.z,
+                stoneDiam, stoneR,
+                crown: geom.crown, pavilion: geom.pavilion
+            })
+        }
+        return result
     }, [
         config.sideStones?.active,
         config.sideStones?.length,
@@ -449,17 +470,17 @@ export default function RingModel({ config }: { config: RingConfig }) {
             {/* SIDE STONES (Pave / Eternity / Half-Eternity) */}
             {paveStones.length > 0 && (
                 <group>
-                    {paveStones.map(({ x, y, rx, ry, rz, stoneR, crown, pavilion }, i) => (
+                    {paveStones.map(({ x, y, rx, ry, rz, stoneDiam, stoneR, crown, pavilion }, i) => (
                         <group key={`pave-${i}`} position={[x, y, 0]} rotation={[rx, ry, rz]}>
-                            <group scale={stoneR}>
+                            <group scale={stoneDiam}>
                                 <mesh geometry={crown} material={baseDiamondMaterial} castShadow />
                                 <mesh geometry={pavilion} material={baseDiamondMaterial} />
                             </group>
                             <mesh position={[0, stoneR * 0.45, -stoneR * 0.7]} material={metalMaterial}>
-                                <sphereGeometry args={[stoneR * 0.14, 5, 5]} />
+                                <sphereGeometry args={[stoneR * 0.3, 5, 5]} />
                             </mesh>
                             <mesh position={[0, stoneR * 0.45, stoneR * 0.7]} material={metalMaterial}>
-                                <sphereGeometry args={[stoneR * 0.14, 5, 5]} />
+                                <sphereGeometry args={[stoneR * 0.3, 5, 5]} />
                             </mesh>
                         </group>
                     ))}
