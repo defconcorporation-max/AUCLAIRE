@@ -490,71 +490,248 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* ADMIN DASHBOARD -KPIs & DESIGN READY SECTION */}
+            {/* ADMIN DASHBOARD - CONTROL CENTER */}
             {role === 'admin' && (
                 <div className="grid gap-6">
-                    {/* Financial KPIs */}
+                    {/* Financial Macros */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
                             <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Total Collected</CardTitle>
-                                <Banknote className="h-4 w-4 text-green-600/70 dark:text-green-500/70" />
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-600 transition-colors">Total Collected</CardTitle>
+                                <Banknote className="h-4 w-4 text-green-600/70" />
                             </CardHeader>
                             <CardContent className="relative z-10">
-                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-500">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-600 transition-colors duration-500">
                                     ${totalCollected.toLocaleString()}
                                 </div>
                                 <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Cash Received</p>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
                             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Pending Payment</CardTitle>
-                                <Clock className="h-4 w-4 text-amber-600/70 dark:text-amber-500/70" />
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-amber-600 transition-colors">Pending Payment</CardTitle>
+                                <Clock className="h-4 w-4 text-amber-600/70" />
                             </CardHeader>
                             <CardContent className="relative z-10">
-                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors duration-500">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-amber-600 transition-colors duration-500">
                                     ${totalPending.toLocaleString()}
                                 </div>
                                 <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Outstanding Balance</p>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 transition-colors duration-500 overflow-hidden relative group">
                             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Commissions</CardTitle>
-                                <Banknote className="h-4 w-4 text-purple-600/70 dark:text-purple-500/70" />
+                                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-600 transition-colors">Commissions</CardTitle>
+                                <Banknote className="h-4 w-4 text-purple-600/70" />
                             </CardHeader>
                             <CardContent className="relative z-10">
-                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-500">
+                                <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-600 transition-colors duration-500">
                                     ${totalCommissions.toLocaleString()}
                                 </div>
                                 <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Affiliate Payouts (Est)</p>
                             </CardContent>
                         </Card>
 
-                        {role === 'admin' && (
-                            <Card className="bg-gradient-to-br from-luxury-gold/10 to-black/40 backdrop-blur-xl border-luxury-gold/30 shadow-[0_4px_20px_rgba(210,181,123,0.1) relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-tl from-luxury-gold/10 to-transparent opacity-50" />
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                    <CardTitle className="text-xs font-bold uppercase tracking-widest text-luxury-gold">Actual Profit</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-luxury-gold" />
-                                </CardHeader>
-                                <CardContent className="relative z-10">
-                                    <div className="text-3xl font-serif text-black dark:text-white">
-                                        ${totalProfit.toLocaleString()}
+                        <Card className="bg-gradient-to-br from-luxury-gold/10 to-black/40 backdrop-blur-xl border-luxury-gold/30 shadow-[0_4px_20px_rgba(210,181,123,0.1)] relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-tl from-luxury-gold/10 to-transparent opacity-50" />
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                <CardTitle className="text-xs font-bold uppercase tracking-widest text-luxury-gold">Actual Profit</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-luxury-gold" />
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="text-3xl font-serif text-black dark:text-white">
+                                    ${totalProfit.toLocaleString()}
+                                </div>
+                                <div className="text-[10px] text-luxury-gold/70 uppercase tracking-widest mt-1 flex justify-between gap-2 font-medium">
+                                    <span>Net Income</span>
+                                    <span title="Potential profit if all invoices are paid" className="opacity-70">/ ${projectedProfit.toLocaleString()} Proj.</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Time-Based Statistics Component For Admin */}
+                    <Card className="bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-2xl relative overflow-hidden">
+                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/50 to-transparent opacity-50" />
+                        <CardContent className="p-0">
+                            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/5 dark:divide-white/5">
+                                {/* TODAY */}
+                                <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                    <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                        <Activity className="w-5 h-5" />
+                                        <h3 className="font-serif text-lg tracking-wide">Aujourd'hui (Today)</h3>
                                     </div>
-                                    <div className="text-[10px] text-luxury-gold/70 uppercase tracking-widest mt-1 flex justify-between gap-2 font-medium">
-                                        <span>Net Income</span>
-                                        <span title="Potential profit if all invoices are paid" className="opacity-70">/ ${projectedProfit.toLocaleString()} Proj.</span>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                            <span className="text-xs uppercase tracking-widest text-gray-500">New Projects</span>
+                                            <span className="font-serif text-xl text-black dark:text-white">{stats.today.count}</span>
+                                        </div>
+                                        <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                            <span className="text-xs uppercase tracking-widest text-gray-500">Volume Generated</span>
+                                            <span className="font-serif text-xl text-black dark:text-white">${stats.today.volume.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Collected</span>
+                                            <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.today.collected.toLocaleString()}</span>
+                                        </div>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                                </div>
+
+                                {/* THIS WEEK */}
+                                <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                    <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                        <BarChart3 className="w-5 h-5" />
+                                        <h3 className="font-serif text-lg tracking-wide">Cette Semaine (Week)</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                            <span className="text-xs uppercase tracking-widest text-gray-500">New Projects</span>
+                                            <span className="font-serif text-xl text-black dark:text-white">{stats.week.count}</span>
+                                        </div>
+                                        <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                            <span className="text-xs uppercase tracking-widest text-gray-500">Volume Generated</span>
+                                            <span className="font-serif text-xl text-black dark:text-white">${stats.week.volume.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Collected</span>
+                                            <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.week.collected.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* THIS MONTH */}
+                                <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                    <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                        <CalendarDays className="w-5 h-5" />
+                                        <h3 className="font-serif text-lg tracking-wide">Ce Mois (Month)</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                            <span className="text-xs uppercase tracking-widest text-gray-500">New Projects</span>
+                                            <span className="font-serif text-xl text-black dark:text-white">{stats.month.count}</span>
+                                        </div>
+                                        <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                            <span className="text-xs uppercase tracking-widest text-gray-500">Volume Generated</span>
+                                            <span className="font-serif text-xl text-black dark:text-white">${stats.month.volume.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Collected</span>
+                                            <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.month.collected.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Factory Pipeline Overview */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50">
+                            <CardHeader className="py-4 pb-2">
+                                <CardTitle className="text-[10px] uppercase tracking-widest font-semibold text-blue-700 dark:text-blue-400">Design Phase</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-serif text-blue-900 dark:text-blue-100">{manufacturerDesignRequests.length}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50">
+                            <CardHeader className="py-4 pb-2">
+                                <CardTitle className="text-[10px] uppercase tracking-widest font-semibold text-green-700 dark:text-green-400">Ready for Prod</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-serif text-green-900 dark:text-green-100">{manufacturerPendingProduction.length}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/50">
+                            <CardHeader className="py-4 pb-2">
+                                <CardTitle className="text-[10px] uppercase tracking-widest font-semibold text-purple-700 dark:text-purple-400">In Production</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-serif text-purple-900 dark:text-purple-100">{manufacturerOngoingProduction.length}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50">
+                            <CardHeader className="py-4 pb-2">
+                                <CardTitle className="text-[10px] uppercase tracking-widest font-semibold text-amber-700 dark:text-amber-400">In Delivery</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-serif text-amber-900 dark:text-amber-100">{manufacturerInDelivery.length}</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Two Column Section: Action Items & Leaderboard */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Action Required: Designs pending approval */}
+                        <Card className="border-l-2 border-l-luxury-gold bg-white/60 dark:bg-black/40 backdrop-blur-md shadow-xl border border-black/5 dark:border-white/5">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-luxury-gold font-serif">
+                                    <AlertCircle className="w-5 h-5 relative -top-[1px]" />
+                                    Designs Pending Review
+                                </CardTitle>
+                                <CardDescription className="text-xs uppercase tracking-widest">Awaiting Admin Approval</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {adminDesignReady.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground p-4 text-center border-dashed border rounded-lg">No designs are waiting for approval.</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {adminDesignReady.map(project => (
+                                            <div key={project.id} className="group flex items-center justify-between p-3 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors rounded-lg border border-black/5 dark:border-white/5">
+                                                <div>
+                                                    <div className="font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors">{project.title}</div>
+                                                </div>
+                                                <Button size="sm" variant="outline" className="border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black" asChild>
+                                                    <Link to={`/dashboard/projects/${project.id}`}>Review Design</Link>
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Top Ambassadors */}
+                        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 shadow-xl">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 font-serif text-gray-800 dark:text-gray-200">
+                                    <Trophy className="w-5 h-5 text-amber-500 relative -top-[1px]" />
+                                    Top Ambassadors
+                                </CardTitle>
+                                <CardDescription className="text-xs uppercase tracking-widest">Global Sales Leaderboard</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {leaderboard.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground p-4 text-center border-dashed border rounded-lg">No active sales yet.</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {leaderboard.slice(0, 5).map((seller, index) => (
+                                            <div key={seller.id} className="flex flex-wrap items-center justify-between p-3 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5 gap-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${index === 0 ? 'bg-amber-400 text-black shadow-[0_0_10px_rgba(251,191,36,0.5)]' : index === 1 ? 'bg-gray-300 text-black' : index === 2 ? 'bg-amber-700 text-white' : 'bg-black/10 dark:bg-white/10 text-gray-500'}`}>
+                                                        {index + 1}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium text-sm text-black dark:text-white capitalize">{seller.name}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="font-serif text-green-600 dark:text-green-400">${seller.volume.toLocaleString()}</div>
+                                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">
+                                                        {seller.projectCount} Projects
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
             )}
@@ -622,112 +799,80 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
 
-                        {/* TIME-BASED STATISTICS COMPONENT */}
-                        {((role as string) === 'admin' || (role as string) === 'affiliate') && (
-                            <Card className="col-span-full bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-2xl relative overflow-hidden mt-2">
-                                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/50 to-transparent opacity-50" />
-                                <CardContent className="p-0">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/5 dark:divide-white/5">
+                        {/* TIME-BASED STATISTICS COMPONENT EN AFFILIÉ RESTE SEUL AU BOUT DU BLOC */}
+                        <Card className="col-span-full bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-2xl relative overflow-hidden mt-2">
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/50 to-transparent opacity-50" />
+                            <CardContent className="p-0">
+                                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black/5 dark:divide-white/5">
 
-                                        {/* TODAY */}
-                                        <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
-                                            <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
-                                                <Activity className="w-5 h-5" />
-                                                <h3 className="font-serif text-lg tracking-wide">Aujourd'hui</h3>
+                                    {/* TODAY */}
+                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                            <Activity className="w-5 h-5" />
+                                            <h3 className="font-serif text-lg tracking-wide">Aujourd'hui</h3>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">{stats.today.count}</span>
                                             </div>
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
-                                                    <span className="font-serif text-xl text-black dark:text-white">{stats.today.count}</span>
-                                                </div>
-                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
-                                                    <span className="font-serif text-xl text-black dark:text-white">${stats.today.volume.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between items-end">
-                                                    <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
-                                                    <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.today.collected.toLocaleString()}</span>
-                                                </div>
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">${stats.today.volume.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.today.collected.toLocaleString()}</span>
                                             </div>
                                         </div>
-
-                                        {/* THIS WEEK */}
-                                        <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
-                                            <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
-                                                <BarChart3 className="w-5 h-5" />
-                                                <h3 className="font-serif text-lg tracking-wide">Cette Semaine</h3>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
-                                                    <span className="font-serif text-xl text-black dark:text-white">{stats.week.count}</span>
-                                                </div>
-                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
-                                                    <span className="font-serif text-xl text-black dark:text-white">${stats.week.volume.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between items-end">
-                                                    <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
-                                                    <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.week.collected.toLocaleString()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* THIS MONTH */}
-                                        <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
-                                            <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
-                                                <CalendarDays className="w-5 h-5" />
-                                                <h3 className="font-serif text-lg tracking-wide">Ce Mois</h3>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
-                                                    <span className="font-serif text-xl text-black dark:text-white">{stats.month.count}</span>
-                                                </div>
-                                                <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
-                                                    <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
-                                                    <span className="font-serif text-xl text-black dark:text-white">${stats.month.volume.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between items-end">
-                                                    <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
-                                                    <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.month.collected.toLocaleString()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
                                     </div>
-                                </CardContent>
-                            </Card>
-                        )}
 
-                        {adminDesignReady.length > 0 && (
-                            <Card className="border-l-2 border-l-luxury-gold bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 mb-6 shadow-xl">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-luxury-gold font-serif text-xl">
-                                        <AlertCircle className="w-5 h-5" />
-                                        Designs Pending Approval
-                                    </CardTitle>
-                                    <CardDescription className="uppercase tracking-widest text-[10px]">Manufacturer has submitted these for review.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        {adminDesignReady.map(project => (
-                                            <div key={project.id} className="group flex items-center justify-between p-4 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors shadow-sm rounded-lg border border-black/5 dark:border-white/5">
-                                                <div>
-                                                    <div className="font-serif text-lg text-black dark:text-white group-hover:text-luxury-gold transition-colors">{project.title}</div>
-                                                    <div className="text-xs text-gray-600 dark:text-gray-300 uppercase tracking-wider mt-1">Submitted by Manufacturer</div>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <Button size="sm" variant="outline" className="border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black" asChild>
-                                                        <Link to={`/dashboard/projects/${project.id}`}>Review Design</Link>
-                                                    </Button>
-                                                </div>
+                                    {/* THIS WEEK */}
+                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                            <BarChart3 className="w-5 h-5" />
+                                            <h3 className="font-serif text-lg tracking-wide">Cette Semaine</h3>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">{stats.week.count}</span>
                                             </div>
-                                        ))}
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">${stats.week.volume.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.week.collected.toLocaleString()}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        )}
+
+                                    {/* THIS MONTH */}
+                                    <div className="p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-6 text-luxury-gold/80 group-hover:text-luxury-gold transition-colors">
+                                            <CalendarDays className="w-5 h-5" />
+                                            <h3 className="font-serif text-lg tracking-wide">Ce Mois</h3>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Nvx Projets</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">{stats.month.count}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2">
+                                                <span className="text-xs uppercase tracking-widest text-gray-500">Volume Généré</span>
+                                                <span className="font-serif text-xl text-black dark:text-white">${stats.month.volume.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-xs uppercase tracking-widest text-green-600/70">Cash Encaissé</span>
+                                                <span className="font-serif text-xl text-green-600 dark:text-green-400">${stats.month.collected.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
             )}
