@@ -281,7 +281,13 @@ export default function RingModel({ config }: { config: RingConfig }) {
         const bandW = shankWidth * 0.1
         const stoneDiam = Math.min(sizeParam * 0.055, bandW * 0.88)
         const stoneR = Math.max(0.01, stoneDiam / 2)
-        const placeR = 0.825 + (shankThickness * 0.1) * 0.3
+
+        // The ring is a torus at R=0.825. 
+        // The metal's radial thickness extends from 0.825 - (thickness/2) to 0.825 + (thickness/2).
+        // Place the stones exactly at the outer boundary so the crown sticks out and the pavilion embeds.
+        const bandHalfThick = (shankThickness * 0.1) / 2
+        const placeR = 0.825 + bandHalfThick
+
         const count = Math.max(2, Math.round((totalArc * placeR) / stoneDiam))
         const step = totalArc / count
 
