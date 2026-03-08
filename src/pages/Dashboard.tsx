@@ -63,7 +63,8 @@ export default function Dashboard() {
     }
 
     const filteredProjects = projects?.filter(p => {
-        if (role === 'admin' || role === 'manufacturer') return true;
+        if (role === 'admin') return true;
+        if (role === 'manufacturer') return (p as any).manufacturer_id === profile?.id;
         if (role === 'affiliate') {
             return p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
         }

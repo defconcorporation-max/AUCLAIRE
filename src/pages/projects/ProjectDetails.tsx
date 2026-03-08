@@ -8,6 +8,7 @@ import { apiClients } from '@/services/apiClients';
 import { apiNotifications } from '@/services/apiNotifications';
 import { apiAffiliates } from '@/services/apiAffiliates';
 import { apiActivities } from '@/services/apiActivities';
+import { apiUsers } from '@/services/apiUsers';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -94,6 +95,8 @@ export default function ProjectDetails() {
     const [selectedClientId, setSelectedClientId] = useState('');
     const [isEditingAffiliate, setIsEditingAffiliate] = useState(false);
     const [selectedAffiliateId, setSelectedAffiliateId] = useState('');
+    const [isEditingManufacturer, setIsEditingManufacturer] = useState(false);
+    const [selectedManufacturerId, setSelectedManufacturerId] = useState('');
     const [uploadError, setUploadError] = useState('');
     const [isSharing, setIsSharing] = useState(false);
 
@@ -146,6 +149,12 @@ export default function ProjectDetails() {
         queryKey: ['affiliates'],
         queryFn: apiAffiliates.getAffiliates,
         enabled: isEditingAffiliate
+    });
+
+    const { data: manufacturers } = useQuery({
+        queryKey: ['manufacturers'],
+        queryFn: () => apiUsers.getAll().then(users => users.filter((u: any) => u.role === 'manufacturer')),
+        enabled: isEditingManufacturer
     });
 
     const { data: invoices } = useQuery({
@@ -601,6 +610,51 @@ export default function ProjectDetails() {
                                         </div>
                                     )}
                                 </div>
+                                {/* Manufacturer Assignment */}
+                                {role === 'admin' && (
+                                    <div className="flex items-center justify-between border-b pb-2">
+                                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                                            <Factory className="w-3 h-3" /> Manufacturer
+                                        </span>
+                                        {!isEditingManufacturer ? (
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-medium">{(project as any).manufacturer?.full_name || 'None'}</span>
+                                                <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => {
+                                                    setSelectedManufacturerId((project as any).manufacturer_id || '');
+                                                    setIsEditingManufacturer(true);
+                                                }}>
+                                                    <Pencil className="w-3 h-3" />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1 animate-in fade-in zoom-in-95">
+                                                <select
+                                                    className="h-6 rounded border border-input bg-background text-xs px-1 w-36"
+                                                    value={selectedManufacturerId}
+                                                    onChange={(e) => setSelectedManufacturerId(e.target.value)}
+                                                >
+                                                    <option value="">None</option>
+                                                    {manufacturers?.map((m: any) => (
+                                                        <option key={m.id} value={m.id}>{m.full_name}</option>
+                                                    ))}
+                                                </select>
+                                                <Button size="icon" variant="ghost" className="h-5 w-5 text-green-600" onClick={() => {
+                                                    apiProjects.update(project.id, { manufacturer_id: selectedManufacturerId || null } as any)
+                                                        .then(() => {
+                                                            queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                            setIsEditingManufacturer(false);
+                                                        })
+                                                        .catch(err => alert('Failed to assign manufacturer: ' + err.message));
+                                                }}>
+                                                    <Save className="w-3 h-3" />
+                                                </Button>
+                                                <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500" onClick={() => setIsEditingManufacturer(false)}>
+                                                    <X className="w-3 h-3" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 {/* Commission Controls (Editable) */}
                                 {project.affiliate_id && (role === 'admin' || role === 'affiliate') && (
                                     <>

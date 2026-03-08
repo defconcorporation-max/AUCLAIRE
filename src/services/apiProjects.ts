@@ -57,6 +57,8 @@ export interface Project {
     affiliate?: { full_name: string };
     affiliate_commission_rate?: number;
     affiliate_commission_type?: 'percent' | 'fixed';
+    manufacturer_id?: string;
+    manufacturer?: { full_name: string };
 }
 
 export type ProjectStatus = Project['status'];
@@ -99,7 +101,8 @@ export const apiProjects = {
             .select(`
         *,
         client:clients(full_name),
-        affiliate:profiles!projects_affiliate_id_fkey(full_name)
+        affiliate:profiles!projects_affiliate_id_fkey(full_name),
+        manufacturer:profiles!projects_manufacturer_id_fkey(full_name)
       `)
             .order('updated_at', { ascending: false });
 
