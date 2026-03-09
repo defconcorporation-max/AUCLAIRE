@@ -7,7 +7,7 @@ import { apiUsers } from "@/services/apiUsers";
 import { User, X } from "lucide-react";
 
 export function RoleSwitcher() {
-    const { role, switchRole, user, profile, isInSharedMode, signInAsDev, impersonate, stopImpersonating, impersonatedProfile } = useAuth() as any;
+    const { role, switchRole, user, profile, isInSharedMode, impersonate, stopImpersonating, impersonatedProfile } = useAuth() as any;
 
     const roles: UserRole[] = ['admin', 'manufacturer', 'client', 'affiliate', 'secretary'];
     const showButtons = !user || (profile?.role === 'admin' || isInSharedMode);
