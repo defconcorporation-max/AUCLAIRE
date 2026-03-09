@@ -44,20 +44,20 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
     return (
         <Card className="bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl overflow-hidden">
             <CardHeader
-                className={`flex flex-row items-center justify-between cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${open ? 'border-b border-black/5 dark:border-white/5' : ''}`}
+                className={`py-3 px-4 flex flex-row items-center justify-between cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${open ? 'border-b border-black/5 dark:border-white/5' : ''}`}
                 onClick={() => setOpen(!open)}
             >
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-luxury-gold/10 flex items-center justify-center text-luxury-gold font-bold">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-luxury-gold/10 flex items-center justify-center text-luxury-gold font-bold text-sm">
                         {manufacturer.full_name.charAt(0)}
                     </div>
                     <div>
-                        <CardTitle className="text-lg font-serif">{manufacturer.full_name}</CardTitle>
-                        <CardDescription className="text-[10px] uppercase tracking-widest">Manufacturer Dashboard • {projects.length} Projects</CardDescription>
+                        <CardTitle className="text-base font-serif">{manufacturer.full_name}</CardTitle>
+                        <CardDescription className="text-[9px] uppercase tracking-widest">Manufacturer • {projects.length} Projects</CardDescription>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:flex gap-4 text-center">
+                <div className="flex items-center gap-3">
+                    <div className="hidden md:flex gap-3 text-center">
                         <div>
                             <div className="text-xs font-bold text-blue-500">{mDesignRequests.length}</div>
                             <div className="text-[8px] uppercase tracking-tighter text-muted-foreground">Design</div>
@@ -75,76 +75,76 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                             <div className="text-[8px] uppercase tracking-tighter text-muted-foreground">Delivery</div>
                         </div>
                     </div>
-                    {open ? <ChevronDown className="w-5 h-5 text-muted-foreground" /> : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
+                    {open ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                 </div>
             </CardHeader>
 
             {open && (
-                <CardContent className="pt-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="grid gap-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <CardContent className="pt-4 px-4 pb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="grid gap-4">
+                        <div className="grid grid-cols-3 md:grid-cols-3 gap-3">
                             {/* KPI 1: Design Ready */}
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-blue-500/30 transition-colors duration-500 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-blue-500 transition-colors">Design Ready</CardTitle>
-                                    <Clock className="h-4 w-4 text-blue-500/70" />
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4 relative z-10">
+                                    <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-blue-500 transition-colors">Design Ready</CardTitle>
+                                    <Clock className="h-3 w-3 text-blue-500/70" />
                                 </CardHeader>
-                                <CardContent className="relative z-10">
-                                    <div className="text-3xl font-serif text-black dark:text-white group-hover:text-blue-500 transition-colors duration-500">
+                                <CardContent className="relative z-10 pb-3 px-4">
+                                    <div className="text-2xl font-serif text-black dark:text-white group-hover:text-blue-500 transition-colors duration-500">
                                         {mDesignRequests.length}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">À Démarrer</p>
+                                    <p className="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">À Démarrer</p>
                                 </CardContent>
                             </Card>
 
                             {/* KPI 2: Ongoing Production */}
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-purple-500/30 transition-colors duration-500 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-500 transition-colors">En Cours (Ongoing)</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-purple-500/70" />
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4 relative z-10">
+                                    <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-500 transition-colors">En Cours</CardTitle>
+                                    <TrendingUp className="h-3 w-3 text-purple-500/70" />
                                 </CardHeader>
-                                <CardContent className="relative z-10">
-                                    <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-500 transition-colors duration-500">
+                                <CardContent className="relative z-10 pb-3 px-4">
+                                    <div className="text-2xl font-serif text-black dark:text-white group-hover:text-purple-500 transition-colors duration-500">
                                         {mOngoingProduction.length}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">En Fabrication</p>
+                                    <p className="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">En Fabrication</p>
                                 </CardContent>
                             </Card>
 
                             {/* KPI 3: Completed Projects */}
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-green-500/30 transition-colors duration-500 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-500 transition-colors">Total Fabriqué</CardTitle>
-                                    <Briefcase className="h-4 w-4 text-green-500/70" />
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4 relative z-10">
+                                    <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-500 transition-colors">Total Fabriqué</CardTitle>
+                                    <Briefcase className="h-3 w-3 text-green-500/70" />
                                 </CardHeader>
-                                <CardContent className="relative z-10">
-                                    <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-500 transition-colors duration-500">
+                                <CardContent className="relative z-10 pb-3 px-4">
+                                    <div className="text-2xl font-serif text-black dark:text-white group-hover:text-green-500 transition-colors duration-500">
                                         {mCompleted.length}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Projets historiques achevés</p>
+                                    <p className="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">Achevés</p>
                                 </CardContent>
                             </Card>
                         </div>
 
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                             {/* 1. DESIGN REQUESTS */}
                             <Card className="border-l-4 border-l-blue-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 font-serif text-sm">
-                                        <Clock className="w-4 h-4 text-blue-500" />
+                                <CardHeader className="py-3 px-4">
+                                    <CardTitle className="flex items-center gap-1.5 font-serif text-xs">
+                                        <Clock className="w-3.5 h-3.5 text-blue-500" />
                                         Design Requests
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 pb-3">
                                     {mDesignRequests.length === 0 ? (
                                         <p className="text-[10px] text-muted-foreground p-2 text-center border border-dashed rounded-lg">No designs.</p>
                                     ) : (
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             {mDesignRequests.map(project => (
-                                                <div key={project.id} className="flex flex-col gap-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
+                                                <div key={project.id} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
                                                     <div className="flex items-center justify-between gap-1">
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-[11px] truncate flex-1 hover:text-blue-500 transition-colors">
                                                             {project.title}
@@ -164,19 +164,19 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
 
                             {/* 2. PENDING PRODUCTION */}
                             <Card className="border-l-4 border-l-green-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 font-serif text-sm">
-                                        <AlertCircle className="w-4 h-4 text-green-500" />
+                                <CardHeader className="py-3 px-4">
+                                    <CardTitle className="flex items-center gap-1.5 font-serif text-xs">
+                                        <AlertCircle className="w-3.5 h-3.5 text-green-500" />
                                         Pending Prod
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 pb-3">
                                     {mPendingProduction.length === 0 ? (
                                         <p className="text-[10px] text-muted-foreground p-2 text-center border border-dashed rounded-lg">No pending.</p>
                                     ) : (
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             {mPendingProduction.map(project => (
-                                                <div key={project.id} className="flex flex-col gap-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
+                                                <div key={project.id} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
                                                     <div className="flex items-center justify-between gap-1">
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-[11px] truncate flex-1 hover:text-green-500 transition-colors">
                                                             {project.title}
@@ -196,19 +196,19 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
 
                             {/* 3. ONGOING PRODUCTION */}
                             <Card className="border-l-4 border-l-purple-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 font-serif text-sm">
-                                        <TrendingUp className="w-4 h-4 text-purple-500" />
+                                <CardHeader className="py-3 px-4">
+                                    <CardTitle className="flex items-center gap-1.5 font-serif text-xs">
+                                        <TrendingUp className="w-3.5 h-3.5 text-purple-500" />
                                         Ongoing
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 pb-3">
                                     {mOngoingProduction.length === 0 ? (
                                         <p className="text-[10px] text-muted-foreground p-2 text-center border border-dashed rounded-lg">No ongoing.</p>
                                     ) : (
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             {mOngoingProduction.map(project => (
-                                                <div key={project.id} className="flex flex-col gap-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
+                                                <div key={project.id} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
                                                     <div className="flex items-center justify-between gap-1">
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-[11px] truncate flex-1 hover:text-purple-500 transition-colors">
                                                             {project.title}
@@ -228,19 +228,19 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
 
                             {/* 4. IN DELIVERY */}
                             <Card className="border-l-4 border-l-amber-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 font-serif text-sm">
-                                        <Package className="w-4 h-4 text-amber-500" />
+                                <CardHeader className="py-3 px-4">
+                                    <CardTitle className="flex items-center gap-1.5 font-serif text-xs">
+                                        <Package className="w-3.5 h-3.5 text-amber-500" />
                                         In Delivery
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 pb-3">
                                     {mInDelivery.length === 0 ? (
                                         <p className="text-[10px] text-muted-foreground p-2 text-center border border-dashed rounded-lg">No delivery.</p>
                                     ) : (
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             {mInDelivery.map(project => (
-                                                <div key={project.id} className="flex flex-col gap-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
+                                                <div key={project.id} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
                                                     <div className="flex items-center justify-between gap-1">
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-[11px] truncate flex-1 hover:text-amber-500 transition-colors">
                                                             {project.title}
