@@ -62,6 +62,12 @@ export const apiUsers = {
     },
 
     async adminUpdatePassword(userId: string, newPassword: string) {
+        // Bypass for Demo Admin
+        if (localStorage.getItem('isSharedMode') === 'true') {
+            console.warn("Demo Mode: Mocking password update.");
+            return true;
+        }
+
         const { data, error } = await supabase.rpc('admin_update_user_password', {
             target_user_id: userId,
             new_password: newPassword
