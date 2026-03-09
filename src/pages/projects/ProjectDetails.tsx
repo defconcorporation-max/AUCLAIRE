@@ -1078,7 +1078,7 @@ export default function ProjectDetails() {
                                 </div>
                             )}
 
-                            {(project.status === '3d_model' || project.status === 'design_ready' || project.status === 'design_modification' || project.status === 'approved_for_production') && (
+                            {project.status !== 'designing' && (
                                 <>
                                     {/* Initial Design Reference (Read Only) */}
                                     <div className="bg-zinc-50 dark:bg-zinc-900 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 mb-6">
@@ -1229,7 +1229,7 @@ export default function ProjectDetails() {
                                     )}
 
                                     {/* SUBMIT BUTTON FOR MANUFACTURER */}
-                                    {role === 'manufacturer' && project.status !== 'design_ready' && (
+                                    {role === 'manufacturer' && (project.status === '3d_model' || project.status === 'design_modification') && (
                                         <div className="pt-4 border-t flex justify-end">
                                             <Button className="w-full md:w-auto gap-2" size="lg" onClick={() => handleStatusUpdate('design_ready')}>
                                                 <Send className="w-4 h-4" />
