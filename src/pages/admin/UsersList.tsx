@@ -65,6 +65,7 @@ export default function UsersList() {
         switch (role) {
             case 'admin': return <Shield className="w-4 h-4 text-red-500" />;
             case 'manufacturer': return <Briefcase className="w-4 h-4 text-blue-500" />;
+            case 'secretary': return <UserCircle className="w-4 h-4 text-purple-500" />;
             case 'client': return <User className="w-4 h-4 text-green-500" />;
             case 'pending': return <Clock className="w-4 h-4 text-amber-500" />;
             default: return <UserCircle className="w-4 h-4 text-gray-500" />;
@@ -146,6 +147,7 @@ export default function UsersList() {
                                             <option value="pending">Pending Approval</option>
                                             <option value="client">Client</option>
                                             <option value="manufacturer">Manufacturer</option>
+                                            <option value="secretary">Secretaire</option>
                                             <option value="admin">Admin</option>
                                             <option value="sales">Sales Agent</option>
                                             <option value="affiliate">Ambassador (Affiliate)</option>
