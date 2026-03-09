@@ -633,7 +633,7 @@ export default function ProjectDetails() {
                     </CardHeader>
                     <CardContent className="space-y-5 pt-6">
                         {/* Affiliate Section */}
-                        {(role === 'admin' || role === 'affiliate' || project.affiliate_id) && (
+                        {(role === 'admin' || role === 'affiliate' || role === 'secretary' || project.affiliate_id) && (
                             <>
                                 <div className="flex items-center justify-between border-b pb-2">
                                     <span className="text-sm text-muted-foreground flex items-center gap-2">

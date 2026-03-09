@@ -101,7 +101,7 @@ function App() {
               <Route path="finance/expenses" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><ExpensesList /></ProtectedRoute>} />
               <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliatesList /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><Settings /></ProtectedRoute>} />
-              <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
+              <Route path="users" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><UsersList /></ProtectedRoute>} />
               <Route path="qcm" element={<ProtectedRoute allowedRoles={['admin']}><AdminQcmResults /></ProtectedRoute>} />
               <Route path="studio" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><Studio /></ProtectedRoute>} />
               <Route path="resources" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ResourcesHub /></ProtectedRoute>} />

@@ -32,7 +32,7 @@ const navItems = [
     { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate', 'secretary'] },
     { label: 'Expenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin', 'secretary'] },
     { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin', 'secretary'] },
-    { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
+    { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin', 'secretary'] },
     // Link back to the CAD tool
     { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
