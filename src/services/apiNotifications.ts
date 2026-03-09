@@ -38,42 +38,94 @@ const saveMockData = () => {
 };
 
 export const apiNotifications = {
-    async getAll() {
-        const { data, error } = await supabase
+    async getAll(userId?: string, role?: string) {
+        let query = supabase
             .from('notifications')
             .select('*')
             .order('created_at', { ascending: false });
 
+        if (role === 'admin' && userId) {
+            query = query.in('user_id', [userId, 'admin', '1']);
+        } else if (role === 'admin') {
+            query = query.in('user_id', ['admin', '1']);
+        } else if (userId) {
+            query = query.eq('user_id', userId);
+        }
+
+        const { data, error } = await query;
+
         if (error || !data) {
             console.warn("Using Mock Data for Notifications");
             loadMockData();
-            return [...mockNotifications].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            let filtered = mockNotifications;
+            if (role === 'admin' && userId) {
+                filtered = filtered.filter(n => n.user_id === userId || n.user_id === 'admin' || n.user_id === '1');
+            } else if (role === 'admin') {
+                filtered = filtered.filter(n => n.user_id === 'admin' || n.user_id === '1');
+            } else if (userId) {
+                filtered = filtered.filter(n => n.user_id === userId);
+            }
+            return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         }
         return data as Notification[];
     },
 
-    async getUnreadCount() {
-        const { count, error } = await supabase
+    async getUnreadCount(userId?: string, role?: string) {
+        let query = supabase
             .from('notifications')
             .select('*', { count: 'exact', head: true })
             .eq('is_read', false);
 
+        if (role === 'admin' && userId) {
+            query = query.in('user_id', [userId, 'admin', '1']);
+        } else if (role === 'admin') {
+            query = query.in('user_id', ['admin', '1']);
+        } else if (userId) {
+            query = query.eq('user_id', userId);
+        }
+
+        const { count, error } = await query;
+
         if (error) {
             loadMockData();
-            return mockNotifications.filter(n => !n.is_read).length;
+            let filtered = mockNotifications.filter(n => !n.is_read);
+            if (role === 'admin' && userId) {
+                filtered = filtered.filter(n => n.user_id === userId || n.user_id === 'admin' || n.user_id === '1');
+            } else if (role === 'admin') {
+                filtered = filtered.filter(n => n.user_id === 'admin' || n.user_id === '1');
+            } else if (userId) {
+                filtered = filtered.filter(n => n.user_id === userId);
+            }
+            return filtered.length;
         }
         return count || 0;
     },
 
-    async markAllRead() {
-        const { error } = await supabase
+    async markAllRead(userId?: string, role?: string) {
+        let query = supabase
             .from('notifications')
             .update({ is_read: true })
             .eq('is_read', false); // Updates all unread
 
+        if (role === 'admin' && userId) {
+            query = query.in('user_id', [userId, 'admin', '1']);
+        } else if (role === 'admin') {
+            query = query.in('user_id', ['admin', '1']);
+        } else if (userId) {
+            query = query.eq('user_id', userId);
+        }
+
+        const { error } = await query;
+
         if (error) {
             loadMockData();
-            mockNotifications = mockNotifications.map(n => ({ ...n, is_read: true }));
+            mockNotifications = mockNotifications.map(n => {
+                if (!n.is_read) {
+                    if (role === 'admin' && (n.user_id === userId || n.user_id === 'admin' || n.user_id === '1')) return { ...n, is_read: true };
+                    if (role !== 'admin' && userId && n.user_id === userId) return { ...n, is_read: true };
+                }
+                return n;
+            });
             saveMockData();
             return true;
         }

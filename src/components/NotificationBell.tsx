@@ -11,21 +11,24 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiNotifications } from '@/services/apiNotifications';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
 export default function NotificationBell() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { user, role } = useAuth();
 
     const { data: notifications = [] } = useQuery({
-        queryKey: ['notifications'],
-        queryFn: apiNotifications.getAll,
-        refetchInterval: 5000 // Poll every 5s for new alerts
+        queryKey: ['notifications', user?.id, role],
+        queryFn: () => apiNotifications.getAll(user?.id, role),
+        refetchInterval: 5000, // Poll every 5s for new alerts
+        enabled: !!user || !!role
     });
 
     const unreadCount = notifications.filter(n => !n.is_read).length;
 
     const handleMarkRead = async () => {
-        await apiNotifications.markAllRead();
+        await apiNotifications.markAllRead(user?.id, role);
         queryClient.invalidateQueries({ queryKey: ['notifications'] });
     };
 

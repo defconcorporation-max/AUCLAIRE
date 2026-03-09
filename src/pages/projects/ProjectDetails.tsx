@@ -87,7 +87,7 @@ export default function ProjectDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { role } = useAuth(); // Get current role
+    const { role, user } = useAuth(); // Get current role and user
     const [isAddingRender, setIsAddingRender] = useState(false);
     const [isAddingSketch, setIsAddingSketch] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -170,6 +170,33 @@ export default function ProjectDetails() {
         apiProjects.updateStatus(project.id, status)
             .then(() => {
                 queryClient.invalidateQueries({ queryKey: ['projects'] });
+
+                // Detailed Notifications for Status Changes
+                if (status === 'design_ready' && project.client_id) {
+                    apiNotifications.create({
+                        user_id: project.client_id,
+                        title: 'Design Ready for Review',
+                        message: `Your project "${project.title}" has a new 3D design ready for your approval.`,
+                        type: 'info',
+                        link: `/dashboard/projects/${project.id}`
+                    });
+                } else if (status === 'production' && project.client_id) {
+                    apiNotifications.create({
+                        user_id: project.client_id,
+                        title: 'Production Started',
+                        message: `Great news! "${project.title}" is now in production.`,
+                        type: 'success',
+                        link: `/dashboard/projects/${project.id}`
+                    });
+                } else if (status === 'design_modification' && (project as any).manufacturer_id) {
+                    apiNotifications.create({
+                        user_id: (project as any).manufacturer_id,
+                        title: 'Modifications Requested',
+                        message: `Changes have been requested on "${project.title}".`,
+                        type: 'warning',
+                        link: `/dashboard/projects/${project.id}`
+                    });
+                }
             });
     };
 
@@ -203,10 +230,34 @@ export default function ProjectDetails() {
             if (type === 'sketch') {
                 const current = project.stage_details?.sketch_files || [];
                 await apiProjects.updateDetails(project.id, { sketch_files: [...current, compressedBase64] });
+                apiActivities.log({
+                    project_id: project.id,
+                    user_id: user?.id || 'admin',
+                    user_name: user?.user_metadata?.full_name || 'User',
+                    action: 'update',
+                    details: 'Added a new sketch/reference image'
+                });
                 setIsAddingSketch(false);
             } else {
                 const current = project.stage_details?.design_files || [];
                 await apiProjects.updateDetails(project.id, { design_files: [...current, compressedBase64] });
+                apiActivities.log({
+                    project_id: project.id,
+                    user_id: user?.id || 'admin',
+                    user_name: user?.user_metadata?.full_name || 'User',
+                    action: 'update',
+                    details: 'Uploaded a new 3D rendering'
+                });
+                // Notify Client if Renders are uploaded (optional, but good)
+                if (project.client_id && project.status === 'design_ready') {
+                    apiNotifications.create({
+                        user_id: project.client_id,
+                        title: 'New 3D Render Uploaded',
+                        message: `A new 3D rendering has been added to "${project.title}".`,
+                        type: 'info',
+                        link: `/dashboard/projects/${project.id}`
+                    });
+                }
                 setIsAddingRender(false);
             }
 
@@ -273,6 +324,14 @@ export default function ProjectDetails() {
                                     <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => {
                                         apiProjects.update(project.id, { client_id: selectedClientId })
                                             .then(() => {
+                                                const newClient = clients?.find((c: any) => c.id === selectedClientId);
+                                                apiActivities.log({
+                                                    project_id: project.id,
+                                                    user_id: user?.id || 'admin',
+                                                    user_name: user?.user_metadata?.full_name || 'Admin',
+                                                    action: 'update',
+                                                    details: `Reassigned client to ${newClient?.full_name || 'Unknown'}`
+                                                });
                                                 queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                 setIsEditingClient(false);
                                             });
@@ -326,7 +385,16 @@ export default function ProjectDetails() {
                         onChange={(e) => {
                             const newPriority = e.target.value as 'normal' | 'rush';
                             apiProjects.update(project.id, { priority: newPriority })
-                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
+                                .then(() => {
+                                    apiActivities.log({
+                                        project_id: project.id,
+                                        user_id: user?.id || 'admin',
+                                        user_name: user?.user_metadata?.full_name || 'Admin',
+                                        action: 'update',
+                                        details: `Changed priority to ${newPriority.toUpperCase()}`
+                                    });
+                                    queryClient.invalidateQueries({ queryKey: ['projects', 'activities'] });
+                                })
                                 .catch(err => alert(err.message));
                         }}
                         disabled={role === 'client' || role === 'affiliate' || role === 'manufacturer'}
@@ -345,10 +413,10 @@ export default function ProjectDetails() {
                             handleStatusUpdate(newStatus);
                             apiActivities.log({
                                 project_id: project.id,
-                                user_id: 'admin', // Mock User ID
-                                user_name: 'Admin User',
+                                user_id: user?.id || 'admin',
+                                user_name: user?.user_metadata?.full_name || 'Admin',
                                 action: 'status_change',
-                                details: `Changed status from ${project.status} to ${newStatus}`
+                                details: `Changed status from ${project.status.replace('_', ' ')} to ${newStatus.replace('_', ' ')}`
                             });
                         }}
                         disabled={role === 'client'} // Clients shouldn't manually update status
@@ -596,6 +664,22 @@ export default function ProjectDetails() {
                                                     .then(() => {
                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                         setIsEditingAffiliate(false);
+                                                        if (selectedAffiliateId && affiliate) {
+                                                            apiActivities.log({
+                                                                project_id: project.id,
+                                                                user_id: user?.id || 'admin',
+                                                                user_name: user?.user_metadata?.full_name || 'Admin',
+                                                                action: 'update',
+                                                                details: `Assigned ambassador ${affiliate.full_name}`
+                                                            });
+                                                            apiNotifications.create({
+                                                                user_id: selectedAffiliateId,
+                                                                title: 'New Ambassador Assignment',
+                                                                message: `You've been assigned to the project "${project.title}"!`,
+                                                                type: 'info',
+                                                                link: `/dashboard/projects/${project.id}`
+                                                            });
+                                                        }
                                                     })
                                                     .catch(error => {
                                                         console.error(error);
@@ -641,8 +725,25 @@ export default function ProjectDetails() {
                                                 <Button size="icon" variant="ghost" className="h-5 w-5 text-green-600" onClick={() => {
                                                     apiProjects.update(project.id, { manufacturer_id: selectedManufacturerId || null } as any)
                                                         .then(() => {
+                                                            const mfg = manufacturers?.find((m: any) => m.id === selectedManufacturerId);
                                                             queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                             setIsEditingManufacturer(false);
+                                                            if (selectedManufacturerId && mfg) {
+                                                                apiActivities.log({
+                                                                    project_id: project.id,
+                                                                    user_id: user?.id || 'admin',
+                                                                    user_name: user?.user_metadata?.full_name || 'Admin',
+                                                                    action: 'update',
+                                                                    details: `Assigned manufacturer ${mfg.full_name}`
+                                                                });
+                                                                apiNotifications.create({
+                                                                    user_id: selectedManufacturerId,
+                                                                    title: 'New Manufacturing Assignment',
+                                                                    message: `You've been assigned to manufacture "${project.title}"!`,
+                                                                    type: 'info',
+                                                                    link: `/dashboard/projects/${project.id}`
+                                                                });
+                                                            }
                                                         })
                                                         .catch(err => alert('Failed to assign manufacturer: ' + err.message));
                                                 }}>
@@ -843,7 +944,16 @@ export default function ProjectDetails() {
                                                 const val = parseFloat(e.target.value);
                                                 if (!isNaN(val)) {
                                                     apiProjects.updateFinancials(project.id, { paid_amount: val })
-                                                        .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }));
+                                                        .then(() => {
+                                                            apiActivities.log({
+                                                                project_id: project.id,
+                                                                user_id: user?.id || 'admin',
+                                                                user_name: user?.user_metadata?.full_name || 'Admin',
+                                                                action: 'update',
+                                                                details: `Updated Paid Amount to $${val.toLocaleString()}`
+                                                            });
+                                                            queryClient.invalidateQueries({ queryKey: ['projects', 'activities'] });
+                                                        });
                                                 }
                                             }}
                                         />
@@ -1137,7 +1247,21 @@ export default function ProjectDetails() {
                                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                             placeholder="https://..."
                                             defaultValue={project.stage_details?.model_link}
-                                            onBlur={(e) => apiProjects.updateDetails(project.id, { model_link: e.target.value })}
+                                            onBlur={(e) => {
+                                                const val = e.target.value;
+                                                if (val !== project.stage_details?.model_link) {
+                                                    apiProjects.updateDetails(project.id, { model_link: val }).then(() => {
+                                                        apiActivities.log({
+                                                            project_id: project.id,
+                                                            user_id: user?.id || 'admin',
+                                                            user_name: user?.user_metadata?.full_name || 'Admin',
+                                                            action: 'update',
+                                                            details: `Updated CAD Model Link`
+                                                        });
+                                                        queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
+                                                    });
+                                                }
+                                            }}
                                             readOnly={project.status === 'design_ready'} // Lock during review
                                         />
                                     </div>
@@ -1147,7 +1271,21 @@ export default function ProjectDetails() {
                                             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                             placeholder="Notes on the 3D model..."
                                             defaultValue={project.stage_details?.model_notes}
-                                            onBlur={(e) => apiProjects.updateDetails(project.id, { model_notes: e.target.value })}
+                                            onBlur={(e) => {
+                                                const val = e.target.value;
+                                                if (val !== project.stage_details?.model_notes) {
+                                                    apiProjects.updateDetails(project.id, { model_notes: val }).then(() => {
+                                                        apiActivities.log({
+                                                            project_id: project.id,
+                                                            user_id: user?.id || 'admin',
+                                                            user_name: user?.user_metadata?.full_name || 'Admin',
+                                                            action: 'update',
+                                                            details: `Updated Model Notes`
+                                                        });
+                                                        queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
+                                                    });
+                                                }
+                                            }}
                                             readOnly={project.status === 'design_ready'}
                                         />
                                     </div>
@@ -1221,7 +1359,19 @@ export default function ProjectDetails() {
                                                 className="flex h-10 w-full rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-sm"
                                                 placeholder="0.00"
                                                 defaultValue={project.financials?.supplier_cost}
-                                                onBlur={(e) => apiProjects.updateFinancials(project.id, { supplier_cost: parseFloat(e.target.value) }).then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))}
+                                                onBlur={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    apiProjects.updateFinancials(project.id, { supplier_cost: val }).then(() => {
+                                                        apiActivities.log({
+                                                            project_id: project.id,
+                                                            user_id: user?.id || 'admin',
+                                                            user_name: user?.user_metadata?.full_name || 'Admin',
+                                                            action: 'update',
+                                                            details: `Updated internal manufacturing cost to $${val.toLocaleString()}`
+                                                        });
+                                                        queryClient.invalidateQueries({ queryKey: ['projects', 'activities'] });
+                                                    });
+                                                }}
                                                 readOnly={project.status === 'design_ready'}
                                             />
                                             <p className="text-[10px] text-muted-foreground">Estimate production cost at this stage.</p>
@@ -1249,7 +1399,21 @@ export default function ProjectDetails() {
                                             placeholder="Casting details, stone setting notes..."
                                             defaultValue={project.stage_details?.production_notes}
                                             readOnly={role === 'client'}
-                                            onBlur={(e) => role !== 'client' && apiProjects.updateDetails(project.id, { production_notes: e.target.value })}
+                                            onBlur={(e) => {
+                                                const val = e.target.value;
+                                                if (role !== 'client' && val !== project.stage_details?.production_notes) {
+                                                    apiProjects.updateDetails(project.id, { production_notes: val }).then(() => {
+                                                        apiActivities.log({
+                                                            project_id: project.id,
+                                                            user_id: user?.id || 'admin',
+                                                            user_name: user?.user_metadata?.full_name || 'Admin',
+                                                            action: 'update',
+                                                            details: `Updated Production Notes`
+                                                        });
+                                                        queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
+                                                    });
+                                                }
+                                            }}
                                         />
                                     </div>
                                     {/* ... rest of production view ... */}
@@ -1266,7 +1430,30 @@ export default function ProjectDetails() {
                                             placeholder="FedEx / DHL Tracking"
                                             defaultValue={project.stage_details?.tracking_number}
                                             readOnly={role === 'client'}
-                                            onBlur={(e) => role !== 'client' && apiProjects.updateDetails(project.id, { tracking_number: e.target.value })}
+                                            onBlur={(e) => {
+                                                const val = e.target.value;
+                                                if (role !== 'client' && val !== project.stage_details?.tracking_number) {
+                                                    apiProjects.updateDetails(project.id, { tracking_number: val }).then(() => {
+                                                        apiActivities.log({
+                                                            project_id: project.id,
+                                                            user_id: user?.id || 'admin',
+                                                            user_name: user?.user_metadata?.full_name || 'Admin',
+                                                            action: 'update',
+                                                            details: `Added/Updated tracking number: ${val}`
+                                                        });
+                                                        if (project.client_id && val) {
+                                                            apiNotifications.create({
+                                                                user_id: project.client_id,
+                                                                title: 'Project Shipped!',
+                                                                message: `A tracking number (${val}) has been added to your project "${project.title}".`,
+                                                                type: 'success',
+                                                                link: `/dashboard/projects/${project.id}`
+                                                            });
+                                                        }
+                                                        queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
+                                                    });
+                                                }
+                                            }}
                                         />
                                     </div>
                                 </div>
