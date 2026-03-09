@@ -768,7 +768,7 @@ export default function ProjectDetails() {
                                     </div>
                                 )}
                                 {/* Commission Controls (Editable) */}
-                                {project.affiliate_id && (role === 'admin' || role === 'affiliate') && (
+                                {project.affiliate_id && (role === 'admin' || role === 'affiliate' || role === 'secretary') && (
                                     <>
                                         <div className="flex items-center justify-between mt-2 pl-5">
                                             <span className="text-xs text-muted-foreground">Commission</span>
@@ -845,8 +845,8 @@ export default function ProjectDetails() {
 
                                                                 apiActivities.log({
                                                                     project_id: project.id,
-                                                                    user_id: 'admin',
-                                                                    user_name: 'Admin User',
+                                                                    user_id: user?.id || 'admin',
+                                                                    user_name: user?.user_metadata?.full_name || 'Admin User',
                                                                     action: 'update',
                                                                     details: `Exported commission ($${amount.toLocaleString()}) for ${project.affiliate?.full_name} to expenses.`
                                                                 });
@@ -888,8 +888,8 @@ export default function ProjectDetails() {
 
                                                                     apiActivities.log({
                                                                         project_id: project.id,
-                                                                        user_id: 'admin',
-                                                                        user_name: 'Admin User',
+                                                                        user_id: user?.id || 'admin',
+                                                                        user_name: user?.user_metadata?.full_name || 'Admin User',
                                                                         action: 'update',
                                                                         details: `Reverted and reset commission export for ${project.affiliate?.full_name}. Expense deleted.`
                                                                     });
@@ -930,8 +930,8 @@ export default function ProjectDetails() {
                                                     .then(() => {
                                                         apiActivities.log({
                                                             project_id: project.id,
-                                                            user_id: 'admin',
-                                                            user_name: 'Admin User',
+                                                            user_id: user?.id || 'admin',
+                                                            user_name: user?.user_metadata?.full_name || 'Admin User',
                                                             action: 'update',
                                                             details: `Updated Sale Price to $${val}`
                                                         });
@@ -1075,8 +1075,8 @@ export default function ProjectDetails() {
 
                                                         apiActivities.log({
                                                             project_id: project.id,
-                                                            user_id: 'admin',
-                                                            user_name: 'Admin User',
+                                                            user_id: user?.id || 'admin',
+                                                            user_name: user?.user_metadata?.full_name || 'Admin User',
                                                             action: 'update',
                                                             details: `Exported $${totalCost.toLocaleString()} to global expenses`
                                                         });

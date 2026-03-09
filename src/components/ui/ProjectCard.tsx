@@ -12,7 +12,7 @@ interface ProjectCardProps {
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
     const { role } = useAuth()
     const isRush = project.priority === 'rush'
-    const hasNoMfgCost = role === 'admin' && Number(project.financials?.supplier_cost || 0) === 0
+    const hasNoMfgCost = (role === 'admin' || role === 'secretary') && Number(project.financials?.supplier_cost || 0) === 0
 
     return (
         <Card
@@ -69,7 +69,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                 <StatusBadge status={project.status} />
 
                 {/* Admin tags row */}
-                {role === 'admin' && (project.affiliate?.full_name || project.manufacturer?.full_name || isRush || hasNoMfgCost) && (
+                {(role === 'admin' || role === 'secretary') && (project.affiliate?.full_name || project.manufacturer?.full_name || isRush || hasNoMfgCost) && (
                     <div className="flex flex-wrap gap-1.5 pt-0.5">
                         {isRush && (
                             <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-white bg-red-600 px-2 py-0.5 rounded-full">

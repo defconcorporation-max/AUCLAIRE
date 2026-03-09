@@ -251,8 +251,8 @@ export default function Dashboard() {
                 )}
             </div>
 
-            {/* MANUFACTURER DASHBOARD */}
-            {role === 'manufacturer' && (
+            {/* MANUFACTURER DASHBOARD (Show to Manufacturer, Secretary, or Admin) */}
+            {(role === 'manufacturer' || role === 'secretary' || role === 'admin') && (
                 <div className="grid gap-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* KPI 1: Design Ready */}
@@ -327,6 +327,12 @@ export default function Dashboard() {
                                                     </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Status: <span className="capitalize">{project.status.replace('_', ' ')}</span>
+                                                        {(role === 'admin' || role === 'secretary') && (
+                                                            <>
+                                                                {project.affiliate && ` • Amb: ${project.affiliate.full_name}`}
+                                                                {project.manufacturer && ` • Mfg: ${project.manufacturer.full_name}`}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-wrap">
@@ -367,6 +373,12 @@ export default function Dashboard() {
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Pending Production
                                                         {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
+                                                        {(role === 'admin' || role === 'secretary') && (
+                                                            <>
+                                                                {project.affiliate && ` • Amb: ${project.affiliate.full_name}`}
+                                                                {project.manufacturer && ` • Mfg: ${project.manufacturer.full_name}`}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -420,6 +432,12 @@ export default function Dashboard() {
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Production Started
                                                         {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
+                                                        {(role === 'admin' || role === 'secretary') && (
+                                                            <>
+                                                                {project.affiliate && ` • Amb: ${project.affiliate.full_name}`}
+                                                                {project.manufacturer && ` • Mfg: ${project.manufacturer.full_name}`}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -472,6 +490,12 @@ export default function Dashboard() {
                                                     </div>
                                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Shipment Pending
+                                                        {(role === 'admin' || role === 'secretary') && (
+                                                            <>
+                                                                {project.affiliate && ` • Amb: ${project.affiliate.full_name}`}
+                                                                {project.manufacturer && ` • Mfg: ${project.manufacturer.full_name}`}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
 
