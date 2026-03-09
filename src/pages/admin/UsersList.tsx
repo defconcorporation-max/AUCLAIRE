@@ -1,14 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Shield, Briefcase, UserCircle, Clock, Trash2 } from 'lucide-react';
+import { User, Shield, Briefcase, UserCircle, Clock, Trash2, KeyRound } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export default function UsersList() {
     const { profile: currentProfile } = useAuth();
     const queryClient = useQueryClient();
+
+    const [passwordModalUserId, setPasswordModalUserId] = useState<string | null>(null);
+    const [passwordModalUserName, setPasswordModalUserName] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
     const { data: users, isLoading } = useQuery({
         queryKey: ['users'],
@@ -151,6 +166,17 @@ export default function UsersList() {
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-2 h-7 text-xs w-full mt-1 border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-black"
+                                        onClick={() => {
+                                            setPasswordModalUserId(user.id);
+                                            setPasswordModalUserName(user.full_name || 'Unnamed User');
+                                        }}
+                                    >
+                                        <KeyRound className="w-3 h-3" /> Reset Password
+                                    </Button>
                                 </div>
                             </div>
                         ))}
@@ -161,6 +187,58 @@ export default function UsersList() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Password Reset Modal */}
+            <Dialog
+                open={!!passwordModalUserId}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPasswordModalUserId(null);
+                        setNewPassword('');
+                    }
+                }}
+            >
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
+                            Enter a new password for {passwordModalUserName}. They will be able to log in immediately with this new password.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Input
+                                id="new_password"
+                                type="text"
+                                placeholder="Enter new password (min 6 chars)..."
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            disabled={newPassword.length < 6 || isUpdatingPassword}
+                            onClick={async () => {
+                                if (!passwordModalUserId) return;
+                                setIsUpdatingPassword(true);
+                                try {
+                                    await apiUsers.adminUpdatePassword(passwordModalUserId, newPassword);
+                                    alert("Password updated successfully!");
+                                    setPasswordModalUserId(null);
+                                    setNewPassword('');
+                                } catch (err: any) {
+                                    alert("Failed to update password. Did you run the Supabase RPC script? Error: " + err.message);
+                                } finally {
+                                    setIsUpdatingPassword(false);
+                                }
+                            }}
+                        >
+                            {isUpdatingPassword ? 'Saving...' : 'Save Password'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

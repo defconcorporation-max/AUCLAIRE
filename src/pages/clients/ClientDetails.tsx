@@ -5,11 +5,29 @@ import { apiClients } from '@/services/apiClients';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, KeyRound } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { apiUsers } from '@/services/apiUsers';
 
 export default function ClientDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { role } = useAuth();
+
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
     const { data: clients } = useQuery({
         queryKey: ['clients'],
@@ -32,7 +50,56 @@ export default function ClientDetails() {
                         <span className="uppercase text-[10px] tracking-[0.2em] font-medium">Client Profile</span>
                     </div>
                 </div>
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-3">
+                    {role === 'admin' && (
+                        <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-2 border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black">
+                                    <KeyRound className="w-4 h-4" /> Reset Password
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>Reset Client Password</DialogTitle>
+                                    <DialogDescription>
+                                        Enter a new password for {client.full_name}. They will be able to log in immediately with this new password.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="space-y-2">
+                                        <Input
+                                            id="new_password"
+                                            type="text"
+                                            placeholder="Enter new password (min 6 chars)..."
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button
+                                        disabled={newPassword.length < 6 || isUpdatingPassword}
+                                        onClick={async () => {
+                                            if (!id) return;
+                                            setIsUpdatingPassword(true);
+                                            try {
+                                                await apiUsers.adminUpdatePassword(id, newPassword);
+                                                alert("Password updated successfully!");
+                                                setIsPasswordModalOpen(false);
+                                                setNewPassword('');
+                                            } catch (err: any) {
+                                                alert("Failed to update password. Did you run the Supabase RPC script? Error: " + err.message);
+                                            } finally {
+                                                setIsUpdatingPassword(false);
+                                            }
+                                        }}
+                                    >
+                                        {isUpdatingPassword ? 'Saving...' : 'Save Password'}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
                     <Badge variant="outline" className={`border-luxury-gold/50 tracking-widest uppercase text-[10px] ${client.status === 'active' ? 'bg-luxury-gold/10 text-luxury-gold' : 'text-gray-500 dark:text-gray-400 border-black/10 dark:border-white/10'}`}>
                         {client.status}
                     </Badge>

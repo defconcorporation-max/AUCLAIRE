@@ -59,5 +59,19 @@ export const apiUsers = {
             .eq('id', id);
 
         if (error) throw error;
+    },
+
+    async adminUpdatePassword(userId: string, newPassword: string) {
+        const { data, error } = await supabase.rpc('admin_update_user_password', {
+            target_user_id: userId,
+            new_password: newPassword
+        });
+
+        if (error) {
+            console.error("Admin Password Update Error:", error);
+            throw error;
+        }
+
+        return data; // Usually returns true on success
     }
 };
