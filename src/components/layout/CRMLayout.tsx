@@ -24,20 +24,20 @@ import { useTheme } from '@/components/ThemeProvider'
 import { Sun, Moon } from 'lucide-react'
 
 const navItems = [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate'] },
-    { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin'] },
-    { label: 'Leads & CRM', href: '/dashboard/leads', icon: PhoneCall, roles: ['admin', 'affiliate'] },
-    { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'client', 'affiliate'] },
-    { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate'] },
-    { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate'] },
-    { label: 'Expenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin'] },
-    { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin'] },
+    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+    { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'secretary'] },
+    { label: 'Leads & CRM', href: '/dashboard/leads', icon: PhoneCall, roles: ['admin', 'affiliate', 'secretary'] },
+    { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'client', 'affiliate', 'secretary'] },
+    { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate', 'secretary'] },
+    { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate', 'secretary'] },
+    { label: 'Expenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin', 'secretary'] },
+    { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin', 'secretary'] },
     { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin'] },
     // Link back to the CAD tool
-    { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate'] },
-    { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate'] },
+    { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+    { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'QCM Academy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
-    { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin'] },
+    { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'secretary'] },
 ]
 
 const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: any, profile: any, signOut: any, setIsMobileOpen: (v: boolean) => void }) => (

@@ -147,7 +147,7 @@ export default function InvoicesList() {
                                         Print PDF
                                     </Button>
                                     {/* Admin Actions: Edit Link & Mark Paid & Delete */}
-                                    {role === 'admin' && (
+                                    {(role === 'admin' || role === 'secretary') && (
                                         <>
                                             {invoice.status !== 'paid' && (
                                                 <>

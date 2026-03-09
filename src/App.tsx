@@ -86,28 +86,28 @@ function App() {
                 </CRMLayout>
               </ProtectedRoute>
             }>
-              <Route index element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><Dashboard /></ProtectedRoute>} />
-              <Route path="analytics" element={<ProtectedRoute allowedRoles={['admin']}><AnalyticsDashboard /></ProtectedRoute>} />
-              <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><ProjectsList /></ProtectedRoute>} />
-              <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate']}><CreateProject /></ProtectedRoute>} />
-              <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><ProjectDetails /></ProtectedRoute>} />
-              <Route path="leads" element={<ProtectedRoute allowedRoles={['admin', 'affiliate']}><LeadsDashboard /></ProtectedRoute>} />
-              <Route path="leads/:id" element={<ProtectedRoute allowedRoles={['admin', 'affiliate']}><LeadDetails /></ProtectedRoute>} />
-              <Route path="clients" element={<ProtectedRoute allowedRoles={['admin', 'affiliate']}><ClientsList /></ProtectedRoute>} />
-              <Route path="clients/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate']}><CreateClient /></ProtectedRoute>} />
-              <Route path="clients/:id" element={<ProtectedRoute allowedRoles={['admin', 'affiliate']}><ClientDetails /></ProtectedRoute>} />
-              <Route path="invoices" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'accounting']}><InvoicesList /></ProtectedRoute>} />
-              <Route path="invoices/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate']}><CreateInvoice /></ProtectedRoute>} />
-              <Route path="finance/expenses" element={<ProtectedRoute allowedRoles={['admin']}><ExpensesList /></ProtectedRoute>} />
-              <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin']}><AffiliatesList /></ProtectedRoute>} />
-              <Route path="settings" element={<ProtectedRoute allowedRoles={['admin']}><Settings /></ProtectedRoute>} />
+              <Route index element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><Dashboard /></ProtectedRoute>} />
+              <Route path="analytics" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AnalyticsDashboard /></ProtectedRoute>} />
+              <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ProjectsList /></ProtectedRoute>} />
+              <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><CreateProject /></ProtectedRoute>} />
+              <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ProjectDetails /></ProtectedRoute>} />
+              <Route path="leads" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><LeadsDashboard /></ProtectedRoute>} />
+              <Route path="leads/:id" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><LeadDetails /></ProtectedRoute>} />
+              <Route path="clients" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><ClientsList /></ProtectedRoute>} />
+              <Route path="clients/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><CreateClient /></ProtectedRoute>} />
+              <Route path="clients/:id" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><ClientDetails /></ProtectedRoute>} />
+              <Route path="invoices" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'accounting', 'secretary']}><InvoicesList /></ProtectedRoute>} />
+              <Route path="invoices/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><CreateInvoice /></ProtectedRoute>} />
+              <Route path="finance/expenses" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><ExpensesList /></ProtectedRoute>} />
+              <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliatesList /></ProtectedRoute>} />
+              <Route path="settings" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><Settings /></ProtectedRoute>} />
               <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersList /></ProtectedRoute>} />
               <Route path="qcm" element={<ProtectedRoute allowedRoles={['admin']}><AdminQcmResults /></ProtectedRoute>} />
-              <Route path="studio" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><Studio /></ProtectedRoute>} />
-              <Route path="resources" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><ResourcesHub /></ProtectedRoute>} />
-              <Route path="resources/sales-process" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate']}><SalesProcess /></ProtectedRoute>} />
+              <Route path="studio" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><Studio /></ProtectedRoute>} />
+              <Route path="resources" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ResourcesHub /></ProtectedRoute>} />
+              <Route path="resources/sales-process" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><SalesProcess /></ProtectedRoute>} />
 
-              <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin']}><AffiliateDetails /></ProtectedRoute>} />
+              <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliateDetails /></ProtectedRoute>} />
 
               {/* Debugging */}
               <Route path="debug" element={<DebugPage />} />

@@ -9,7 +9,7 @@ import { User, X } from "lucide-react";
 export function RoleSwitcher() {
     const { role, switchRole, user, signInAsDev, impersonate, stopImpersonating, impersonatedProfile } = useAuth() as any;
 
-    const roles: UserRole[] = ['admin', 'manufacturer', 'client', 'affiliate'];
+    const roles: UserRole[] = ['admin', 'manufacturer', 'client', 'affiliate', 'secretary'];
     const showUserPicker = role === 'manufacturer' || role === 'affiliate';
 
     const { data: users = [] } = useQuery({
@@ -77,8 +77,8 @@ export function RoleSwitcher() {
                                     key={u.id}
                                     onClick={() => impersonate(u)}
                                     className={`text-left text-xs px-2.5 py-1.5 rounded-lg transition-colors duration-150 ${impersonatedProfile?.id === u.id
-                                            ? 'bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30'
-                                            : 'text-white/70 hover:bg-white/5 hover:text-white border border-transparent'
+                                        ? 'bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30'
+                                        : 'text-white/70 hover:bg-white/5 hover:text-white border border-transparent'
                                         }`}
                                 >
                                     <span className="font-medium">{u.full_name}</span>

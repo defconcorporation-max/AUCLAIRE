@@ -63,7 +63,7 @@ export default function Dashboard() {
     }
 
     const filteredProjects = projects?.filter(p => {
-        if (role === 'admin') return true;
+        if (role === 'admin' || role === 'secretary') return true;
         if (role === 'manufacturer') return (p as any).manufacturer_id === profile?.id;
         if (role === 'affiliate') {
             return p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
@@ -75,7 +75,7 @@ export default function Dashboard() {
     const filteredInvoices = invoices?.filter(i => projectIds.has(i.project_id)) || [];
 
     // Expenses are usually admin-only, but let's be safe
-    const filteredExpenses = role === 'admin' ? expenses : [];
+    const filteredExpenses = (role === 'admin' || role === 'secretary') ? expenses : [];
 
     const sortByRush = (a: any, b: any) => {
         if (a.priority === 'rush' && b.priority !== 'rush') return -1;
@@ -244,7 +244,7 @@ export default function Dashboard() {
                     <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">Welcome back, <span className="text-luxury-gold italic">{profile?.full_name?.split(' ')[0]}</span></h1>
                     <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Here is what needs your attention today.</p>
                 </div>
-                {role === 'admin' && (
+                {(role === 'admin' || role === 'secretary') && (
                     <Button asChild className="bg-luxury-gold text-black hover:bg-luxury-gold/90">
                         <Link to="/dashboard/projects/new">New Project</Link>
                     </Button>
@@ -491,7 +491,7 @@ export default function Dashboard() {
             )}
 
             {/* ADMIN DASHBOARD - CONTROL CENTER */}
-            {role === 'admin' && (
+            {(role === 'admin' || role === 'secretary') && (
                 <div className="grid gap-6">
                     {/* Financial Macros */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

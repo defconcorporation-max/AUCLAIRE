@@ -98,6 +98,8 @@ export default function ProjectDetails() {
     const [isEditingManufacturer, setIsEditingManufacturer] = useState(false);
     const [selectedManufacturerId, setSelectedManufacturerId] = useState('');
     const [uploadError, setUploadError] = useState('');
+    const [localPriority, setLocalPriority] = useState<string | null>(null);
+    const [localStatus, setLocalStatus] = useState<string | null>(null);
     const [isSharing, setIsSharing] = useState(false);
 
     const handleShareProject = async () => {
@@ -280,13 +282,13 @@ export default function ProjectDetails() {
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     </Button>
                     <div className="flex items-center gap-4 flex-wrap">
-                        {role === 'admin' && (
+                        {(role === 'admin' || role === 'secretary') && (
                             <Button variant="outline" size="sm" onClick={handleShareProject} disabled={isSharing} className="gap-2 text-luxury-gold border-luxury-gold/30 hover:bg-luxury-gold hover:text-black transition-colors">
                                 <Send className="w-4 h-4" />
                                 {isSharing ? "Copying..." : "Share Link"}
                             </Button>
                         )}
-                        {(role === 'admin' || role === 'affiliate') && (
+                        {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
                             <Button variant="outline" size="sm" onClick={() => setIsEditingClient(true)} className="gap-2 border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10">
                                 <Pencil className="w-4 h-4" />
                                 Edit Client
@@ -301,7 +303,7 @@ export default function ProjectDetails() {
                             {!isEditingClient ? (
                                 <div className="flex items-center gap-2">
                                     <span>Client: {project.client?.full_name}</span>
-                                    {(role === 'admin' || role === 'affiliate') && (
+                                    {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
                                         <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
                                             setSelectedClientId(project.client_id);
                                             setIsEditingClient(true);
@@ -346,7 +348,7 @@ export default function ProjectDetails() {
                         </div>
                     </div>
                 </div>
-                {role === 'admin' && (
+                {(role === 'admin' || role === 'secretary') && (
                     <Button variant="ghost" size="icon" className="absolute right-0 top-0 text-red-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" onClick={async () => {
                         if (confirm("DELETE PROJECT? This action cannot be undone.")) {
                             await apiProjects.delete(project.id);
@@ -380,10 +382,11 @@ export default function ProjectDetails() {
                 <div className="flex items-center gap-3">
                     <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Priority:</span>
                     <select
-                        className={`h-8 px-2 rounded-md border border-input font-medium text-sm capitalize ${project.priority === 'rush' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-background'}`}
-                        value={project.priority || 'normal'}
+                        className={`h-8 px-2 rounded-md border border-input font-medium text-sm capitalize ${(localPriority || project.priority) === 'rush' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-background'}`}
+                        value={localPriority || project.priority || 'normal'}
                         onChange={(e) => {
                             const newPriority = e.target.value as 'normal' | 'rush';
+                            setLocalPriority(newPriority);
                             apiProjects.update(project.id, { priority: newPriority })
                                 .then(() => {
                                     apiActivities.log({
@@ -393,11 +396,15 @@ export default function ProjectDetails() {
                                         action: 'update',
                                         details: `Changed priority to ${newPriority.toUpperCase()}`
                                     });
-                                    queryClient.invalidateQueries({ queryKey: ['projects', 'activities'] });
+                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                    queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                                 })
-                                .catch(err => alert(err.message));
+                                .catch(err => {
+                                    alert(err.message);
+                                    setLocalPriority(null);
+                                });
                         }}
-                        disabled={role === 'client' || role === 'affiliate' || role === 'manufacturer'}
+                        disabled={role === 'client' || role === 'affiliate' || role === 'manufacturer'} // Secretary can update priority
                     >
                         <option value="normal">Normal</option>
                         <option value="rush">Rush 🚨</option>
@@ -407,9 +414,10 @@ export default function ProjectDetails() {
                     <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Status:</span>
                     <select
                         className="h-8 px-2 rounded-md border border-input bg-background font-medium text-sm capitalize"
-                        value={project.status}
+                        value={localStatus || project.status}
                         onChange={(e) => {
                             const newStatus = e.target.value as ProjectStatus;
+                            setLocalStatus(newStatus);
                             handleStatusUpdate(newStatus);
                             apiActivities.log({
                                 project_id: project.id,
@@ -417,6 +425,9 @@ export default function ProjectDetails() {
                                 user_name: user?.user_metadata?.full_name || 'Admin',
                                 action: 'status_change',
                                 details: `Changed status from ${project.status.replace('_', ' ')} to ${newStatus.replace('_', ' ')}`
+                            }).then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                             });
                         }}
                         disabled={role === 'client'} // Clients shouldn't manually update status
@@ -436,7 +447,7 @@ export default function ProjectDetails() {
 
             {/* Approval Banners */}
             {
-                project.status === 'design_ready' && role === 'admin' && (
+                project.status === 'design_ready' && (role === 'admin' || role === 'secretary') && (
                     <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4 rounded-lg flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-full">
@@ -479,7 +490,7 @@ export default function ProjectDetails() {
             }
 
             {
-                project.status === 'approved_for_production' && role === 'admin' && (
+                project.status === 'approved_for_production' && (role === 'admin' || role === 'secretary') && (
                     <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4 rounded-lg flex items-center gap-3">
                         <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
                             <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -631,7 +642,7 @@ export default function ProjectDetails() {
                                     {!isEditingAffiliate ? (
                                         <div className="flex items-center gap-2">
                                             <span className="font-medium">{project.affiliate?.full_name || 'None'}</span>
-                                            {(role === 'admin') && (
+                                            {(role === 'admin' || role === 'secretary') && (
                                                 <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => {
                                                     setSelectedAffiliateId(project.affiliate_id || '');
                                                     setIsEditingAffiliate(true);
@@ -695,7 +706,7 @@ export default function ProjectDetails() {
                                     )}
                                 </div>
                                 {/* Manufacturer Assignment */}
-                                {role === 'admin' && (
+                                {(role === 'admin' || role === 'secretary') && (
                                     <div className="flex items-center justify-between border-b pb-2">
                                         <span className="text-sm text-muted-foreground flex items-center gap-2">
                                             <Factory className="w-3 h-3" /> Manufacturer
@@ -952,7 +963,8 @@ export default function ProjectDetails() {
                                                                 action: 'update',
                                                                 details: `Updated Paid Amount to $${val.toLocaleString()}`
                                                             });
-                                                            queryClient.invalidateQueries({ queryKey: ['projects', 'activities'] });
+                                                            queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                            queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                                                         });
                                                 }
                                             }}
@@ -982,7 +994,7 @@ export default function ProjectDetails() {
                         </div>
 
                         {/* Admin Financials - Strictly for Admin */}
-                        {role === 'admin' && (
+                        {(role === 'admin' || role === 'secretary') && (
                             <div className="bg-zinc-50 dark:bg-zinc-900 p-3 rounded-md space-y-2">
                                 <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
                                     <Shield className="w-3 h-3" /> Admin Financials
@@ -1351,7 +1363,7 @@ export default function ProjectDetails() {
                                     </div>
 
                                     {/* Supplier Cost Input */}
-                                    {(role === 'manufacturer' || role === 'admin') && (
+                                    {(role === 'manufacturer' || role === 'admin' || role === 'secretary') && (
                                         <div className="space-y-2 border-t pt-4">
                                             <label className="text-sm font-medium flex items-center gap-2 text-amber-600"><DollarSign className="w-3 h-3" /> Manufacturing Cost (Internal)</label>
                                             <input
@@ -1369,7 +1381,8 @@ export default function ProjectDetails() {
                                                             action: 'update',
                                                             details: `Updated internal manufacturing cost to $${val.toLocaleString()}`
                                                         });
-                                                        queryClient.invalidateQueries({ queryKey: ['projects', 'activities'] });
+                                                        queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                        queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                                                     });
                                                 }}
                                                 readOnly={project.status === 'design_ready'}
@@ -1470,6 +1483,6 @@ export default function ProjectDetails() {
                 onClose={() => setPreviewImage(null)}
                 imageUrl={previewImage}
             />
-        </div >
+        </div>
     );
 }

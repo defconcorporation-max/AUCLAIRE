@@ -24,7 +24,7 @@ export default function ProjectsList() {
     const { data: users = [] } = useQuery({
         queryKey: ['users'],
         queryFn: apiUsers.getAll,
-        enabled: role === 'admin'
+        enabled: role === 'admin' || role === 'secretary'
     })
 
     const affiliates = (users as any[]).filter(u => u.role === 'affiliate' || u.role === 'admin')
@@ -35,7 +35,7 @@ export default function ProjectsList() {
 
     // Role-based base filter
     const baseProjects = allProjects?.filter(p => {
-        if (role === 'admin') return true;
+        if (role === 'admin' || role === 'secretary') return true;
         if (role === 'manufacturer') return (p as any).manufacturer_id === profile?.id;
         if (role === 'affiliate') {
             return p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
@@ -43,8 +43,8 @@ export default function ProjectsList() {
         return false;
     }) || []
 
-    // Admin-only secondary filters
-    const projects = role === 'admin' ? baseProjects.filter(p => {
+    // Admin/Secretary secondary filters
+    const projects = (role === 'admin' || role === 'secretary') ? baseProjects.filter(p => {
         if (filterAffiliate && p.affiliate_id !== filterAffiliate) return false;
         if (filterManufacturer && (p as any).manufacturer_id !== filterManufacturer) return false;
         return true;
@@ -150,8 +150,8 @@ export default function ProjectsList() {
                 </div>
             </div>
 
-            {/* Filters — admin only */}
-            {role === 'admin' && (
+            {/* Filters — admin/secretary */}
+            {(role === 'admin' || role === 'secretary') && (
                 <div className="flex flex-wrap items-center gap-3 p-3 bg-black/20 border border-white/10 rounded-xl">
                     <Filter className="w-4 h-4 text-gray-400 shrink-0" />
                     <div className="flex flex-wrap gap-3 flex-1">
@@ -225,7 +225,7 @@ export default function ProjectsList() {
                                                 <h3 className="font-semibold text-[10px] text-luxury-gold uppercase tracking-[0.2em] mb-1">
                                                     {status.replace(/_/g, ' ')}
                                                 </h3>
-                                                {role === 'admin' && (
+                                                {(role === 'admin' || role === 'secretary') && (
                                                     <p className="text-sm font-serif text-white/90">
                                                         {columnTotal > 0 ? `$${columnTotal.toLocaleString()}` : '-'}
                                                     </p>
