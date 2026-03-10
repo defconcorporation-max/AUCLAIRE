@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiProjects, ProjectStatus, Project } from '@/services/apiProjects'
 import { apiUsers } from '@/services/apiUsers'
+import { apiActivities } from '@/services/apiActivities'
 import { ProjectCard } from '@/components/ui/ProjectCard'
 import { Button } from '@/components/ui/button'
 import { Plus, LayoutGrid, List as ListIcon, Loader2, Filter, X } from 'lucide-react'
@@ -99,6 +100,8 @@ export default function ProjectsList() {
 
         const newStatus = destination.droppableId as ProjectStatus
 
+        const projectToUpdate = projects?.find((p) => p.id === draggableId)
+
         // Optimistic update
         queryClient.setQueryData(['projects'], (old: Project[] | undefined) => {
             if (!old) return []
@@ -106,6 +109,18 @@ export default function ProjectsList() {
         })
 
         updateStatusMutation.mutate({ id: draggableId, status: newStatus })
+
+        if (projectToUpdate && projectToUpdate.status !== newStatus) {
+            apiActivities.log({
+                project_id: draggableId,
+                user_id: profile?.id || 'admin',
+                user_name: profile?.user_metadata?.full_name || 'Admin',
+                action: 'status_change',
+                details: `Changed status from ${projectToUpdate.status.replace('_', ' ')} to ${newStatus.replace('_', ' ')} via Kanban`
+            }).then(() => {
+                queryClient.invalidateQueries({ queryKey: ['activities', draggableId] });
+            })
+        }
     }
 
     if (isLoading) return (

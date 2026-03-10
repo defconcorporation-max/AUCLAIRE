@@ -48,6 +48,7 @@ export interface Project {
         supplier_cost?: number; // Cost from manufacturer
         shipping_cost?: number; // Shipping to client
         customs_fee?: number;   // Import duties
+        additional_expense?: number; // Extra supplementary costs added after main expenses
         selling_price?: number; // Usually same as budget, but tracked separately
         paid_amount?: number;   // Total amount paid by client
         exported_to_expenses?: boolean; // Flag to skip double-counting in dashboard

@@ -204,12 +204,9 @@ export default function ProjectDetails() {
 
     // Helper to check active status for timeline
     const isStepActive = (stepStatus: string) => {
-        const statuses = ['designing', 'design_ready', 'design_modification', '3d_model', 'production', 'delivery', 'completed'];
-        const currentIndex = statuses.indexOf(project.status === 'design_ready' || project.status === 'design_modification' ? '3d_model' : project.status);
+        const statuses = ['designing', '3d_model', 'design_ready', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed'];
+        const currentIndex = statuses.indexOf(project.status);
         const stepIndex = statuses.indexOf(stepStatus);
-
-        // Custom logic for parallel/looping design states
-        if (stepStatus === '3d_model' && (project.status === 'design_ready' || project.status === 'design_modification')) return true;
 
         return currentIndex >= stepIndex;
     };
@@ -239,6 +236,15 @@ export default function ProjectDetails() {
                     action: 'update',
                     details: 'Added a new sketch/reference image'
                 });
+                if (project.client_id) {
+                    apiNotifications.create({
+                        user_id: 'admin',
+                        title: 'New Sketch Uploaded',
+                        message: `A new sketch has been added to "${project.title}".`,
+                        type: 'info',
+                        link: `/dashboard/projects/${project.id}`
+                    });
+                }
                 setIsAddingSketch(false);
             } else {
                 const current = project.stage_details?.design_files || [];
@@ -254,6 +260,15 @@ export default function ProjectDetails() {
                 if (project.client_id && project.status === 'design_ready') {
                     apiNotifications.create({
                         user_id: project.client_id,
+                        title: 'New 3D Render Uploaded',
+                        message: `A new 3D rendering has been added to "${project.title}".`,
+                        type: 'info',
+                        link: `/dashboard/projects/${project.id}`
+                    });
+                }
+                if (project.client_id) {
+                    apiNotifications.create({
+                        user_id: 'admin',
                         title: 'New 3D Render Uploaded',
                         message: `A new 3D rendering has been added to "${project.title}".`,
                         type: 'info',
@@ -605,10 +620,14 @@ export default function ProjectDetails() {
                                     {/* Mock Timeline Visual */}
                                     <div className="relative border-l border-zinc-200 dark:border-zinc-800 ml-4 space-y-8 pb-4">
                                         {[
-                                            { status: 'designing', label: 'Initial Design', date: project.created_at, active: true },
-                                            { status: '3d_model', label: '3D Modeling', date: 'In Progress', active: isStepActive('3d_model') },
-                                            { status: 'production', label: 'Production', date: 'TBD', active: ['production', 'delivery', 'completed'].includes(project.status) },
-                                            { status: 'delivery', label: 'Final QC & Delivery', date: project.deadline, active: ['delivery', 'completed'].includes(project.status) },
+                                            { status: 'designing', label: 'Initial Design', date: project.created_at, active: isStepActive('designing') },
+                                            { status: '3d_model', label: '3D Modeling', date: 'TBD', active: isStepActive('3d_model') },
+                                            { status: 'design_ready', label: 'Design Ready (Review)', date: 'TBD', active: isStepActive('design_ready') },
+                                            { status: 'design_modification', label: 'Modifications Requested', date: 'TBD', active: isStepActive('design_modification') },
+                                            { status: 'approved_for_production', label: 'Approved (Pending Prod)', date: 'TBD', active: isStepActive('approved_for_production') },
+                                            { status: 'production', label: 'Production', date: 'TBD', active: isStepActive('production') },
+                                            { status: 'delivery', label: 'Final QC & Delivery', date: project.deadline, active: isStepActive('delivery') },
+                                            { status: 'completed', label: 'Completed', date: 'TBD', active: isStepActive('completed') },
                                         ].map((step, i) => (
                                             <div key={i} className="relative pl-6 group cursor-pointer" onClick={() => handleStatusUpdate(step.status as ProjectStatus)}>
                                                 <div className={`absolute -left-1.5 w-3 h-3 rounded-full border-2 transition-colors ${step.active ? 'bg-luxury-gold border-luxury-gold' : 'bg-background border-zinc-300 group-hover:border-luxury-gold'}`} />
@@ -1006,6 +1025,13 @@ export default function ProjectDetails() {
                                     <div>Shipping/Customs:</div>
                                     <div className="font-mono text-right text-red-500">-${(project.financials?.shipping_cost || 0) + (project.financials?.customs_fee || 0)}</div>
 
+                                    {project.financials?.additional_expense ? (
+                                        <>
+                                            <div>Additional Expense:</div>
+                                            <div className="font-mono text-right text-red-500">-${project.financials.additional_expense}</div>
+                                        </>
+                                    ) : null}
+
                                     {/* Commission Display */}
                                     {project.affiliate_id && (
                                         <>
@@ -1024,7 +1050,7 @@ export default function ProjectDetails() {
                                     <div className={`border-t pt-1 font-mono text-right font-bold ${(() => {
                                         const salePrice = Number(project.financials?.selling_price || project.budget || 0);
                                         const comm = project.affiliate_id ? (project.affiliate_commission_type === 'fixed' ? Number(project.affiliate_commission_rate || 0) : (salePrice * (Number(project.affiliate_commission_rate) || 0) / 100)) : 0;
-                                        return salePrice - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0) - comm > 0 ? 'text-green-600' : 'text-red-600';
+                                        return salePrice - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0) - (project.financials?.additional_expense || 0) - comm > 0 ? 'text-green-600' : 'text-red-600';
                                     })()}`}>
                                         ${(() => {
                                             const salePrice = Number(project.financials?.selling_price || project.budget || 0);
@@ -1033,6 +1059,7 @@ export default function ProjectDetails() {
                                                 (project.financials?.supplier_cost || 0) -
                                                 (project.financials?.shipping_cost || 0) -
                                                 (project.financials?.customs_fee || 0) -
+                                                (project.financials?.additional_expense || 0) -
                                                 comm
                                             ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                         })()}
@@ -1168,7 +1195,17 @@ export default function ProjectDetails() {
                                                             const current = project.stage_details?.sketch_files || [];
                                                             const newFiles = current.filter((_, idx) => idx !== i);
                                                             apiProjects.updateDetails(project.id, { sketch_files: newFiles })
-                                                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }));
+                                                                .then(() => {
+                                                                    apiActivities.log({
+                                                                        project_id: project.id,
+                                                                        user_id: user?.id || 'admin',
+                                                                        user_name: user?.user_metadata?.full_name || 'User',
+                                                                        action: 'delete',
+                                                                        details: 'Deleted a sketch/reference image'
+                                                                    });
+                                                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                                    queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
+                                                                });
                                                         }}
                                                     >
                                                         <XCircle className="w-4 h-4" />
@@ -1322,7 +1359,17 @@ export default function ProjectDetails() {
                                                                 const current = project.stage_details?.design_files || [];
                                                                 const newFiles = current.filter((_, idx) => idx !== i);
                                                                 apiProjects.updateDetails(project.id, { design_files: newFiles })
-                                                                    .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }));
+                                                                    .then(() => {
+                                                                        apiActivities.log({
+                                                                            project_id: project.id,
+                                                                            user_id: user?.id || 'admin',
+                                                                            user_name: user?.user_metadata?.full_name || 'User',
+                                                                            action: 'delete',
+                                                                            details: 'Deleted a 3D rendering image'
+                                                                        });
+                                                                        queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                                        queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
+                                                                    });
                                                             }}
                                                         >
                                                             <XCircle className="w-4 h-4" />
@@ -1364,30 +1411,59 @@ export default function ProjectDetails() {
 
                                     {/* Supplier Cost Input */}
                                     {(role === 'manufacturer' || role === 'admin' || role === 'secretary') && (
-                                        <div className="space-y-2 border-t pt-4">
-                                            <label className="text-sm font-medium flex items-center gap-2 text-amber-600"><DollarSign className="w-3 h-3" /> Manufacturing Cost (Internal)</label>
-                                            <input
-                                                type="number"
-                                                className="flex h-10 w-full rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-sm"
-                                                placeholder="0.00"
-                                                defaultValue={project.financials?.supplier_cost}
-                                                onBlur={(e) => {
-                                                    const val = parseFloat(e.target.value);
-                                                    apiProjects.updateFinancials(project.id, { supplier_cost: val }).then(() => {
-                                                        apiActivities.log({
-                                                            project_id: project.id,
-                                                            user_id: user?.id || 'admin',
-                                                            user_name: user?.user_metadata?.full_name || 'Admin',
-                                                            action: 'update',
-                                                            details: `Updated internal manufacturing cost to $${val.toLocaleString()}`
+                                        <div className="space-y-4 border-t pt-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium flex items-center gap-2 text-amber-600"><DollarSign className="w-3 h-3" /> Manufacturing Cost (Internal)</label>
+                                                <input
+                                                    type="number"
+                                                    className={`flex h-10 w-full rounded-md border ${project.financials?.exported_to_expenses ? 'border-zinc-200 bg-zinc-100 dark:bg-zinc-900 cursor-not-allowed opacity-75' : 'border-amber-200 bg-amber-50 dark:bg-amber-950/20'} px-3 py-2 text-sm`}
+                                                    placeholder="0.00"
+                                                    defaultValue={project.financials?.supplier_cost}
+                                                    onBlur={(e) => {
+                                                        const val = parseFloat(e.target.value);
+                                                        if (project.financials?.exported_to_expenses) return; // Prevent saving if locked
+                                                        apiProjects.updateFinancials(project.id, { supplier_cost: val }).then(() => {
+                                                            apiActivities.log({
+                                                                project_id: project.id,
+                                                                user_id: user?.id || 'admin',
+                                                                user_name: user?.user_metadata?.full_name || 'Admin',
+                                                                action: 'update',
+                                                                details: `Updated internal manufacturing cost to $${val.toLocaleString()}`
+                                                            });
+                                                            queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                            queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                                                         });
-                                                        queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                        queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
-                                                    });
-                                                }}
-                                                readOnly={project.status === 'design_ready'}
-                                            />
-                                            <p className="text-[10px] text-muted-foreground">Estimate production cost at this stage.</p>
+                                                    }}
+                                                    readOnly={!!project.financials?.exported_to_expenses} // Locked when exported
+                                                />
+                                                <p className="text-[10px] text-muted-foreground">{project.financials?.exported_to_expenses ? "Cost locked, already exported to expenses." : "Update production cost at any stage before exporting."}</p>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium flex items-center gap-2 text-red-500"><DollarSign className="w-3 h-3" /> Additional Expense</label>
+                                                <input
+                                                    type="number"
+                                                    className="flex h-10 w-full rounded-md border border-red-200 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-sm"
+                                                    placeholder="0.00"
+                                                    defaultValue={project.financials?.additional_expense}
+                                                    onBlur={(e) => {
+                                                        const val = parseFloat(e.target.value);
+                                                        apiProjects.updateFinancials(project.id, { additional_expense: val }).then(() => {
+                                                            apiActivities.log({
+                                                                project_id: project.id,
+                                                                user_id: user?.id || 'admin',
+                                                                user_name: user?.user_metadata?.full_name || 'Admin',
+                                                                action: 'update',
+                                                                details: `Updated additional expense to $${val.toLocaleString()}`
+                                                            });
+                                                            queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                            queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
+                                                        });
+                                                    }}
+                                                // This field is deliberately left editable at all times for supplementary costs
+                                                />
+                                                <p className="text-[10px] text-muted-foreground">Add any extra costs that arise after main expenses are locked.</p>
+                                            </div>
                                         </div>
                                     )}
 
