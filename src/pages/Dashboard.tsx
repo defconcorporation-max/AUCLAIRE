@@ -1,3 +1,4 @@
+import { Project } from '@/services/apiProjects';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';

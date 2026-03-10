@@ -1,3 +1,4 @@
+import { RingConfig } from '@/context/RingContext';
 
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import RingModel from "./RingModel"
@@ -81,7 +82,7 @@ function LuxuryStudio({ intensity = 1 }: { intensity?: number }) {
 }
 
 // --- RING DISPLAY STAND (PRESENTOIR) ---
-function RingStand({ metalColor = "#2a2a2a" }: { metalColor?: string }) {
+function RingStand() {
     const velvetColor = "#1a0a1a" // Dark burgundy/purple velvet
     const baseColor = "#1c1c1c"  // Dark polished base
     const trimColor = "#c8a84b"  // Gold trim
@@ -131,7 +132,7 @@ function RingStand({ metalColor = "#2a2a2a" }: { metalColor?: string }) {
 }
 
 const CameraController = () => {
-    const { camera, gl } = useThree()
+    const { camera, gl } = useThree((state) => state)
     const controlsRef = useRef<OrbitControls>()
 
     useEffect(() => {
@@ -177,8 +178,6 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: RingCo
         head: { ...config.head, prongStyle },
         sideStones: { ...config.sideStones, active: sideActive, length: sideLength, shape: paveShape, size: paveSize }
     }
-
-    const metalColor = { 'Yellow Gold': '#c8a848', 'Rose Gold': '#d4907a', 'White Gold': '#b0b0c0', 'Platinum': '#a0a0b0' }[config.metal] || '#c8a848'
 
     return (
         <div className="w-full h-full min-h-[600px] flex flex-col font-sans relative"
@@ -263,7 +262,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: RingCo
                 gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: intensity }}
             >
                 <LuxuryStudio intensity={intensity} />
-                <RingStand metalColor={metalColor} />
+                <RingStand />
                 <RingModel config={activeConfig} />
                 <CameraController />
             </Canvas>

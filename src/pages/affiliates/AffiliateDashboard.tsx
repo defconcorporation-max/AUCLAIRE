@@ -1,3 +1,4 @@
+import { Project } from '@/services/apiProjects';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiAffiliates, AffiliateStats } from '@/services/apiAffiliates';

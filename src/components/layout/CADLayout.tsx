@@ -98,7 +98,7 @@ export default function CADLayout() {
         { id: 8, name: "Vintage Head", type: 'head', value: 'Vintage' },
     ]
 
-    const handleComponentClick = (comp: { id: string }) => {
+    const handleComponentClick = (comp: any) => {
         if (comp.type === 'head') {
             updateRing({ head: { style: comp.value } })
         } else if (comp.type === 'shank') {

@@ -1,3 +1,4 @@
+import { Project } from '@/services/apiProjects';
 
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "./StatusBadge"

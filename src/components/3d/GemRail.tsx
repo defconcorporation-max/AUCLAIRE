@@ -10,15 +10,11 @@ import { useMemo } from "react"
 export default function GemRail({
     radius,
     width,
-    startAngle = 0,
-    endAngle = Math.PI,
     gemSize = 0.5,
     coverage = 0.5
 }: {
     radius: number,
     width: number,
-    startAngle?: number,
-    endAngle?: number,
     gemSize?: number,
     coverage?: number
 }) {

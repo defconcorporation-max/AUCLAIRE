@@ -315,7 +315,7 @@ export default function LeadDetails() {
                             ))}
 
                             {/* Messenger/Omnichannel Messages */}
-                            {messages.map((msg: Record<string, unknown>) => (
+                            {messages.map((msg: any) => (
                                 <div key={msg.id} className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20">
                                     <div className={`absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] ${msg.sender_type === 'agent' ? 'bg-luxury-gold text-white' : 'bg-pink-100 text-pink-600 dark:bg-pink-900/30'}`}>
                                         <MessageSquare className="w-3 h-3" />

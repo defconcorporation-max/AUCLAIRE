@@ -1,3 +1,4 @@
+import { UserProfile } from '@/services/apiUsers';
 
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";

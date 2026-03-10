@@ -1,3 +1,4 @@
+import { UserProfile } from '@/services/apiUsers';
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'

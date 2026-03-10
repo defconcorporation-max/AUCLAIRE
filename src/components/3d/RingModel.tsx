@@ -1,6 +1,5 @@
 
-import React, { useRef, useMemo } from 'react'
-import { useFrame, useLoader } from '@react-three/fiber'
+import { useRef, useMemo } from 'react'
 import { Text } from '@react-three/drei'
 import * as THREE from "three"
 import { RingConfig } from "../../context/RingContext"
@@ -149,7 +148,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
     const prongMeshes = useMemo(() => {
         if (config.head.style === 'Halo') return null; // Halo handles its own internal prongs or bezel usually
 
-        const meshes: JSX.Element[] = []
+        const meshes: any[] = []
 
         // Base angles for prongs
         let angles: number[] = []
@@ -199,8 +198,6 @@ export default function RingModel({ config }: { config: RingConfig }) {
             const endY = 0.45 * finalGemScale // Top of prong holding girdle
 
             // Calculate stem height and angle
-            const height = endY - startY
-
             // To make a curved prong, we could manipulate vertices.
             // For a perfectly elegant clean prong, a straight tapering wire angled in looks best:
             // We place it at (x, startY, z) but the bottom roots in (x*0.6, startY, z*0.6)
@@ -285,7 +282,6 @@ export default function RingModel({ config }: { config: RingConfig }) {
                 const bx = Math.sin(nextAngle) * r
                 const bz = Math.cos(nextAngle) * r
 
-                const dist = Math.sqrt((bx - ax) ** 2 + (bz - az) ** 2 + h ** 2)
                 const midPos = new THREE.Vector3((ax + bx) / 2, h / 2, (az + bz) / 2)
 
                 // Slightly curved tube

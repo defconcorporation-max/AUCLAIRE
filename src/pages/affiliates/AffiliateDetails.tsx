@@ -1,3 +1,4 @@
+import { Invoice } from '@/services/apiInvoices';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiAffiliates, AffiliateProfile } from '@/services/apiAffiliates';

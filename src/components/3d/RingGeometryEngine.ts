@@ -56,7 +56,7 @@ export const createProceduralRingGeometry = (options: ProceduralRingOptions): TH
 
     const pointsPerProfile = profilePoints.length
 
-    strands.forEach((strandDir, strandIndex) => {
+    strands.forEach((strandDir) => {
         // const strandOffset = ... // Unused in this loop
 
         for (let i = 0; i <= radialSegments; i++) {
