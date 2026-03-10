@@ -87,7 +87,7 @@ export default function ClientDetails() {
                                                 alert("Password updated successfully!");
                                                 setIsPasswordModalOpen(false);
                                                 setNewPassword('');
-                                            } catch (err: any) {
+                                            } catch (err) {
                                                 alert("Failed to update password. Did you run the Supabase RPC script? Error: " + err.message);
                                             } finally {
                                                 setIsUpdatingPassword(false);

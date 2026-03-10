@@ -18,7 +18,7 @@ const PRICES = {
     }
 }
 
-export const generateSpecSheet = (config: RingConfig, _materials: any, imageUrl: string, designName: string = "Custom Design") => {
+export const generateSpecSheet = (config: RingConfig, _materials: unknown, imageUrl: string, designName: string = "Custom Design") => {
     const doc = new jsPDF()
 
     // --- 1. HEADER ---

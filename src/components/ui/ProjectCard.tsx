@@ -5,7 +5,7 @@ import { Calendar, Factory, Handshake, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
 interface ProjectCardProps {
-    project: any
+    project: Project
     onClick?: () => void
 }
 

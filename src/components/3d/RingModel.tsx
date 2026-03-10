@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useRef, useMemo } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
@@ -73,6 +73,23 @@ export default function RingModel({ config }: { config: RingConfig }) {
     const currentGemGeom = useMemo(() => getGemGeometry(gemShape as any), [gemShape])
     // Halo side gem (fixed round)
     const sideGemGeom = useMemo(() => getGemGeometry('Round'), [])
+
+    // --- REUSABLE INLINE GEOMETRIES ---
+    const sideProngGeom = useMemo(() => new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8), [])
+    const sideProngTipGeom = useMemo(() => new THREE.SphereGeometry(0.045, 8, 8), [])
+    const sideRailGeom = useMemo(() => new THREE.TorusGeometry(0.35, 0.03, 8, 16), [])
+
+    const haloProngGeom = useMemo(() => new THREE.SphereGeometry(0.02, 8, 8), [])
+    const haloBezelGeom = useMemo(() => new THREE.CylinderGeometry(0.25 * finalGemScale, 0.25 * finalGemScale, 0.2, 16, 1, true), [finalGemScale])
+
+    const paveProngGeom = useMemo(() => {
+        if (!config.sideStones?.active) return null
+        const sizeParam = Number(config.sideStones?.size) || 1.5
+        const bandW = shankWidth * 0.1
+        const stoneDiam = Math.min(sizeParam * 0.055, bandW * 0.88)
+        const stoneR = Math.max(0.01, stoneDiam / 2)
+        return new THREE.SphereGeometry(stoneR * 0.35, 8, 8)
+    }, [config.sideStones?.active, config.sideStones?.size, shankWidth])
 
 
     // --- MATERIALS ---
@@ -428,18 +445,13 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
                                     {/* Side Prongs (Simplified 3-prong per side stone) */}
                                     {[0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].map((rad, i) => (
-                                        <mesh key={i} position={[Math.sin(rad) * 0.35, 0.1, Math.cos(rad) * 0.35]} material={metalMaterial}>
-                                            <cylinderGeometry args={[0.04, 0.04, 0.4, 8]} />
-                                            <mesh position={[0, 0.2, 0]}>
-                                                <sphereGeometry args={[0.045, 8, 8]} />
-                                            </mesh>
+                                        <mesh key={i} position={[Math.sin(rad) * 0.35, 0.1, Math.cos(rad) * 0.35]} geometry={sideProngGeom} material={metalMaterial}>
+                                            <mesh position={[0, 0.2, 0]} geometry={sideProngTipGeom} material={metalMaterial} />
                                         </mesh>
                                     ))}
 
                                     {/* Basket Rail */}
-                                    <mesh position={[0, -0.1, 0]} rotation={[Math.PI / 2, 0, 0]} material={metalMaterial}>
-                                        <torusGeometry args={[0.35, 0.03, 8, 16]} />
-                                    </mesh>
+                                    <mesh position={[0, -0.1, 0]} rotation={[Math.PI / 2, 0, 0]} geometry={sideRailGeom} material={metalMaterial} />
                                 </group>
                             )
                         })}
@@ -458,17 +470,12 @@ export default function RingModel({ config }: { config: RingConfig }) {
                                     <mesh geometry={sideGemGeom.pavilion} material={baseDiamondMaterial} />
                                 </group>
                                 {/* Small Prong for Halo */}
-                                <mesh position={[0.05, 0, 0]} material={metalMaterial}>
-                                    <sphereGeometry args={[0.02, 8, 8]} />
-                                </mesh>
+                                <mesh position={[0.05, 0, 0]} material={metalMaterial} geometry={haloProngGeom} />
                             </group>
                         ))}
 
                         {/* Inner Bezel / Seat for Main Stone (simplified) */}
-                        <mesh position={[0, 0.1 * finalGemScale, 0]} material={metalMaterial}>
-                            <cylinderGeometry args={[0.25 * finalGemScale, 0.25 * finalGemScale, 0.2, 16, 1, true]} />
-                            {/* Or just a rail */}
-                        </mesh>
+                        <mesh position={[0, 0.1 * finalGemScale, 0]} material={metalMaterial} geometry={haloBezelGeom} />
                     </group>
                 )}
 
@@ -524,12 +531,12 @@ export default function RingModel({ config }: { config: RingConfig }) {
                                 <mesh geometry={crown} material={baseDiamondMaterial} castShadow />
                                 <mesh geometry={pavilion} material={baseDiamondMaterial} />
                             </group>
-                            <mesh position={[0, stoneR * 0.75, -stoneR * 0.8]} material={metalMaterial}>
-                                <sphereGeometry args={[stoneR * 0.35, 8, 8]} />
-                            </mesh>
-                            <mesh position={[0, stoneR * 0.75, stoneR * 0.8]} material={metalMaterial}>
-                                <sphereGeometry args={[stoneR * 0.35, 8, 8]} />
-                            </mesh>
+                            {paveProngGeom && (
+                                <>
+                                    <mesh position={[0, stoneR * 0.75, -stoneR * 0.8]} material={metalMaterial} geometry={paveProngGeom} />
+                                    <mesh position={[0, stoneR * 0.75, stoneR * 0.8]} material={metalMaterial} geometry={paveProngGeom} />
+                                </>
+                            )}
                         </group>
                     ))}
                 </group>

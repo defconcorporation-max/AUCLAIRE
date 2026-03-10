@@ -7,10 +7,10 @@ import { apiUsers } from "@/services/apiUsers";
 import { User, X } from "lucide-react";
 
 export function RoleSwitcher() {
-    const { role, switchRole, user, profile, isInSharedMode, impersonate, stopImpersonating, impersonatedProfile } = useAuth() as any;
+    const { role, switchRole, user, profile, impersonate, stopImpersonating, impersonatedProfile } = useAuth() as any;
 
     const roles: UserRole[] = ['admin', 'manufacturer', 'client', 'affiliate', 'secretary'];
-    const showButtons = !user || (profile?.role === 'admin' || isInSharedMode);
+    const showButtons = profile?.role === 'admin';
     const showUserPicker = role === 'manufacturer' || role === 'affiliate';
 
     const { data: users = [] } = useQuery({
@@ -24,7 +24,7 @@ export function RoleSwitcher() {
     return (
         <div className="fixed bottom-4 right-4 bg-black/90 border border-white/10 rounded-xl shadow-2xl p-2.5 flex flex-col gap-2 z-50 backdrop-blur-md min-w-[260px]">
             <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Demo Mode</span>
+                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Admin Control</span>
             </div>
 
             {/* Role switcher buttons */}
@@ -64,7 +64,7 @@ export function RoleSwitcher() {
                         <p className="text-[10px] text-white/30 italic">No {role} users found.</p>
                     ) : (
                         <div className="flex flex-col gap-1">
-                            {filteredUsers.map((u: any) => (
+                            {filteredUsers.map((u: UserProfile) => (
                                 <button
                                     key={u.id}
                                     onClick={() => impersonate(u)}

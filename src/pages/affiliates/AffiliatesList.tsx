@@ -46,7 +46,7 @@ export default function AffiliatesList() {
 
     const totalPending = affiliates?.reduce((sum, a) => sum + (a.stats?.commissionPending || 0), 0) || 0;
 
-    const handleOpenPayment = (affiliate: any, e: React.MouseEvent) => {
+    const handleOpenPayment = (affiliate: AffiliateProfile, e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent navigation
         setSelectedAffiliate(affiliate);
         setAmountToPay(affiliate.stats?.commissionPending?.toString() || '0');

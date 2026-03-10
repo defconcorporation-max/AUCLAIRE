@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import * as THREE from "three"
 
 // Helper to compute normals manually if needed, but Three.js can compute from vertices.

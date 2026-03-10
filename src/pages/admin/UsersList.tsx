@@ -35,7 +35,7 @@ export default function UsersList() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },
-        onError: (error: any) => {
+        onError: (error) => {
             alert(`Failed to update role: ${error.message}`);
             console.error(error);
         }
@@ -53,7 +53,7 @@ export default function UsersList() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },
-        onError: (error: any) => {
+        onError: (error) => {
             alert(`Failed to update monthly goal: ${error.message}`);
             console.error(error);
         }
@@ -229,7 +229,7 @@ export default function UsersList() {
                                     alert("Password updated successfully!");
                                     setPasswordModalUserId(null);
                                     setNewPassword('');
-                                } catch (err: any) {
+                                } catch (err) {
                                     alert("Failed to update password. Did you run the Supabase RPC script? Error: " + err.message);
                                 } finally {
                                     setIsUpdatingPassword(false);

@@ -40,7 +40,7 @@ const navItems = [
     { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'secretary'] },
 ]
 
-const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: any, profile: any, signOut: any, setIsMobileOpen: (v: boolean) => void }) => (
+const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, profile: UserProfile | null, signOut: () => void, setIsMobileOpen: (v: boolean) => void }) => (
     <div className="flex flex-col h-full bg-white/80 dark:bg-black/40 backdrop-blur-xl border-r border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300">
         <div className="p-8">
             <h1 className="text-2xl font-serif text-luxury-gold tracking-widest drop-shadow-sm">AUCLAIRE</h1>

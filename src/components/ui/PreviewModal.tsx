@@ -5,8 +5,8 @@ import { Icons } from './Icons' /** Icons import might need adjustment based on 
 /** So from F:/Entreprises/Auclaire/Auclaire APP/src/components/ui/PreviewModal.tsx it is ./Icons */
 
 interface PreviewModalProps {
-    config: any; // RingConfig
-    materials: any; // RingMaterials
+    config: RingConfig;
+    materials: RingMaterials;
     onClose: () => void;
 }
 

@@ -40,7 +40,7 @@ export default function RegisterAffiliate() {
                 text: 'Demande envoyée ! Vérifiez votre email pour confirmer. Un administrateur validera votre compte rapidement.'
             })
             // Optional: Redirect after delay or just show message
-        } catch (error: any) {
+        } catch (error) {
             setMessage({ type: 'error', text: error.message })
         } finally {
             setLoading(false)

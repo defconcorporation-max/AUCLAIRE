@@ -114,7 +114,7 @@ export default function ProjectsList() {
             apiActivities.log({
                 project_id: draggableId,
                 user_id: profile?.id || 'admin',
-                user_name: profile?.full_name || (profile as any)?.user_metadata?.full_name || 'Admin',
+                user_name: profile?.full_name || 'Admin',
                 action: 'status_change',
                 details: `Changed status from ${projectToUpdate.status.replace('_', ' ')} to ${newStatus.replace('_', ' ')} via Kanban`
             }).then(() => {
@@ -178,7 +178,7 @@ export default function ProjectsList() {
                                 onChange={e => setFilterAffiliate(e.target.value)}
                             >
                                 <option value="">All</option>
-                                {affiliates.map((a: any) => (
+                                {affiliates.map((a: UserProfile) => (
                                     <option key={a.id} value={a.id}>{a.full_name}</option>
                                 ))}
                             </select>
@@ -191,7 +191,7 @@ export default function ProjectsList() {
                                 onChange={e => setFilterManufacturer(e.target.value)}
                             >
                                 <option value="">All</option>
-                                {manufacturers.map((m: any) => (
+                                {manufacturers.map((m: UserProfile) => (
                                     <option key={m.id} value={m.id}>{m.full_name}</option>
                                 ))}
                             </select>

@@ -22,8 +22,8 @@ export default function AnalyticsDashboard() {
     }
 
     // Helpers to prevent string concatenation
-    const getSalePrice = (p: any) => Number(p.financials?.selling_price || p.budget || 0);
-    const getPaidAmount = (inv: any) => Number((inv.amount_paid && inv.amount_paid > 0) ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0));
+    const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
+    const getPaidAmount = (inv: Invoice) => Number((inv.amount_paid && inv.amount_paid > 0) ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0));
 
     // 1. Global KPIs
     const totalCollected = invoices.reduce((sum, i) => sum + getPaidAmount(i), 0);
@@ -74,7 +74,7 @@ export default function AnalyticsDashboard() {
     });
 
     // Commissions come from expense rows (pending + paid), matching apiAffiliates.getStats
-    (expenses as any[]).filter(e => (e as any).category === 'commission' && (e as any).status !== 'cancelled').forEach((e: any) => {
+    (expenses as unknown as { category: string; status: string; amount?: number }[]).filter(e => e.category === 'commission' && e.status !== 'cancelled').forEach(e => {
         const recipientId = e.recipient_id;
         if (recipientId && sellerStats[recipientId]) {
             sellerStats[recipientId].commissions += Number(e.amount);

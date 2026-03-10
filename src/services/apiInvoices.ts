@@ -1,5 +1,5 @@
-
 import { supabase } from '@/lib/supabase';
+import { toast } from '@/components/ui/use-toast';
 import { Project } from './apiProjects';
 
 export interface Invoice {
@@ -15,49 +15,16 @@ export interface Invoice {
     project?: Project; // joined
 }
 
-// MOCK STORE
-let mockInvoices: Invoice[] = [
-    {
-        id: '1', amount: 1500, amount_paid: 0, status: 'draft', due_date: '2024-12-31', created_at: new Date().toISOString(),
-        project_id: '1',
-        project: { title: 'Test Project - Solitaire Ring', client: { full_name: 'Test Client' } } as Project
-    },
-];
-
-// Helper to persist mock data
-const saveMockData = () => {
-    try {
-        localStorage.setItem('mock_invoices', JSON.stringify(mockInvoices));
-    } catch (e) {
-        console.warn("Failed to persist mock invoices", e);
-    }
-};
-
-// Load mock data from storage
-const loadMockData = () => {
-    const stored = localStorage.getItem('mock_invoices');
-    if (stored) {
-        mockInvoices = JSON.parse(stored);
-    }
-};
-
-// Initial Load
-loadMockData();
-
 export const apiInvoices = {
     async getAll() {
-        loadMockData(); // Ensure fresh data
         const { data, error } = await supabase
             .from('invoices')
             .select('*, project:projects(title, client:clients(full_name))')
             .order('created_at', { ascending: false });
 
-        if (error || !data) {
-            console.warn("Using Mock Data for Invoices");
-
-
-
-            return [...mockInvoices];
+        if (error) {
+            toast({ title: 'Error fetching invoices', description: error.message, variant: 'destructive' });
+            throw error;
         }
         return data as Invoice[];
     },
@@ -99,28 +66,8 @@ export const apiInvoices = {
         const { data, error } = await supabase.from('invoices').update(updates).eq('id', id).select().single();
 
         if (error) {
-            console.warn("Using Mock Update for Invoice");
-            const index = mockInvoices.findIndex(i => i.id === id);
-            if (index !== -1) {
-                // Auto-calculate status based on amount_paid
-                let updatedInvoice = { ...mockInvoices[index], ...updates };
-
-                if (updates.amount_paid !== undefined) {
-                    if (updatedInvoice.amount_paid >= updatedInvoice.amount) {
-                        updatedInvoice.status = 'paid';
-                        updatedInvoice.paid_at = new Date().toISOString();
-                    } else if (updatedInvoice.amount_paid > 0) {
-                        updatedInvoice.status = 'partial';
-                    } else {
-                        updatedInvoice.status = 'sent'; // Default back to sent if 0
-                    }
-                }
-
-                mockInvoices[index] = updatedInvoice;
-                saveMockData();
-                return mockInvoices[index];
-            }
-            throw new Error('Invoice not found');
+            toast({ title: 'Error updating invoice', description: error.message, variant: 'destructive' });
+            throw error;
         }
         return data; // Fixed missing brace in previous attempt context
     },
@@ -129,10 +76,8 @@ export const apiInvoices = {
         const { error } = await supabase.from('invoices').delete().eq('id', id);
 
         if (error) {
-            console.warn("Using Mock Delete for Invoice");
-            mockInvoices = mockInvoices.filter(i => i.id !== id);
-            saveMockData();
-            return;
+            toast({ title: 'Error deleting invoice', description: error.message, variant: 'destructive' });
+            throw error;
         }
     }
 };

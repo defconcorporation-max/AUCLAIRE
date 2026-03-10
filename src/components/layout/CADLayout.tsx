@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, Suspense, lazy } from 'react'
 import { useRing, ToolType, MetalType, ProfileType } from '../../context/RingContext'
 import { Icons } from '../ui/Icons'
-import Viewport3D from '../3d/Viewport3D'
+const Viewport3D = lazy(() => import('../3d/Viewport3D'))
 import PreviewModal from '../ui/PreviewModal'
 import SaveLoadModal from '../ui/SaveLoadModal'
 import { generateSpecSheet } from '../../utils/pdfGenerator'
 
 // --- HELPER COMPONENTS ---
 
-const ToolButton = ({ tool, active, onClick, icon: IconComp }: { tool: string, active: boolean, onClick: () => void, icon: any }) => (
+const ToolButton = ({ tool, active, onClick, icon: IconComp }: { tool: string, active: boolean, onClick: () => void, icon: React.ElementType }) => (
     <button
         onClick={onClick}
         className={`w-10 h-10 flex flex-col items-center justify-center rounded-md transition-colors ${active ? 'bg-[#40a9ff] text-white' : 'text-gray-400 hover:bg-[#333] hover:text-white'}`}
@@ -68,7 +68,7 @@ export default function CADLayout() {
         generateSpecSheet(ringConfig, materials, imageUrl, "My Custom Design")
     }
 
-    const tools: { id: ToolType, icon: any }[] = [
+    const tools: { id: ToolType, icon: React.ElementType }[] = [
         { id: 'select', icon: Icons.Select },
         { id: 'move', icon: Icons.Move },
         { id: 'scale', icon: Icons.Scale },
@@ -98,7 +98,7 @@ export default function CADLayout() {
         { id: 8, name: "Vintage Head", type: 'head', value: 'Vintage' },
     ]
 
-    const handleComponentClick = (comp: any) => {
+    const handleComponentClick = (comp: { id: string }) => {
         if (comp.type === 'head') {
             updateRing({ head: { style: comp.value } })
         } else if (comp.type === 'shank') {
@@ -177,7 +177,9 @@ export default function CADLayout() {
                 <main className="flex-1 relative bg-[#050505] flex flex-col min-w-0">
                     {/* 3D View */}
                     <div className="flex-1 relative">
-                        <Viewport3D />
+                        <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-[#40a9ff] text-[10px] font-mono tracking-widest animate-pulse">INIT ENGINE...</div>}>
+                            <Viewport3D />
+                        </Suspense>
                     </div>
 
                     {/* 4. BOTTOM TRAY (Components) */}

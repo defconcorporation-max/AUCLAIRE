@@ -1,7 +1,6 @@
 
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase' // Use directly for Auth
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 
 export default function Login() {
-    // Mode: 'login' | 'register' | 'shared'
-    const [mode, setMode] = useState<'login' | 'register' | 'shared'>('login')
+    // Mode: 'login' | 'register'
+    const [mode, setMode] = useState<'login' | 'register'>('login')
 
     // Form State
     const [email, setEmail] = useState('')
@@ -19,10 +18,6 @@ export default function Login() {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-    // Shared Code State
-    const [accessCode, setAccessCode] = useState('')
-
-    const { unlockApp } = useAuth()
     const navigate = useNavigate()
 
     const handleAuth = async (e: React.FormEvent) => {
@@ -53,24 +48,14 @@ export default function Login() {
                 // Success - redirect handled by AuthContext or manual
                 navigate('/dashboard')
             }
-        } catch (error: any) {
+        } catch (error) {
             setMessage({ type: 'error', text: error.message })
         } finally {
             setLoading(false)
         }
     }
 
-    const handleUnlock = (e: React.FormEvent) => {
-        e.preventDefault();
-        setMessage(null);
 
-        if (accessCode === 'auclaire2468') {
-            unlockApp();
-            navigate('/dashboard');
-        } else {
-            setMessage({ type: 'error', text: 'Incorrect access code' });
-        }
-    }
 
     return (
         <div className="min-h-screen grid lg:grid-cols-2">
@@ -101,64 +86,38 @@ export default function Login() {
                             >
                                 Register
                             </button>
-                            <button
-                                onClick={() => { setMode('shared'); setMessage(null); }}
-                                className={`pb-1 border-b-2 transition-colors ${mode === 'shared' ? 'text-luxury-gold border-luxury-gold' : 'border-transparent hover:text-foreground'}`}
-                            >
-                                Code
-                            </button>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
-                        {mode === 'shared' ? (
-                            <form onSubmit={handleUnlock} className="space-y-4">
-                                <div className="space-y-2 text-center">
-                                    <h3 className="font-medium">Shared Access</h3>
-                                    <p className="text-xs text-muted-foreground">Enter the team access code.</p>
-                                </div>
+                        <form onSubmit={handleAuth} className="space-y-4">
+                            {mode === 'register' && (
                                 <Input
-                                    type="password"
-                                    placeholder="Enter Code"
-                                    value={accessCode}
-                                    onChange={(e) => setAccessCode(e.target.value)}
-                                    className="text-center tracking-widest"
-                                    autoFocus
-                                />
-                                <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black">
-                                    Unlock App
-                                </Button>
-                            </form>
-                        ) : (
-                            <form onSubmit={handleAuth} className="space-y-4">
-                                {mode === 'register' && (
-                                    <Input
-                                        placeholder="Full Name"
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        required
-                                    />
-                                )}
-                                <Input
-                                    type="email"
-                                    placeholder="Email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Full Name"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
                                     required
                                 />
-                                <Input
-                                    type="password"
-                                    placeholder="Password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                />
+                            )}
+                            <Input
+                                type="email"
+                                placeholder="Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                            <Input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
 
-                                <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black" disabled={loading}>
-                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {mode === 'login' ? 'Sign In' : 'Create Account'}
-                                </Button>
-                            </form>
-                        )}
+                            <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black" disabled={loading}>
+                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {mode === 'login' ? 'Sign In' : 'Create Account'}
+                            </Button>
+                        </form>
 
                         {message && (
                             <div className={`mt-4 text-sm p-3 rounded text-center ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

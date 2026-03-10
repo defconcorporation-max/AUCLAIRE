@@ -155,7 +155,7 @@ export default function ProjectDetails() {
 
     const { data: manufacturers } = useQuery({
         queryKey: ['manufacturers'],
-        queryFn: () => apiUsers.getAll().then(users => users.filter((u: any) => u.role === 'manufacturer')),
+        queryFn: () => apiUsers.getAll().then(users => users.filter((u: UserProfile) => u.role === 'manufacturer')),
         enabled: isEditingManufacturer
     });
 
@@ -334,14 +334,14 @@ export default function ProjectDetails() {
                                         value={selectedClientId}
                                         onChange={(e) => setSelectedClientId(e.target.value)}
                                     >
-                                        {clients?.map((client: any) => (
+                                        {clients?.map((client: UserProfile) => (
                                             <option key={client.id} value={client.id}>{client.full_name}</option>
                                         ))}
                                     </select>
                                     <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => {
                                         apiProjects.update(project.id, { client_id: selectedClientId })
                                             .then(() => {
-                                                const newClient = clients?.find((c: any) => c.id === selectedClientId);
+                                                const newClient = clients?.find((c: UserProfile) => c.id === selectedClientId);
                                                 apiActivities.log({
                                                     project_id: project.id,
                                                     user_id: user?.id || 'admin',
@@ -684,7 +684,7 @@ export default function ProjectDetails() {
                                             </select>
                                             <Button size="icon" variant="ghost" className="h-5 w-5 text-green-600" onClick={() => {
                                                 const affiliate = affiliates?.find(a => a.id === selectedAffiliateId);
-                                                const updates: any = { affiliate_id: selectedAffiliateId || null };
+                                                const updates: Record<string, unknown> = { affiliate_id: selectedAffiliateId || null };
                                                 if (affiliate) {
                                                     updates.affiliate_commission_rate = affiliate.commission_rate;
                                                     updates.affiliate_commission_type = affiliate.commission_type;
@@ -748,14 +748,14 @@ export default function ProjectDetails() {
                                                     onChange={(e) => setSelectedManufacturerId(e.target.value)}
                                                 >
                                                     <option value="">None</option>
-                                                    {manufacturers?.map((m: any) => (
+                                                    {manufacturers?.map((m: UserProfile) => (
                                                         <option key={m.id} value={m.id}>{m.full_name}</option>
                                                     ))}
                                                 </select>
                                                 <Button size="icon" variant="ghost" className="h-5 w-5 text-green-600" onClick={() => {
                                                     apiProjects.update(project.id, { manufacturer_id: selectedManufacturerId || null } as any)
                                                         .then(() => {
-                                                            const mfg = manufacturers?.find((m: any) => m.id === selectedManufacturerId);
+                                                            const mfg = manufacturers?.find((m: UserProfile) => m.id === selectedManufacturerId);
                                                             queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                             setIsEditingManufacturer(false);
                                                             if (selectedManufacturerId && mfg) {
@@ -873,7 +873,7 @@ export default function ProjectDetails() {
                                                                 queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                                 queryClient.invalidateQueries({ queryKey: ['expenses'] });
                                                                 alert("Commission exported successfully!");
-                                                            } catch (err: any) {
+                                                            } catch (err) {
                                                                 alert("Export failed: " + err.message);
                                                             }
                                                         }
@@ -916,7 +916,7 @@ export default function ProjectDetails() {
                                                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                                     queryClient.invalidateQueries({ queryKey: ['expenses'] });
                                                                     alert("Commission export reverted successfully!");
-                                                                } catch (err: any) {
+                                                                } catch (err) {
                                                                     alert("Revert failed: " + err.message);
                                                                 }
                                                             }
@@ -1111,7 +1111,7 @@ export default function ProjectDetails() {
                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                         queryClient.invalidateQueries({ queryKey: ['expenses'] });
                                                         alert("Exported successfully!");
-                                                    } catch (err: any) {
+                                                    } catch (err) {
                                                         alert("Export failed: " + err.message);
                                                     }
                                                 }

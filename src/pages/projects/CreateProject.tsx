@@ -66,7 +66,7 @@ export default function CreateProject() {
             await new Promise(resolve => setTimeout(resolve, 500));
 
             navigate(-1);
-        } catch (error: any) {
+        } catch (error) {
             console.error("Create Project Failed:", error);
             alert(`Failed to create project: ${error.message || 'Unknown error'}`);
         } finally {

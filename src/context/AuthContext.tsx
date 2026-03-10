@@ -26,8 +26,6 @@ interface AuthContextType {
     isAdmin: boolean;
     role?: UserRole;
     signOut: () => Promise<void>;
-    unlockApp: () => void;
-    signInAsDev: () => void; // Deprecated
     switchRole: (role: UserRole) => void;
     impersonate: (profile: Profile) => void;
     stopImpersonating: () => void;
@@ -40,14 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [isLoadingSession, setIsLoadingSession] = useState(true);
-
-    // Shared Mode State (Persisted)
-    const [isSharedMode, setIsSharedMode] = useState(() => {
-        return localStorage.getItem('isSharedMode') === 'true';
-    });
-    const [demoRole, setDemoRole] = useState<UserRole>(() => {
-        return (localStorage.getItem('demoRole') as UserRole) || 'admin';
-    });
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -66,26 +56,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    // Persist Shared Mode
-    useEffect(() => {
-        localStorage.setItem('isSharedMode', isSharedMode.toString());
-        localStorage.setItem('demoRole', demoRole);
-    }, [isSharedMode, demoRole]);
-
-    // Fetch profile only if user exists OR in Shared Mode
+    // Fetch user profile
     const { data: profile, isLoading: isLoadingProfile } = useQuery({
-        queryKey: ['profile', user?.id, isSharedMode, demoRole],
+        queryKey: ['profile', user?.id],
         queryFn: async () => {
-            if (isSharedMode) {
-                // Return dynamic profile based on demoRole
-                return {
-                    id: `demo-${demoRole}`,
-                    full_name: `Demo ${demoRole.charAt(0).toUpperCase() + demoRole.slice(1)}`,
-                    role: demoRole,
-                    avatar_url: null
-                } as Profile;
-            }
-
             if (!user) return null;
             const { data, error } = await supabase
                 .from('profiles')
@@ -99,17 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             return data as Profile;
         },
-        enabled: !!user || isSharedMode,
+        enabled: !!user,
     });
-
-    const unlockApp = () => {
-        setIsSharedMode(true);
-        setDemoRole('admin'); // Default start as admin
-        // We simulate a user so protected routes don't redirect
-        // But we DON'T use Supabase Auth. We use Anon key + RLS policies.
-        const mockUser = { id: 'shared-admin', email: 'admin@auclaire.com' } as User;
-        setUser(mockUser);
-    };
 
     // Admin Preview Mode State
     const [overrideRole, setOverrideRole] = useState<UserRole | null>(null);
@@ -117,12 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Impersonation: override profile with a real user's profile
     const [impersonatedProfile, setImpersonatedProfile] = useState<Profile | null>(null);
 
-    // Effective Role: Shared Mode -> demoRole, Admin Preview -> overrideRole, Normal -> profile.role
+    // Effective Role: Admin Preview -> overrideRole, Normal -> profile.role
     // Security Fallback: If profile is missing (deleted), default to 'pending'
     const activeProfile = impersonatedProfile ?? (profile ?? null);
-    const effectiveRole = isSharedMode
-        ? (impersonatedProfile ? impersonatedProfile.role : demoRole)
-        : (overrideRole ?? (activeProfile?.role || 'pending'));
+    const effectiveRole = overrideRole ?? (activeProfile?.role || 'pending');
 
     const value = {
         session,
@@ -132,23 +95,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // isAdmin should be false if we are simulating another role
         isAdmin: effectiveRole === 'admin',
         isLoading: isLoadingSession || (!!user && isLoadingProfile),
-        isInSharedMode: isSharedMode,
         impersonatedProfile,
-        impersonate: (p: Profile) => setImpersonatedProfile(p),
+        impersonate: (p: Profile) => {
+            if (profile?.role === 'admin') {
+                setImpersonatedProfile(p);
+            }
+        },
         stopImpersonating: () => setImpersonatedProfile(null),
         signOut: async () => {
-            setIsSharedMode(false);
             setUser(null);
             setImpersonatedProfile(null);
             await supabase.auth.signOut();
         },
-        signInAsDev: unlockApp, // Alias for compatibility during refactor
-        unlockApp,
         switchRole: (role: UserRole) => {
             setImpersonatedProfile(null); // clear impersonation when switching role
-            if (isSharedMode) {
-                setDemoRole(role);
-            } else if (profile?.role === 'admin') {
+            if (profile?.role === 'admin') {
                 // Allow real admins to preview other roles
                 setOverrideRole(role);
             }

@@ -1,5 +1,5 @@
-
 import { supabase } from '@/lib/supabase';
+import { toast } from '@/components/ui/use-toast';
 
 // Types
 export interface Project {
@@ -64,36 +64,8 @@ export interface Project {
 
 export type ProjectStatus = Project['status'];
 
-// MOCK STORE
-let mockProjects: Project[] = [
-    { id: '1', title: 'Test Project - Solitaire Ring', status: 'designing', client_id: '1', client: { full_name: 'Test Client' }, budget: 5000, deadline: '2024-12-31', created_at: new Date().toISOString() },
-];
-
-// Helper to persist mock data
-const saveMockData = () => {
-    try {
-        localStorage.setItem('mock_projects', JSON.stringify(mockProjects));
-    } catch (e) {
-        console.warn("Failed to persist mock data (Likely Quota Exceeded)", e);
-        // Could implement LRU or clear old projects here in a real limited demo
-    }
-};
-
-// Load mock data from storage or use default
-const loadMockData = () => {
-    const stored = localStorage.getItem('mock_projects');
-    if (stored) {
-        mockProjects = JSON.parse(stored);
-    }
-};
-
-// Initial Load
-loadMockData();
-
 export const apiProjects = {
     async getAll() {
-        // Reload on every fetch to ensure consistency across tabs if needed
-        loadMockData();
 
         // Primary Query: Try with Affiliate Join
         // We use the specific FK constraint name to avoid ambiguity if multiple FKs exist
@@ -122,8 +94,8 @@ export const apiProjects = {
             }
 
             if (error.code === '42P01' || error.message.includes('permission denied')) {
-                console.warn("Using Mock Data for Projects due to critical database error");
-                return [...mockProjects];
+                toast({ title: 'Database Error', description: error.message, variant: 'destructive' });
+                throw error;
             }
             throw error;
         }
@@ -189,15 +161,9 @@ export const apiProjects = {
             .select()
             .single();
 
-        if (error) throw error;
-
-        // Mock fallback/sync (legacy support)
-        const index = mockProjects.findIndex(p => p.id === id);
-        if (index !== -1) {
-            const current = mockProjects[index];
-            // Simple state update for mock
-            mockProjects[index] = { ...current, status };
-            saveMockData();
+        if (error) {
+            toast({ title: 'Error updating status', description: error.message, variant: 'destructive' });
+            throw error;
         }
 
         return data as Project;
@@ -214,7 +180,7 @@ export const apiProjects = {
         return data[0] as Project;
     },
 
-    async updateByToken(token: string, updates: { stage_details: any, financials: any, status: string }) {
+    async updateByToken(token: string, updates: Partial<Project>) {
         const { error } = await supabase
             .rpc('update_project_by_token', {
                 token_uuid: token,
@@ -243,21 +209,17 @@ export const apiProjects = {
                 .select()
                 .single();
 
-            if (!error) return data;
+            if (error) {
+                toast({ title: 'Error updating details', description: error.message, variant: 'destructive' });
+                throw error;
+            }
+            return data;
         }
 
-        console.warn("Using Mock Update for Project Details");
-        const index = mockProjects.findIndex(p => p.id === id);
-        if (index !== -1) {
-            const current = mockProjects[index].stage_details || {};
-            mockProjects[index] = {
-                ...mockProjects[index],
-                stage_details: { ...current, ...details }
-            };
-            saveMockData(); // Save to local storage
-            return mockProjects[index];
+        if (fetchError) {
+            toast({ title: 'Error fetching details', description: fetchError.message, variant: 'destructive' });
+            throw fetchError;
         }
-        throw new Error('Project not found');
     },
 
     async update(id: string, updates: Partial<Project>) {
@@ -285,59 +247,8 @@ export const apiProjects = {
         }
 
         if (error) {
-            console.warn("Using Mock Update for Project Root");
-            const index = mockProjects.findIndex(p => p.id === id);
-            if (index !== -1) {
-                let updatedProject = { ...mockProjects[index], ...updates };
-
-                // Check if Client ID changed, if so, update the joined client object
-                if (updates.client_id && updates.client_id !== mockProjects[index].client_id) {
-                    try {
-                        let clientName = 'Unknown Client';
-                        const storedClients = JSON.parse(localStorage.getItem('mock_clients') || '[]');
-                        const found = storedClients.find((c: any) => c.id === updates.client_id);
-                        if (found) {
-                            clientName = found.full_name;
-                        } else {
-                            // Try dynamic import if not found (less likely for mock, but safe)
-                            const { apiClients } = await import('./apiClients');
-                            const client = await apiClients.getById(updates.client_id!);
-                            if (client) clientName = client.full_name;
-                        }
-
-                        updatedProject.client = { full_name: clientName };
-                        // Also update the client_id prop if not already set by spread
-                        updatedProject.client_id = updates.client_id;
-                    } catch (e) {
-                        console.warn("Failed to resolve new client name during update", e);
-                    }
-                }
-
-                mockProjects[index] = updatedProject;
-                saveMockData();
-                mockProjects[index] = updatedProject;
-                saveMockData();
-
-                // FINANCIAL SYNC: Update Invoice if Budget Changed
-                if (updates.budget) {
-                    try {
-                        // Dynamic import to avoid cycles if any
-                        const { apiInvoices } = await import('./apiInvoices');
-                        const invoices = await apiInvoices.getAll();
-                        const linkedInvoice = invoices.find(i => i.project_id === id && i.status !== 'paid');
-
-                        if (linkedInvoice) {
-                            console.log(`Syncing Invoice ${linkedInvoice.id} amount to ${updates.budget}`);
-                            await apiInvoices.update(linkedInvoice.id, { amount: updates.budget });
-                        }
-                    } catch (err) {
-                        console.error("Failed to sync invoice price", err);
-                    }
-                }
-
-                return mockProjects[index];
-            }
-            throw new Error('Project not found');
+            toast({ title: 'Error updating project', description: error.message, variant: 'destructive' });
+            throw error;
         }
         return data;
     },
@@ -359,31 +270,25 @@ export const apiProjects = {
                 .select()
                 .single();
 
-            if (!error) return data;
+            if (error) {
+                toast({ title: 'Error updating financials', description: error.message, variant: 'destructive' });
+                throw error;
+            }
+            return data;
         }
 
-        console.warn("Using Mock Update for Project Financials");
-        const index = mockProjects.findIndex(p => p.id === id);
-        if (index !== -1) {
-            const current = mockProjects[index].financials || {};
-            mockProjects[index] = {
-                ...mockProjects[index],
-                financials: { ...current, ...financials }
-            };
-            saveMockData(); // Save to local storage
-            return mockProjects[index];
+        if (fetchError) {
+            toast({ title: 'Error fetching financials', description: fetchError.message, variant: 'destructive' });
+            throw fetchError;
         }
-        throw new Error('Project not found');
     },
 
     async delete(id: string) {
         const { error } = await supabase.from('projects').delete().eq('id', id);
 
         if (error) {
-            console.warn("Using Mock Delete for Project");
-            mockProjects = mockProjects.filter(p => p.id !== id);
-            saveMockData();
-            return;
+            toast({ title: 'Error deleting project', description: error.message, variant: 'destructive' });
+            throw error;
         }
     }
 };

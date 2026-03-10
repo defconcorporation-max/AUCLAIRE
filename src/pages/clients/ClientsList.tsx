@@ -45,7 +45,7 @@ export default function ClientsList() {
         setIsClientModalOpen(true);
     };
 
-    const openEditModal = (client: any) => {
+    const openEditModal = (client: UserProfile) => {
         setEditingClient(client);
         setFormData({
             full_name: client.full_name,

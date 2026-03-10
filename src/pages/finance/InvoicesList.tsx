@@ -39,7 +39,7 @@ export default function InvoicesList() {
     const [paymentAmount, setPaymentAmount] = useState('');
 
     // Edit Link Handlers
-    const openEditModal = (invoice: any) => {
+    const openEditModal = (invoice: Invoice) => {
         setEditingInvoice(invoice);
         setPaymentLink(invoice.stripe_payment_link || '');
         setIsEditModalOpen(true);
@@ -53,7 +53,7 @@ export default function InvoicesList() {
     };
 
     // Payment Handlers
-    const openPaymentModal = (invoice: any) => {
+    const openPaymentModal = (invoice: Invoice) => {
         setEditingInvoice(invoice);
         setPaymentAmount('');
         setIsPaymentModalOpen(true);

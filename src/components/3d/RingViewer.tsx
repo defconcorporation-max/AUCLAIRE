@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import RingModel from "./RingModel"
 import { useEffect, useRef, useState } from "react"
@@ -161,7 +161,7 @@ const BAND_MODES: { value: BandMode; label: string }[] = [
     { value: 'eternity', label: 'Eternity' },
 ]
 
-export default function RingViewer({ config, intensity = 1.2 }: { config: any, intensity?: number }) {
+export default function RingViewer({ config, intensity = 1.2 }: { config: RingConfig, intensity?: number }) {
     const [profile, setProfile] = useState("Court")
     const [prongStyle, setProngStyle] = useState("Round")
     const [bandMode, setBandMode] = useState<BandMode>('solitaire')

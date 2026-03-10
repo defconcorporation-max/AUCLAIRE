@@ -68,7 +68,7 @@ export default function AffiliateDetails() {
                     .order('date', { ascending: false });
                 setPendingCommissions(commData || []);
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Failed to load affiliate", error);
             setError(error.message);
         } finally {
@@ -119,7 +119,7 @@ export default function AffiliateDetails() {
                 .update({ status: 'paid' })
                 .eq('id', commissionId);
             await loadData();
-        } catch (err: any) {
+        } catch (err) {
             alert('Échec du paiement : ' + err.message);
         } finally {
             setIsPayingId(null);
@@ -140,7 +140,7 @@ export default function AffiliateDetails() {
 
             alert('Commission annulée avec succès.');
             await loadData();
-        } catch (err: any) {
+        } catch (err) {
             alert('Erreur lors de la suppression : ' + err.message);
         }
     };
@@ -190,7 +190,7 @@ export default function AffiliateDetails() {
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-amber-600">
                             {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(
-                                pendingCommissions.filter(c => c.status === 'pending').reduce((s: number, c: any) => s + Number(c.amount), 0)
+                                pendingCommissions.filter(c => c.status === 'pending').reduce((s: number, c: Invoice) => s + Number(c.amount), 0)
                             )}
                         </div>
                     </CardContent>
@@ -202,7 +202,7 @@ export default function AffiliateDetails() {
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-green-600">
                             {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(
-                                pendingCommissions.filter(c => c.status === 'paid').reduce((s: number, c: any) => s + Number(c.amount), 0)
+                                pendingCommissions.filter(c => c.status === 'paid').reduce((s: number, c: Invoice) => s + Number(c.amount), 0)
                             )}
                         </div>
                     </CardContent>
@@ -303,7 +303,7 @@ export default function AffiliateDetails() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {pendingCommissions.map((c: any) => (
+                                        {pendingCommissions.map((c: Invoice) => (
                                             <TableRow key={c.id}>
                                                 <TableCell className="text-sm">
                                                     <div>{c.description}</div>

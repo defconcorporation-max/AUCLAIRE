@@ -6,7 +6,7 @@ export interface AffiliateStats {
     commissionPaid: number;
     commissionPending: number;
     activeProjects: number;
-    projects: any[];
+    projects: unknown[];
 }
 
 export interface AffiliateProfile {
@@ -106,7 +106,7 @@ export const apiAffiliates = {
     },
 
     async getAllAffiliatesWithStats() {
-        let allProfiles: any[] = [];
+        const allProfiles: unknown[] = [];
 
         try {
             // Attempt 1: Fetch Profiles first
@@ -148,7 +148,7 @@ export const apiAffiliates = {
 
             return results;
 
-        } catch (err: any) {
+        } catch (err) {
             console.error("Critical: Could not fetch affiliates.", err);
             return [];
         }

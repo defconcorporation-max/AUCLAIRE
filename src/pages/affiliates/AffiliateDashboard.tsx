@@ -199,7 +199,7 @@ export default function AffiliateDashboard() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    projects.map((project: any) => {
+                                    projects.map((project: Project) => {
                                         const price = Number(project.financials?.selling_price || project.financials?.budget || 0);
                                         let com = 0;
                                         let rateDisplay = '';

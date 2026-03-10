@@ -5,6 +5,7 @@ console.log("App Version: V2.5 - Added Formation Guide");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
+import { Toaster } from './components/ui/toaster';
 import CRMLayout from './components/layout/CRMLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -62,6 +63,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="auclaire-theme">
+      <Toaster />
       <Router>
         <RingProvider>
           <Routes>

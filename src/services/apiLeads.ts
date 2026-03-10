@@ -13,7 +13,7 @@ export interface Lead {
     source: LeadSource;
     value: number;
     notes: string | null;
-    metadata: any | null;
+    metadata: Record<string, unknown> | null;
     fb_leadgen_id: string | null;
 }
 

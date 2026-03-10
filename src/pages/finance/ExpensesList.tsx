@@ -58,7 +58,7 @@ export default function ExpensesList() {
             });
             alert("Expense Saved!");
         },
-        onError: (error: any) => {
+        onError: (error) => {
             console.error("Failed to create expense:", error);
             alert(`Error saving expense: ${error.message || error.error_description || "Unknown error"}`);
         }
@@ -86,7 +86,7 @@ export default function ExpensesList() {
                 recipient: { full_name: 'Demo Recipient', email: 'demo@example.com' },
                 project: null
             };
-            queryClient.setQueryData(['expenses'], (old: any) => [demoExpense, ...(old || [])]);
+            queryClient.setQueryData(['expenses'], (old: unknown) => [demoExpense, ...((old as Expense[]) || [])]);
 
             setNewExpense({
                 date: new Date().toISOString().split('T')[0],

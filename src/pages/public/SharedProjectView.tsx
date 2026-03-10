@@ -63,7 +63,7 @@ export default function SharedProjectView() {
     });
 
     const updateProjectMutation = useMutation({
-        mutationFn: (updates: { stage_details: any, financials: any, status: string }) =>
+        mutationFn: (updates: Partial<Project>) =>
             apiProjects.updateByToken(token!, updates),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['shared-project', token] });

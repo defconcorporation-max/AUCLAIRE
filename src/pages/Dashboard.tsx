@@ -21,7 +21,7 @@ import { apiUsers, UserProfile } from '@/services/apiUsers';
 
 interface ManufacturerDashboardProps {
     manufacturer: UserProfile;
-    projects: any[];
+    projects: Project[];
     role: string;
 }
 
@@ -29,7 +29,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
 
     const [open, setOpen] = useState(role === 'manufacturer');
 
-    const sortByRush = (a: any, b: any) => {
+    const sortByRush = (a: Project, b: Project) => {
         if (a.priority === 'rush' && b.priority !== 'rush') return -1;
         if (a.priority !== 'rush' && b.priority === 'rush') return 1;
         return 0;
@@ -323,7 +323,7 @@ export default function Dashboard() {
     // Expenses are usually admin-only, but let's be safe
     const filteredExpenses = (role === 'admin' || role === 'secretary') ? expenses : [];
 
-    const sortByRush = (a: any, b: any) => {
+    const sortByRush = (a: Project, b: Project) => {
         if (a.priority === 'rush' && b.priority !== 'rush') return -1;
         if (a.priority !== 'rush' && b.priority === 'rush') return 1;
         return 0;
@@ -339,11 +339,11 @@ export default function Dashboard() {
 
     // ─── Financial Source of Truth ──────────────────────────────────────────────
     // RULE: selling_price is the canonical sale price. budget is the legacy fallback.
-    const getSalePrice = (p: any) => Number(p.financials?.selling_price || p.budget || 0);
+    const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
 
     // RULE: Commission for a project is estimated from its rate fields.
     //       Once exported to expenses, the expense row IS the real commission.
-    const getCommissionEstimate = (p: any) => {
+    const getCommissionEstimate = (p: Project) => {
         if (!p.affiliate_id && !p.sales_agent_id) return 0;
         if (p.affiliate_commission_type === 'fixed') return Number(p.affiliate_commission_rate || 0);
         return (getSalePrice(p) * Number(p.affiliate_commission_rate || 0)) / 100;
