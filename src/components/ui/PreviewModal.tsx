@@ -1,4 +1,4 @@
-import { RingConfig, RingMaterials } from '@/context/RingContext';
+import { RingConfig } from '@/context/RingContext';
 // import React from 'react' // Unused with new JSX transform
 import { Icons } from './Icons' /** Icons import might need adjustment based on where icons are located, usually ../ui/Icons */
 /** actually Icons is exported from ./Icons.tsx in the same folder usually or ../ui/Icons */

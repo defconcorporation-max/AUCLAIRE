@@ -1,4 +1,4 @@
-import { UserProfile } from '@/services/apiUsers';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

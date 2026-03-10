@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, ReactNode } from 'react'
 
 // --- TYPES ---
 export type ToolType = 'select' | 'move' | 'scale' | 'rotate' | 'sculpt' | 'prongs' | 'stones' | 'shank' | 'render'
@@ -160,7 +160,7 @@ export function RingProvider({ children }: { children: ReactNode }) {
             const saved = localStorage.getItem('auclaire_designs')
             const parsed = saved ? JSON.parse(saved) : []
             // Defensive: Ensure loaded configs have all new fields
-            return parsed.map((d: Record<string, unknown>) => ({
+            return parsed.map((d: any) => ({
                 ...d,
                 config: {
                     ...defaultConfig,
@@ -178,8 +178,7 @@ export function RingProvider({ children }: { children: ReactNode }) {
         }
     })
 
-    // Recursive merge for deep updates
-    const deepMerge = (target: Record<string, unknown>, source: Record<string, unknown>) => {
+    const deepMerge = (target: any, source: any) => {
         for (const key of Object.keys(source)) {
             if (source[key] instanceof Object && key in target) {
                 Object.assign(source[key], deepMerge(target[key], source[key]))

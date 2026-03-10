@@ -335,14 +335,14 @@ export default function ProjectDetails() {
                                         value={selectedClientId}
                                         onChange={(e) => setSelectedClientId(e.target.value)}
                                     >
-                                        {clients?.map((client: UserProfile) => (
+                                        {clients?.map((client: any) => (
                                             <option key={client.id} value={client.id}>{client.full_name}</option>
                                         ))}
                                     </select>
                                     <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => {
                                         apiProjects.update(project.id, { client_id: selectedClientId })
                                             .then(() => {
-                                                const newClient = clients?.find((c: UserProfile) => c.id === selectedClientId);
+                                                const newClient = clients?.find((c: any) => c.id === selectedClientId);
                                                 apiActivities.log({
                                                     project_id: project.id,
                                                     user_id: user?.id || 'admin',

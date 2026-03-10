@@ -51,8 +51,8 @@ export default function ClientsList() {
         setFormData({
             full_name: client.full_name,
             email: client.email || '',
-            phone: client.phone || '',
-            notes: client.notes || ''
+            phone: (client as any).phone || '',
+            notes: (client as any).notes || ''
         });
         setIsClientModalOpen(true);
     };
@@ -147,7 +147,7 @@ export default function ClientsList() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Phone className="h-3 w-3" />
-                                    <span>{client.phone || 'No phone'}</span>
+                                    <span>{(client as any).phone || 'No phone'}</span>
                                 </div>
                             </div>
                         </CardContent>

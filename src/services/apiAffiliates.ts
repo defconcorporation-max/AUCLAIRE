@@ -119,7 +119,7 @@ export const apiAffiliates = {
 
             // Filter for affiliates/ambassadors
             const affiliateProfiles = allProfiles.filter(p =>
-                ['affiliate', 'ambassador'].includes(p.role?.toLowerCase())
+                ['affiliate', 'ambassador'].includes((p as any).role?.toLowerCase())
             );
 
             // Fetch generic stats for them (Batched or individual - keeping it simple/safe for now)

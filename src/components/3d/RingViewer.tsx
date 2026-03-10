@@ -3,7 +3,7 @@ import { RingConfig } from '@/context/RingContext';
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import RingModel from "./RingModel"
 import { useEffect, useRef, useState } from "react"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
+import { OrbitControls } from "@react-three/drei"
 import * as THREE from "three"
 
 // --- ENVIRONMENT MAP ---
@@ -132,7 +132,7 @@ function RingStand() {
 }
 
 const CameraController = () => {
-    const { camera, gl } = useThree((state) => state)
+    const { camera, gl } = useThree<any>((state: any) => state)
     const controlsRef = useRef<OrbitControls>()
 
     useEffect(() => {
@@ -162,9 +162,9 @@ const BAND_MODES: { value: BandMode; label: string }[] = [
     { value: 'eternity', label: 'Eternity' },
 ]
 
-export default function RingViewer({ config, intensity = 1.2 }: { config: RingConfig, intensity?: number }) {
-    const [profile, setProfile] = useState("Court")
-    const [prongStyle, setProngStyle] = useState("Round")
+export default function RingViewer({ config, intensity = 1.2 }: { config: any, intensity?: number }) {
+    const [profile, setProfile] = useState<any>("Court")
+    const [prongStyle, setProngStyle] = useState<any>("Round")
     const [bandMode, setBandMode] = useState<BandMode>('solitaire')
     const [paveShape, setPaveShape] = useState("Round")
     const [paveSize, setPaveSize] = useState(1.5) // 0.3 – 2.8

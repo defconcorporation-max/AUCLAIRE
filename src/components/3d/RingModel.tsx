@@ -154,7 +154,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
         let angles: number[] = []
         if (prongCount === 4) {
             const baseAngles = [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4]
-            angles = prongStyle === 'Compass' ? [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2] : baseAngles
+            angles = (prongStyle as string) === 'Compass' ? [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2] : baseAngles
         } else if (prongCount === 6) {
             angles = [0, Math.PI / 3, 2 * Math.PI / 3, Math.PI, 4 * Math.PI / 3, 5 * Math.PI / 3]
         }
@@ -222,7 +222,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
             // TIPS
             // Positioned exactly at the top of the prong stem
-            if (prongStyle === 'Round' || prongStyle === 'Compass') {
+            if (prongStyle === 'Round' || (prongStyle as string) === 'Compass') {
                 meshes.push(
                     <mesh key={`tip-${i}`} position={top} material={metalMaterial}>
                         <sphereGeometry args={[0.035, 16, 16]} />
@@ -347,7 +347,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
             : 0
 
         // Create ONE fresh geometry for this pave shape (avoid shared mutation)
-        const shapeKey = config.sideStones?.shape || 'Round'
+        const shapeKey = (config.sideStones as any)?.shape || 'Round'
         const geom = getGemGeometry(shapeKey as any)
 
         const result = []
@@ -395,7 +395,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
         config.sideStones?.active,
         config.sideStones?.length,
         config.sideStones?.size,
-        config.sideStones?.shape,
+        (config.sideStones as any)?.shape,
         shankWidth, shankThickness
     ])
 
@@ -424,8 +424,8 @@ export default function RingModel({ config }: { config: RingConfig }) {
                         {[-1, 1].map(dir => {
                             const sideGemSize = config.threeStone?.size || 0.5
                             const sideScale = sideGemSize // A bit simplistic, but works for scale factor relative to 1.0
-                            const sideShape = config.threeStone?.shape || 'Round'
-                            const sideGeom = getGemGeometry(sideShape)
+                            const sideShape = (config.threeStone as any)?.shape || 'Round'
+                            const sideGeom = getGemGeometry(sideShape as any)
 
                             // Position: Sides of the main stone, angled down slightly
                             // Gap from center: Main Radius + Side Radius
