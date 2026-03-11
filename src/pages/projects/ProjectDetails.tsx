@@ -1,6 +1,6 @@
 import { UserProfile } from '@/services/apiUsers';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiProjects, ProjectStatus } from '@/services/apiProjects';
 import { apiExpenses } from '@/services/apiExpenses';
@@ -1033,6 +1033,13 @@ export default function ProjectDetails() {
                                         </>
                                     ) : null}
 
+                                    {project.financials?.cost_items?.map((item, idx) => (
+                                        <React.Fragment key={item.id || idx}>
+                                            <div>{item.detail || "Cost Item"}:</div>
+                                            <div className="font-mono text-right text-red-500">-${item.amount}</div>
+                                        </React.Fragment>
+                                    ))}
+
                                     {/* Commission Display */}
                                     {project.affiliate_id && (
                                         <>
@@ -1051,16 +1058,19 @@ export default function ProjectDetails() {
                                     <div className={`border-t pt-1 font-mono text-right font-bold ${(() => {
                                         const salePrice = Number(project.financials?.selling_price || project.budget || 0);
                                         const comm = project.affiliate_id ? (project.affiliate_commission_type === 'fixed' ? Number(project.affiliate_commission_rate || 0) : (salePrice * (Number(project.affiliate_commission_rate) || 0) / 100)) : 0;
-                                        return salePrice - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0) - (project.financials?.additional_expense || 0) - comm > 0 ? 'text-green-600' : 'text-red-600';
+                                        const dynamicCosts = project.financials?.cost_items?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
+                                        return salePrice - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0) - (project.financials?.additional_expense || 0) - dynamicCosts - comm > 0 ? 'text-green-600' : 'text-red-600';
                                     })()}`}>
                                         ${(() => {
                                             const salePrice = Number(project.financials?.selling_price || project.budget || 0);
                                             const comm = project.affiliate_id ? (project.affiliate_commission_type === 'fixed' ? Number(project.affiliate_commission_rate || 0) : (salePrice * (Number(project.affiliate_commission_rate) || 0) / 100)) : 0;
+                                            const dynamicCosts = project.financials?.cost_items?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
                                             return (salePrice -
                                                 (project.financials?.supplier_cost || 0) -
                                                 (project.financials?.shipping_cost || 0) -
                                                 (project.financials?.customs_fee || 0) -
                                                 (project.financials?.additional_expense || 0) -
+                                                dynamicCosts -
                                                 comm
                                             ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                         })()}
@@ -1081,7 +1091,7 @@ export default function ProjectDetails() {
                                                     (project.financials?.customs_fee || 0);
 
                                                 if (totalCost <= 0) {
-                                                    alert("No costs to export (Supplier + Shipping + Customs = 0)");
+                                                    alert("No costs to export (Supplier + Shipping + Customs + Items = 0)");
                                                     return;
                                                 }
 
@@ -1410,61 +1420,125 @@ export default function ProjectDetails() {
                                         )}
                                     </div>
 
-                                    {/* Supplier Cost Input */}
+                                    {/* Cost Line Items Input */}
                                     {(role === 'manufacturer' || role === 'admin' || role === 'secretary') && (
                                         <div className="space-y-4 border-t pt-4">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium flex items-center gap-2 text-amber-600"><DollarSign className="w-3 h-3" /> Manufacturing Cost (Internal)</label>
-                                                <input
-                                                    type="number"
-                                                    className={`flex h-10 w-full rounded-md border ${project.financials?.exported_to_expenses ? 'border-zinc-200 bg-zinc-100 dark:bg-zinc-900 cursor-not-allowed opacity-75' : 'border-amber-200 bg-amber-50 dark:bg-amber-950/20'} px-3 py-2 text-sm`}
-                                                    placeholder="0.00"
-                                                    defaultValue={project.financials?.supplier_cost}
-                                                    onBlur={(e) => {
-                                                        const val = parseFloat(e.target.value);
-                                                        if (project.financials?.exported_to_expenses) return; // Prevent saving if locked
-                                                        apiProjects.updateFinancials(project.id, { supplier_cost: val }).then(() => {
-                                                            apiActivities.log({
-                                                                project_id: project.id,
-                                                                user_id: user?.id || 'admin',
-                                                                user_name: user?.user_metadata?.full_name || 'Admin',
-                                                                action: 'update',
-                                                                details: `Updated internal manufacturing cost to $${val.toLocaleString()}`
-                                                            });
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-sm font-medium flex items-center gap-2 text-amber-600">
+                                                    <DollarSign className="w-3 h-3" /> Cost Line Items (Internal)
+                                                </label>
+                                                {!project.financials?.exported_to_expenses && (
+                                                    <Button size="sm" variant="outline" onClick={() => {
+                                                        const currentItems = project.financials?.cost_items || [];
+                                                        const newItems = [...currentItems, { id: crypto.randomUUID(), detail: '', amount: 0 }];
+                                                        apiProjects.updateFinancials(project.id, { cost_items: newItems }).then(() => {
                                                             queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                            queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                                                         });
-                                                    }}
-                                                    readOnly={!!project.financials?.exported_to_expenses} // Locked when exported
-                                                />
-                                                <p className="text-[10px] text-muted-foreground">{project.financials?.exported_to_expenses ? "Cost locked, already exported to expenses." : "Update production cost at any stage before exporting."}</p>
+                                                    }}>
+                                                        + Add Cost Row
+                                                    </Button>
+                                                )}
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium flex items-center gap-2 text-red-500"><DollarSign className="w-3 h-3" /> Additional Expense</label>
-                                                <input
-                                                    type="number"
-                                                    className="flex h-10 w-full rounded-md border border-red-200 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-sm"
-                                                    placeholder="0.00"
-                                                    defaultValue={project.financials?.additional_expense}
-                                                    onBlur={(e) => {
-                                                        const val = parseFloat(e.target.value);
-                                                        apiProjects.updateFinancials(project.id, { additional_expense: val }).then(() => {
-                                                            apiActivities.log({
-                                                                project_id: project.id,
-                                                                user_id: user?.id || 'admin',
-                                                                user_name: user?.user_metadata?.full_name || 'Admin',
-                                                                action: 'update',
-                                                                details: `Updated additional expense to $${val.toLocaleString()}`
+                                            {project.financials?.cost_items?.map((item, idx) => (
+                                                <div key={item.id || idx} className="flex gap-2 items-center">
+                                                    <input
+                                                        className={`flex-1 h-10 rounded-md border ${project.financials?.exported_to_expenses ? 'border-zinc-200 bg-zinc-100 dark:bg-zinc-900 cursor-not-allowed opacity-75' : 'border-amber-200 bg-amber-50 dark:bg-amber-950/20'} px-3 py-2 text-sm`}
+                                                        placeholder="Detail (e.g. 14k gold, shipping)"
+                                                        defaultValue={item.detail}
+                                                        readOnly={!!project.financials?.exported_to_expenses}
+                                                        onBlur={(e) => {
+                                                            if (project.financials?.exported_to_expenses) return;
+                                                            const currentItems = project.financials?.cost_items || [];
+                                                            const newItems = [...currentItems];
+                                                            if (newItems[idx].detail === e.target.value) return;
+                                                            newItems[idx] = { ...newItems[idx], detail: e.target.value };
+                                                            apiProjects.updateFinancials(project.id, { cost_items: newItems }).then(() => {
+                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                             });
-                                                            queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                            queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
-                                                        });
-                                                    }}
-                                                // This field is deliberately left editable at all times for supplementary costs
-                                                />
-                                                <p className="text-[10px] text-muted-foreground">Add any extra costs that arise after main expenses are locked.</p>
-                                            </div>
+                                                        }}
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        className={`w-32 h-10 rounded-md border ${project.financials?.exported_to_expenses ? 'border-zinc-200 bg-zinc-100 dark:bg-zinc-900 cursor-not-allowed opacity-75' : 'border-amber-200 bg-amber-50 dark:bg-amber-950/20'} px-3 py-2 text-sm text-right font-mono`}
+                                                        placeholder="0.00"
+                                                        defaultValue={item.amount}
+                                                        readOnly={!!project.financials?.exported_to_expenses}
+                                                        onBlur={(e) => {
+                                                            if (project.financials?.exported_to_expenses) return;
+                                                            const currentItems = project.financials?.cost_items || [];
+                                                            const newItems = [...currentItems];
+                                                            const val = parseFloat(e.target.value) || 0;
+                                                            if (newItems[idx].amount === val) return;
+                                                            newItems[idx] = { ...newItems[idx], amount: val };
+                                                            apiProjects.updateFinancials(project.id, { cost_items: newItems }).then(() => {
+                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                                apiActivities.log({
+                                                                    project_id: project.id,
+                                                                    user_id: user?.id || 'admin',
+                                                                    user_name: user?.user_metadata?.full_name || 'Admin',
+                                                                    action: 'update',
+                                                                    details: `Updated cost item to $${val.toLocaleString()}`
+                                                                });
+                                                            });
+                                                        }}
+                                                    />
+                                                    {!project.financials?.exported_to_expenses && (
+                                                        <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-700 h-10 w-10 shrink-0" onClick={() => {
+                                                            if (!window.confirm('Remove this cost item?')) return;
+                                                            const currentItems = project.financials?.cost_items || [];
+                                                            const newItems = currentItems.filter((_, i) => i !== idx);
+                                                            apiProjects.updateFinancials(project.id, { cost_items: newItems }).then(() => {
+                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                            });
+                                                        }}>
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            <p className="text-[10px] text-muted-foreground">{project.financials?.exported_to_expenses ? "Costs locked, already exported to expenses." : "Update production costs at any stage before exporting."}</p>
+
+                                            {/* Legacy Fields Below */}
+                                            {((project.financials?.supplier_cost || 0) > 0) && (
+                                                <div className="space-y-2 mt-4 pt-4 border-t border-amber-200/50">
+                                                    <label className="text-sm font-medium flex items-center gap-2 text-amber-600/70"><DollarSign className="w-3 h-3" /> Legacy Manufacturing Cost</label>
+                                                    <input
+                                                        type="number"
+                                                        className={`flex h-10 w-full rounded-md border ${project.financials?.exported_to_expenses ? 'border-zinc-200 bg-zinc-100 dark:bg-zinc-900 cursor-not-allowed opacity-75' : 'border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/10'} px-3 py-2 text-sm opacity-80`}
+                                                        placeholder="0.00"
+                                                        defaultValue={project.financials?.supplier_cost}
+                                                        onBlur={(e) => {
+                                                            const val = parseFloat(e.target.value) || 0;
+                                                            if (project.financials?.exported_to_expenses) return;
+                                                            apiProjects.updateFinancials(project.id, { supplier_cost: val }).then(() => {
+                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                            });
+                                                        }}
+                                                        readOnly={!!project.financials?.exported_to_expenses}
+                                                    />
+                                                    <p className="text-[10px] text-muted-foreground">Zero out this field to migrate it to the dynamic list above.</p>
+                                                </div>
+                                            )}
+
+                                            {((project.financials?.additional_expense || 0) > 0) && (
+                                                <div className="space-y-2 mt-2">
+                                                    <label className="text-sm font-medium flex items-center gap-2 text-red-500/70"><DollarSign className="w-3 h-3" /> Legacy Additional Expense</label>
+                                                    <input
+                                                        type="number"
+                                                        className="flex h-10 w-full rounded-md border border-red-200/50 bg-red-50/50 dark:bg-red-950/10 px-3 py-2 text-sm opacity-80"
+                                                        placeholder="0.00"
+                                                        defaultValue={project.financials?.additional_expense}
+                                                        onBlur={(e) => {
+                                                            const val = parseFloat(e.target.value) || 0;
+                                                            apiProjects.updateFinancials(project.id, { additional_expense: val }).then(() => {
+                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                            });
+                                                        }}
+                                                    />
+                                                    <p className="text-[10px] text-muted-foreground">Zero out this field to migrate it to the dynamic list above.</p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 

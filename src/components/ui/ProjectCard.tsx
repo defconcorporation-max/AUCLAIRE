@@ -13,7 +13,7 @@ interface ProjectCardProps {
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
     const { role } = useAuth()
     const isRush = project.priority === 'rush'
-    const hasNoMfgCost = (role === 'admin' || role === 'secretary') && Number(project.financials?.supplier_cost || 0) === 0
+    const hasNoMfgCost = (role === 'admin' || role === 'secretary') && Number(project.financials?.supplier_cost || 0) === 0 && (!project.financials?.cost_items || project.financials.cost_items.length === 0);
 
     return (
         <Card

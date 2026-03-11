@@ -383,10 +383,14 @@ export default function Dashboard() {
         const COST_STATUSES = ['production', 'delivery', 'completed'];
         if (!COST_STATUSES.includes(p.status)) return sum;
         if (p.financials?.exported_to_expenses) return sum; // already in real expenses
+
+        const dynamicCosts = p.financials?.cost_items?.reduce((itemSum, item) => itemSum + (Number(item.amount) || 0), 0) || 0;
+
         return sum +
             Number(p.financials?.supplier_cost || 0) +
             Number(p.financials?.shipping_cost || 0) +
-            Number(p.financials?.customs_fee || 0);
+            Number(p.financials?.customs_fee || 0) +
+            dynamicCosts;
     }, 0);
 
     // ── Profit Calculations ───────────────────────────────────────────────────────

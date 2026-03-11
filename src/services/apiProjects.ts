@@ -45,10 +45,19 @@ export interface Project {
         client_approval_status?: 'pending' | 'approved' | 'changes_requested';
     };
     financials?: {
+        // Legacy fields (kept for backward compatibility and auto-migration)
         supplier_cost?: number; // Cost from manufacturer
         shipping_cost?: number; // Shipping to client
         customs_fee?: number;   // Import duties
         additional_expense?: number; // Extra supplementary costs added after main expenses
+
+        // New Dynamic Cost Items
+        cost_items?: {
+            id: string; // Unique ID for React mapping
+            detail: string; // "Manufacturing 14k", "Shipping", etc.
+            amount: number;
+        }[];
+
         selling_price?: number; // Usually same as budget, but tracked separately
         paid_amount?: number;   // Total amount paid by client
         exported_to_expenses?: boolean; // Flag to skip double-counting in dashboard
