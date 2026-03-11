@@ -63,8 +63,10 @@ export default function NotificationBell() {
                             <DropdownMenuItem
                                 key={notification.id}
                                 className={`flex flex-col items-start gap-1 p-3 cursor-pointer ${!notification.is_read ? 'bg-muted/50' : ''}`}
-                                onClick={() => {
-                                    if (notification.link) navigate(notification.link);
+                                onSelect={() => {
+                                    if (notification.link) {
+                                        setTimeout(() => navigate(notification.link!), 0);
+                                    }
                                 }}
                             >
                                 <div className="flex w-full justify-between items-start">
