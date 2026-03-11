@@ -34,6 +34,7 @@ import {
     Handshake
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 
 // Helper to resize/compress image to save LocalStorage space
