@@ -31,7 +31,8 @@ import {
     Save,
     X,
     Trash2,
-    Handshake
+    Handshake,
+    Link as LinkIcon
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -104,34 +105,25 @@ export default function ProjectDetails() {
     const [localStatus, setLocalStatus] = useState<string | null>(null);
     const [isSharing, setIsSharing] = useState(false);
 
-    const handleShareProject = async () => {
-        if (!projects || projects.length === 0) return;
-        // In this component, we fetch ALL projects. We need to find the specific one.
-        const project = projects.find(p => p.id === id);
-
-        if (!project) return;
+    const handleSendClientAccessLink = async () => {
+        if (!project?.client?.email) {
+            alert("This client does not have an email address on file.");
+            return;
+        }
 
         setIsSharing(true);
         try {
-            // Check if token exists on the object. If not, we might need to refresh or the DB trigger/default hasn't run.
-            // But since we selected all columns, if the column exists, we have it.
-            // For older projects, it might be null if we didn't backfill.
-            // The SQL I wrote ADDS the column with DEFAULT uuid_generate_v4(), so it SHOULD backfill.
-
-            // NOTE: We need to augment the Project interface in the frontend to know about 'share_token'
-            const token = (project as any).share_token;
-
-            if (!token) {
-                alert("Share token missing. Please refresh or contact admin.");
-                return;
-            }
-
-            const shareUrl = `${window.location.origin}/shared/${token}`;
-            await navigator.clipboard.writeText(shareUrl);
-            alert("Manufacturer Link copied to clipboard!");
-        } catch (err) {
+            const { error } = await supabase.auth.signInWithOtp({
+                email: project.client.email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/dashboard`
+                }
+            });
+            if (error) throw error;
+            alert(`Portal access link successfully sent to ${project.client.email}!`);
+        } catch (err: any) {
             console.error(err);
-            alert("Failed to copy link");
+            alert("Failed to send access link: " + err.message);
         } finally {
             setIsSharing(false);
         }
@@ -453,10 +445,16 @@ export default function ProjectDetails() {
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     </Button>
                     <div className="flex items-center gap-4 flex-wrap">
-                        {(role === 'admin' || role === 'secretary') && (
-                            <Button variant="outline" size="sm" onClick={handleShareProject} disabled={isSharing} className="gap-2 text-luxury-gold border-luxury-gold/30 hover:bg-luxury-gold hover:text-black transition-colors">
-                                <Send className="w-4 h-4" />
-                                {isSharing ? "Copying..." : "Share Link"}
+                        {(role === 'admin' || role === 'secretary' || role === 'affiliate') && (
+                            <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                onClick={handleSendClientAccessLink} 
+                                disabled={isSharing || !project?.client?.email} 
+                                className="gap-2 bg-luxury-gold/10 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-colors border border-luxury-gold/50"
+                            >
+                                <LinkIcon className="w-4 h-4" />
+                                {isSharing ? "Sending..." : "Send Portal Link"}
                             </Button>
                         )}
                         {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
