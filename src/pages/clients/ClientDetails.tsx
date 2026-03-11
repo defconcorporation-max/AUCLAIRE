@@ -5,9 +5,10 @@ import { apiClients } from '@/services/apiClients';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, KeyRound } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, KeyRound, Link as LinkIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import {
     Dialog,
     DialogContent,
@@ -28,6 +29,7 @@ export default function ClientDetails() {
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+    const [isSendingLink, setIsSendingLink] = useState(false);
 
     const { data: clients } = useQuery({
         queryKey: ['clients'],
@@ -37,6 +39,28 @@ export default function ClientDetails() {
     const client = clients?.find(c => c.id === id) || clients?.[0];
 
     if (!client) return <div>Client not found</div>;
+
+    const handleSendAccessLink = async () => {
+        if (!client.email) {
+            alert("Client does not have an email address on file.");
+            return;
+        }
+        setIsSendingLink(true);
+        try {
+            const { error } = await supabase.auth.signInWithOtp({
+                email: client.email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/dashboard`
+                }
+            });
+            if (error) throw error;
+            alert(`Access link successfully sent to ${client.email}! The client can click it to log in without a password.`);
+        } catch(err: any) {
+            alert("Failed to send access link: " + err.message);
+        } finally {
+            setIsSendingLink(false);
+        }
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -51,6 +75,17 @@ export default function ClientDetails() {
                     </div>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
+                    {/* Access Link Button */}
+                    <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="gap-2 bg-luxury-gold/10 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-colors border border-luxury-gold/50"
+                        onClick={handleSendAccessLink}
+                        disabled={isSendingLink || !client.email}
+                    >
+                        <LinkIcon className="w-4 h-4" /> {isSendingLink ? 'Sending...' : 'Send Portal Link'}
+                    </Button>
+
                     {role === 'admin' && (
                         <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
                             <DialogTrigger asChild>

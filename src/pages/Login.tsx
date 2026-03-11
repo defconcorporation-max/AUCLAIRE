@@ -44,6 +44,16 @@ export default function Login() {
                 })
                 if (error) throw error
                 setMessage({ type: 'success', text: 'Account created! Please check your email to confirm.' })
+            } else if (mode === 'magic-link') {
+                const { error } = await supabase.auth.signInWithOtp({
+                    email,
+                    options: {
+                        // Redirect to the client portal after they click the link
+                        emailRedirectTo: `${window.location.origin}/dashboard`
+                    }
+                })
+                if (error) throw error
+                setMessage({ type: 'success', text: 'Check your email for the magic link! You can close this window.' })
             } else {
                 // Login
                 const { error } = await supabase.auth.signInWithPassword({
@@ -112,7 +122,7 @@ export default function Login() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
-                            {mode !== 'forgot' && (
+                            {(mode === 'login' || mode === 'register') && (
                                 <Input
                                     type="password"
                                     placeholder="Password"
@@ -124,19 +134,28 @@ export default function Login() {
 
                             <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black" disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Send Reset Link'}
+                                {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : mode === 'magic-link' ? 'Send Access Link' : 'Send Reset Link'}
                             </Button>
 
                             {mode === 'login' && (
-                                <button
-                                    type="button"
-                                    onClick={() => { setMode('forgot'); setMessage(null); }}
-                                    className="w-full text-center text-xs text-muted-foreground hover:text-luxury-gold transition-colors"
-                                >
-                                    Forgot your password?
-                                </button>
+                                <div className="space-y-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setMode('magic-link'); setMessage(null); }}
+                                        className="w-full mt-2 p-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-black transition-colors text-sm font-medium"
+                                    >
+                                        Client? Get a Login Link (No Password)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setMode('forgot'); setMessage(null); }}
+                                        className="w-full text-center text-xs text-muted-foreground hover:text-luxury-gold transition-colors block mt-4"
+                                    >
+                                        Forgot your password?
+                                    </button>
+                                </div>
                             )}
-                            {mode === 'forgot' && (
+                            {(mode === 'forgot' || mode === 'magic-link') && (
                                 <button
                                     type="button"
                                     onClick={() => { setMode('login'); setMessage(null); }}
