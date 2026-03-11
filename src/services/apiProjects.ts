@@ -262,16 +262,34 @@ export const apiProjects = {
         return data;
     },
 
-    async updateFinancials(id: string, financials: Partial<Project['financials']>) {
+    async updateFinancials(id: string, financials: Partial<Project['financials']>, auditInfo?: { user_id: string; user_name: string }) {
         // 1. Fetch current to merge JSONB
         const { data: currentProject, error: fetchError } = await supabase
             .from('projects')
-            .select('financials')
+            .select('financials, title')
             .eq('id', id)
             .single();
 
         if (!fetchError && currentProject) {
-            const newFinancials = { ...(currentProject.financials || {}), ...financials };
+            const oldFinancials = currentProject.financials || {};
+            const newFinancials = { ...oldFinancials, ...financials };
+
+            // Build audit diff — track what actually changed
+            const changes: string[] = [];
+            for (const key of Object.keys(financials) as (keyof typeof financials)[]) {
+                const oldVal = oldFinancials[key];
+                const newVal = financials[key];
+                if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+                    if (key === 'cost_items') {
+                        const oldCount = Array.isArray(oldVal) ? (oldVal as any[]).length : 0;
+                        const newCount = Array.isArray(newVal) ? (newVal as any[]).length : 0;
+                        changes.push(`cost_items: ${oldCount} → ${newCount} items`);
+                    } else {
+                        changes.push(`${key}: ${oldVal ?? 'N/A'} → ${newVal ?? 'N/A'}`);
+                    }
+                }
+            }
+
             const { data, error } = await supabase
                 .from('projects')
                 .update({ financials: newFinancials })
@@ -283,6 +301,18 @@ export const apiProjects = {
                 toast({ title: 'Error updating financials', description: error.message, variant: 'destructive' });
                 throw error;
             }
+
+            // Log audit trail if there were meaningful changes
+            if (changes.length > 0 && auditInfo) {
+                supabase.from('activity_logs').insert({
+                    project_id: id,
+                    user_id: auditInfo.user_id,
+                    user_name: auditInfo.user_name,
+                    action: 'financial',
+                    details: `Updated financials on "${currentProject.title}": ${changes.join(', ')}`
+                }).then(() => {}).catch(() => {}); // fire and forget
+            }
+
             return data;
         }
 

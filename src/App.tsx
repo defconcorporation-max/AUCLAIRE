@@ -35,6 +35,13 @@ import LeadDetails from './pages/crm/LeadDetails';
 import ResourcesHub from './pages/resources/ResourcesHub';
 import SalesProcess from './pages/resources/SalesProcess';
 import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
+import { useRealtimeSync } from './hooks/useRealtimeSync';
+
+// Realtime sync component — must be inside Router + QueryClientProvider
+function RealtimeSync() {
+  useRealtimeSync();
+  return null;
+}
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -65,6 +72,7 @@ function App() {
     <ThemeProvider defaultTheme="dark" storageKey="auclaire-theme">
       <Toaster />
       <Router>
+        <RealtimeSync />
         <RingProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
