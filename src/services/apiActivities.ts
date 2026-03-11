@@ -5,7 +5,7 @@ export interface ActivityLog {
     project_id?: string;
     user_id: string;
     user_name: string;
-    action: 'status_change' | 'update' | 'create' | 'delete' | 'comment' | 'approval';
+    action: 'status_change' | 'update' | 'create' | 'delete' | 'comment' | 'approval' | 'financial' | 'invoice' | 'expense' | 'notification';
     details: string;
     created_at: string;
 }
@@ -42,7 +42,7 @@ export const apiActivities = {
             .from('activity_logs')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(50); // Reasonable limit for dashboard
+            .limit(200); // Show plenty of recent activity
 
         if (error || !data) {
             loadMockData();

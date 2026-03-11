@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiExpenses, Expense } from '@/services/apiExpenses';
+import { apiActivities } from '@/services/apiActivities';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,8 +46,14 @@ export default function ExpensesList() {
     // Mutations
     const createMutation = useMutation({
         mutationFn: apiExpenses.create,
-        onSuccess: () => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['expenses'] });
+            apiActivities.log({
+                user_id: profile?.id || 'admin',
+                user_name: profile?.full_name || 'Admin',
+                action: 'expense',
+                details: `Recorded expense: $${variables.amount} — ${variables.description || variables.category}`,
+            });
             setIsAddOpen(false);
             setNewExpense({
                 date: new Date().toISOString().split('T')[0],
@@ -68,6 +75,12 @@ export default function ExpensesList() {
         mutationFn: apiExpenses.delete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['expenses'] });
+            apiActivities.log({
+                user_id: profile?.id || 'admin',
+                user_name: profile?.full_name || 'Admin',
+                action: 'delete',
+                details: `Deleted an expense entry`,
+            });
         }
     });
 

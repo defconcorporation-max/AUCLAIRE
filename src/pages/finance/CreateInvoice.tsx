@@ -8,9 +8,12 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, DollarSign, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
+import { apiActivities } from '@/services/apiActivities';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CreateInvoice() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [projectId, setProjectId] = useState('');
     const [amount, setAmount] = useState('');
@@ -25,11 +28,19 @@ export default function CreateInvoice() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        const selectedProject = projects?.find(p => p.id === projectId);
         await apiInvoices.create({
             project_id: projectId,
             amount: parseFloat(amount),
             stripe_payment_link: paymentLink,
             due_date: dueDate
+        });
+        apiActivities.log({
+            project_id: projectId,
+            user_id: user?.id || 'admin',
+            user_name: user?.user_metadata?.full_name || 'Admin',
+            action: 'invoice',
+            details: `Created invoice of $${amount} for "${selectedProject?.title || 'Unknown'}"`,
         });
         setLoading(false);
         navigate(-1);
