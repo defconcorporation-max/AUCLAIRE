@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts"
 
-const resendApiKey = Deno.env.get('RESEND_API_KEY')
+const GMAIL_USER = Deno.env.get('GMAIL_USER')
+const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD')
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -13,39 +15,40 @@ serve(async (req) => {
     }
 
     try {
-        if (!resendApiKey) {
-            throw new Error("Missing RESEND_API_KEY inside Supabase Environment Variables.");
+        if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+            throw new Error("Missing GMAIL_USER or GMAIL_APP_PASSWORD secrets.");
         }
 
         const { to, subject, html } = await req.json();
 
         if (!to || !subject || !html) {
-            throw new Error("Missing required payload fields: 'to', 'subject', 'html'.");
+            throw new Error("Missing required fields: to, subject, html");
         }
 
-        // Call Resend API natively
-        const res = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${resendApiKey}`
+        const client = new SMTPClient({
+            connection: {
+                hostname: "smtp.gmail.com",
+                port: 465,
+                tls: true,
+                auth: {
+                    username: GMAIL_USER,
+                    password: GMAIL_APP_PASSWORD,
+                },
             },
-            body: JSON.stringify({
-                from: 'Auclaire CRM <notifications@your-domain.com>',
-                to: [to],
-                subject: subject,
-                html: html,
-            })
         });
 
-        const data = await res.json();
+        await client.send({
+            from: GMAIL_USER,
+            to: to,
+            subject: subject,
+            content: "auto",
+            html: html,
+        });
 
-        if (!res.ok) {
-            throw new Error(JSON.stringify(data));
-        }
+        await client.close();
 
         return new Response(
-            JSON.stringify(data),
+            JSON.stringify({ success: true }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         )
     } catch (error) {
