@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 
 export default function Login() {
-    // Mode: 'login' | 'register' | 'forgot'
-    const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login')
+    // Mode: 'login' | 'register' | 'forgot' | 'magic-link'
+    const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'magic-link'>('login')
 
     // Form State
     const [email, setEmail] = useState('')
