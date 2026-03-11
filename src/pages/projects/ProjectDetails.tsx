@@ -226,15 +226,15 @@ export default function ProjectDetails() {
                         });
                     }
 
-                    // Notify Secretaries
+                    // Notify Secretaries and Admins
                     try {
                         const allUsers = await apiUsers.getAll();
-                        const secretaries = allUsers.filter(u => u.role === 'secretary');
+                        const notifiedUsers = allUsers.filter(u => u.role === 'secretary' || u.role === 'admin');
 
-                        secretaries.forEach(sec => {
+                        notifiedUsers.forEach(userToNotify => {
                             // 1. In-App Notification
                             apiNotifications.create({
-                                user_id: sec.id,
+                                user_id: userToNotify.id,
                                 title: 'Design Ready for Review',
                                 message: `The project "${project.title}" is Design Ready and awaits client review.`,
                                 type: 'info',
@@ -242,8 +242,8 @@ export default function ProjectDetails() {
                             });
 
                             // 2. Email Notification via Edge Function
-                            if (sec.email || (sec as any).user_metadata?.email) {
-                                const emailAddress = sec.email || (sec as any).user_metadata?.email;
+                            if (userToNotify.email || (userToNotify as any).user_metadata?.email) {
+                                const emailAddress = userToNotify.email || (userToNotify as any).user_metadata?.email;
                                 supabase.functions.invoke('send-email', {
                                     body: {
                                         to: emailAddress,
@@ -251,7 +251,7 @@ export default function ProjectDetails() {
                                         html: `
                                             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
                                                 <h2 style="color: #6a5100;">Design Ready for Review</h2>
-                                                <p>Hello ${sec.full_name},</p>
+                                                <p>Hello ${userToNotify.full_name},</p>
                                                 <p>The manufacturing team has marked the project <strong>"${project.title}"</strong> as Design Ready.</p>
                                                 <p>Please review the design files and coordinate with the client for approval.</p>
                                                 <br/>
@@ -263,7 +263,7 @@ export default function ProjectDetails() {
                             }
                         });
                     } catch (err) {
-                        console.error("Failed to fetch secretaries for notifications", err);
+                        console.error("Failed to fetch users for notifications", err);
                     }
 
                 } else if (status === 'production' && project.client_id) {
