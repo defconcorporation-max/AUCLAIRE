@@ -304,13 +304,13 @@ export const apiProjects = {
 
             // Log audit trail if there were meaningful changes
             if (changes.length > 0 && auditInfo) {
-                supabase.from('activity_logs').insert({
+                Promise.resolve(supabase.from('activity_logs').insert({
                     project_id: id,
                     user_id: auditInfo.user_id,
                     user_name: auditInfo.user_name,
                     action: 'financial',
                     details: `Updated financials on "${currentProject.title}": ${changes.join(', ')}`
-                }).then(() => {}).catch(() => {}); // fire and forget
+                })).catch(() => {}); // fire and forget
             }
 
             return data;
