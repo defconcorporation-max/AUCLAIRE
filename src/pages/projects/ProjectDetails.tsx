@@ -169,6 +169,46 @@ export default function ProjectDetails() {
 
     if (!project) return <div>Project not found</div>;
 
+    // Auto-migrate legacy costs to cost_items
+    React.useEffect(() => {
+        if (!project || !project.financials) return;
+
+        const hasLegacyMfg = (project.financials.supplier_cost || 0) > 0;
+        const hasLegacyAdd = (project.financials.additional_expense || 0) > 0;
+
+        if (hasLegacyMfg || hasLegacyAdd) {
+            const newItems = [...(project.financials.cost_items || [])];
+            let changed = false;
+
+            if (hasLegacyMfg) {
+                newItems.push({ id: crypto.randomUUID(), detail: 'Manufacturing Cost', amount: project.financials.supplier_cost! });
+                changed = true;
+            }
+            if (hasLegacyAdd) {
+                newItems.push({ id: crypto.randomUUID(), detail: 'Additional Expense', amount: project.financials.additional_expense! });
+                changed = true;
+            }
+
+            if (changed) {
+                // Migrate to new rows and zero out the legacy fields
+                apiProjects.updateFinancials(project.id, {
+                    cost_items: newItems,
+                    supplier_cost: 0,
+                    additional_expense: 0
+                }).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['projects'] });
+                    apiActivities.log({
+                        project_id: project.id,
+                        user_id: user?.id || 'admin',
+                        user_name: user?.user_metadata?.full_name || 'System',
+                        action: 'update',
+                        details: `Auto-migrated legacy costs to dynamic line items.`
+                    });
+                });
+            }
+        }
+    }, [project?.id, project?.financials?.supplier_cost, project?.financials?.additional_expense, queryClient, user]);
+
     const handleStatusUpdate = (status: ProjectStatus) => {
         apiProjects.updateStatus(project.id, status)
             .then(() => {
@@ -1498,47 +1538,6 @@ export default function ProjectDetails() {
                                                 </div>
                                             ))}
                                             <p className="text-[10px] text-muted-foreground">{project.financials?.exported_to_expenses ? "Costs locked, already exported to expenses." : "Update production costs at any stage before exporting."}</p>
-
-                                            {/* Legacy Fields Below */}
-                                            {((project.financials?.supplier_cost || 0) > 0) && (
-                                                <div className="space-y-2 mt-4 pt-4 border-t border-amber-200/50">
-                                                    <label className="text-sm font-medium flex items-center gap-2 text-amber-600/70"><DollarSign className="w-3 h-3" /> Legacy Manufacturing Cost</label>
-                                                    <input
-                                                        type="number"
-                                                        className={`flex h-10 w-full rounded-md border ${project.financials?.exported_to_expenses ? 'border-zinc-200 bg-zinc-100 dark:bg-zinc-900 cursor-not-allowed opacity-75' : 'border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/10'} px-3 py-2 text-sm opacity-80`}
-                                                        placeholder="0.00"
-                                                        defaultValue={project.financials?.supplier_cost}
-                                                        onBlur={(e) => {
-                                                            const val = parseFloat(e.target.value) || 0;
-                                                            if (project.financials?.exported_to_expenses) return;
-                                                            apiProjects.updateFinancials(project.id, { supplier_cost: val }).then(() => {
-                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                            });
-                                                        }}
-                                                        readOnly={!!project.financials?.exported_to_expenses}
-                                                    />
-                                                    <p className="text-[10px] text-muted-foreground">Zero out this field to migrate it to the dynamic list above.</p>
-                                                </div>
-                                            )}
-
-                                            {((project.financials?.additional_expense || 0) > 0) && (
-                                                <div className="space-y-2 mt-2">
-                                                    <label className="text-sm font-medium flex items-center gap-2 text-red-500/70"><DollarSign className="w-3 h-3" /> Legacy Additional Expense</label>
-                                                    <input
-                                                        type="number"
-                                                        className="flex h-10 w-full rounded-md border border-red-200/50 bg-red-50/50 dark:bg-red-950/10 px-3 py-2 text-sm opacity-80"
-                                                        placeholder="0.00"
-                                                        defaultValue={project.financials?.additional_expense}
-                                                        onBlur={(e) => {
-                                                            const val = parseFloat(e.target.value) || 0;
-                                                            apiProjects.updateFinancials(project.id, { additional_expense: val }).then(() => {
-                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                            });
-                                                        }}
-                                                    />
-                                                    <p className="text-[10px] text-muted-foreground">Zero out this field to migrate it to the dynamic list above.</p>
-                                                </div>
-                                            )}
                                         </div>
                                     )}
 
