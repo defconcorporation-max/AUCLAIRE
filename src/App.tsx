@@ -35,6 +35,7 @@ import LeadDetails from './pages/crm/LeadDetails';
 import ResourcesHub from './pages/resources/ResourcesHub';
 import SalesProcess from './pages/resources/SalesProcess';
 import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
+import ClientPortal from './pages/clients/ClientPortal';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
 
 // Realtime sync component — must be inside Router + QueryClientProvider
@@ -97,11 +98,12 @@ function App() {
                 </CRMLayout>
               </ProtectedRoute>
             }>
-              <Route index element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><Dashboard /></ProtectedRoute>} />
+              <Route index element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary', 'client']}><Dashboard /></ProtectedRoute>} />
+              <Route path="my-portal" element={<ProtectedRoute allowedRoles={['client']}><ClientPortal /></ProtectedRoute>} />
               <Route path="analytics" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AnalyticsDashboard /></ProtectedRoute>} />
               <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ProjectsList /></ProtectedRoute>} />
               <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><CreateProject /></ProtectedRoute>} />
-              <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ProjectDetails /></ProtectedRoute>} />
+              <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary', 'client']}><ProjectDetails /></ProtectedRoute>} />
               <Route path="leads" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><LeadsDashboard /></ProtectedRoute>} />
               <Route path="leads/:id" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><LeadDetails /></ProtectedRoute>} />
               <Route path="clients" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><ClientsList /></ProtectedRoute>} />

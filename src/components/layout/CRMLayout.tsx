@@ -15,7 +15,8 @@ import {
     GraduationCap,
     PhoneCall,
     BookOpen,
-    BarChart3
+    BarChart3,
+    Eye
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -25,16 +26,18 @@ import { useTheme } from '@/components/ThemeProvider'
 import { Sun, Moon } from 'lucide-react'
 
 const navItems = [
+    // Client-specific
+    { label: 'My Portal', href: '/dashboard/my-portal', icon: Eye, roles: ['client'] },
+    // Standard roles
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'secretary'] },
     { label: 'Leads & CRM', href: '/dashboard/leads', icon: PhoneCall, roles: ['admin', 'affiliate', 'secretary'] },
-    { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'client', 'affiliate', 'secretary'] },
+    { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate', 'secretary'] },
     { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate', 'secretary'] },
     { label: 'Expenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin', 'secretary'] },
     { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin', 'secretary'] },
     { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin', 'secretary'] },
-    // Link back to the CAD tool
     { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'QCM Academy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
