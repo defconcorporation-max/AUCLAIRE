@@ -1,5 +1,5 @@
 import { Project } from '@/services/apiProjects';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from "@/components/ui/badge";
 import { RecentActivityList } from "@/components/RecentActivityList";
 import { RevenueChart } from "@/components/RevenueChart";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import {
     Activity, TrendingUp,
@@ -269,6 +269,14 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
 export default function Dashboard() {
     const { profile, role } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
+
+    // Redirect clients to their portal
+    useEffect(() => {
+        if (role === 'client') {
+            navigate('/dashboard/my-portal', { replace: true });
+        }
+    }, [role, navigate]);
 
     // Fetch all projects
     const { data: projects, isLoading: projectsLoading, error: projectsError } = useQuery({
