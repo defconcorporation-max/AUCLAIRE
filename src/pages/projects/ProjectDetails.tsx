@@ -217,6 +217,8 @@ export default function ProjectDetails() {
 
                 // Detailed Notifications for Status Changes
                 if (status === 'design_ready') {
+                    console.log('[Notifications] Design Ready triggered for project:', project.title);
+
                     if (project.client_id) {
                         apiNotifications.create({
                             user_id: project.client_id,
@@ -224,27 +226,35 @@ export default function ProjectDetails() {
                             message: `Your project "${project.title}" has a new 3D design ready for your approval.`,
                             type: 'info',
                             link: `/dashboard/projects/${project.id}`
-                        });
+                        }).then(() => console.log('[Notifications] Client notification created'))
+                            .catch(err => console.error('[Notifications] Client notification FAILED:', err));
                     }
 
                     // Notify Secretaries and Admins
                     try {
                         const allUsers = await apiUsers.getAll();
                         const notifiedUsers = allUsers.filter(u => u.role === 'secretary' || u.role === 'admin');
+                        console.log('[Notifications] Found users to notify:', notifiedUsers.map(u => ({ name: u.full_name, role: u.role, email: u.email })));
 
-                        notifiedUsers.forEach(userToNotify => {
+                        for (const userToNotify of notifiedUsers) {
                             // 1. In-App Notification
-                            apiNotifications.create({
-                                user_id: userToNotify.id,
-                                title: 'Design Ready for Review',
-                                message: `The project "${project.title}" is Design Ready and awaits client review.`,
-                                type: 'info',
-                                link: `/dashboard/projects/${project.id}`
-                            });
+                            try {
+                                await apiNotifications.create({
+                                    user_id: userToNotify.id,
+                                    title: 'Design Ready for Review',
+                                    message: `The project "${project.title}" is Design Ready and awaits client review.`,
+                                    type: 'info',
+                                    link: `/dashboard/projects/${project.id}`
+                                });
+                                console.log(`[Notifications] ✅ In-app notification created for ${userToNotify.full_name}`);
+                            } catch (err) {
+                                console.error(`[Notifications] ❌ In-app notification FAILED for ${userToNotify.full_name}:`, err);
+                            }
 
                             // 2. Email Notification via Edge Function
-                            if (userToNotify.email || (userToNotify as any).user_metadata?.email) {
-                                const emailAddress = userToNotify.email || (userToNotify as any).user_metadata?.email;
+                            const emailAddress = userToNotify.email || (userToNotify as any).user_metadata?.email;
+                            if (emailAddress) {
+                                console.log(`[Notifications] Sending email to ${emailAddress}...`);
                                 supabase.functions.invoke('send-email', {
                                     body: {
                                         to: emailAddress,
@@ -260,11 +270,14 @@ export default function ProjectDetails() {
                                             </div>
                                         `
                                     }
-                                }).catch(err => console.error("Email dispatch failed:", err));
+                                }).then(res => console.log(`[Notifications] ✅ Email result for ${emailAddress}:`, res))
+                                    .catch(err => console.error(`[Notifications] ❌ Email FAILED for ${emailAddress}:`, err));
+                            } else {
+                                console.warn(`[Notifications] ⚠️ No email found for ${userToNotify.full_name}`);
                             }
-                        });
+                        }
                     } catch (err) {
-                        console.error("Failed to fetch users for notifications", err);
+                        console.error("[Notifications] Failed to fetch users for notifications", err);
                     }
 
                 } else if (status === 'production' && project.client_id) {
