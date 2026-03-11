@@ -89,5 +89,17 @@ export const apiNotifications = {
             throw error;
         }
         return data;
+    },
+
+    async markOneRead(notificationId: string) {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', notificationId);
+
+        if (error) {
+            throw error;
+        }
+        return true;
     }
 };

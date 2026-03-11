@@ -12,10 +12,10 @@ export function RoleSwitcher() {
 
     const roles: UserRole[] = ['admin', 'manufacturer', 'client', 'affiliate', 'secretary'];
     
-    // Use user metadata or another way to know if they are TRULY an admin, or just check if there's an original profile
-    // In AuthContext, originalProfile is exposed as originalProfile. We need to check if they have admin privileges.
-    // If they have impersonated someone, impersonatedProfile is set.
-    const showButtons = originalProfile?.role === 'admin' || impersonatedProfile !== null || role === 'admin';
+    // Only show for real admins — not when impersonating or switching roles
+    const isRealAdmin = originalProfile?.role === 'admin';
+    if (!isRealAdmin) return null;
+
     const showUserPicker = role === 'manufacturer' || role === 'affiliate' || role === 'secretary';
 
     const { data: users = [] } = useQuery({
@@ -33,8 +33,7 @@ export function RoleSwitcher() {
             </div>
 
 
-            {/* Role switcher buttons */}
-            {showButtons && (
+            {/* Role switcher buttons — always shown since only admins reach this point */}
                 <div className="flex gap-1.5 flex-wrap">
                     {roles.map(r => (
                         <Button
@@ -48,7 +47,7 @@ export function RoleSwitcher() {
                         </Button>
                     ))}
                 </div>
-            )}
+
 
             {/* User picker — shown when role is manufacturer or affiliate */}
             {showUserPicker && user && (

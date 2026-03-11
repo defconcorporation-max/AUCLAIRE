@@ -279,14 +279,73 @@ export default function ProjectDetails() {
                         console.error("[Notifications] Failed to fetch users for notifications", err);
                     }
 
-                } else if (status === 'production' && project.client_id) {
-                    apiNotifications.create({
-                        user_id: project.client_id,
-                        title: 'Production Started',
-                        message: `Great news! "${project.title}" is now in production.`,
-                        type: 'success',
-                        link: `/dashboard/projects/${project.id}`
-                    });
+                } else if (status === 'production') {
+                    if (project.client_id) {
+                        apiNotifications.create({
+                            user_id: project.client_id,
+                            title: 'Production Started',
+                            message: `Great news! "${project.title}" is now in production.`,
+                            type: 'success',
+                            link: `/dashboard/projects/${project.id}`
+                        });
+                    }
+                    // Email secretaries & admins
+                    try {
+                        const allUsers = await apiUsers.getAll();
+                        allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
+                            const email = u.email || (u as any).user_metadata?.email;
+                            if (email) {
+                                supabase.functions.invoke('send-email', {
+                                    body: { to: email, subject: `Production Started: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Production Started</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has entered production.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
+                                }).catch(err => console.error("Email failed:", err));
+                            }
+                        });
+                    } catch (err) { /* silent */ }
+
+                } else if (status === 'delivery') {
+                    if (project.client_id) {
+                        apiNotifications.create({
+                            user_id: project.client_id,
+                            title: 'Order Shipped',
+                            message: `Your project "${project.title}" is on its way!`,
+                            type: 'success',
+                            link: `/dashboard/projects/${project.id}`
+                        });
+                    }
+                    try {
+                        const allUsers = await apiUsers.getAll();
+                        allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
+                            const email = u.email || (u as any).user_metadata?.email;
+                            if (email) {
+                                supabase.functions.invoke('send-email', {
+                                    body: { to: email, subject: `Shipped: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Order Shipped</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has been shipped for delivery.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
+                                }).catch(err => console.error("Email failed:", err));
+                            }
+                        });
+                    } catch (err) { /* silent */ }
+
+                } else if (status === 'completed') {
+                    if (project.client_id) {
+                        apiNotifications.create({
+                            user_id: project.client_id,
+                            title: 'Project Completed',
+                            message: `Your project "${project.title}" is complete! Thank you for choosing Auclaire.`,
+                            type: 'success',
+                            link: `/dashboard/projects/${project.id}`
+                        });
+                    }
+                    try {
+                        const allUsers = await apiUsers.getAll();
+                        allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
+                            const email = u.email || (u as any).user_metadata?.email;
+                            if (email) {
+                                supabase.functions.invoke('send-email', {
+                                    body: { to: email, subject: `Completed: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Project Completed 🎉</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has been marked as completed.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
+                                }).catch(err => console.error("Email failed:", err));
+                            }
+                        });
+                    } catch (err) { /* silent */ }
+
                 } else if (status === 'design_modification' && (project as any).manufacturer_id) {
                     apiNotifications.create({
                         user_id: (project as any).manufacturer_id,

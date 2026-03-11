@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 
 export default function Login() {
-    // Mode: 'login' | 'register'
-    const [mode, setMode] = useState<'login' | 'register'>('login')
+    // Mode: 'login' | 'register' | 'forgot'
+    const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login')
 
     // Form State
     const [email, setEmail] = useState('')
@@ -26,7 +26,13 @@ export default function Login() {
         setMessage(null)
 
         try {
-            if (mode === 'register') {
+            if (mode === 'forgot') {
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/login`
+                })
+                if (error) throw error
+                setMessage({ type: 'success', text: 'Password reset email sent! Check your inbox.' })
+            } else if (mode === 'register') {
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
@@ -48,8 +54,9 @@ export default function Login() {
                 // Success - redirect handled by AuthContext or manual
                 navigate('/dashboard')
             }
-        } catch (error) {
-            setMessage({ type: 'error', text: error.message })
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'An unexpected error occurred';
+            setMessage({ type: 'error', text: msg })
         } finally {
             setLoading(false)
         }
@@ -105,18 +112,39 @@ export default function Login() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
-                            <Input
-                                type="password"
-                                placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
+                            {mode !== 'forgot' && (
+                                <Input
+                                    type="password"
+                                    placeholder="Password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            )}
 
                             <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black" disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {mode === 'login' ? 'Sign In' : 'Create Account'}
+                                {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Send Reset Link'}
                             </Button>
+
+                            {mode === 'login' && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setMode('forgot'); setMessage(null); }}
+                                    className="w-full text-center text-xs text-muted-foreground hover:text-luxury-gold transition-colors"
+                                >
+                                    Forgot your password?
+                                </button>
+                            )}
+                            {mode === 'forgot' && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setMode('login'); setMessage(null); }}
+                                    className="w-full text-center text-xs text-muted-foreground hover:text-luxury-gold transition-colors"
+                                >
+                                    Back to Login
+                                </button>
+                            )}
                         </form>
 
                         {message && (

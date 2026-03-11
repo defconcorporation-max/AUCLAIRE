@@ -83,6 +83,7 @@ function App() {
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <CRMLayout>
+                  {/* RoleSwitcher only for real admins */}
                   <RoleSwitcher />
                   <Outlet /> {/* This is where nested routes will render */}
                 </CRMLayout>
@@ -111,14 +112,14 @@ function App() {
 
               <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliateDetails /></ProtectedRoute>} />
 
-              {/* Debugging */}
-              <Route path="debug" element={<DebugPage />} />
+              {/* Debugging - Admin only */}
+              <Route path="debug" element={<ProtectedRoute allowedRoles={['admin']}><DebugPage /></ProtectedRoute>} />
             </Route>
 
 
 
-            {/* Debugging */}
-            <Route path="/debug-tool" element={<DebugPage />} />
+            {/* Debugging - Admin only */}
+            <Route path="/debug-tool" element={<ProtectedRoute><DebugPage /></ProtectedRoute>} />
 
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
