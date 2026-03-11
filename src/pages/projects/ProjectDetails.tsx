@@ -168,9 +168,7 @@ export default function ProjectDetails() {
 
     const project = projects?.find(p => p.id === id) || projects?.[0]; // Fallback for demo
 
-    if (!project) return <div>Project not found</div>;
-
-    // Auto-migrate legacy costs to cost_items
+    // Auto-migrate legacy costs to cost_items (must be before any conditional return)
     React.useEffect(() => {
         if (!project || !project.financials) return;
 
@@ -191,7 +189,6 @@ export default function ProjectDetails() {
             }
 
             if (changed) {
-                // Migrate to new rows and zero out the legacy fields
                 apiProjects.updateFinancials(project.id, {
                     cost_items: newItems,
                     supplier_cost: 0,
@@ -209,6 +206,8 @@ export default function ProjectDetails() {
             }
         }
     }, [project?.id, project?.financials?.supplier_cost, project?.financials?.additional_expense, queryClient, user]);
+
+    if (!project) return <div>Project not found</div>;
 
     const handleStatusUpdate = (status: ProjectStatus) => {
         apiProjects.updateStatus(project.id, status)
