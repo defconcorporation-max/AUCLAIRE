@@ -211,18 +211,61 @@ export default function ProjectDetails() {
 
     const handleStatusUpdate = (status: ProjectStatus) => {
         apiProjects.updateStatus(project.id, status)
-            .then(() => {
+            .then(async () => {
                 queryClient.invalidateQueries({ queryKey: ['projects'] });
 
                 // Detailed Notifications for Status Changes
-                if (status === 'design_ready' && project.client_id) {
-                    apiNotifications.create({
-                        user_id: project.client_id,
-                        title: 'Design Ready for Review',
-                        message: `Your project "${project.title}" has a new 3D design ready for your approval.`,
-                        type: 'info',
-                        link: `/dashboard/projects/${project.id}`
-                    });
+                if (status === 'design_ready') {
+                    if (project.client_id) {
+                        apiNotifications.create({
+                            user_id: project.client_id,
+                            title: 'Design Ready for Review',
+                            message: `Your project "${project.title}" has a new 3D design ready for your approval.`,
+                            type: 'info',
+                            link: `/dashboard/projects/${project.id}`
+                        });
+                    }
+
+                    // Notify Secretaries
+                    try {
+                        const allUsers = await apiUsers.getAll();
+                        const secretaries = allUsers.filter(u => u.role === 'secretary');
+
+                        secretaries.forEach(sec => {
+                            // 1. In-App Notification
+                            apiNotifications.create({
+                                user_id: sec.id,
+                                title: 'Design Ready for Review',
+                                message: `The project "${project.title}" is Design Ready and awaits client review.`,
+                                type: 'info',
+                                link: `/dashboard/projects/${project.id}`
+                            });
+
+                            // 2. Email Notification via Edge Function
+                            if (sec.email || (sec as any).user_metadata?.email) {
+                                const emailAddress = sec.email || (sec as any).user_metadata?.email;
+                                supabase.functions.invoke('send-email', {
+                                    body: {
+                                        to: emailAddress,
+                                        subject: `Design Ready: ${project.title}`,
+                                        html: `
+                                            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                                                <h2 style="color: #6a5100;">Design Ready for Review</h2>
+                                                <p>Hello ${sec.full_name},</p>
+                                                <p>The manufacturing team has marked the project <strong>"${project.title}"</strong> as Design Ready.</p>
+                                                <p>Please review the design files and coordinate with the client for approval.</p>
+                                                <br/>
+                                                <a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color: #6a5100; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Project</a>
+                                            </div>
+                                        `
+                                    }
+                                }).catch(err => console.error("Email dispatch failed:", err));
+                            }
+                        });
+                    } catch (err) {
+                        console.error("Failed to fetch secretaries for notifications", err);
+                    }
+
                 } else if (status === 'production' && project.client_id) {
                     apiNotifications.create({
                         user_id: project.client_id,
