@@ -76,7 +76,7 @@ export default function AnalyticsDashboard() {
     });
 
     // Commissions come from expense rows (pending + paid), matching apiAffiliates.getStats
-    (expenses as unknown as { category: string; status: string; amount?: number }[]).filter(e => e.category === 'commission' && e.status !== 'cancelled').forEach(e => {
+    (expenses as unknown as { category: string; status: string; amount?: number; recipient_id?: string }[]).filter(e => e.category === 'commission' && e.status !== 'cancelled').forEach(e => {
         const recipientId = e.recipient_id;
         if (recipientId && sellerStats[recipientId]) {
             sellerStats[recipientId].commissions += Number(e.amount);

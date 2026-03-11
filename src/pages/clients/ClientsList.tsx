@@ -1,4 +1,4 @@
-import { UserProfile } from '@/services/apiUsers';
+
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -46,7 +46,7 @@ export default function ClientsList() {
         setIsClientModalOpen(true);
     };
 
-    const openEditModal = (client: UserProfile) => {
+    const openEditModal = (client: any) => {
         setEditingClient(client);
         setFormData({
             full_name: client.full_name,

@@ -304,7 +304,7 @@ export default function AffiliateDetails() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {pendingCommissions.map((c: Invoice) => (
+                                        {pendingCommissions.map((c: any) => (
                                             <TableRow key={c.id}>
                                                 <TableCell className="text-sm">
                                                     <div>{c.description}</div>

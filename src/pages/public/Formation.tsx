@@ -57,7 +57,7 @@ export default function Formation() {
     return <FormationContent />;
 }
 
-function SectionHeader({ id, icon: Icon, title, emoji, expanded, toggleSection }: { id: string, icon?: React.ElementType, title: string, emoji?: string, expanded: boolean, toggleSection: (id: string) => void }) {
+function SectionHeader({ id, icon: Icon, title, emoji, expanded, toggleSection }: { id: string, icon?: any, title: string, emoji?: string, expanded: boolean, toggleSection: (id: string) => void }) {
     return (
         <button
             onClick={() => toggleSection(id)}

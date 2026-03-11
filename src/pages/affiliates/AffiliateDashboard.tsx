@@ -201,7 +201,7 @@ export default function AffiliateDashboard() {
                                     </TableRow>
                                 ) : (
                                     projects.map((project: Project) => {
-                                        const price = Number(project.financials?.selling_price || project.financials?.budget || 0);
+                                        const price = Number(project.financials?.selling_price || project.budget || 0);
                                         let com = 0;
                                         let rateDisplay = '';
                                         if (project.affiliate_commission_type === 'fixed') {

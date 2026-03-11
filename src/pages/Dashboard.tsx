@@ -54,26 +54,26 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                     </div>
                     <div>
                         <CardTitle className="text-base font-serif">{manufacturer.full_name}</CardTitle>
-                        <CardDescription className="text-[9px] uppercase tracking-widest">Manufacturer • {projects.length} Projects</CardDescription>
+                        <CardDescription className="text-xs uppercase tracking-widest">Manufacturer • {projects.length} Projects</CardDescription>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="hidden md:flex gap-3 text-center">
                         <div>
                             <div className="text-xs font-bold text-blue-500">{mDesignRequests.length}</div>
-                            <div className="text-[8px] uppercase tracking-tighter text-muted-foreground">Design</div>
+                            <div className="text-xs uppercase tracking-tighter text-muted-foreground">Design</div>
                         </div>
                         <div>
                             <div className="text-xs font-bold text-green-500">{mPendingProduction.length}</div>
-                            <div className="text-[8px] uppercase tracking-tighter text-muted-foreground">Pending</div>
+                            <div className="text-xs uppercase tracking-tighter text-muted-foreground">Pending</div>
                         </div>
                         <div>
                             <div className="text-xs font-bold text-purple-500">{mOngoingProduction.length}</div>
-                            <div className="text-[8px] uppercase tracking-tighter text-muted-foreground">Production</div>
+                            <div className="text-xs uppercase tracking-tighter text-muted-foreground">Production</div>
                         </div>
                         <div>
                             <div className="text-xs font-bold text-amber-500">{mInDelivery.length}</div>
-                            <div className="text-[8px] uppercase tracking-tighter text-muted-foreground">Delivery</div>
+                            <div className="text-xs uppercase tracking-tighter text-muted-foreground">Delivery</div>
                         </div>
                     </div>
                     {open ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
@@ -88,14 +88,14 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-blue-500/30 transition-colors duration-500 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4 relative z-10">
-                                    <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-blue-500 transition-colors">Design Ready</CardTitle>
+                                    <CardTitle className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-blue-500 transition-colors">Design Ready</CardTitle>
                                     <Clock className="h-3 w-3 text-blue-500/70" />
                                 </CardHeader>
                                 <CardContent className="relative z-10 pb-3 px-4">
                                     <div className="text-2xl font-serif text-black dark:text-white group-hover:text-blue-500 transition-colors duration-500">
                                         {mDesignRequests.length}
                                     </div>
-                                    <p className="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">À Démarrer</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">À Démarrer</p>
                                 </CardContent>
                             </Card>
 
@@ -103,14 +103,14 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-purple-500/30 transition-colors duration-500 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4 relative z-10">
-                                    <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-500 transition-colors">En Cours</CardTitle>
+                                    <CardTitle className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-500 transition-colors">En Cours</CardTitle>
                                     <TrendingUp className="h-3 w-3 text-purple-500/70" />
                                 </CardHeader>
                                 <CardContent className="relative z-10 pb-3 px-4">
                                     <div className="text-2xl font-serif text-black dark:text-white group-hover:text-purple-500 transition-colors duration-500">
                                         {mOngoingProduction.length}
                                     </div>
-                                    <p className="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">En Fabrication</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">En Fabrication</p>
                                 </CardContent>
                             </Card>
 
@@ -118,14 +118,14 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-green-500/30 transition-colors duration-500 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4 relative z-10">
-                                    <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-500 transition-colors">Total Fabriqué</CardTitle>
+                                    <CardTitle className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-500 transition-colors">Total Fabriqué</CardTitle>
                                     <Briefcase className="h-3 w-3 text-green-500/70" />
                                 </CardHeader>
                                 <CardContent className="relative z-10 pb-3 px-4">
                                     <div className="text-2xl font-serif text-black dark:text-white group-hover:text-green-500 transition-colors duration-500">
                                         {mCompleted.length}
                                     </div>
-                                    <p className="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">Achevés</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5">Achevés</p>
                                 </CardContent>
                             </Card>
                         </div>
@@ -135,24 +135,24 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                             <Card className="border-l-4 border-l-blue-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
                                 <CardHeader className="py-3 px-4">
                                     <CardTitle className="flex items-center gap-1.5 font-serif text-xs">
-                                        <Clock className="w-3.5 h-3.5 text-blue-500" />
+                                        <Clock className="w-4 h-4 text-blue-500" />
                                         Design Requests
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-4 pb-3">
                                     {mDesignRequests.length === 0 ? (
-                                        <p className="text-[10px] text-muted-foreground p-2 text-center border border-dashed rounded-lg">No designs.</p>
+                                        <p className="text-sm text-muted-foreground p-2 text-center border border-dashed rounded-lg">No designs.</p>
                                     ) : (
                                         <div className="space-y-1.5">
                                             {mDesignRequests.map(project => (
                                                 <div key={project.id} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
                                                     <div className="flex items-center justify-between gap-1">
-                                                        <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-[11px] truncate flex-1 hover:text-blue-500 transition-colors">
+                                                        <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-blue-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-[7px] px-1">RUSH</Badge>}
+                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-sm px-1">RUSH</Badge>}
                                                     </div>
-                                                    <div className="text-[8px] text-gray-500 uppercase tracking-tighter flex justify-between">
+                                                    <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>{project.status.replace('_', ' ')}</span>
                                                         {(role === 'admin' || role === 'secretary') && project.affiliate && <span className="text-luxury-gold">Amb: {project.affiliate.full_name?.split(' ')[0]}</span>}
                                                     </div>
@@ -167,24 +167,24 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                             <Card className="border-l-4 border-l-green-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
                                 <CardHeader className="py-3 px-4">
                                     <CardTitle className="flex items-center gap-1.5 font-serif text-xs">
-                                        <AlertCircle className="w-3.5 h-3.5 text-green-500" />
+                                        <AlertCircle className="w-4 h-4 text-green-500" />
                                         Pending Prod
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-4 pb-3">
                                     {mPendingProduction.length === 0 ? (
-                                        <p className="text-[10px] text-muted-foreground p-2 text-center border border-dashed rounded-lg">No pending.</p>
+                                        <p className="text-sm text-muted-foreground p-2 text-center border border-dashed rounded-lg">No pending.</p>
                                     ) : (
                                         <div className="space-y-1.5">
                                             {mPendingProduction.map(project => (
                                                 <div key={project.id} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
                                                     <div className="flex items-center justify-between gap-1">
-                                                        <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-[11px] truncate flex-1 hover:text-green-500 transition-colors">
+                                                        <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-green-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-[7px] px-1">RUSH</Badge>}
+                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-sm px-1">RUSH</Badge>}
                                                     </div>
-                                                    <div className="text-[8px] text-gray-500 uppercase tracking-tighter flex justify-between">
+                                                    <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>Ready for Prod</span>
                                                         {(role === 'admin' || role === 'secretary') && project.affiliate && <span className="text-luxury-gold">Amb: {project.affiliate.full_name?.split(' ')[0]}</span>}
                                                     </div>
@@ -199,24 +199,24 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                             <Card className="border-l-4 border-l-purple-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
                                 <CardHeader className="py-3 px-4">
                                     <CardTitle className="flex items-center gap-1.5 font-serif text-xs">
-                                        <TrendingUp className="w-3.5 h-3.5 text-purple-500" />
+                                        <TrendingUp className="w-4 h-4 text-purple-500" />
                                         Ongoing
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-4 pb-3">
                                     {mOngoingProduction.length === 0 ? (
-                                        <p className="text-[10px] text-muted-foreground p-2 text-center border border-dashed rounded-lg">No ongoing.</p>
+                                        <p className="text-sm text-muted-foreground p-2 text-center border border-dashed rounded-lg">No ongoing.</p>
                                     ) : (
                                         <div className="space-y-1.5">
                                             {mOngoingProduction.map(project => (
                                                 <div key={project.id} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
                                                     <div className="flex items-center justify-between gap-1">
-                                                        <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-[11px] truncate flex-1 hover:text-purple-500 transition-colors">
+                                                        <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-purple-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-[7px] px-1">RUSH</Badge>}
+                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-sm px-1">RUSH</Badge>}
                                                     </div>
-                                                    <div className="text-[8px] text-gray-500 uppercase tracking-tighter flex justify-between">
+                                                    <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>In Fabrication</span>
                                                         {(role === 'admin' || role === 'secretary') && project.affiliate && <span className="text-luxury-gold">Amb: {project.affiliate.full_name?.split(' ')[0]}</span>}
                                                     </div>
@@ -231,24 +231,24 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                             <Card className="border-l-4 border-l-amber-500 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-black/5 dark:border-white/5 shadow-xl">
                                 <CardHeader className="py-3 px-4">
                                     <CardTitle className="flex items-center gap-1.5 font-serif text-xs">
-                                        <Package className="w-3.5 h-3.5 text-amber-500" />
+                                        <Package className="w-4 h-4 text-amber-500" />
                                         In Delivery
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-4 pb-3">
                                     {mInDelivery.length === 0 ? (
-                                        <p className="text-[10px] text-muted-foreground p-2 text-center border border-dashed rounded-lg">No delivery.</p>
+                                        <p className="text-sm text-muted-foreground p-2 text-center border border-dashed rounded-lg">No delivery.</p>
                                     ) : (
                                         <div className="space-y-1.5">
                                             {mInDelivery.map(project => (
                                                 <div key={project.id} className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/5 group">
                                                     <div className="flex items-center justify-between gap-1">
-                                                        <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-[11px] truncate flex-1 hover:text-amber-500 transition-colors">
+                                                        <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-amber-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-[7px] px-1">RUSH</Badge>}
+                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-sm px-1">RUSH</Badge>}
                                                     </div>
-                                                    <div className="text-[8px] text-gray-500 uppercase tracking-tighter flex justify-between">
+                                                    <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>Finished</span>
                                                         {(role === 'admin' || role === 'secretary') && project.affiliate && <span className="text-luxury-gold">Amb: {project.affiliate.full_name?.split(' ')[0]}</span>}
                                                     </div>
@@ -552,7 +552,7 @@ export default function Dashboard() {
                                     <div className="text-3xl font-serif text-black dark:text-white group-hover:text-blue-500 transition-colors duration-500">
                                         {manufacturerDesignRequests.length}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">À Démarrer</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">À Démarrer</p>
                                 </CardContent>
                             </Card>
 
@@ -567,7 +567,7 @@ export default function Dashboard() {
                                     <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-500 transition-colors duration-500">
                                         {manufacturerOngoingProduction.length}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">En Fabrication</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">En Fabrication</p>
                                 </CardContent>
                             </Card>
 
@@ -582,7 +582,7 @@ export default function Dashboard() {
                                     <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-500 transition-colors duration-500">
                                         {manufacturerCompleted.length}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Projets historiques achevés</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Projets historiques achevés</p>
                                 </CardContent>
                             </Card>
                         </div>
@@ -601,7 +601,7 @@ export default function Dashboard() {
                                 <div className="text-3xl font-serif text-black dark:text-white group-hover:text-blue-500 transition-colors duration-500">
                                     {manufacturerDesignRequests.length}
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">À Démarrer</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">À Démarrer</p>
                             </CardContent>
                         </Card>
 
@@ -616,7 +616,7 @@ export default function Dashboard() {
                                 <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-500 transition-colors duration-500">
                                     {manufacturerOngoingProduction.length}
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">En Fabrication</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">En Fabrication</p>
                             </CardContent>
                         </Card>
 
@@ -631,7 +631,7 @@ export default function Dashboard() {
                                 <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-500 transition-colors duration-500">
                                     {manufacturerCompleted.length}
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Projets historiques achevés</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Projets historiques achevés</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -644,7 +644,7 @@ export default function Dashboard() {
                                     <Clock className="w-5 h-5 text-blue-500" />
                                     Design Requests
                                 </CardTitle>
-                                <CardDescription className="uppercase tracking-widest text-[10px]">New ideas needing 3D design & cost estimation.</CardDescription>
+                                <CardDescription className="uppercase tracking-widest text-sm">New ideas needing 3D design & cost estimation.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {manufacturerDesignRequests.length === 0 ? (
@@ -657,10 +657,10 @@ export default function Dashboard() {
                                                     <div className="font-serif text-base group-hover:text-blue-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
+                                                            <Badge variant="destructive" className="bg-red-500 text-xs uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
                                                         )}
                                                     </div>
-                                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Status: <span className="capitalize">{project.status.replace('_', ' ')}</span>
                                                         {(role === 'admin' || role === 'secretary') && (
                                                             <>
@@ -689,7 +689,7 @@ export default function Dashboard() {
                                     <AlertCircle className="w-5 h-5 text-green-500" />
                                     Pending Production
                                 </CardTitle>
-                                <CardDescription className="uppercase tracking-widest text-[10px]">Approved designs ready to be manufactured.</CardDescription>
+                                <CardDescription className="uppercase tracking-widest text-sm">Approved designs ready to be manufactured.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {manufacturerPendingProduction.length === 0 ? (
@@ -702,10 +702,10 @@ export default function Dashboard() {
                                                     <div className="font-serif text-base group-hover:text-green-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
+                                                            <Badge variant="destructive" className="bg-red-500 text-xs uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
                                                         )}
                                                     </div>
-                                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Pending Production
                                                         {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
                                                         {(role === 'admin' || role === 'secretary') && (
@@ -748,7 +748,7 @@ export default function Dashboard() {
                                     <TrendingUp className="w-5 h-5 text-purple-500" />
                                     Ongoing Production
                                 </CardTitle>
-                                <CardDescription className="uppercase tracking-widest text-[10px]">Projects currently being manufactured.</CardDescription>
+                                <CardDescription className="uppercase tracking-widest text-sm">Projects currently being manufactured.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {manufacturerOngoingProduction.length === 0 ? (
@@ -761,10 +761,10 @@ export default function Dashboard() {
                                                     <div className="font-serif text-base group-hover:text-purple-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
+                                                            <Badge variant="destructive" className="bg-red-500 text-xs uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
                                                         )}
                                                     </div>
-                                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Production Started
                                                         {project.deadline && ` • Due ${new Date(project.deadline).toLocaleDateString()}`}
                                                         {(role === 'admin' || role === 'secretary') && (
@@ -807,7 +807,7 @@ export default function Dashboard() {
                                     <Package className="w-5 h-5 text-amber-500" />
                                     In Delivery
                                 </CardTitle>
-                                <CardDescription className="uppercase tracking-widest text-[10px]">Finished rings awaiting client delivery.</CardDescription>
+                                <CardDescription className="uppercase tracking-widest text-sm">Finished rings awaiting client delivery.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {manufacturerInDelivery.length === 0 ? (
@@ -820,10 +820,10 @@ export default function Dashboard() {
                                                     <div className="font-serif text-base group-hover:text-amber-500 transition-colors flex items-center gap-2 flex-wrap">
                                                         {project.title}
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="bg-red-500 text-[9px] uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
+                                                            <Badge variant="destructive" className="bg-red-500 text-xs uppercase tracking-widest leading-none px-1.5 py-0.5 whitespace-nowrap">RUSH</Badge>
                                                         )}
                                                     </div>
-                                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
                                                         Shipment Pending
                                                         {(role === 'admin' || role === 'secretary') && (
                                                             <>
@@ -860,7 +860,7 @@ export default function Dashboard() {
                                 <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-600 transition-colors duration-500">
                                     ${totalCollected.toLocaleString()}
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Cash Received</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Cash Received</p>
                             </CardContent>
                         </Card>
 
@@ -874,7 +874,7 @@ export default function Dashboard() {
                                 <div className="text-3xl font-serif text-black dark:text-white group-hover:text-amber-600 transition-colors duration-500">
                                     ${totalPending.toLocaleString()}
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Outstanding Balance</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Outstanding Balance</p>
                             </CardContent>
                         </Card>
 
@@ -888,7 +888,7 @@ export default function Dashboard() {
                                 <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-600 transition-colors duration-500">
                                     ${totalCommissions.toLocaleString()}
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Affiliate Payouts (Est)</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Affiliate Payouts (Est)</p>
                             </CardContent>
                         </Card>
 
@@ -902,7 +902,7 @@ export default function Dashboard() {
                                 <div className="text-3xl font-serif text-black dark:text-white">
                                     ${totalProfit.toLocaleString()}
                                 </div>
-                                <div className="text-[10px] text-luxury-gold/70 uppercase tracking-widest mt-1 flex justify-between gap-2 font-medium">
+                                <div className="text-sm text-luxury-gold/70 uppercase tracking-widest mt-1 flex justify-between gap-2 font-medium">
                                     <span>Net Income</span>
                                     <span title="Potential profit if all invoices are paid" className="opacity-70">/ ${projectedProfit.toLocaleString()} Proj.</span>
                                 </div>
@@ -989,7 +989,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50">
                             <CardHeader className="py-4 pb-2">
-                                <CardTitle className="text-[10px] uppercase tracking-widest font-semibold text-blue-700 dark:text-blue-400">Design Phase</CardTitle>
+                                <CardTitle className="text-sm uppercase tracking-widest font-semibold text-blue-700 dark:text-blue-400">Design Phase</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-serif text-blue-900 dark:text-blue-100">{manufacturerDesignRequests.length}</div>
@@ -997,7 +997,7 @@ export default function Dashboard() {
                         </Card>
                         <Card className="bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50">
                             <CardHeader className="py-4 pb-2">
-                                <CardTitle className="text-[10px] uppercase tracking-widest font-semibold text-green-700 dark:text-green-400">Ready for Prod</CardTitle>
+                                <CardTitle className="text-sm uppercase tracking-widest font-semibold text-green-700 dark:text-green-400">Ready for Prod</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-serif text-green-900 dark:text-green-100">{manufacturerPendingProduction.length}</div>
@@ -1005,7 +1005,7 @@ export default function Dashboard() {
                         </Card>
                         <Card className="bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/50">
                             <CardHeader className="py-4 pb-2">
-                                <CardTitle className="text-[10px] uppercase tracking-widest font-semibold text-purple-700 dark:text-purple-400">In Production</CardTitle>
+                                <CardTitle className="text-sm uppercase tracking-widest font-semibold text-purple-700 dark:text-purple-400">In Production</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-serif text-purple-900 dark:text-purple-100">{manufacturerOngoingProduction.length}</div>
@@ -1013,7 +1013,7 @@ export default function Dashboard() {
                         </Card>
                         <Card className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50">
                             <CardHeader className="py-4 pb-2">
-                                <CardTitle className="text-[10px] uppercase tracking-widest font-semibold text-amber-700 dark:text-amber-400">In Delivery</CardTitle>
+                                <CardTitle className="text-sm uppercase tracking-widest font-semibold text-amber-700 dark:text-amber-400">In Delivery</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-serif text-amber-900 dark:text-amber-100">{manufacturerInDelivery.length}</div>
@@ -1078,7 +1078,7 @@ export default function Dashboard() {
                                                 </div>
                                                 <div className="text-right">
                                                     <div className="font-serif text-green-600 dark:text-green-400">${seller.volume.toLocaleString()}</div>
-                                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">
+                                                    <div className="text-sm text-gray-500 uppercase tracking-widest mt-0.5">
                                                         {seller.projectCount} Projects
                                                     </div>
                                                 </div>
@@ -1109,7 +1109,7 @@ export default function Dashboard() {
                                     <div className="text-3xl font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors duration-500">
                                         ${(myStats?.commissions || 0).toLocaleString()}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Gagnées sur {myStats?.projectCount || 0} projets</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Gagnées sur {myStats?.projectCount || 0} projets</p>
                                 </CardContent>
                             </Card>
 
@@ -1122,7 +1122,7 @@ export default function Dashboard() {
                                     <div className="text-3xl font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors duration-500">
                                         ${(myStats?.volume || 0).toLocaleString()}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Chiffre d'Affaires Apporté</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Chiffre d'Affaires Apporté</p>
                                 </CardContent>
                             </Card>
 
@@ -1135,7 +1135,7 @@ export default function Dashboard() {
                                     <div className="text-3xl font-serif text-black dark:text-white flex items-baseline gap-1">
                                         <span className="text-lg text-luxury-gold/50">#</span>{myRank}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Sur {leaderboard.length} Ambassadeurs actifs</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Sur {leaderboard.length} Ambassadeurs actifs</p>
                                 </CardContent>
                             </Card>
 
@@ -1151,7 +1151,7 @@ export default function Dashboard() {
                                     <div className="mt-2 w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
                                         <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${Math.min((stats.month.volume / (profile?.monthly_goal || 50000)) * 100, 100)}%` }} />
                                     </div>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 flex justify-between">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 flex justify-between">
                                         <span>Palier: {(profile?.monthly_goal || 50000) / 1000}k$</span>
                                         <span>{Math.round(Math.min((stats.month.volume / (profile?.monthly_goal || 50000)) * 100, 100))}%</span>
                                     </p>

@@ -91,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         user,
         profile: activeProfile,
+        originalProfile: profile, // <-- Export the real profile
         role: effectiveRole as UserRole,
         // isAdmin should be false if we are simulating another role
         isAdmin: effectiveRole === 'admin',

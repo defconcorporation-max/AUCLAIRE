@@ -1,8 +1,7 @@
-import { RingConfig } from '@/context/RingContext';
 
-import { Canvas, useThree, useFrame } from "@react-three/fiber"
+import { Canvas, useThree } from "@react-three/fiber"
 import RingModel from "./RingModel"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { OrbitControls } from "@react-three/drei"
 import * as THREE from "three"
 
@@ -131,25 +130,6 @@ function RingStand() {
     )
 }
 
-const CameraController = () => {
-    const { camera, gl } = useThree<any>((state: any) => state)
-    const controlsRef = useRef<OrbitControls>()
-
-    useEffect(() => {
-        const controls = new OrbitControls(camera, gl.domElement)
-        controls.minDistance = 2
-        controls.maxDistance = 10
-        controls.enableDamping = true
-        controls.dampingFactor = 0.06
-        controls.target.set(0, 0, 0)
-        controlsRef.current = controls
-        return () => controls.dispose()
-    }, [camera, gl])
-
-    useFrame(() => controlsRef.current?.update())
-    return null
-}
-
 const PROFILES = ["Court", "D-Shape", "Flat", "Knife-Edge"]
 const PAVE_SHAPES = ["Round", "Princess", "Emerald", "Marquise"]
 
@@ -264,9 +244,14 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: any, i
                 <LuxuryStudio intensity={intensity} />
                 <RingStand />
                 <RingModel config={activeConfig} />
-                <CameraController />
+                <OrbitControls 
+                    minDistance={2} 
+                    maxDistance={10} 
+                    enableDamping 
+                    dampingFactor={0.06} 
+                    target={[0, 0, 0]} 
+                />
             </Canvas>
         </div>
     )
 }
-

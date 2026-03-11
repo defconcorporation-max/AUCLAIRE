@@ -8,11 +8,15 @@ import { apiUsers } from "@/services/apiUsers";
 import { User, X } from "lucide-react";
 
 export function RoleSwitcher() {
-    const { role, switchRole, user, profile, impersonate, stopImpersonating, impersonatedProfile } = useAuth() as any;
+    const { role, switchRole, user, originalProfile, impersonate, stopImpersonating, impersonatedProfile } = useAuth() as any;
 
     const roles: UserRole[] = ['admin', 'manufacturer', 'client', 'affiliate', 'secretary'];
-    const showButtons = profile?.role === 'admin';
-    const showUserPicker = role === 'manufacturer' || role === 'affiliate';
+    
+    // Use user metadata or another way to know if they are TRULY an admin, or just check if there's an original profile
+    // In AuthContext, originalProfile is exposed as originalProfile. We need to check if they have admin privileges.
+    // If they have impersonated someone, impersonatedProfile is set.
+    const showButtons = originalProfile?.role === 'admin' || impersonatedProfile !== null || role === 'admin';
+    const showUserPicker = role === 'manufacturer' || role === 'affiliate' || role === 'secretary';
 
     const { data: users = [] } = useQuery({
         queryKey: ['users'],
@@ -25,8 +29,9 @@ export function RoleSwitcher() {
     return (
         <div className="fixed bottom-4 right-4 bg-black/90 border border-white/10 rounded-xl shadow-2xl p-2.5 flex flex-col gap-2 z-50 backdrop-blur-md min-w-[260px]">
             <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Admin Control</span>
+                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Demo Mode</span>
             </div>
+
 
             {/* Role switcher buttons */}
             {showButtons && (

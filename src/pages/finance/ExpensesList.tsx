@@ -60,7 +60,7 @@ export default function ExpensesList() {
         },
         onError: (error) => {
             console.error("Failed to create expense:", error);
-            alert(`Error saving expense: ${error.message || error.error_description || "Unknown error"}`);
+            alert(`Error saving expense: ${error.message || (error as any).error_description || "Unknown error"}`);
         }
     });
 

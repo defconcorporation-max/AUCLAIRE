@@ -8,7 +8,7 @@ import { generateSpecSheet } from '../../utils/pdfGenerator'
 
 // --- HELPER COMPONENTS ---
 
-const ToolButton = ({ tool, active, onClick, icon: IconComp }: { tool: string, active: boolean, onClick: () => void, icon: React.ElementType }) => (
+const ToolButton = ({ tool, active, onClick, icon: IconComp }: { tool: string, active: boolean, onClick: () => void, icon: any }) => (
     <button
         onClick={onClick}
         className={`w-10 h-10 flex flex-col items-center justify-center rounded-md transition-colors ${active ? 'bg-[#40a9ff] text-white' : 'text-gray-400 hover:bg-[#333] hover:text-white'}`}

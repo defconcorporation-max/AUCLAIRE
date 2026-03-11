@@ -7,7 +7,7 @@ import { Icons } from './Icons' /** Icons import might need adjustment based on 
 
 interface PreviewModalProps {
     config: RingConfig;
-    materials: RingMaterials;
+    materials: any;
     onClose: () => void;
 }
 

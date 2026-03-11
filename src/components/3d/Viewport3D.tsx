@@ -119,7 +119,7 @@ export default function Viewport3D() {
                     <CameraController />
 
                     {/* Pass combined config */}
-                    <RingModel config={{ ...ringConfig, ...selectedDesign.config } as any} />
+                    <RingModel config={activeConfig as any} />
 
                     {/* SHADOWS - REPLACES GRID */}
                     {/* Note: ContactShadows is from @react-three/drei. Since we don't have it explicitly imported, we use a simple shadow plane or rely on castShadows */}

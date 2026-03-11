@@ -106,7 +106,7 @@ export const apiAffiliates = {
     },
 
     async getAllAffiliatesWithStats() {
-        const allProfiles: unknown[] = [];
+        let allProfiles: any[] = [];
 
         try {
             // Attempt 1: Fetch Profiles first
