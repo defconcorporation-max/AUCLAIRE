@@ -253,6 +253,157 @@ export default function AnalyticsDashboard() {
                 </CardContent>
             </Card>
 
+            {/* ====== AI INSIGHTS SECTION ====== */}
+            <Card className="border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent backdrop-blur-md shadow-xl mt-8">
+                <CardHeader>
+                    <CardTitle className="font-serif text-2xl tracking-wide flex items-center gap-2">
+                        <span className="text-luxury-gold">✨</span>
+                        AI Business Insights
+                    </CardTitle>
+                    <CardDescription>Smart analysis generated from your data — updated in real-time.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {generateInsights(projects, invoices, expenses, monthlyData, leaderboard, clients).map((insight, i) => (
+                            <div
+                                key={i}
+                                className={`p-4 rounded-xl border ${
+                                    insight.type === 'success' ? 'border-green-500/20 bg-green-500/5' :
+                                    insight.type === 'warning' ? 'border-amber-500/20 bg-amber-500/5' :
+                                    insight.type === 'danger' ? 'border-red-500/20 bg-red-500/5' :
+                                    'border-blue-500/20 bg-blue-500/5'
+                                }`}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <span className="text-xl">{insight.icon}</span>
+                                    <div>
+                                        <p className="font-medium text-sm">{insight.title}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">{insight.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+
         </div>
     );
+}
+
+// AI Insights Engine — generates smart observations from raw data
+interface Insight {
+    icon: string;
+    title: string;
+    description: string;
+    type: 'success' | 'warning' | 'danger' | 'info';
+}
+
+function generateInsights(
+    projects: Project[],
+    invoices: Invoice[],
+    expenses: any[],
+    monthlyData: { month: string; collected: number; volume: number }[],
+    leaderboard: { name: string; projectCount: number; volume: number }[],
+    clients: any[]
+): Insight[] {
+    const insights: Insight[] = [];
+    const now = new Date();
+    const currentMonth = now.getMonth();
+
+    // 1. Revenue Trend
+    const last3Months = monthlyData.slice(Math.max(0, currentMonth - 2), currentMonth + 1);
+    const totalRecent = last3Months.reduce((s, m) => s + m.collected, 0);
+    const prev3Months = monthlyData.slice(Math.max(0, currentMonth - 5), Math.max(0, currentMonth - 2));
+    const totalPrev = prev3Months.reduce((s, m) => s + m.collected, 0);
+
+    if (totalPrev > 0) {
+        const growth = Math.round(((totalRecent - totalPrev) / totalPrev) * 100);
+        if (growth > 20) {
+            insights.push({ icon: '📈', title: `Revenue up ${growth}% vs prior quarter`, description: `Strong momentum! Collections grew from $${totalPrev.toLocaleString()} to $${totalRecent.toLocaleString()}.`, type: 'success' });
+        } else if (growth < -10) {
+            insights.push({ icon: '📉', title: `Revenue declined ${Math.abs(growth)}%`, description: `Collections dropped from $${totalPrev.toLocaleString()} to $${totalRecent.toLocaleString()}. Consider running promotions.`, type: 'danger' });
+        } else {
+            insights.push({ icon: '📊', title: `Revenue stable (${growth > 0 ? '+' : ''}${growth}%)`, description: `Consistent cash flow of ~$${Math.round(totalRecent / 3).toLocaleString()}/month.`, type: 'info' });
+        }
+    }
+
+    // 2. Collection Rate
+    const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
+    const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
+    const collectionRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
+
+    if (collectionRate >= 80) {
+        insights.push({ icon: '💰', title: `${collectionRate}% collection rate — excellent`, description: `You're collecting $${totalPaid.toLocaleString()} of $${totalInvoiced.toLocaleString()} invoiced. Strong client payment discipline.`, type: 'success' });
+    } else if (collectionRate >= 50) {
+        insights.push({ icon: '⚠️', title: `${collectionRate}% collection rate — needs attention`, description: `$${(totalInvoiced - totalPaid).toLocaleString()} outstanding. Consider sending payment reminders.`, type: 'warning' });
+    } else if (totalInvoiced > 0) {
+        insights.push({ icon: '🚨', title: `Only ${collectionRate}% collected — critical`, description: `$${(totalInvoiced - totalPaid).toLocaleString()} unpaid. Urgent follow-up needed on outstanding invoices.`, type: 'danger' });
+    }
+
+    // 3. Pipeline Health
+    const designing = projects.filter(p => ['designing', '3d_model', 'design_ready'].includes(p.status)).length;
+    const inProduction = projects.filter(p => ['approved_for_production', 'production'].includes(p.status)).length;
+    const completed = projects.filter(p => p.status === 'completed').length;
+
+    if (designing > inProduction * 2) {
+        insights.push({ icon: '🎨', title: `${designing} designs in progress, only ${inProduction} in production`, description: `The design pipeline is full but production capacity may be a bottleneck. Consider scaling manufacturing.`, type: 'warning' });
+    } else if (inProduction > 0) {
+        insights.push({ icon: '🏭', title: `${inProduction} projects in production, ${designing} designing`, description: `Healthy pipeline balance. ${completed} completed total.`, type: 'success' });
+    }
+
+    // 4. Best Season
+    const busyMonths = monthlyData
+        .map((m, i) => ({ ...m, index: i }))
+        .filter(m => m.volume > 0)
+        .sort((a, b) => b.volume - a.volume);
+
+    if (busyMonths.length >= 2) {
+        const topMonth = busyMonths[0];
+        insights.push({ icon: '📅', title: `Peak month: ${topMonth.month}`, description: `$${topMonth.volume.toLocaleString()} in project volume. Ensure design/production capacity is scaled up ahead of peak periods.`, type: 'info' });
+    }
+
+    // 5. Top Client Concentration
+    if (leaderboard.length >= 2) {
+        const topSellerShare = Math.round((leaderboard[0].volume / leaderboard.reduce((s, l) => s + l.volume, 0)) * 100);
+        if (topSellerShare > 60) {
+            insights.push({ icon: '👤', title: `${leaderboard[0].name} brings ${topSellerShare}% of volume`, description: `High dependency on one seller. Diversifying the sales force would reduce business risk.`, type: 'warning' });
+        } else {
+            insights.push({ icon: '👥', title: `Healthy seller distribution`, description: `Top seller (${leaderboard[0].name}) brings ${topSellerShare}% — well diversified across ${leaderboard.length} active sellers.`, type: 'success' });
+        }
+    }
+
+    // 6. Expense Ratio
+    const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+    const totalRevenue = invoices.reduce((s, i) => s + Number(i.amount), 0);
+    if (totalRevenue > 0) {
+        const expenseRatio = Math.round((totalExpenses / totalRevenue) * 100);
+        if (expenseRatio < 40) {
+            insights.push({ icon: '✅', title: `${expenseRatio}% expense ratio — healthy margins`, description: `Expenses ($${totalExpenses.toLocaleString()}) vs revenue ($${totalRevenue.toLocaleString()}) show strong profitability.`, type: 'success' });
+        } else if (expenseRatio < 70) {
+            insights.push({ icon: '📋', title: `${expenseRatio}% expense ratio — monitor closely`, description: `Expenses are growing relative to revenue. Review cost categories for optimization.`, type: 'warning' });
+        } else {
+            insights.push({ icon: '🔴', title: `${expenseRatio}% expense ratio — margins squeezed`, description: `Expenses nearly match revenue. Urgent cost review recommended.`, type: 'danger' });
+        }
+    }
+
+    // 7. Growth Prediction
+    if (currentMonth >= 2) {
+        const avgMonthly = totalRecent / Math.min(3, currentMonth + 1);
+        const monthsLeft = 12 - currentMonth - 1;
+        const predicted = totalRecent + (avgMonthly * monthsLeft);
+        insights.push({ icon: '🔮', title: `Projected annual collections: $${Math.round(predicted).toLocaleString()}`, description: `Based on $${Math.round(avgMonthly).toLocaleString()}/month average over the last 3 months, with ${monthsLeft} months remaining.`, type: 'info' });
+    }
+
+    // 8. Client Growth
+    const newClientsThisMonth = clients.filter(c => {
+        const d = new Date(c.created_at);
+        return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
+    }).length;
+
+    if (newClientsThisMonth > 0) {
+        insights.push({ icon: '🌟', title: `${newClientsThisMonth} new client${newClientsThisMonth > 1 ? 's' : ''} this month`, description: `Growing client base! Total active clients: ${clients.length}.`, type: 'success' });
+    }
+
+    return insights;
 }
