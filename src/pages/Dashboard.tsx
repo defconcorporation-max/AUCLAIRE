@@ -19,6 +19,152 @@ import {
 
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers, UserProfile } from '@/services/apiUsers';
+import { apiActivities, ActivityLog } from '@/services/apiActivities';
+
+interface HealthAlert {
+    id: string;
+    projectId: string;
+    projectTitle: string;
+    type: 'delay' | 'margin';
+    severity: 'warning' | 'danger';
+    message: string;
+}
+
+function ProjectHealthAuditor({ projects, activities }: { projects: Project[], activities: ActivityLog[] }) {
+    const alerts: HealthAlert[] = [];
+
+    // 1. Calculate Average Velocity per status from logs
+    const statusLogs = activities.filter(a => a.action === 'status_change');
+    const velocityData: Record<string, { totalDays: number, count: number }> = {};
+    const logsByProject: Record<string, any[]> = {};
+
+    statusLogs.forEach(log => {
+        if (log.project_id) {
+            if (!logsByProject[log.project_id]) logsByProject[log.project_id] = [];
+            logsByProject[log.project_id].push(log);
+        }
+    });
+
+    Object.values(logsByProject).forEach(logs => {
+        const sorted = logs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        for (let i = 0; i < sorted.length - 1; i++) {
+            const start = new Date(sorted[i].created_at);
+            const end = new Date(sorted[i + 1].created_at);
+            const days = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+            const status = sorted[i].details.toLowerCase().split('to ')[1];
+            if (status) {
+                if (!velocityData[status]) velocityData[status] = { totalDays: 0, count: 0 };
+                velocityData[status].totalDays += days;
+                velocityData[status].count++;
+            }
+        }
+    });
+
+    const avgVelocity: Record<string, number> = {};
+    Object.entries(velocityData).forEach(([status, data]) => {
+        avgVelocity[status] = data.totalDays / data.count;
+    });
+
+    // 2. Scan Projects for health issues
+    projects.forEach(p => {
+        if (p.status === 'completed' || p.status === 'cancelled') return;
+
+        // --- Delay Detection ---
+        const pLogs = logsByProject[p.id] || [];
+        const lastLog = pLogs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+        const lastChangeDate = lastLog ? new Date(lastLog.created_at) : new Date(p.created_at);
+        const daysInStatus = (Date.now() - lastChangeDate.getTime()) / (1000 * 60 * 60 * 24);
+
+        const statusLower = p.status.toLowerCase().replace(/_/g, ' ');
+        const avg = avgVelocity[statusLower] || 5; // Default 5 days if no data
+
+        if (daysInStatus > avg * 3) {
+            alerts.push({
+                id: `delay-danger-${p.id}`,
+                projectId: p.id,
+                projectTitle: p.title,
+                type: 'delay',
+                severity: 'danger',
+                message: `Stuck for ${Math.round(daysInStatus)} days (Avg: ${Math.round(avg)})`
+            });
+        } else if (daysInStatus > avg * 1.5) {
+            alerts.push({
+                id: `delay-warn-${p.id}`,
+                projectId: p.id,
+                projectTitle: p.title,
+                type: 'delay',
+                severity: 'warning',
+                message: `Slow progress (${Math.round(daysInStatus)} days)`
+            });
+        }
+
+        // --- Margin Detection ---
+        const price = Number(p.financials?.selling_price || p.budget || 0);
+        const dynamicCosts = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
+        const totalCosts = Number(p.financials?.supplier_cost || 0) + 
+                          Number(p.financials?.shipping_cost || 0) + 
+                          Number(p.financials?.customs_fee || 0) + 
+                          dynamicCosts;
+
+        if (price > 0) {
+            const margin = (price - totalCosts) / price;
+            if (margin < 0.10 && totalCosts > 0) {
+                alerts.push({
+                    id: `margin-danger-${p.id}`,
+                    projectId: p.id,
+                    projectTitle: p.title,
+                    type: 'margin',
+                    severity: 'danger',
+                    message: `Critical Margin: ${Math.round(margin * 100)}%`
+                });
+            } else if (margin < 0.20 && totalCosts > 0) {
+                alerts.push({
+                    id: `margin-warn-${p.id}`,
+                    projectId: p.id,
+                    projectTitle: p.title,
+                    type: 'margin',
+                    severity: 'warning',
+                    message: `Low Margin: ${Math.round(margin * 100)}%`
+                });
+            }
+        }
+    });
+
+    if (alerts.length === 0) return null;
+
+    return (
+        <Card className="border-luxury-gold/20 bg-luxury-gold/5 backdrop-blur-md shadow-xl overflow-hidden">
+            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-luxury-gold/10">
+                <CardTitle className="text-sm font-serif tracking-widest text-luxury-gold flex items-center gap-2">
+                    <Activity className="w-4 h-4" /> PROJECT HEALTH AUDITOR
+                </CardTitle>
+                <div className="flex gap-2">
+                    <div className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors uppercase tracking-tighter border-red-500/50 text-red-500 bg-transparent">
+                        {alerts.filter(a => a.severity === 'danger').length} Critical
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-h-[200px] overflow-y-auto">
+                    {alerts.sort((a, _) => a.severity === 'danger' ? -1 : 1).map(alert => (
+
+                        <Link 
+                            key={alert.id} 
+                            to={`/dashboard/projects/${alert.projectId}`}
+                            className={`flex items-start gap-3 p-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 transition-colors group ${alert.severity === 'danger' ? 'bg-red-500/5' : ''}`}
+                        >
+                            <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${alert.severity === 'danger' ? 'text-red-500' : 'text-amber-500'}`} />
+                            <div>
+                                <p className="text-[13px] font-serif group-hover:text-luxury-gold transition-colors truncate max-w-[150px]">{alert.projectTitle}</p>
+                                <p className={`text-[11px] font-medium leading-tight ${alert.severity === 'danger' ? 'text-red-600' : 'text-amber-600'}`}>{alert.message}</p>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
 interface ManufacturerDashboardProps {
     manufacturer: UserProfile;
@@ -150,7 +296,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-blue-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-sm px-1">RUSH</Badge>}
+                                                        {project.priority === 'rush' && <div className="h-3 text-[10px] px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
                                                     </div>
                                                     <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>{project.status.replace('_', ' ')}</span>
@@ -182,7 +328,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-green-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-sm px-1">RUSH</Badge>}
+                                                        {project.priority === 'rush' && <div className="h-3 text-[10px] px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
                                                     </div>
                                                     <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>Ready for Prod</span>
@@ -214,7 +360,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-purple-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-sm px-1">RUSH</Badge>}
+                                                        {project.priority === 'rush' && <div className="h-3 text-[10px] px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
                                                     </div>
                                                     <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>In Fabrication</span>
@@ -246,7 +392,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-amber-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <Badge variant="destructive" className="h-3 text-sm px-1">RUSH</Badge>}
+                                                        {project.priority === 'rush' && <div className="h-3 text-[10px] px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
                                                     </div>
                                                     <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>Finished</span>
@@ -300,7 +446,12 @@ export default function Dashboard() {
         queryFn: apiUsers.getAll
     });
 
-    if (projectsLoading || invoicesLoading || expensesLoading || usersLoading) return <div>Loading dashboard...</div>;
+    const { data: activities, isLoading: activitiesLoading } = useQuery({
+        queryKey: ['activities'],
+        queryFn: apiActivities.getAll
+    });
+
+    if (projectsLoading || invoicesLoading || expensesLoading || usersLoading || activitiesLoading) return <div>Loading dashboard...</div>;
 
     const hasError = projectsError || invoicesError || expensesError || usersError || !projects || !invoices || !expenses;
 
@@ -438,6 +589,7 @@ export default function Dashboard() {
         .filter(s => s.projectCount > 0)
         .sort((a, b) => b.volume - a.volume);
 
+
     // Find current affiliate user's rank
     const myRankIndex = leaderboard.findIndex(s => s.id === profile?.id);
     const myRank = myRankIndex !== -1 ? myRankIndex + 1 : '-';
@@ -509,6 +661,11 @@ export default function Dashboard() {
                     </Button>
                 )}
             </div>
+
+            {/* PROJECT HEALTH AUDITOR (Admin & Secretary Only) */}
+            {(role === 'admin' || role === 'secretary') && activities && projects && (
+                <ProjectHealthAuditor projects={projects} activities={activities} />
+            )}
 
             {/* SECRETARY VIEW: PER-MANUFACTURER DASHBOARDS */}
             {role === 'secretary' && (
@@ -1276,9 +1433,10 @@ export default function Dashboard() {
                                                 <h3 className="font-serif text-lg text-gray-800 dark:text-gray-200 group-hover:text-luxury-gold transition-colors">{project.title}</h3>
                                                 <p className="text-xs text-gray-600 dark:text-gray-300 uppercase tracking-wider mt-1">{project.status.replace('_', ' ')} <span className="text-luxury-gold/50">•</span> {project.client?.full_name}</p>
                                             </div>
-                                            <Badge variant={project.status === 'completed' ? 'secondary' : 'default'} className="bg-luxury-gold/10 text-luxury-gold hover:bg-luxury-gold hover:text-black border border-luxury-gold/30">
+                                            <div className="bg-luxury-gold/10 text-luxury-gold px-2.5 py-0.5 rounded-full text-xs font-semibold border border-luxury-gold/30">
                                                 {project.status.replace('_', ' ')}
-                                            </Badge>
+                                            </div>
+
                                         </div>
                                     ))}
                                 </div>

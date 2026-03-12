@@ -146,6 +146,50 @@ export default function AnalyticsDashboard() {
         avgDays: data.count > 0 ? Math.round(data.totalDays / data.count * 10) / 10 : 0
     })).filter(d => d.avgDays > 0);
 
+    // 6. POWER ANALYTICS: Manufacturer Performance Scorecards
+    const manufacturerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, totalProdDays: number, prodCount: number, modCount: number }> = {};
+    
+    users.filter(u => u.role === 'manufacturer').forEach(u => {
+        manufacturerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, totalProdDays: 0, prodCount: 0, modCount: 0 };
+    });
+
+    projects.forEach(p => {
+        if (p.manufacturer_id && manufacturerStats[p.manufacturer_id]) {
+            manufacturerStats[p.manufacturer_id].projectCount++;
+            manufacturerStats[p.manufacturer_id].volume += getSalePrice(p);
+            
+            // Speed Calculation
+            const pLogs = logsByProject[p.id] || [];
+            const sorted = pLogs.sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            
+            let prodStart: Date | null = null;
+            sorted.forEach(log => {
+                const details = log.details.toLowerCase();
+                if (details.includes('to production') || details.includes('to approved_for_production')) {
+                    prodStart = new Date(log.created_at);
+                }
+                if (details.includes('to completed') && prodStart) {
+                    const days = (new Date(log.created_at).getTime() - prodStart.getTime()) / (1000 * 60 * 60 * 24);
+                    manufacturerStats[p.manufacturer_id!].totalProdDays += days;
+                    manufacturerStats[p.manufacturer_id!].prodCount++;
+                    prodStart = null; // Reset for next potential cycle
+                }
+                if (details.includes('to design_modification')) {
+                    manufacturerStats[p.manufacturer_id!].modCount++;
+                }
+            });
+        }
+    });
+
+    const manufacturerScorecard = Object.values(manufacturerStats)
+        .filter(s => s.projectCount > 0)
+        .map(s => ({
+            ...s,
+            avgSpeed: s.prodCount > 0 ? Math.round(s.totalProdDays / s.prodCount) : 0,
+            qualityRate: Math.max(0, 100 - (s.modCount / s.projectCount * 100))
+        }))
+        .sort((a, b) => b.qualityRate - a.qualityRate);
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
             <div className="flex items-center justify-between">
@@ -355,6 +399,83 @@ export default function AnalyticsDashboard() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Manufacturer Performance Scorecards */}
+            <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="font-serif text-2xl tracking-wide flex items-center gap-2">
+                            <Briefcase className="w-6 h-6 text-luxury-gold" />
+                            Manufacturer Performance Scorecards
+                        </CardTitle>
+                        <CardDescription>Supplier accountability: Tracking speed, quality, and output.</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader className="bg-black/5 dark:bg-white/5">
+                            <TableRow className="border-black/5 dark:border-white/5">
+                                <TableHead>Manufacturer</TableHead>
+                                <TableHead className="text-center">Projects</TableHead>
+                                <TableHead className="text-center text-blue-500">Avg Speed</TableHead>
+                                <TableHead className="text-center text-green-500">Quality Score</TableHead>
+                                <TableHead className="text-right">Total Volume</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {manufacturerScorecard.map((m) => (
+                                <TableRow key={m.id} className="border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <TableCell className="font-medium text-black dark:text-white">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-luxury-gold/10 flex items-center justify-center text-luxury-gold font-bold text-xs">
+                                                {m.name.charAt(0)}
+                                            </div>
+                                            {m.name}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-widest border-luxury-gold/30 text-luxury-gold bg-transparent uppercase">
+                                            {m.projectCount} Projects
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center font-serif text-lg">
+                                        {m.avgSpeed > 0 ? (
+                                            <span className={m.avgSpeed < 7 ? 'text-green-500' : m.avgSpeed > 14 ? 'text-red-500' : 'text-amber-500'}>
+                                                {m.avgSpeed} Days
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400 text-xs italic">N/A</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex flex-col items-center">
+                                            <span className={`text-lg font-serif ${m.qualityRate > 90 ? 'text-green-500' : m.qualityRate < 70 ? 'text-red-500' : 'text-amber-500'}`}>
+                                                {Math.round(m.qualityRate)}%
+                                            </span>
+                                            <div className="w-16 h-1 bg-gray-200 dark:bg-gray-800 rounded-full mt-1 overflow-hidden">
+                                                <div 
+                                                    className={`h-full ${m.qualityRate > 90 ? 'bg-green-500' : m.qualityRate < 70 ? 'bg-red-500' : 'bg-amber-500'}`} 
+                                                    style={{ width: `${m.qualityRate}%` }} 
+                                                />
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right font-serif text-lg font-bold">
+                                        ${m.volume.toLocaleString()}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {manufacturerScorecard.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-8 text-gray-500 italic">
+                                        No manufacturer production data found yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
             <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
                 <CardHeader>
