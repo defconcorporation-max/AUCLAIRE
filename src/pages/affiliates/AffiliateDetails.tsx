@@ -172,7 +172,7 @@ export default function AffiliateDetails() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-5">
+            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
                 <Card className="bg-zinc-900 text-white border-zinc-800">
                     <CardHeader className="pb-2 text-luxury-gold flex flex-row items-center justify-between space-y-0">
                         <CardTitle className="text-sm font-medium">Ventes Totales</CardTitle>
@@ -182,7 +182,18 @@ export default function AffiliateDetails() {
                         <div className="text-2xl font-bold font-serif">
                             {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(stats?.totalSales || 0)}
                         </div>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Volume de vente total</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Volume de {stats?.salesCount || 0} vente(s)</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-zinc-900 text-white border-zinc-800">
+                    <CardHeader className="pb-2 text-green-500 flex flex-row items-center justify-between space-y-0">
+                        <CardTitle className="text-sm font-medium">Cash Récolté</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold font-serif text-green-400">
+                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(stats?.cashCollected || 0)}
+                        </div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Factures payées</p>
                     </CardContent>
                 </Card>
                 {/* Stats Cards */}

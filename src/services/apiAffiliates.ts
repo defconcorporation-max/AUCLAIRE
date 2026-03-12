@@ -2,6 +2,8 @@ import { supabase } from '@/lib/supabase';
 
 export interface AffiliateStats {
     totalSales: number;
+    salesCount: number;
+    cashCollected: number;
     commissionEarned: number;
     commissionPaid: number;
     commissionPending: number;
@@ -62,17 +64,26 @@ export const apiAffiliates = {
 
         if (projectsError) throw projectsError;
 
-        // 2. Get Invoices to verify sales
+        // 2. Get Invoices to verify sales AND get total cash collected
         const { data: invoices, error: invError } = await supabase
             .from('invoices')
-            .select('project_id')
+            .select('project_id, amount, amount_paid, status')
             .in('project_id', projects.map(p => p.id));
 
         if (invError) throw invError;
         const invoicedProjectIds = new Set(invoices?.map(i => i.project_id));
 
         let totalSales = 0;
+        let salesCount = 0;
+        let cashCollected = 0;
         let activeProjects = 0;
+
+        // Calculate actual cash collected from PAID client invoices
+        invoices?.forEach(inv => {
+            // Include amount_paid if available, otherwise fallback to amount if fully paid
+            const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
+            cashCollected += paidValue;
+        });
 
         const PRODUCTION_READY_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
 
@@ -85,6 +96,7 @@ export const apiAffiliates = {
             if (isSale) {
                 const price = Number(p.financials?.selling_price || p.budget || 0);
                 totalSales += price;
+                salesCount++;
             }
         });
 
@@ -113,6 +125,8 @@ export const apiAffiliates = {
 
         return {
             totalSales,
+            salesCount,
+            cashCollected,
             commissionEarned,
             commissionPaid,
             commissionPending,

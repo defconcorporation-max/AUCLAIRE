@@ -128,6 +128,14 @@ export default function AffiliatesList() {
                                             <div className="font-bold text-zinc-700 dark:text-zinc-300">
                                                 ${affiliate.stats.totalSales.toLocaleString()}
                                             </div>
+                                            <div className="text-[10px] text-muted-foreground mt-0.5">{affiliate.stats.salesCount} ventes</div>
+                                        </div>
+
+                                        <div className="text-right hidden xl:block">
+                                            <div className="text-xs text-green-600/70 uppercase tracking-wider">Cash Récolté</div>
+                                            <div className="font-bold text-green-600 dark:text-green-500">
+                                                ${affiliate.stats.cashCollected.toLocaleString()}
+                                            </div>
                                         </div>
 
                                         <div className="text-right">
