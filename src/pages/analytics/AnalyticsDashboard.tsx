@@ -65,10 +65,10 @@ export default function AnalyticsDashboard() {
 
     // 3. Seller/Affiliate Leaderboard
     // Commission totals come from expense rows (same source of truth as apiAffiliates.getStats)
-    const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number }> = {};
+    const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number, cashCollected: number }> = {};
 
-    users.filter(u => u.role === 'affiliate' || u.role === 'admin').forEach(u => {
-        sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0 };
+    users.filter(u => (u.role as string) === 'affiliate' || (u.role as string) === 'admin' || (u.role as string) === 'ambassador').forEach(u => {
+        sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0, cashCollected: 0 };
     });
 
     // Volume and project count from projects - Strictly Production Ready or Invoiced
@@ -78,11 +78,18 @@ export default function AnalyticsDashboard() {
         if (responsibleId && sellerStats[responsibleId]) {
             sellerStats[responsibleId].projectCount++;
             sellerStats[responsibleId].volume += getSalePrice(p);
+            
+            // Add accurate Cash Collected metrics corresponding to this project
+            const pInvoices = invoices.filter(inv => inv.project_id === p.id);
+            pInvoices.forEach(inv => {
+                const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
+                sellerStats[responsibleId].cashCollected += paidValue;
+            });
         }
     });
 
     // Commissions come from expense rows (pending + paid), matching apiAffiliates.getStats
-    (expenses as unknown as { category: string; status: string; amount?: number; recipient_id?: string }[]).filter(e => e.category === 'commission' && e.status !== 'cancelled').forEach(e => {
+    (expenses as unknown as { category: string; status: string; amount?: number; recipient_id?: string; description?: string }[]).filter(e => e.category === 'commission' && e.status !== 'cancelled' && !e.description?.includes('Commission Payout')).forEach(e => {
         const recipientId = e.recipient_id;
         if (recipientId && sellerStats[recipientId]) {
             sellerStats[recipientId].commissions += Number(e.amount);
@@ -496,6 +503,7 @@ export default function AnalyticsDashboard() {
                                 <TableHead>Nom du Vendeur</TableHead>
                                 <TableHead className="text-center">Projets</TableHead>
                                 <TableHead className="text-right">Volume Apporté</TableHead>
+                                <TableHead className="text-right text-green-600/70 dark:text-green-500">Cash Récolté</TableHead>
                                 <TableHead className="text-right text-purple-600/70 dark:text-purple-400">Commissions (Est/Payées)</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -516,6 +524,9 @@ export default function AnalyticsDashboard() {
                                     </TableCell>
                                     <TableCell className="text-right font-serif text-lg font-bold">
                                         ${seller.volume.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="text-right font-serif text-lg font-bold text-green-600 dark:text-green-500">
+                                        ${seller.cashCollected.toLocaleString()}
                                     </TableCell>
                                     <TableCell className="text-right font-mono text-sm text-purple-600 dark:text-purple-400 font-medium">
                                         ${seller.commissions.toLocaleString()}
