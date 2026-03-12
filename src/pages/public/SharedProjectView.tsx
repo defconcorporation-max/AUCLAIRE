@@ -1,4 +1,3 @@
-import { Project } from '@/services/apiProjects';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
@@ -176,6 +175,7 @@ const images = details.design_files || [];
         </div>
     );
 }
+
 
 
 
