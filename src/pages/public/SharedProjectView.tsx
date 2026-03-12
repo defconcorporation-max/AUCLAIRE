@@ -2,8 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, FileText, PenTool, Box, ThumbsUp, Hammer, Truck, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
@@ -52,7 +51,9 @@ const images = details.design_files || [];
                         <p className="text-zinc-500 mt-2 max-w-xl">{project.description || "No description provided."}</p>
                     </div>
                     <div className="text-right">
-                        <Badge variant="outline" className="text-xs font-mono">ID: {project.id.slice(0, 8)}</Badge>
+                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors text-foreground text-xs font-mono">
+                            ID: {project.id.slice(0, 8)}
+                        </div>
                         {project.deadline && (
                             <div className="text-sm text-red-500 mt-1 font-medium">
                                 Deadline: {new Date(project.deadline).toLocaleDateString()}
@@ -66,35 +67,59 @@ const images = details.design_files || [];
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Left Column: Specifications */}
                     <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><FileText className="w-4 h-4" /> Usage Specifications</CardTitle>
+                        {/* Project Timeline Tracker */}
+                        <Card className="bg-gradient-to-br from-black to-zinc-950 border-luxury-gold/20 shadow-lg shadow-luxury-gold/5 overflow-hidden">
+                            <CardHeader className="border-b border-luxury-gold/10 bg-white/5 pb-4">
+                                <CardTitle className="flex items-center gap-2 text-luxury-gold">
+                                    <Sparkles className="w-4 h-4" /> Project Timeline
+                                </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <span className="text-zinc-500 block">Required Size</span>
-                                        <span className="font-medium">{details.finger_size || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-zinc-500 block">Metal Type</span>
-                                        <span className="font-medium">{details.metal_type || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-zinc-500 block">Center Stone</span>
-                                        <span className="font-medium">{details.gem_type || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-zinc-500 block">Stone Shape</span>
-                                        <span className="font-medium">{details.stone_shape || '-'}</span>
+                            <CardContent className="pt-6 pb-8">
+                                <div className="relative">
+                                    {/* Vertical line connecting steps */}
+                                    <div className="absolute left-6 top-4 bottom-4 w-px bg-zinc-800" />
+                                    
+                                    <div className="space-y-6">
+                                        {[
+                                            { id: 'designing', label: 'Initial Design', desc: 'Crafting the concept', icon: PenTool },
+                                            { id: '3d_model', label: '3D Modeling', desc: 'Creating the digital blueprint', icon: Box },
+                                            { id: 'approved_for_production', label: 'Approved', desc: 'Design confirmed for manufacturing', icon: ThumbsUp },
+                                            { id: 'production', label: 'In Production', desc: 'Casting and polishing your piece', icon: Hammer },
+                                            { id: 'delivery', label: 'Ready for Delivery', desc: 'Quality checked and shipping', icon: Truck },
+                                            { id: 'completed', label: 'Completed', desc: 'Delivered successfully', icon: Sparkles }
+                                        ].map((step, index, array) => {
+                                            const statuses = array.map(s => s.id);
+                                            const currentIndex = statuses.indexOf(project.status || 'designing');
+                                            const isCompleted = index < currentIndex;
+                                            const isCurrent = index === currentIndex;
+                                            const isPending = index > currentIndex;
+
+                                            return (
+                                                <div key={step.id} className={`relative flex items-center gap-4 ${isPending ? 'opacity-40' : 'opacity-100'}`}>
+                                                    <div className={`
+                                                        relative z-10 w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300
+                                                        ${isCompleted ? 'bg-luxury-gold border-luxury-gold text-black' : ''}
+                                                        ${isCurrent ? 'bg-black border-luxury-gold text-luxury-gold shadow-[0_0_15px_rgba(210,181,123,0.3)]' : ''}
+                                                        ${isPending ? 'bg-zinc-900 border-zinc-800 text-zinc-500' : ''}
+                                                    `}>
+                                                        <step.icon className={`w-5 h-5 ${isCurrent ? 'animate-pulse' : ''}`} />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className={`font-medium ${isCurrent ? 'text-luxury-gold' : isCompleted ? 'text-zinc-200' : 'text-zinc-500'}`}>
+                                                            {step.label}
+                                                        </h4>
+                                                        <p className="text-xs text-zinc-500 mt-0.5">{step.desc}</p>
+                                                    </div>
+                                                    {isCurrent && (
+                                                        <div className="inline-flex items-center rounded-full font-semibold transition-colors px-2.5 py-0.5 bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/30 uppercase text-[10px] tracking-wider">
+                                                            Current Phase
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                                {details.model_notes && (
-                                    <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-md text-sm mt-4">
-                                        <span className="font-semibold block mb-1">Notes:</span>
-                                        {details.model_notes}
-                                    </div>
-                                )}
                             </CardContent>
                         </Card>
 
