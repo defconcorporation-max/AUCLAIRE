@@ -37,6 +37,10 @@ export const apiInvoices = {
             throw error;
         }
 
+        if (data?.project_id) {
+            await apiInvoices.syncProjectPaidAmount(data.project_id);
+        }
+
         return data;
     },
 
@@ -69,15 +73,54 @@ export const apiInvoices = {
             toast({ title: 'Error updating invoice', description: error.message, variant: 'destructive' });
             throw error;
         }
+
+        if (data?.project_id && updates.amount_paid !== undefined) {
+            await apiInvoices.syncProjectPaidAmount(data.project_id);
+        }
+
         return data; // Fixed missing brace in previous attempt context
     },
 
     async delete(id: string) {
+        const { data: invoice } = await supabase.from('invoices').select('project_id').eq('id', id).single();
         const { error } = await supabase.from('invoices').delete().eq('id', id);
 
         if (error) {
             toast({ title: 'Error deleting invoice', description: error.message, variant: 'destructive' });
             throw error;
+        }
+
+        if (invoice?.project_id) {
+            await apiInvoices.syncProjectPaidAmount(invoice.project_id);
+        }
+    },
+
+    async syncProjectPaidAmount(projectId: string) {
+        if (!projectId) return;
+
+        // Sum amount_paid from all invoices for this project
+        const { data: invoices } = await supabase
+            .from('invoices')
+            .select('amount_paid')
+            .eq('project_id', projectId);
+
+        const totalPaid = (invoices || []).reduce((sum, inv) => sum + (Number(inv.amount_paid) || 0), 0);
+
+        // Fetch current project financials
+        const { data: project } = await supabase
+            .from('projects')
+            .select('financials')
+            .eq('id', projectId)
+            .single();
+
+        if (project) {
+            const financials = project.financials || {};
+            await supabase
+                .from('projects')
+                .update({ 
+                    financials: { ...financials, paid_amount: totalPaid } 
+                })
+                .eq('id', projectId);
         }
     }
 };
