@@ -24,8 +24,8 @@ export const apiMetals = {
         // You can replace this endpoint with your chosen provider (e.g., goldapi.io, metals-api.com)
         const API_KEY = import.meta.env.VITE_METALS_API_KEY; 
         
-        let xauPrice = 2150.50; // Fallback mock price (per Ounce)
-        let xagPrice = 25.30;   // Fallback mock price (per Ounce)
+        let xauPrice = 4315.50; // Fallback offline mock price (per Ounce)
+        let xagPrice = 52.30;   // Fallback offline mock price (per Ounce)
 
         try {
             if (API_KEY) {
