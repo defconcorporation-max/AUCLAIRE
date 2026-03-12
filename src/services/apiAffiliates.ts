@@ -91,23 +91,24 @@ export const apiAffiliates = {
         // 3. Get Expenses Stats — commissionEarned is the source of truth
         const { data: expenses, error: expensesError } = await supabase
             .from('expenses')
-            .select('amount, status')
+            .select('amount, status, description')
             .eq('recipient_id', affiliateId)
             .eq('category', 'commission');
 
         if (expensesError) throw expensesError;
 
-        // Total = ALL non-cancelled commission expenses (pending + paid)
+        // Total Earned = ALL non-cancelled commission expenses (pending + paid) EXCEPT manual payout records
+        // Manual payout records usually have description "Commission Payout" or no project_id
         const commissionEarned = expenses
-            ?.filter(e => e.status !== 'cancelled')
+            ?.filter(e => e.status !== 'cancelled' && !e.description?.includes('Commission Payout'))
             .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
         const commissionPaid = expenses
-            ?.filter(e => e.status === 'paid')
+            ?.filter(e => e.status === 'paid' && !e.description?.includes('Commission Payout'))
             .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
         const commissionPending = expenses
-            ?.filter(e => e.status === 'pending')
+            ?.filter(e => e.status === 'pending' && !e.description?.includes('Commission Payout'))
             .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
         return {
