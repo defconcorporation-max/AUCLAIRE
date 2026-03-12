@@ -53,6 +53,7 @@ export default function AnalyticsDashboard() {
     });
 
     projects.forEach(p => {
+        if (p.status === 'cancelled') return;
         const date = new Date(p.created_at);
         if (date.getFullYear() === currentYear) {
             monthlyData[date.getMonth()].volume += getSalePrice(p);
@@ -67,8 +68,9 @@ export default function AnalyticsDashboard() {
         sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0 };
     });
 
-    // Volume and project count from projects
+    // Volume and project count from projects - Exclude cancelled
     projects.forEach(p => {
+        if (p.status === 'cancelled') return;
         const responsibleId = p.sales_agent_id || p.affiliate_id;
         if (responsibleId && sellerStats[responsibleId]) {
             sellerStats[responsibleId].projectCount++;
@@ -102,7 +104,7 @@ export default function AnalyticsDashboard() {
     };
 
     const forecastedRevenue = projects.reduce((sum, p) => {
-        if (p.status === 'completed') return sum;
+        if (p.status === 'completed' || p.status === 'cancelled') return sum;
         const prob = PROBABILITY_MAP[p.status] || 0;
         return sum + (getSalePrice(p) * prob);
     }, 0);

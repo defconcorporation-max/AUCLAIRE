@@ -75,19 +75,34 @@ function ProjectHealthAuditor({ projects, activities }: { projects: Project[], a
         const lastChangeDate = lastLog ? new Date(lastLog.created_at) : new Date(p.created_at);
         const daysInStatus = (Date.now() - lastChangeDate.getTime()) / (1000 * 60 * 60 * 24);
 
-        const statusLower = p.status.toLowerCase().replace(/_/g, ' ');
-        const avg = avgVelocity[statusLower] || 5; // Default 5 days if no data
+        let warnThreshold = 0;
+        let dangerThreshold = 0;
 
-        if (daysInStatus > avg * 3) {
+        // Specific thresholds from user business rules
+        if (p.status === 'production') {
+            warnThreshold = 10;
+            dangerThreshold = 20;
+        } else if (p.status === '3d_model' || p.status === 'designing') {
+            warnThreshold = 1; // 24h
+            dangerThreshold = 2; // 48h
+        } else {
+            // Fallback to average velocity logic
+            const statusLower = p.status.toLowerCase().replace(/_/g, ' ');
+            const avg = avgVelocity[statusLower] || 5;
+            warnThreshold = avg * 1.5;
+            dangerThreshold = avg * 3;
+        }
+
+        if (daysInStatus > dangerThreshold) {
             alerts.push({
                 id: `delay-danger-${p.id}`,
                 projectId: p.id,
                 projectTitle: p.title,
                 type: 'delay',
                 severity: 'danger',
-                message: `Stuck for ${Math.round(daysInStatus)} days (Avg: ${Math.round(avg)})`
+                message: `Stuck for ${Math.round(daysInStatus)} days (Limit: ${Math.round(dangerThreshold)})`
             });
-        } else if (daysInStatus > avg * 1.5) {
+        } else if (daysInStatus > warnThreshold) {
             alerts.push({
                 id: `delay-warn-${p.id}`,
                 projectId: p.id,
@@ -510,8 +525,10 @@ export default function Dashboard() {
     };
     // ────────────────────────────────────────────────────────────────────────────
 
-    // Total Pipeline Value
-    const totalProjectValue = filteredProjects.reduce((sum, p) => sum + getSalePrice(p), 0);
+    // Total Pipeline Value - Exclude cancelled
+    const totalProjectValue = filteredProjects
+        .filter(p => p.status !== 'cancelled')
+        .reduce((sum, p) => sum + getSalePrice(p), 0);
 
     // Collected: amount_paid is the exact field; if status=paid and amount_paid=0, use the full invoice amount.
     const totalCollected = filteredInvoices.reduce((sum, i) => {
@@ -573,6 +590,7 @@ export default function Dashboard() {
         });
 
         projects?.forEach(p => {
+            if (p.status === 'cancelled') return;
             const responsibleId = p.sales_agent_id || p.affiliate_id;
             if (responsibleId && sellerStats[responsibleId]) {
                 const salePrice = getSalePrice(p);
