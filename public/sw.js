@@ -28,25 +28,44 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch — network-first for API, cache-first for assets
+// Fetch — network-first for API, cache-first for assets, SPA-ready for navigation
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET and Supabase API calls — always go to network
+  // 1. Navigation requests (e.g. page refresh on a nested route)
+  // Serve index.html so the SPA router can take over
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/');
+      })
+    );
+    return;
+  }
+
+  // 2. Skip non-GET and Supabase API calls — always go to network
   if (event.request.method !== 'GET' || url.hostname.includes('supabase')) {
     return;
   }
 
+  // 3. Asset caching (cache-first)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request).then((response) => {
         // Cache successful responses for static assets
-        if (response.ok && (url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.woff2'))) {
+        if (response.ok && (
+          url.pathname.endsWith('.js') || 
+          url.pathname.endsWith('.css') || 
+          url.pathname.endsWith('.woff2') ||
+          url.pathname.endsWith('.png') ||
+          url.pathname.endsWith('.jpg') ||
+          url.pathname.endsWith('.svg')
+        )) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => cached); // Fallback to cache on network failure
+      }).catch(() => cached);
 
       return cached || fetchPromise;
     })

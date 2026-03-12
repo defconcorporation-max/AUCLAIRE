@@ -133,6 +133,9 @@ function App() {
 
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* Catch-all for SPA navigation safety */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </RingProvider>
       </Router>
