@@ -18,13 +18,6 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
         queryKey: ['shared-project', token],
         queryFn: () => apiProjects.getByToken(token!),
         enabled: !!token
-    });alert("Project updated successfully");
-            setIsThinking(false);
-        },
-        onError: () => {
-            alert("Failed to update project");
-            setIsThinking(false);
-        }
     });
 
     if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-luxury-gold" /></div>;
@@ -183,6 +176,7 @@ const images = details.design_files || [];
         </div>
     );
 }
+
 
 
 
