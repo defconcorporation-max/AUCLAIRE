@@ -154,7 +154,7 @@ function ProjectHealthAuditor({ projects, activities }: { projects: Project[], a
                     <Activity className="w-4 h-4" /> PROJECT HEALTH AUDITOR
                 </CardTitle>
                 <div className="flex gap-2">
-                    <div className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors uppercase tracking-tighter border-red-500/50 text-red-500 bg-transparent">
+                    <div className="inline-flex items-center rounded-full border px-2 py-0.5 text-sm font-semibold transition-colors uppercase tracking-tighter border-red-500/50 text-red-500 bg-transparent">
                         {alerts.filter(a => a.severity === 'danger').length} Critical
                     </div>
                 </div>
@@ -171,7 +171,7 @@ function ProjectHealthAuditor({ projects, activities }: { projects: Project[], a
                             <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${alert.severity === 'danger' ? 'text-red-500' : 'text-amber-500'}`} />
                             <div>
                                 <p className="text-[13px] font-serif group-hover:text-luxury-gold transition-colors truncate max-w-[150px]">{alert.projectTitle}</p>
-                                <p className={`text-[11px] font-medium leading-tight ${alert.severity === 'danger' ? 'text-red-600' : 'text-amber-600'}`}>{alert.message}</p>
+                                <p className={`text-sm mb-1 line-clamp-1 font-medium leading-tight ${alert.severity === 'danger' ? 'text-red-600' : 'text-amber-600'}`}>{alert.message}</p>
                             </div>
                         </Link>
                     ))}
@@ -311,7 +311,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-blue-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <div className="h-3 text-[10px] px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
+                                                        {project.priority === 'rush' && <div className="h-3 text-sm px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
                                                     </div>
                                                     <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>{project.status.replace('_', ' ')}</span>
@@ -343,7 +343,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-green-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <div className="h-3 text-[10px] px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
+                                                        {project.priority === 'rush' && <div className="h-3 text-sm px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
                                                     </div>
                                                     <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>Ready for Prod</span>
@@ -375,7 +375,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-purple-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <div className="h-3 text-[10px] px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
+                                                        {project.priority === 'rush' && <div className="h-3 text-sm px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
                                                     </div>
                                                     <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>In Fabrication</span>
@@ -407,7 +407,7 @@ function ManufacturerDashboardSection({ manufacturer, projects, role }: Manufact
                                                         <Link to={`/dashboard/projects/${project.id}`} className="font-serif text-sm mb-1 line-clamp-1 truncate flex-1 hover:text-amber-500 transition-colors">
                                                             {project.title}
                                                         </Link>
-                                                        {project.priority === 'rush' && <div className="h-3 text-[10px] px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
+                                                        {project.priority === 'rush' && <div className="h-3 text-sm px-1 bg-red-500 text-white rounded-full flex items-center font-bold uppercase tracking-tighter">RUSH</div>}
                                                     </div>
                                                     <div className="text-xs text-gray-500 uppercase tracking-tighter flex justify-between">
                                                         <span>Finished</span>
