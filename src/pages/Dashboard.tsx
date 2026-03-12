@@ -736,56 +736,6 @@ export default function Dashboard() {
             {/* ADMIN VIEW: GLOBAL DASHBOARD (Keep original layout for Admin) */}
             {role === 'admin' && (
                 <div className="space-y-8">
-                    {/* MANUFACTURER DASHBOARD PREVIEW (Show to Admin) */}
-                    <div className="grid gap-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* KPI 1: Design Ready */}
-                            <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-blue-500/30 transition-colors duration-500 overflow-hidden relative group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-blue-500 transition-colors">Design Ready</CardTitle>
-                                    <Clock className="h-4 w-4 text-blue-500/70" />
-                                </CardHeader>
-                                <CardContent className="relative z-10">
-                                    <div className="text-3xl font-serif text-black dark:text-white group-hover:text-blue-500 transition-colors duration-500">
-                                        {manufacturerDesignRequests.length}
-                                    </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">À Démarrer</p>
-                                </CardContent>
-                            </Card>
-
-                            {/* KPI 2: Ongoing Production */}
-                            <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-purple-500/30 transition-colors duration-500 overflow-hidden relative group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-purple-500 transition-colors">En Cours (Ongoing)</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-purple-500/70" />
-                                </CardHeader>
-                                <CardContent className="relative z-10">
-                                    <div className="text-3xl font-serif text-black dark:text-white group-hover:text-purple-500 transition-colors duration-500">
-                                        {manufacturerOngoingProduction.length}
-                                    </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">En Fabrication</p>
-                                </CardContent>
-                            </Card>
-
-                            {/* KPI 3: Completed Projects */}
-                            <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-green-500/30 transition-colors duration-500 overflow-hidden relative group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 group-hover:text-green-500 transition-colors">Total Fabriqué</CardTitle>
-                                    <Briefcase className="h-4 w-4 text-green-500/70" />
-                                </CardHeader>
-                                <CardContent className="relative z-10">
-                                    <div className="text-3xl font-serif text-black dark:text-white group-hover:text-green-500 transition-colors duration-500">
-                                        {manufacturerCompleted.length}
-                                    </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Projets historiques achevés</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-
                     {/* ADMIN DASHBOARD - CONTROL CENTER */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* KPI 1: Design Ready */}
