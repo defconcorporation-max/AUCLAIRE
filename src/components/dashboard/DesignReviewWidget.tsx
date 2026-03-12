@@ -10,7 +10,7 @@ interface DesignReviewWidgetProps {
 
 export function DesignReviewWidget({ projects }: DesignReviewWidgetProps) {
     return (
-        <Card className="glass-card h-full">
+        <Card className="glass-card">
             <CardHeader className="py-4 border-b border-white/5">
                 <CardTitle className="text-lg font-serif tracking-wide flex items-center gap-2">
                     <PenTool className="w-5 h-5 text-luxury-gold" />

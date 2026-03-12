@@ -21,7 +21,7 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
     ];
 
     return (
-        <Card className="glass-card h-full overflow-hidden relative">
+        <Card className="glass-card overflow-hidden relative">
             <CardHeader className="py-4 border-b border-white/5">
                 <CardTitle className="text-lg font-serif tracking-wide flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-amber-500" />
