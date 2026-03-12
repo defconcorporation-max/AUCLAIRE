@@ -1250,12 +1250,14 @@ export default function ProjectDetails() {
                                             variant="outline"
                                             className="text-xs text-red-500 border-red-200 hover:bg-red-50"
                                             onClick={async () => {
+                                                const dynamicCosts = project.financials?.cost_items?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
                                                 const totalCost = (project.financials?.supplier_cost || 0) +
                                                     (project.financials?.shipping_cost || 0) +
-                                                    (project.financials?.customs_fee || 0);
+                                                    (project.financials?.customs_fee || 0) +
+                                                    dynamicCosts;
 
                                                 if (totalCost <= 0) {
-                                                    alert("No costs to export (Supplier + Shipping + Customs + Items = 0)");
+                                                    alert("No costs to export (Supplier + Shipping + Customs + Cost Items = 0)");
                                                     return;
                                                 }
 
