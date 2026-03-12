@@ -10,6 +10,7 @@ import { apiNotifications } from '@/services/apiNotifications';
 import { apiAffiliates } from '@/services/apiAffiliates';
 import { apiActivities } from '@/services/apiActivities';
 import { apiUsers } from '@/services/apiUsers';
+import { apiMetals } from '@/services/apiMetals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +20,7 @@ import {
     User,
     DollarSign,
     Clock,
+    Activity,
     Shield,
     XCircle,
     Send,
@@ -159,6 +161,12 @@ export default function ProjectDetails() {
         queryKey: ['manufacturers'],
         queryFn: () => apiUsers.getAll().then(users => users.filter((u: UserProfile) => u.role === 'manufacturer')),
         enabled: isEditingManufacturer
+    });
+
+    const { data: metalsPrice } = useQuery({
+        queryKey: ['metalsPrice'],
+        queryFn: apiMetals.getLatestPrices,
+        refetchInterval: 1000 * 60 * 15, // 15 mins
     });
 
     const { data: invoices } = useQuery({
@@ -1176,6 +1184,34 @@ export default function ProjectDetails() {
                             <span className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="w-3 h-3" /> Deadline</span>
                             <span className="font-medium">{project.deadline ? new Date(project.deadline).toLocaleDateString() : 'None'}</span>
                         </div>
+
+                        {/* Precious Metals Market Price */}
+                        {(role === 'admin' || role === 'secretary') && metalsPrice && (
+                            <div className="bg-gradient-to-r from-amber-500/10 to-amber-900/10 border border-amber-500/20 p-3 rounded-md space-y-2 mt-4 mb-4">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-500 flex items-center gap-1 mb-2">
+                                    <Activity className="w-3 h-3" /> Live Metals Market (Per Gram)
+                                </h4>
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-mono">
+                                    <div className="flex flex-col">
+                                        <span className="text-muted-foreground text-[9px]">Silver 925</span>
+                                        <span className="font-bold text-gray-700 dark:text-gray-300">${metalsPrice.silver925.toFixed(2)}/g</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-muted-foreground text-[9px]">Gold 10k</span>
+                                        <span className="font-bold text-amber-600 dark:text-amber-400">${metalsPrice.gold10k.toFixed(2)}/g</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-muted-foreground text-[9px]">Gold 14k</span>
+                                        <span className="font-bold text-luxury-gold">${metalsPrice.gold14k.toFixed(2)}/g</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-muted-foreground text-[9px]">Gold 18k</span>
+                                        <span className="font-bold text-amber-500">${metalsPrice.gold18k.toFixed(2)}/g</span>
+                                    </div>
+                                </div>
+                                <div className="text-[9px] text-right text-muted-foreground mt-1 opacity-60">XAu/USD Index: ${metalsPrice.xauOunce.toFixed(2)} / oz</div>
+                            </div>
+                        )}
 
                         {/* Admin Financials - Strictly for Admin */}
                         {(role === 'admin' || role === 'secretary') && (

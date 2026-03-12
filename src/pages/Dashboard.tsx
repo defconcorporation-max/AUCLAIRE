@@ -14,7 +14,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     Activity, TrendingUp,
     AlertCircle, Clock, BarChart3,
-    Briefcase, Package, Banknote, Trophy, CalendarDays, ChevronDown, ChevronRight
+    Briefcase, Package, Banknote, Trophy, CalendarDays, ChevronDown, ChevronRight, CheckCircle2
 } from 'lucide-react';
 
 import { apiExpenses } from '@/services/apiExpenses';
@@ -590,13 +590,64 @@ export default function Dashboard() {
     // Keep this alias for UI referencing totalCommissions
     const totalCommissions = totalPendingCommissions;
 
+    // ─── Financial Risk & Cash Flow Forecast ────────────────────────────────────
+    const highRiskProjects: { project: Project, deficit: number, committed: number, deposited: number }[] = [];
+    let expectedCashPipeline = 0;
+
+    filteredProjects.forEach(p => {
+        if (p.status === 'cancelled') return;
+
+        // 1. Calculate Expected Cash Flow Forecast based on probability
+        const salePrice = getSalePrice(p);
+        const pInvoices = filteredInvoices.filter(i => i.project_id === p.id);
+        const pCollected = pInvoices.reduce((sum, i) => sum + ((i.amount_paid && i.amount_paid > 0) ? i.amount_paid : (i.status === 'paid' ? i.amount : 0)), 0);
+        const pPending = salePrice - pCollected;
+        
+        if (pPending > 0) {
+            let probability = 0.10; // Default low (e.g. 3d_model, designing)
+            if (p.status === 'design_ready' || p.status === 'waiting_for_approval' || p.status === 'approved_for_production') probability = 0.35;
+            if (p.status === 'production') probability = 0.70;
+            if (p.status === 'delivery' || p.status === 'completed') probability = 0.95;
+            
+            expectedCashPipeline += (pPending * probability);
+        }
+
+        // 2. High Risk Tracker (Cash Deficit check)
+        // Skip if project is completed (margin is calculated elsewhere and risk is technically over)
+        if (p.status === 'completed') return;
+
+        const dynamicCosts = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
+        const pProductionCost = Number(p.financials?.supplier_cost || 0) + 
+                                Number(p.financials?.shipping_cost || 0) + 
+                                Number(p.financials?.customs_fee || 0) + 
+                                dynamicCosts;
+        const pCommission = getCommissionEstimate(p);
+        const pCommittedCosts = pProductionCost + pCommission;
+
+        const deficit = pCommittedCosts - pCollected;
+
+        // Flags as high risk if committed costs exceed deposited cash by > $100 
+        // AND there is actually a production cost (meaning work/materials have actively begun)
+        if (pProductionCost > 0 && deficit > 100) {
+            highRiskProjects.push({
+                project: p,
+                deficit,
+                committed: pCommittedCosts,
+                deposited: pCollected
+            });
+        }
+    });
+
+    highRiskProjects.sort((a, b) => b.deficit - a.deficit); // Highest deficit first
+    // ────────────────────────────────────────────────────────────────────────────
+
     // ─── Affiliate (Sales) Specific Calculations ──────────────────────────────────
     // The dashboard leaderboard shows ESTIMATED commissions (project rates, including pre-export).
     // The AffiliateDetails profile page shows ACTUAL commissions from expense rows.
-    const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number }> = {};
+    const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number, productionCosts: number, marginPercent: number }> = {};
     if (users) {
         users.filter(u => u.role === 'affiliate' || u.role === 'admin').forEach(u => {
-            sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0 };
+            sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0, productionCosts: 0, marginPercent: 0 };
         });
 
         projects?.forEach(p => {
@@ -606,9 +657,25 @@ export default function Dashboard() {
                 const salePrice = getSalePrice(p);
                 const comRate = Number(p.affiliate_commission_rate || 0);
                 const commission = p.affiliate_commission_type === 'fixed' ? comRate : (salePrice * comRate) / 100;
+                
+                const dynamicCosts = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
+                const pProductionCost = Number(p.financials?.supplier_cost || 0) + 
+                                        Number(p.financials?.shipping_cost || 0) + 
+                                        Number(p.financials?.customs_fee || 0) + 
+                                        dynamicCosts;
+
                 sellerStats[responsibleId].projectCount++;
                 sellerStats[responsibleId].volume += salePrice;
                 sellerStats[responsibleId].commissions += commission;
+                sellerStats[responsibleId].productionCosts += pProductionCost;
+            }
+        });
+
+        // Calculate margin %
+        Object.values(sellerStats).forEach(s => {
+            if (s.volume > 0) {
+                const profit = s.volume - (s.productionCosts + s.commissions);
+                s.marginPercent = (profit / s.volume) * 100;
             }
         });
     }
@@ -1022,7 +1089,10 @@ export default function Dashboard() {
                                 <div className="text-3xl font-serif text-black dark:text-white group-hover:text-amber-600 transition-colors duration-500">
                                     ${totalPending.toLocaleString()}
                                 </div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Outstanding Balance</p>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 flex justify-between gap-2 font-medium">
+                                    <span>Outstanding</span>
+                                    <span title="Probability-weighted expected pipeline cash" className="text-amber-600/70 cursor-help flex items-center gap-1"><TrendingUp className="w-3 h-3"/> Exp: ${Math.round(expectedCashPipeline).toLocaleString()}</span>
+                                </div>
                             </CardContent>
                         </Card>
 
@@ -1226,11 +1296,75 @@ export default function Dashboard() {
                                                         <div className="font-medium text-sm text-black dark:text-white capitalize">{seller.name}</div>
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <div className="font-serif text-green-600 dark:text-green-400">${seller.volume.toLocaleString()}</div>
-                                                    <div className="text-sm text-gray-500 uppercase tracking-widest mt-0.5">
-                                                        {seller.projectCount} Projects
+                                                <div className="text-right flex items-center gap-4">
+                                                    <div className="text-right">
+                                                        <div className="font-serif text-green-600 dark:text-green-400">${seller.volume.toLocaleString()}</div>
+                                                        <div className="text-sm text-gray-500 uppercase tracking-widest mt-0.5">
+                                                            {seller.projectCount} Projects
+                                                        </div>
                                                     </div>
+                                                    <div className={`px-2 py-1 rounded-md border text-xs font-bold w-[65px] text-center shadow-inner ${
+                                                        seller.marginPercent > 30 ? 'bg-green-500/10 text-green-700 border-green-500/30' : 
+                                                        seller.marginPercent > 15 ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30' :
+                                                        seller.marginPercent > 0 ? 'bg-amber-500/10 text-amber-700 border-amber-500/30' :
+                                                        'bg-red-500/10 text-red-700 border-red-500/30'
+                                                    }`}>
+                                                        {Math.round(seller.marginPercent)}%
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* RISK & PIPELINE ROW */}
+                    <div className="grid grid-cols-1 gap-6">
+                        {/* High-Risk Cash Deficit Tracker */}
+                        <Card className="border-l-4 border-l-red-500 bg-white/60 dark:bg-black/40 backdrop-blur-md shadow-xl border border-black/5 dark:border-white/5 relative overflow-hidden group">
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/50 to-transparent opacity-50" />
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-500 font-serif">
+                                    <AlertCircle className="w-5 h-5 relative -top-[1px]" />
+                                    High-Risk Projects (Cash Deficit)
+                                </CardTitle>
+                                <CardDescription className="text-xs uppercase tracking-widest text-red-900/60 dark:text-red-400/60">
+                                    Projects where committed costs exceed deposited cash.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {highRiskProjects.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center p-6 border-dashed border rounded-lg bg-green-500/5 border-green-500/20">
+                                        <CheckCircle2 className="w-8 h-8 text-green-500 mb-2 opacity-80" />
+                                        <p className="text-sm font-medium text-green-700 dark:text-green-400">Zero Cash Deficit</p>
+                                        <p className="text-xs text-green-600/70 text-center">All active productions have sufficient client deposits.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {highRiskProjects.map(risk => (
+                                            <div key={risk.project.id} className="group flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-red-500/5 hover:bg-red-500/10 dark:bg-red-900/10 dark:hover:bg-red-900/20 transition-colors rounded-lg border border-red-500/20 gap-4">
+                                                <div className="flex-1">
+                                                    <div className="font-serif text-lg text-black dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors flex items-center gap-2">
+                                                        {risk.project.title}
+                                                        <Badge variant="outline" className="text-[10px] uppercase border-red-500/30 text-red-600 bg-red-500/5">{risk.project.status.replace('_', ' ')}</Badge>
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wider mt-1.5 flex gap-4">
+                                                        <span>Committed: <span className="font-bold text-gray-900 dark:text-gray-100">${risk.committed.toLocaleString()}</span></span>
+                                                        <span>Deposited: <span className="font-bold text-gray-900 dark:text-gray-100">${risk.deposited.toLocaleString()}</span></span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto">
+                                                    <div className="text-right">
+                                                        <div className="font-serif text-xl text-red-600 font-bold">
+                                                            -${risk.deficit.toLocaleString()}
+                                                        </div>
+                                                        <div className="text-[10px] uppercase tracking-widest text-red-500/70 font-bold">Deficit</div>
+                                                    </div>
+                                                    <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/20 border-0" asChild>
+                                                        <Link to={`/dashboard/projects/${risk.project.id}`}>Resolve</Link>
+                                                    </Button>
                                                 </div>
                                             </div>
                                         ))}
