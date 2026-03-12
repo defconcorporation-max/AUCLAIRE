@@ -494,7 +494,7 @@ export default function Dashboard() {
     const manufacturerOngoingProduction = filteredProjects.filter(p => p.status === 'production').sort(sortByRush);
     const manufacturerInDelivery = filteredProjects.filter(p => p.status === 'delivery').sort(sortByRush);
     const manufacturerCompleted = filteredProjects.filter(p => p.status === 'completed');
-    const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready');
+    const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready' || p.status === 'waiting_for_approval');
     const recentProjects = filteredProjects.slice(0, 5);
 
     // ─── Financial Source of Truth ──────────────────────────────────────────────
@@ -1078,6 +1078,8 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
                     </div>
+
+
 
 
                     {/* Time-Based Statistics Component For Admin */}

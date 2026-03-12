@@ -64,7 +64,7 @@ export default function ProjectsList() {
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
-    const columns: ProjectStatus[] = ['designing', '3d_model', 'design_ready', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed']
+    const columns: ProjectStatus[] = ['designing', '3d_model', 'design_ready', 'waiting_for_approval', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed']
 
     // Sync scrollbars
     useEffect(() => {

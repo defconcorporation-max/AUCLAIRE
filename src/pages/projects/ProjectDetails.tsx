@@ -612,11 +612,13 @@ export default function ProjectDetails() {
                         <option value="designing">Designing</option>
                         <option value="3d_model">3D Model</option>
                         <option value="design_ready">Design Ready (Review)</option>
+                        <option value="waiting_for_approval">Waiting Approval (Decision)</option>
                         <option value="design_modification">Mod Requested</option>
                         <option value="approved_for_production">Approved (Pending Prod)</option>
                         <option value="production">Production</option>
                         <option value="delivery">Delivery</option>
                         <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
             </div>
