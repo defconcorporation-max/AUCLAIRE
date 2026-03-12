@@ -525,9 +525,11 @@ export default function Dashboard() {
     };
     // ────────────────────────────────────────────────────────────────────────────
 
-    // Total Pipeline Value - Exclude cancelled
+    // Total Pipeline Value - Strictly projects from "Design Ready" onwards
+    const SALE_STATUSES = ['design_ready', 'waiting_for_approval', 'approved_for_production', 'production', 'delivery', 'completed'];
+    
     const totalProjectValue = filteredProjects
-        .filter(p => p.status !== 'cancelled')
+        .filter(p => SALE_STATUSES.includes(p.status))
         .reduce((sum, p) => sum + getSalePrice(p), 0);
 
     // Collected: amount_paid is the exact field; if status=paid and amount_paid=0, use the full invoice amount.
@@ -590,7 +592,7 @@ export default function Dashboard() {
         });
 
         projects?.forEach(p => {
-            if (p.status === 'cancelled') return;
+            if (!SALE_STATUSES.includes(p.status)) return;
             const responsibleId = p.sales_agent_id || p.affiliate_id;
             if (responsibleId && sellerStats[responsibleId]) {
                 const salePrice = getSalePrice(p);
@@ -637,6 +639,7 @@ export default function Dashboard() {
     };
 
     filteredProjects.forEach(p => {
+        if (!SALE_STATUSES.includes(p.status)) return;
         const val = getSalePrice(p);
         if (isToday(p.created_at)) { stats.today.count++; stats.today.volume += val; }
         if (isThisWeek(p.created_at)) { stats.week.count++; stats.week.volume += val; }

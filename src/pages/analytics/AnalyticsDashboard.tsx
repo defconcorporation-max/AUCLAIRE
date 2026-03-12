@@ -52,8 +52,10 @@ export default function AnalyticsDashboard() {
         }
     });
 
+    const SALE_STATUSES = ['design_ready', 'waiting_for_approval', 'approved_for_production', 'production', 'delivery', 'completed'];
+
     projects.forEach(p => {
-        if (p.status === 'cancelled') return;
+        if (!SALE_STATUSES.includes(p.status)) return;
         const date = new Date(p.created_at);
         if (date.getFullYear() === currentYear) {
             monthlyData[date.getMonth()].volume += getSalePrice(p);
@@ -68,9 +70,9 @@ export default function AnalyticsDashboard() {
         sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0 };
     });
 
-    // Volume and project count from projects - Exclude cancelled
+    // Volume and project count from projects - Strictly Design Ready+
     projects.forEach(p => {
-        if (p.status === 'cancelled') return;
+        if (!SALE_STATUSES.includes(p.status)) return;
         const responsibleId = p.sales_agent_id || p.affiliate_id;
         if (responsibleId && sellerStats[responsibleId]) {
             sellerStats[responsibleId].projectCount++;

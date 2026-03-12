@@ -65,12 +65,16 @@ export const apiAffiliates = {
         let totalSales = 0;
         let activeProjects = 0;
 
+        const SALE_STATUSES = ['design_ready', 'waiting_for_approval', 'approved_for_production', 'production', 'delivery', 'completed'];
+
         projects?.forEach(p => {
-            if (p.status !== 'completed' && p.status !== 'delivered') {
+            if (p.status !== 'completed' && (p.status as string) !== 'delivery' && (p.status as string) !== 'delivered') {
                 activeProjects++;
             }
-            const price = Number(p.financials?.selling_price || p.budget || 0);
-            totalSales += price;
+            if (SALE_STATUSES.includes(p.status)) {
+                const price = Number(p.financials?.selling_price || p.budget || 0);
+                totalSales += price;
+            }
         });
 
         // 2. Get Expenses Stats — commissionEarned is the source of truth
