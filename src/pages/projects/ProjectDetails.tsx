@@ -106,24 +106,32 @@ export default function ProjectDetails() {
     const [isSharing, setIsSharing] = useState(false);
 
     const handleSendClientAccessLink = async () => {
-        if (!project?.client?.email) {
-            alert("This client does not have an email address on file.");
-            return;
-        }
-
         setIsSharing(true);
         try {
-            const { error } = await supabase.auth.signInWithOtp({
-                email: project.client.email,
-                options: {
-                    emailRedirectTo: `${window.location.origin}/dashboard`
+            // If they have an email, send the magic link
+            if (project?.client?.email) {
+                const { error } = await supabase.auth.signInWithOtp({
+                    email: project.client.email,
+                    options: {
+                        emailRedirectTo: `${window.location.origin}/dashboard`
+                    }
+                });
+                if (error) throw error;
+                alert(`Portal access link successfully sent to ${project.client.email}!`);
+            } else {
+                // If they DON'T have an email, copy the anonymous share link to clipboard
+                const token = (project as any).share_token;
+                if (!token) {
+                    alert("This project doesn't have a share token yet. Please contact admin.");
+                    return;
                 }
-            });
-            if (error) throw error;
-            alert(`Portal access link successfully sent to ${project.client.email}!`);
+                const shareUrl = `${window.location.origin}/shared/${token}`;
+                await navigator.clipboard.writeText(shareUrl);
+                alert("Client has no email. A direct access link has been copied to your clipboard. You can paste it in a message (WhatsApp, SMS, etc) to send to them.");
+            }
         } catch (err: any) {
             console.error(err);
-            alert("Failed to send access link: " + err.message);
+            alert("Failed: " + err.message);
         } finally {
             setIsSharing(false);
         }
@@ -450,11 +458,11 @@ export default function ProjectDetails() {
                                 variant="secondary" 
                                 size="sm" 
                                 onClick={handleSendClientAccessLink} 
-                                disabled={isSharing || !project?.client?.email} 
+                                disabled={isSharing} 
                                 className="gap-2 bg-luxury-gold/10 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-colors border border-luxury-gold/50"
                             >
                                 <LinkIcon className="w-4 h-4" />
-                                {isSharing ? "Sending..." : "Send Portal Link"}
+                                {isSharing ? "Processing..." : "Share Link"}
                             </Button>
                         )}
                         {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
