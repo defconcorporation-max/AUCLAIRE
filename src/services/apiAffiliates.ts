@@ -62,22 +62,33 @@ export const apiAffiliates = {
 
         if (projectsError) throw projectsError;
 
+        // 2. Get Invoices to verify sales
+        const { data: invoices, error: invError } = await supabase
+            .from('invoices')
+            .select('project_id')
+            .in('project_id', projects.map(p => p.id));
+
+        if (invError) throw invError;
+        const invoicedProjectIds = new Set(invoices?.map(i => i.project_id));
+
         let totalSales = 0;
         let activeProjects = 0;
 
-        const SALE_STATUSES = ['design_ready', 'waiting_for_approval', 'approved_for_production', 'production', 'delivery', 'completed'];
+        const PRODUCTION_READY_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
 
         projects?.forEach(p => {
             if (p.status !== 'completed' && (p.status as string) !== 'delivery' && (p.status as string) !== 'delivered') {
                 activeProjects++;
             }
-            if (SALE_STATUSES.includes(p.status)) {
+            
+            const isSale = PRODUCTION_READY_STATUSES.includes(p.status) || invoicedProjectIds.has(p.id);
+            if (isSale) {
                 const price = Number(p.financials?.selling_price || p.budget || 0);
                 totalSales += price;
             }
         });
 
-        // 2. Get Expenses Stats — commissionEarned is the source of truth
+        // 3. Get Expenses Stats — commissionEarned is the source of truth
         const { data: expenses, error: expensesError } = await supabase
             .from('expenses')
             .select('amount, status')
