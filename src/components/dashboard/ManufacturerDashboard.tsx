@@ -60,9 +60,14 @@ export function ManufacturerDashboard({ projects }: ManufacturerDashboardProps) 
                                 <div key={project.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-all group">
                                     <div className="min-w-0 flex-1">
                                         <h4 className="font-serif text-sm truncate group-hover:text-luxury-gold transition-colors">{project.title}</h4>
-                                        <Badge variant="outline" className="text-[8px] h-3 px-1 mt-1 uppercase border-indigo-500/30 text-indigo-500">
-                                            {project.status === '3d_model' ? 'Modélisation 3D' : 'Rectification Design'}
-                                        </Badge>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <Badge variant="outline" className="text-[8px] h-3 px-1 uppercase border-indigo-500/30 text-indigo-500">
+                                                {project.status === '3d_model' ? 'Modélisation 3D' : 'Rectification Design'}
+                                            </Badge>
+                                            {project.priority === 'rush' && (
+                                                <Badge className="bg-red-500 hover:bg-red-600 text-white text-[8px] h-3 px-1 uppercase animate-pulse border-none">RUSH</Badge>
+                                            )}
+                                        </div>
                                     </div>
                                     <Button size="sm" variant="outline" className="h-8 border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black text-[10px] uppercase font-bold" asChild>
                                         <Link to={`/dashboard/projects/${project.id}`}>Voir</Link>
@@ -88,10 +93,14 @@ export function ManufacturerDashboard({ projects }: ManufacturerDashboardProps) 
                                 <div key={project.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-all group">
                                     <div className="min-w-0 flex-1">
                                         <h4 className="font-serif text-sm truncate group-hover:text-luxury-gold transition-colors">{project.title}</h4>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                                            {project.priority === 'rush' && <span className="text-red-500 font-bold mr-2">RUSH</span>}
-                                            {project.deadline && `Due: ${new Date(project.deadline).toLocaleDateString()}`}
-                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                                                {project.deadline && `Due: ${new Date(project.deadline).toLocaleDateString()}`}
+                                            </p>
+                                            {project.priority === 'rush' && (
+                                                <Badge className="bg-red-500 hover:bg-red-600 text-white text-[8px] h-3 px-1 uppercase animate-pulse border-none">RUSH</Badge>
+                                            )}
+                                        </div>
                                     </div>
                                     <Button size="sm" variant="outline" className="h-8 border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black text-[10px] uppercase font-bold" asChild>
                                         <Link to={`/dashboard/projects/${project.id}`}>Lancer</Link>
@@ -122,6 +131,9 @@ export function ManufacturerDashboard({ projects }: ManufacturerDashboardProps) 
                                             <span className="text-[10px] text-muted-foreground">
                                                 {project.deadline && `Due: ${new Date(project.deadline).toLocaleDateString()}`}
                                             </span>
+                                            {project.priority === 'rush' && (
+                                                <Badge className="bg-red-500 hover:bg-red-600 text-white text-[8px] h-3 px-1 uppercase animate-pulse border-none">RUSH</Badge>
+                                            )}
                                         </div>
                                     </div>
                                     <Button size="sm" variant="outline" className="h-8 border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black text-[10px] uppercase font-bold" asChild>
