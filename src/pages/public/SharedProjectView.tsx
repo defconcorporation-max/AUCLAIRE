@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, AlertCircle, FileText, PenTool, Box, ThumbsUp, Hammer, Truck, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, FileText, PenTool, Box, ThumbsUp, Hammer, Truck, Sparkles, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
@@ -82,8 +82,9 @@ const images = details.design_files || [];
                                     <div className="space-y-6">
                                         {[
                                             { id: 'designing', label: 'Initial Design', desc: 'Crafting the concept', icon: PenTool },
-                                            { id: '3d_model', label: '3D Modeling', desc: 'Creating the digital blueprint', icon: Box },
-                                            { id: 'approved_for_production', label: 'Approved', desc: 'Design confirmed for manufacturing', icon: ThumbsUp },
+                                            { id: '3d_model', label: '3D Modeling', desc: 'Building the digital model', icon: Box },
+                                            { id: 'waiting_for_approval', label: 'Waiting Approval', desc: 'Awaiting client confirmation', icon: Clock },
+                                            { id: 'approved_for_production', label: 'Approved', desc: 'Confirmed for manufacturing', icon: ThumbsUp },
                                             { id: 'production', label: 'In Production', desc: 'Casting and polishing your piece', icon: Hammer },
                                             { id: 'delivery', label: 'Ready for Delivery', desc: 'Quality checked and shipping', icon: Truck },
                                             { id: 'completed', label: 'Completed', desc: 'Delivered successfully', icon: Sparkles }

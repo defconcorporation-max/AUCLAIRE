@@ -67,7 +67,7 @@ function ProjectHealthAuditor({ projects, activities }: { projects: Project[], a
 
     // 2. Scan Projects for health issues
     projects.forEach(p => {
-        if (p.status === 'completed' || p.status === 'cancelled') return;
+        if (p.status === 'completed' || p.status === 'cancelled' || p.status === 'waiting_for_approval') return;
 
         // --- Delay Detection ---
         const pLogs = logsByProject[p.id] || [];

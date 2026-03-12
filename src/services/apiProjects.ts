@@ -6,7 +6,7 @@ export interface Project {
     id: string;
     title: string;
     client_id: string;
-    status: 'designing' | 'design_ready' | 'design_modification' | '3d_model' | 'approved_for_production' | 'production' | 'delivery' | 'completed' | 'cancelled';
+    status: 'designing' | 'design_ready' | 'waiting_for_approval' | 'design_modification' | '3d_model' | 'approved_for_production' | 'production' | 'delivery' | 'completed' | 'cancelled';
     description?: string;
     budget?: number;
     deadline?: string;
