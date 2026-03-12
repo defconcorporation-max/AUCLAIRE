@@ -82,7 +82,7 @@ export const apiProjects = {
             .from('projects')
             .select(`
         *,
-        client:clients(full_name),
+        client:clients(full_name,email),
         affiliate:profiles!projects_affiliate_id_fkey(full_name),
         manufacturer:profiles!projects_manufacturer_id_fkey(full_name)
       `)
@@ -96,7 +96,7 @@ export const apiProjects = {
                 console.warn("Ambiguous join detected, attempting fallback without affiliate join...");
                 const { data: fallback, error: fallbackError } = await supabase
                     .from('projects')
-                    .select('*, client:clients(full_name)')
+                    .select('*, client:clients(full_name,email)')
                     .order('updated_at', { ascending: false });
 
                 if (!fallbackError) return fallback as Project[];
