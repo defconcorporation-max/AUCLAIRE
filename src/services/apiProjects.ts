@@ -162,7 +162,7 @@ export const apiProjects = {
         return data;
     },
 
-    async updateStatus(id: string, status: ProjectStatus) {
+    async updateStatus(id: string, status: ProjectStatus, userContext?: { id: string, name: string }) {
         const { data, error } = await supabase
             .from('projects')
             .update({ status })
@@ -173,6 +173,20 @@ export const apiProjects = {
         if (error) {
             toast({ title: 'Error updating status', description: error.message, variant: 'destructive' });
             throw error;
+        }
+
+        // Log the status change for velocity analytics
+        try {
+            const { apiActivities } = await import('./apiActivities');
+            await apiActivities.log({
+                project_id: id,
+                user_id: userContext?.id || 'system',
+                user_name: userContext?.name || 'System',
+                action: 'status_change',
+                details: `Status updated to ${status.replace(/_/g, ' ')}`
+            });
+        } catch (logErr) {
+            console.warn("Failed to log status change:", logErr);
         }
 
         return data as Project;
