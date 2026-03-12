@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Save, Loader2, CheckCircle, Clock, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, CheckCircle, Clock, Trash2, Briefcase } from 'lucide-react';
 import { apiProjects } from '@/services/apiProjects';
 
 export default function AffiliateDetails() {
@@ -172,7 +172,19 @@ export default function AffiliateDetails() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-5">
+                <Card className="bg-zinc-900 text-white border-zinc-800">
+                    <CardHeader className="pb-2 text-luxury-gold flex flex-row items-center justify-between space-y-0">
+                        <CardTitle className="text-sm font-medium">Ventes Totales</CardTitle>
+                        <Briefcase className="h-4 w-4" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold font-serif">
+                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(stats?.totalSales || 0)}
+                        </div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Volume de vente total</p>
+                    </CardContent>
+                </Card>
                 {/* Stats Cards */}
                 <Card className="bg-zinc-900 text-white border-zinc-800">
                     <CardHeader className="pb-2">
