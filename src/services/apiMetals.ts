@@ -29,21 +29,43 @@ export const apiMetals = {
 
         try {
             if (API_KEY) {
-                // Example using a generic metals API structure. 
-                // Swap the URL and Headers based on your actual provider.
-                const response = await fetch('https://api.metals.dev/v1/latest?currency=USD&precious=true', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
-                    }
-                });
+                // Auto-detect provider based on key format
+                const isGoldApi = API_KEY.startsWith('goldapi-');
 
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data?.metals?.XAU) xauPrice = data.metals.XAU;
-                    if (data?.metals?.XAG) xagPrice = data.metals.XAG;
+                if (isGoldApi) {
+                    // Fetch Gold from GoldAPI.io
+                    const auRes = await fetch('https://www.goldapi.io/api/XAU/USD', {
+                        headers: { 'x-access-token': API_KEY, 'Content-Type': 'application/json' }
+                    });
+                    if (auRes.ok) {
+                        const auData = await auRes.json();
+                        if (auData?.price) xauPrice = auData.price;
+                    }
+
+                    // Fetch Silver from GoldAPI.io
+                    const agRes = await fetch('https://www.goldapi.io/api/XAG/USD', {
+                        headers: { 'x-access-token': API_KEY, 'Content-Type': 'application/json' }
+                    });
+                    if (agRes.ok) {
+                        const agData = await agRes.json();
+                        if (agData?.price) xagPrice = agData.price;
+                    }
                 } else {
-                    console.warn("Metals API failed, using fallback prices. Status:", response.status);
+                    // Assume Metals.dev
+                    const response = await fetch('https://api.metals.dev/v1/latest?currency=USD&precious=true', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${API_KEY}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data?.metals?.XAU) xauPrice = data.metals.XAU;
+                        if (data?.metals?.XAG) xagPrice = data.metals.XAG;
+                    } else {
+                        console.warn("Metals API failed, using fallback prices. Status:", response.status);
+                    }
                 }
             } else {
                 console.log("No VITE_METALS_API_KEY found. Using fallback spot prices for demonstration.");
