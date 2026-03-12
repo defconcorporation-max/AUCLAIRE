@@ -1,5 +1,5 @@
 import { Project } from '@/services/apiProjects';
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
@@ -12,6 +12,8 @@ import { useNavigate } from 'react-router-dom';
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers } from '@/services/apiUsers';
 import { apiActivities } from '@/services/apiActivities';
+import { Filter, User, Factory, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // New Modular Components
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
@@ -26,6 +28,10 @@ import { ManufacturerDashboard } from '@/components/dashboard/ManufacturerDashbo
 export default function Dashboard() {
     const { profile, role } = useAuth();
     const navigate = useNavigate();
+
+    // Filters State
+    const [selectedAffiliate, setSelectedAffiliate] = useState<string>('all');
+    const [selectedManufacturer, setSelectedManufacturer] = useState<string>('all');
 
     // Redirect clients to their portal
     useEffect(() => {
@@ -50,7 +56,7 @@ export default function Dashboard() {
         queryFn: apiExpenses.getAll
     });
 
-    const { data: _users, isLoading: usersLoading } = useQuery({
+    const { data: users, isLoading: usersLoading } = useQuery({
         queryKey: ['users'],
         queryFn: apiUsers.getAll
     });
@@ -59,6 +65,10 @@ export default function Dashboard() {
         queryKey: ['activities'],
         queryFn: apiActivities.getAll
     });
+
+    // Extract Filter Options
+    const affiliates = useMemo(() => users?.filter(u => u.role === 'affiliate') || [], [users]);
+    const manufacturers = useMemo(() => users?.filter(u => u.role === 'manufacturer') || [], [users]);
 
     if (projectsLoading || invoicesLoading || expensesLoading || usersLoading || activitiesLoading) {
         return (
@@ -78,12 +88,23 @@ export default function Dashboard() {
         );
     }
 
-    // Role-based filtering
+    // Role-based filtering + UI Filters
     const filteredProjects = projects?.filter(p => {
-        if (role === 'admin' || role === 'secretary') return true;
-        if (role === 'manufacturer') return (p as any).manufacturer_id === profile?.id;
-        if (role === 'affiliate') return p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
-        return false;
+        // First Level: Role constraints
+        let passesRole = false;
+        if (role === 'admin' || role === 'secretary') passesRole = true;
+        else if (role === 'manufacturer') passesRole = (p as any).manufacturer_id === profile?.id;
+        else if (role === 'affiliate') passesRole = p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
+        
+        if (!passesRole) return false;
+
+        // Second Level: Active UI Filters (for Admin/Secretary)
+        if (role === 'admin' || role === 'secretary') {
+            if (selectedAffiliate !== 'all' && p.affiliate_id !== selectedAffiliate && p.sales_agent_id !== selectedAffiliate) return false;
+            if (selectedManufacturer !== 'all' && (p as any).manufacturer_id !== selectedManufacturer) return false;
+        }
+
+        return true;
     }) || [];
 
     const projectIds = new Set(filteredProjects.map(p => p.id));
@@ -192,13 +213,69 @@ export default function Dashboard() {
     return (
         <div className="space-y-8 pb-12">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="animate-in fade-in slide-in-from-left-4">
                     <h1 className="text-4xl font-serif text-luxury-gradient tracking-tight mb-2">Tableau de Bord</h1>
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
                         Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                 </div>
+
+                {/* Dashboard Filters for Admin/Secretary */}
+                {(role === 'admin' || role === 'secretary') && (
+                    <div className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-right-4">
+                        <div className="flex items-center gap-2 px-3 py-1.5 glass-card rounded-full border-white/10">
+                            <Filter className="w-3.5 h-3.5 text-luxury-gold" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-r border-white/10 pr-2 mr-1">Filtres</span>
+                            
+                            {/* Affiliate Select */}
+                            <div className="flex items-center gap-2 group">
+                                <User className="w-3 h-3 text-muted-foreground group-hover:text-luxury-gold transition-colors" />
+                                <select 
+                                    className="bg-transparent border-none text-[11px] font-medium focus:ring-0 cursor-pointer text-foreground appearance-none min-w-[100px]"
+                                    value={selectedAffiliate}
+                                    onChange={(e) => setSelectedAffiliate(e.target.value)}
+                                >
+                                    <option value="all" className="bg-neutral-900 text-foreground">Tous les Ambassadeurs</option>
+                                    {affiliates.map(aff => (
+                                        <option key={aff.id} value={aff.id} className="bg-neutral-900 text-foreground">{aff.full_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <span className="w-px h-4 bg-white/10 mx-1" />
+
+                            {/* Manufacturer Select */}
+                            <div className="flex items-center gap-2 group">
+                                <Factory className="w-3 h-3 text-muted-foreground group-hover:text-luxury-gold transition-colors" />
+                                <select 
+                                    className="bg-transparent border-none text-[11px] font-medium focus:ring-0 cursor-pointer text-foreground appearance-none min-w-[100px]"
+                                    value={selectedManufacturer}
+                                    onChange={(e) => setSelectedManufacturer(e.target.value)}
+                                >
+                                    <option value="all" className="bg-neutral-900 text-foreground">Tous les Ateliers</option>
+                                    {manufacturers.map(m => (
+                                        <option key={m.id} value={m.id} className="bg-neutral-900 text-foreground">{m.full_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {(selectedAffiliate !== 'all' || selectedManufacturer !== 'all') && (
+                                <>
+                                    <span className="w-px h-4 bg-white/10 mx-1" />
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6 rounded-full hover:bg-white/10"
+                                        onClick={() => { setSelectedAffiliate('all'); setSelectedManufacturer('all'); }}
+                                    >
+                                        <X className="w-3 h-3 text-red-400" />
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ADMIN / SECRETARY VIEW */}
@@ -232,7 +309,9 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <CashRiskTracker highRiskProjects={highRiskProjects} />
-                        <TimeBasedStats stats={statsData} />
+                        <div className="relative z-20">
+                            <TimeBasedStats stats={statsData} />
+                        </div>
                     </div>
                 </div>
             )}

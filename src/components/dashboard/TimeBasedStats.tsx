@@ -23,7 +23,7 @@ export function TimeBasedStats({ stats }: TimeBasedStatsProps) {
     ];
 
     return (
-        <Card className="glass-card overflow-hidden">
+        <Card className="glass-card overflow-hidden relative z-20">
             <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/5">
                 {periods.map((p, idx) => {
                     const data = stats[p.key as keyof typeof stats];

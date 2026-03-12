@@ -130,7 +130,7 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
     const dangerAlerts = alerts.filter(a => a.severity === 'danger');
 
     return (
-        <Card className="glass-card overflow-hidden">
+        <Card className="glass-card overflow-hidden relative">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-white/10">
                 <CardTitle className="text-sm font-bold tracking-widest text-luxury-gold flex items-center gap-2 uppercase">
                     <Activity className="w-4 h-4" /> Health Monitor

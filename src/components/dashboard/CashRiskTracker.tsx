@@ -17,7 +17,7 @@ interface CashRiskTrackerProps {
 
 export function CashRiskTracker({ highRiskProjects }: CashRiskTrackerProps) {
     return (
-        <Card className="glass-card border-l-4 border-l-red-500/50">
+        <Card className="glass-card border-l-4 border-l-red-500/50 overflow-hidden relative">
             <CardHeader className="py-4 border-b border-white/5">
                 <CardTitle className="text-lg font-serif tracking-wide flex items-center gap-2 text-red-500">
                     <AlertCircle className="w-5 h-5" />
