@@ -83,7 +83,9 @@ const images = details.design_files || [];
                                         {[
                                             { id: 'designing', label: 'Initial Design', desc: 'Crafting the concept', icon: PenTool },
                                             { id: '3d_model', label: '3D Modeling', desc: 'Building the digital model', icon: Box },
+                                            { id: 'design_ready', label: 'Renders Ready', desc: '3D designs ready for review', icon: Sparkles },
                                             { id: 'waiting_for_approval', label: 'Waiting Approval', desc: 'Awaiting client confirmation', icon: Clock },
+                                            { id: 'design_modification', label: 'Modifying', desc: 'Refining design based on feedback', icon: PenTool },
                                             { id: 'approved_for_production', label: 'Approved', desc: 'Confirmed for manufacturing', icon: ThumbsUp },
                                             { id: 'production', label: 'In Production', desc: 'Casting and polishing your piece', icon: Hammer },
                                             { id: 'delivery', label: 'Ready for Delivery', desc: 'Quality checked and shipping', icon: Truck },

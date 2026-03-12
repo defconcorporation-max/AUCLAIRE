@@ -91,9 +91,10 @@ export default function AnalyticsDashboard() {
     // 4. POWER ANALYTICS: Revenue Forecasting
     const PROBABILITY_MAP: Record<string, number> = {
         designing: 0.1,
-        design_ready: 0.2,
-        design_modification: 0.2,
         '3d_model': 0.4,
+        design_ready: 0.6,
+        waiting_for_approval: 0.8,
+        design_modification: 0.4,
         approved_for_production: 0.9,
         production: 1.0,
         delivery: 1.0,

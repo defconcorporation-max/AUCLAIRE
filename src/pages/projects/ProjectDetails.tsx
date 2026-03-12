@@ -360,7 +360,7 @@ export default function ProjectDetails() {
 
     // Helper to check active status for timeline
     const isStepActive = (stepStatus: string) => {
-        const statuses = ['designing', '3d_model', 'design_ready', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed'];
+        const statuses = ['designing', '3d_model', 'design_ready', 'waiting_for_approval', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed'];
         const currentIndex = statuses.indexOf(project.status);
         const stepIndex = statuses.indexOf(stepStatus);
 
@@ -787,6 +787,7 @@ export default function ProjectDetails() {
                                             { status: 'designing', label: 'Initial Design', date: project.created_at, active: isStepActive('designing') },
                                             { status: '3d_model', label: '3D Modeling', date: 'TBD', active: isStepActive('3d_model') },
                                             { status: 'design_ready', label: 'Design Ready (Review)', date: 'TBD', active: isStepActive('design_ready') },
+                                            { status: 'waiting_for_approval', label: 'Waiting Approval (Client)', date: 'TBD', active: isStepActive('waiting_for_approval') },
                                             { status: 'design_modification', label: 'Modifications Requested', date: 'TBD', active: isStepActive('design_modification') },
                                             { status: 'approved_for_production', label: 'Approved (Pending Prod)', date: 'TBD', active: isStepActive('approved_for_production') },
                                             { status: 'production', label: 'Production', date: 'TBD', active: isStepActive('production') },
