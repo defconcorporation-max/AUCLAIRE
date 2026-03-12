@@ -613,8 +613,8 @@ export default function Dashboard() {
         }
 
         // 2. High Risk Tracker (Cash Deficit check)
-        // Skip if project is completed (margin is calculated elsewhere and risk is technically over)
-        if (p.status === 'completed') return;
+        // Only consider projects that are approved for production or currently in production
+        if (!['approved_for_production', 'production', 'delivery'].includes(p.status)) return;
 
         const dynamicCosts = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
         const pProductionCost = Number(p.financials?.supplier_cost || 0) + 
