@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Trophy, TrendingUp, User } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Trophy } from 'lucide-react';
 
 interface SellerStat {
     id: string;
@@ -38,12 +37,10 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
                         </div>
                     ) : (
                         leaderboard.slice(0, 6).map((seller, idx) => (
-                            <motion.div
+                            <div
                                 key={seller.id}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: idx * 0.05 }}
-                                className="group flex items-center gap-4 p-4 hover:bg-white/5 transition-all"
+                                className="group flex items-center gap-4 p-4 hover:bg-white/5 transition-all animate-in fade-in slide-in-from-right-2"
+                                style={{ animationDelay: `${idx * 50}ms` }}
                             >
                                 <div className="relative flex-shrink-0">
                                     {idx < 3 ? (
@@ -81,7 +78,7 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
                                         <span className="block text-[8px] opacity-70 font-medium uppercase tracking-tighter mt-0.5">Marge</span>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
                         ))
                     )}
                 </div>

@@ -1,9 +1,8 @@
 import { Project } from '@/services/apiProjects';
 import { ActivityLog } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Activity, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface HealthAlert {
     id: string;
@@ -22,7 +21,6 @@ interface HealthAuditorWidgetProps {
 export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidgetProps) {
     const alerts: HealthAlert[] = [];
 
-    // 1. Calculate Average Velocity per status from logs
     const statusLogs = activities.filter(a => a.action === 'status_change');
     const velocityData: Record<string, { totalDays: number, count: number }> = {};
     const logsByProject: Record<string, any[]> = {};
@@ -54,11 +52,9 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
         avgVelocity[status] = data.totalDays / data.count;
     });
 
-    // 2. Scan Projects for health issues
     projects.forEach(p => {
         if (p.status === 'completed' || p.status === 'cancelled' || p.status === 'waiting_for_approval') return;
 
-        // --- Delay Detection ---
         const pLogs = logsByProject[p.id] || [];
         const lastLog = pLogs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
         const lastChangeDate = lastLog ? new Date(lastLog.created_at) : new Date(p.created_at);
@@ -100,7 +96,6 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
             });
         }
 
-        // --- Margin Detection ---
         const price = Number(p.financials?.selling_price || p.budget || 0);
         const dynamicCosts = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
         const totalCosts = Number(p.financials?.supplier_cost || 0) + 
@@ -154,27 +149,20 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-h-[250px] overflow-y-auto divide-y md:divide-y-0 md:border-b border-white/5">
-                        <AnimatePresence>
-                            {alerts.sort((a, _) => a.severity === 'danger' ? -1 : 1).map((alert, idx) => (
-                                <motion.div
-                                    key={alert.id}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                >
-                                    <Link 
-                                        to={`/dashboard/projects/${alert.projectId}`}
-                                        className={`flex items-start gap-3 p-4 hover:bg-white/5 transition-all group border-r border-white/5 last:border-r-0`}
-                                    >
-                                        <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${alert.severity === 'danger' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`} />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-serif group-hover:text-luxury-gold transition-colors truncate">{alert.projectTitle}</p>
-                                            <p className={`text-[11px] font-bold uppercase tracking-tight mt-0.5 ${alert.severity === 'danger' ? 'text-red-500' : 'text-amber-500'}`}>{alert.message}</p>
-                                        </div>
-                                    </Link>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
+                        {alerts.sort((a) => a.severity === 'danger' ? -1 : 1).map((alert, idx) => (
+                            <Link 
+                                key={alert.id}
+                                to={`/dashboard/projects/${alert.projectId}`}
+                                className="flex items-start gap-3 p-4 hover:bg-white/5 transition-all group border-r border-white/5 last:border-r-0 animate-in fade-in"
+                                style={{ animationDelay: `${idx * 50}ms` }}
+                            >
+                                <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${alert.severity === 'danger' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`} />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-serif group-hover:text-luxury-gold transition-colors truncate">{alert.projectTitle}</p>
+                                    <p className={`text-[11px] font-bold uppercase tracking-tight mt-0.5 ${alert.severity === 'danger' ? 'text-red-500' : 'text-amber-500'}`}>{alert.message}</p>
+                                </div>
+                            </Link>
+                        ))}
                     </div>
                 )}
             </CardContent>

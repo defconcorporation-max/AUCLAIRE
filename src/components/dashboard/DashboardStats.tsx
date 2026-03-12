@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Banknote, Clock, TrendingUp, HandCoins } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface DashboardStatsProps {
     totalCollected: number;
@@ -60,11 +59,10 @@ export function DashboardStats({
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat, index) => (
-                <motion.div
+                <div
                     key={stat.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    className="animate-in fade-in slide-in-from-bottom-2"
+                    style={{ animationDelay: `${index * 100}ms` }}
                 >
                     <Card className={`glass-card overflow-hidden group border-none ${stat.highlight ? 'luxury-shadow' : ''}`}>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -94,7 +92,7 @@ export function DashboardStats({
                             <div className="h-1 w-full bg-gradient-to-r from-transparent via-luxury-gold to-transparent opacity-30" />
                         )}
                     </Card>
-                </motion.div>
+                </div>
             ))}
         </div>
     );

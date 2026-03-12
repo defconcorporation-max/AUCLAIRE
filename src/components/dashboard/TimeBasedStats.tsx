@@ -1,6 +1,5 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Activity, BarChart3, CalendarDays } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface TimeStats {
     count: number;
@@ -29,12 +28,10 @@ export function TimeBasedStats({ stats }: TimeBasedStatsProps) {
                 {periods.map((p, idx) => {
                     const data = stats[p.key as keyof typeof stats];
                     return (
-                        <motion.div 
+                        <div 
                             key={p.key} 
-                            className="p-6 hover:bg-white/5 transition-all group"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: idx * 0.1 }}
+                            className="p-6 hover:bg-white/5 transition-all group animate-in fade-in"
+                            style={{ animationDelay: `${idx * 100}ms` }}
                         >
                             <div className="flex items-center gap-2 mb-6 group-hover:translate-x-1 transition-transform">
                                 <p.icon className={`w-4 h-4 ${p.color}`} />
@@ -54,7 +51,7 @@ export function TimeBasedStats({ stats }: TimeBasedStatsProps) {
                                     <span className="font-serif text-xl text-green-500">${data.collected.toLocaleString()}</span>
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     );
                 })}
             </div>

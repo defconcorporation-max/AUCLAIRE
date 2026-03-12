@@ -1,10 +1,9 @@
 import { Project } from '@/services/apiProjects';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Package, AlertCircle, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { TrendingUp, Package, Clock } from 'lucide-react';
 
 interface ManufacturerDashboardProps {
     projects: Project[];
@@ -25,11 +24,10 @@ export function ManufacturerDashboard({ projects }: ManufacturerDashboardProps) 
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {kpis.map((kpi, idx) => (
-                    <motion.div
+                    <div
                         key={kpi.label}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.1 }}
+                        className="animate-in fade-in slide-in-from-bottom-2"
+                        style={{ animationDelay: `${idx * 100}ms` }}
                     >
                         <Card className="glass-card">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -40,7 +38,7 @@ export function ManufacturerDashboard({ projects }: ManufacturerDashboardProps) 
                                 <div className="text-3xl font-serif">{kpi.count}</div>
                             </CardContent>
                         </Card>
-                    </motion.div>
+                    </div>
                 ))}
             </div>
 
@@ -48,7 +46,6 @@ export function ManufacturerDashboard({ projects }: ManufacturerDashboardProps) 
                 <Card className="glass-card">
                     <CardHeader>
                         <CardTitle className="text-lg font-serif tracking-wide">Commandes à Produire</CardTitle>
-                        <CardDescription className="text-xs uppercase tracking-widest text-blue-500/70 font-bold">Approuvé • En attente de lancement</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y divide-white/5 p-0">
                         {waiting.length === 0 ? (
@@ -75,7 +72,6 @@ export function ManufacturerDashboard({ projects }: ManufacturerDashboardProps) 
                 <Card className="glass-card">
                     <CardHeader>
                         <CardTitle className="text-lg font-serif tracking-wide">Production en Cours</CardTitle>
-                        <CardDescription className="text-xs uppercase tracking-widest text-purple-500/70 font-bold">Actuellement sur l'établi</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y divide-white/5 p-0">
                         {ongoing.length === 0 ? (

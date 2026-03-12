@@ -1,14 +1,13 @@
 import { Project } from '@/services/apiProjects';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RecentActivityList } from "@/components/RecentActivityList";
 import { RevenueChart } from "@/components/RevenueChart";
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers } from '@/services/apiUsers';
@@ -51,7 +50,7 @@ export default function Dashboard() {
         queryFn: apiExpenses.getAll
     });
 
-    const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
+    const { data: _users, isLoading: usersLoading } = useQuery({
         queryKey: ['users'],
         queryFn: apiUsers.getAll
     });
@@ -69,7 +68,7 @@ export default function Dashboard() {
         );
     }
 
-    const hasError = projectsError || invoicesError || expensesError || usersError || !projects || !invoices || !expenses;
+    const hasError = projectsError || invoicesError || expensesError || !projects || !invoices || !expenses;
     if (hasError) {
         return (
             <div className="p-8 glass-card border-red-500/20 text-red-500 text-center">
@@ -142,10 +141,10 @@ export default function Dashboard() {
         const remainingToCollect = price - collected;
         let prob = 0;
         if (p.status === 'completed') prob = 1;
-        else if (['production', 'delivery'].includes(p.status)) prob = 0.95;
+        else if (p.status === 'production' || p.status === 'delivery') prob = 0.95;
         else if (p.status === 'approved_for_production') prob = 0.9;
         else if (p.status === '3d_model') prob = 0.7;
-        else if (p.status === 'inquiring') prob = 0.2;
+        else if (p.status === 'designing') prob = 0.5;
         else prob = 0.5;
         expectedCashPipeline += remainingToCollect * prob;
         if (['approved_for_production', 'production', 'delivery'].includes(p.status) && totalCosts > collected) {
@@ -174,15 +173,16 @@ export default function Dashboard() {
     // Leaderboard
     const sellerStats: Record<string, { id: string, name: string, volume: number, projectCount: number, profit: number, totalSalePrice: number }> = {};
     filteredProjects.filter(isProjectASale).forEach(p => {
-        const seller = p.sales_agent || p.affiliate || { id: 'direct', full_name: 'Vente Directe' };
-        if (!sellerStats[seller.id]) sellerStats[seller.id] = { id: seller.id, name: seller.full_name, volume: 0, projectCount: 0, profit: 0, totalSalePrice: 0 };
+        const sellerId = p.affiliate_id || p.sales_agent_id || 'direct';
+        const sellerName = p.affiliate?.full_name || 'Vente Directe';
+        if (!sellerStats[sellerId]) sellerStats[sellerId] = { id: sellerId, name: sellerName, volume: 0, projectCount: 0, profit: 0, totalSalePrice: 0 };
         const price = getSalePrice(p);
         const dynamicCosts = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
         const totalCosts = Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0) + Number(p.financials?.customs_fee || 0) + dynamicCosts + getCommissionEstimate(p);
-        sellerStats[seller.id].volume += price;
-        sellerStats[seller.id].projectCount++;
-        sellerStats[seller.id].profit += (price - totalCosts);
-        sellerStats[seller.id].totalSalePrice += price;
+        sellerStats[sellerId].volume += price;
+        sellerStats[sellerId].projectCount++;
+        sellerStats[sellerId].profit += (price - totalCosts);
+        sellerStats[sellerId].totalSalePrice += price;
     });
 
     const leaderboard = Object.values(sellerStats)
@@ -193,12 +193,12 @@ export default function Dashboard() {
         <div className="space-y-8 pb-12">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                <div className="animate-in fade-in slide-in-from-left-4">
                     <h1 className="text-4xl font-serif text-luxury-gradient tracking-tight mb-2">Tableau de Bord</h1>
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
                         Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
-                </motion.div>
+                </div>
             </div>
 
             {/* ADMIN / SECRETARY VIEW */}
@@ -242,7 +242,7 @@ export default function Dashboard() {
                 <ManufacturerDashboard projects={filteredProjects} />
             )}
 
-            {/* AFFILIATE VIEW (Shared logic with Admin but simplified UI) */}
+            {/* AFFILIATE VIEW */}
             {role === 'affiliate' && (
                 <div className="space-y-8">
                     <DashboardStats 

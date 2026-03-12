@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface RiskProject {
     project: any;
@@ -35,47 +34,43 @@ export function CashRiskTracker({ highRiskProjects }: CashRiskTrackerProps) {
                     </div>
                 ) : (
                     <div className="divide-y divide-white/5">
-                        <AnimatePresence>
-                            {highRiskProjects.map((risk, idx) => (
-                                <motion.div
-                                    key={risk.project.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: idx * 0.1 }}
-                                    className="p-4 hover:bg-red-500/5 transition-all group relative border-l-2 border-transparent hover:border-red-500/50"
-                                >
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-serif text-sm truncate group-hover:text-red-500 transition-colors">{risk.project.title}</h4>
-                                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-red-500/30 text-red-500">{risk.project.status.replace('_', ' ')}</Badge>
-                                            </div>
-                                            <div className="flex gap-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Committed</span>
-                                                    <span className="text-[10px] font-bold tabular-nums">${risk.committed.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Deposited</span>
-                                                    <span className="text-[10px] font-bold tabular-nums text-green-500">${risk.deposited.toLocaleString()}</span>
-                                                </div>
-                                            </div>
+                        {highRiskProjects.map((risk, idx) => (
+                            <div
+                                key={risk.project.id}
+                                className="p-4 hover:bg-red-500/5 transition-all group relative border-l-2 border-transparent hover:border-red-500/50 animate-in fade-in slide-in-from-bottom-2"
+                                style={{ animationDelay: `${idx * 100}ms` }}
+                            >
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h4 className="font-serif text-sm truncate group-hover:text-red-500 transition-colors">{risk.project.title}</h4>
+                                            <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-red-500/30 text-red-500">{risk.project.status.replace('_', ' ')}</Badge>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-right">
-                                                <p className="text-sm font-serif font-bold text-red-500">-${risk.deficit.toLocaleString()}</p>
-                                                <p className="text-[8px] uppercase tracking-widest font-black text-red-500/70">Déficit</p>
+                                        <div className="flex gap-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Committed</span>
+                                                <span className="text-[10px] font-bold tabular-nums">${risk.committed.toLocaleString()}</span>
                                             </div>
-                                            <Button size="sm" className="h-8 bg-red-600 hover:bg-red-700 text-white border-0 shadow-lg shadow-red-500/20 text-[10px] uppercase font-bold" asChild>
-                                                <Link to={`/dashboard/projects/${risk.project.id}`}>
-                                                    Résoudre <ChevronRight className="w-3 h-3 ml-1" />
-                                                </Link>
-                                            </Button>
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Deposited</span>
+                                                <span className="text-[10px] font-bold tabular-nums text-green-500">${risk.deposited.toLocaleString()}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-right">
+                                            <p className="text-sm font-serif font-bold text-red-500">-${risk.deficit.toLocaleString()}</p>
+                                            <p className="text-[8px] uppercase tracking-widest font-black text-red-500/70">Déficit</p>
+                                        </div>
+                                        <Button size="sm" className="h-8 bg-red-600 hover:bg-red-700 text-white border-0 shadow-lg shadow-red-500/20 text-[10px] uppercase font-bold" asChild>
+                                            <Link to={`/dashboard/projects/${risk.project.id}`}>
+                                                Résoudre <ChevronRight className="w-3 h-3 ml-1" />
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </CardContent>

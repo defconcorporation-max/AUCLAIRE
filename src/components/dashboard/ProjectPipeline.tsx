@@ -1,12 +1,10 @@
-import { Project } from '@/services/apiProjects';
+import { Project, apiProjects } from '@/services/apiProjects';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, AlertCircle, TrendingUp, Package, ChevronRight } from 'lucide-react';
-import * as apiProjects from '@/services/apiProjects';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Clock, AlertCircle, TrendingUp, Package, ChevronRight, HandCoins } from 'lucide-react';
 
 interface ProjectPipelineProps {
     design: Project[];
@@ -16,7 +14,7 @@ interface ProjectPipelineProps {
     role: string;
 }
 
-export function ProjectPipeline({ design, pending, ongoing, delivery, role }: ProjectPipelineProps) {
+export function ProjectPipeline({ design, pending, ongoing, delivery, role: _role }: ProjectPipelineProps) {
     const categories = [
         { id: 'design', label: 'Design', icon: Clock, data: design, color: 'text-blue-500' },
         { id: 'pending', label: 'Ready', icon: AlertCircle, data: pending, color: 'text-green-500' },
@@ -58,87 +56,78 @@ export function ProjectPipeline({ design, pending, ongoing, delivery, role }: Pr
                         ))}
                     </TabsList>
                     
-                    <AnimatePresence mode="wait">
-                        {categories.map(cat => (
-                            <TabsContent key={cat.id} value={cat.id} className="m-0 focus-visible:outline-none">
-                                <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
-                                    {cat.data.length === 0 ? (
-                                        <div className="p-12 text-center text-muted-foreground">
-                                            <p className="text-xs uppercase tracking-widest">Rien en cours ici</p>
-                                        </div>
-                                    ) : (
-                                        cat.data.map((project, idx) => (
-                                            <motion.div
-                                                key={project.id}
-                                                initial={{ opacity: 0, y: 5 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: idx * 0.05 }}
-                                                className="p-3 hover:bg-white/5 transition-colors group relative border-l-2 border-transparent hover:border-luxury-gold/50"
-                                            >
-                                                <div className="flex items-center justify-between gap-4">
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <h4 className="font-serif text-sm truncate group-hover:text-luxury-gold transition-colors">{project.title}</h4>
-                                                            {project.priority === 'rush' && (
-                                                                <Badge variant="destructive" className="h-4 text-[8px] px-1 uppercase leading-none bg-red-500/80 animate-pulse">RUSH</Badge>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-x-3 gap-y-1">
-                                                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                                <HandIcon className="w-2.5 h-2.5" /> {project.affiliate?.full_name || 'Direct'}
-                                                            </span>
-                                                            {project.deadline && (
-                                                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                                    <Clock className="w-2.5 h-2.5" /> {new Date(project.deadline).toLocaleDateString()}
-                                                                </span>
-                                                            )}
-                                                            <span className="text-[10px] text-muted-foreground flex items-center gap-1 uppercase tracking-tighter">
-                                                                {project.manufacturer?.full_name || 'No Factory'}
-                                                            </span>
-                                                        </div>
+                    {categories.map(cat => (
+                        <TabsContent key={cat.id} value={cat.id} className="m-0 focus-visible:outline-none">
+                            <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
+                                {cat.data.length === 0 ? (
+                                    <div className="p-12 text-center text-muted-foreground">
+                                        <p className="text-xs uppercase tracking-widest">Rien en cours ici</p>
+                                    </div>
+                                ) : (
+                                    cat.data.map((project, idx) => (
+                                        <div
+                                            key={project.id}
+                                            className="p-3 hover:bg-white/5 transition-colors group relative border-l-2 border-transparent hover:border-luxury-gold/50 animate-in fade-in slide-in-from-bottom-1"
+                                            style={{ animationDelay: `${idx * 50}ms` }}
+                                        >
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h4 className="font-serif text-sm truncate group-hover:text-luxury-gold transition-colors">{project.title}</h4>
+                                                        {project.priority === 'rush' && (
+                                                            <Badge variant="destructive" className="h-4 text-[8px] px-1 uppercase leading-none bg-red-500/80 animate-pulse">RUSH</Badge>
+                                                        )}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
-                                                            <Link to={`/dashboard/projects/${project.id}`}>
-                                                                <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:text-luxury-gold" />
-                                                            </Link>
-                                                        </Button>
-                                                        
-                                                        {cat.id === 'pending' && (
-                                                             <Button 
-                                                                size="sm" 
-                                                                className="h-7 text-[10px] bg-green-600 hover:bg-green-700 text-white"
-                                                                onClick={() => handleAction(project.id, 'production', "Start production for this project?")}
-                                                            >
-                                                                Générer Production
-                                                            </Button>
+                                                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                            <HandCoins className="w-2.5 h-2.5" /> {project.affiliate?.full_name || 'Direct'}
+                                                        </span>
+                                                        {project.deadline && (
+                                                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                                <Clock className="w-2.5 h-2.5" /> {new Date(project.deadline).toLocaleDateString()}
+                                                            </span>
                                                         )}
-                                                        
-                                                        {cat.id === 'ongoing' && (
-                                                            <Button 
-                                                                size="sm" 
-                                                                className="h-7 text-[10px] bg-purple-600 hover:bg-purple-700 text-white"
-                                                                onClick={() => handleAction(project.id, 'delivery', "Production finished? Send to delivery?")}
-                                                            >
-                                                                Prêt pour Livraison
-                                                            </Button>
-                                                        )}
+                                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1 uppercase tracking-tighter">
+                                                            {project.manufacturer?.full_name || 'No Factory'}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            </motion.div>
-                                        ))
-                                    )}
-                                </div>
-                            </TabsContent>
-                        ))}
-                    </AnimatePresence>
+                                                <div className="flex items-center gap-2">
+                                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
+                                                        <Link to={`/dashboard/projects/${project.id}`}>
+                                                            <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:text-luxury-gold" />
+                                                        </Link>
+                                                    </Button>
+                                                    
+                                                    {cat.id === 'pending' && (
+                                                         <Button 
+                                                            size="sm" 
+                                                            className="h-7 text-[10px] bg-green-600 hover:bg-green-700 text-white"
+                                                            onClick={() => handleAction(project.id, 'production', "Start production for this project?")}
+                                                        >
+                                                            Générer Production
+                                                        </Button>
+                                                    )}
+                                                    
+                                                    {cat.id === 'ongoing' && (
+                                                        <Button 
+                                                            size="sm" 
+                                                            className="h-7 text-[10px] bg-purple-600 hover:bg-purple-700 text-white"
+                                                            onClick={() => handleAction(project.id, 'delivery', "Production finished? Send to delivery?")}
+                                                        >
+                                                            Prêt pour Livraison
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </TabsContent>
+                    ))}
                 </Tabs>
             </CardContent>
         </Card>
     );
 }
-
-function HandIcon({ className }: { className?: string }) {
-    return <HandCoins className={className} />;
-}
-import { HandCoins } from 'lucide-react';
