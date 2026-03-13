@@ -302,17 +302,15 @@ export default function ProductCatalog() {
                             </div>
                         )}
 
-                        {/* Image field for everything except categories */}
-                        {nextType !== 'category' && (
-                            <div className="space-y-2">
-                                <Label>URL de l'Image (optionnel)</Label>
-                                <Input 
-                                    placeholder="https://..." 
-                                    value={newNode.image_url}
-                                    onChange={(e) => setNewNode({...newNode, image_url: e.target.value})}
-                                />
-                            </div>
-                        )}
+                        {/* Image field for all types */}
+                        <div className="space-y-2">
+                            <Label>URL de l'Image (optionnel)</Label>
+                            <Input 
+                                placeholder="https://..." 
+                                value={newNode.image_url}
+                                onChange={(e) => setNewNode({...newNode, image_url: e.target.value})}
+                            />
+                        </div>
 
                         {/* Price field only for leaf nodes (metals) */}
                         {nextType === 'metal' && (
@@ -375,17 +373,16 @@ export default function ProductCatalog() {
                                 </div>
                             )}
 
-                            {editingNode.type !== 'category' && (
-                                <div className="space-y-2">
-                                    <Label>URL de l'Image</Label>
-                                    <Input 
-                                        className="bg-white/5 border-white/10"
-                                        placeholder="https://..." 
-                                        value={editingNode.image_url || ''}
-                                        onChange={(e) => setEditingNode({...editingNode, image_url: e.target.value})}
-                                    />
-                                </div>
-                            )}
+                            {/* Image field for all types */}
+                            <div className="space-y-2">
+                                <Label>URL de l'Image</Label>
+                                <Input 
+                                    className="bg-white/5 border-white/10"
+                                    placeholder="https://..." 
+                                    value={editingNode.image_url || ''}
+                                    onChange={(e) => setEditingNode({...editingNode, image_url: e.target.value})}
+                                />
+                            </div>
 
                             {editingNode.type === 'metal' && (
                                 <div className="space-y-2">

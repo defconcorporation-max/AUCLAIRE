@@ -23,7 +23,7 @@ echo Last deploy trigger: %date% %time% > force_deploy.txt
 echo [3/4] Staging and Committing...
 git add .
 :: Use a more descriptive default or allow override
-set COMMIT_MSG="Update: Hierarchical Product Catalog and Estimator feature (automated)"
+set COMMIT_MSG="Update: Product Catalog refinements and category thumbnails (automated)"
 git commit -m %COMMIT_MSG%
 
 echo [4/4] Pushing to Vercel...
