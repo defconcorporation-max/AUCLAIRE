@@ -16,16 +16,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityLogList } from '@/components/ActivityLogList';
 import {
-    LayoutDashboard,
-    Calendar,
     Clock,
-    Package,
-    MessageSquare,
-    Image as ImageIcon,
     Upload,
     FileText,
     Trash2,
-    Plus,
     CheckCircle2,
     AlertCircle,
     DollarSign,
