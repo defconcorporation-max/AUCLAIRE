@@ -144,6 +144,7 @@ export default function ProductCatalog() {
         sort_order: 0,
         specs: {}
     });
+    const [propagateAll, setPropagateAll] = useState(false);
 
     const nextType = getNextType(currentPath.length);
 
@@ -164,20 +165,28 @@ export default function ProductCatalog() {
             parent_id: currentParentId,
             type: nextType
         }),
-        onSuccess: () => {
+        onSuccess: async (data) => {
+            if (propagateAll && data?.id) {
+                await apiCatalog.propagateNode(data.id);
+            }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
             setIsAddDialogOpen(false);
             setNewNode({ label: '', description: '', image_url: '', price: 0, sort_order: 0, specs: {} });
+            setPropagateAll(false);
         }
     });
 
     const updateNodeMutation = useMutation({
         mutationFn: ({ id, updates }: { id: string, updates: Partial<CatalogNode> }) => 
             apiCatalog.updateNode(id, updates),
-        onSuccess: () => {
+        onSuccess: async (_, { id }) => {
+            if (propagateAll) {
+                await apiCatalog.propagateNode(id);
+            }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
             setIsEditDialogOpen(false);
             setEditingNode(null);
+            setPropagateAll(false);
         }
     });
 
@@ -428,6 +437,22 @@ export default function ProductCatalog() {
                                 Ce prix sera cumulé dans le Flash Quote.
                             </p>
                         </div>
+
+                        {/* Bulk Propagation Checkbox */}
+                        {(nextType === 'style' || nextType === 'carat' || nextType === 'metal') && (
+                            <div className="flex items-center gap-3 p-3 bg-luxury-gold/5 rounded-xl border border-luxury-gold/20">
+                                <input 
+                                    type="checkbox" 
+                                    id="propagateAdd"
+                                    checked={propagateAll}
+                                    onChange={(e) => setPropagateAll(e.target.checked)}
+                                    className="w-4 h-4 accent-luxury-gold"
+                                />
+                                <Label htmlFor="propagateAdd" className="cursor-pointer text-xs font-bold text-luxury-gold uppercase tracking-widest">
+                                    Appliquer à tous les modèles de cette catégorie
+                                </Label>
+                            </div>
+                        )}
                     </div>
 
                     <DialogFooter className="px-2">
@@ -497,6 +522,22 @@ export default function ProductCatalog() {
                                     Ce prix sera cumulé dans le Flash Quote.
                                 </p>
                             </div>
+
+                            {/* Bulk Propagation Checkbox */}
+                            {(editingNode.type === 'style' || editingNode.type === 'carat' || editingNode.type === 'metal') && (
+                                <div className="flex items-center gap-3 p-3 bg-luxury-gold/5 rounded-xl border border-luxury-gold/20">
+                                    <input 
+                                        type="checkbox" 
+                                        id="propagateEdit"
+                                        checked={propagateAll}
+                                        onChange={(e) => setPropagateAll(e.target.checked)}
+                                        className="w-4 h-4 accent-luxury-gold"
+                                    />
+                                    <Label htmlFor="propagateEdit" className="cursor-pointer text-xs font-bold text-luxury-gold uppercase tracking-widest">
+                                        Synchroniser ce changement sur tous les modèles
+                                    </Label>
+                                </div>
+                            )}
                         </div>
                     )}
 
