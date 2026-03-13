@@ -1,4 +1,4 @@
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
 
 import { useQuery } from "@tanstack/react-query"
 import { apiProjects } from "@/services/apiProjects"
@@ -55,6 +55,12 @@ export function RevenueChart() {
                     labelStyle={{ color: '#D4AF37', fontWeight: 'bold', marginBottom: '4px', fontFamily: 'serif' }}
                     itemStyle={{ fontSize: '12px', padding: '2px 0' }}
                     formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                />
+                <Legend 
+                    verticalAlign="top" 
+                    height={36} 
+                    iconType="circle"
+                    formatter={(value) => <span className="text-zinc-400 text-xs uppercase tracking-widest font-sans">{value}</span>}
                 />
                 <Bar name="Encaissé" dataKey="collected" fill="#D4AF37" radius={[4, 4, 0, 0]} barSize={20} />
                 <Bar name="Facturé" dataKey="invoiced" fill="#E5E4E2" radius={[4, 4, 0, 0]} barSize={20} />
