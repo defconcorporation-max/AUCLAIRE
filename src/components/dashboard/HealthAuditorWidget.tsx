@@ -52,8 +52,10 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
         avgVelocity[status] = data.totalDays / data.count;
     });
 
+    const PIPELINE_STATUSES = ['3d_model', 'design_modification', 'production', 'delivery'];
+
     projects.forEach(p => {
-        if (p.status === 'completed' || p.status === 'cancelled' || p.status === 'waiting_for_approval') return;
+        if (!PIPELINE_STATUSES.includes(p.status)) return;
 
         const pLogs = logsByProject[p.id] || [];
         const lastLog = pLogs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
