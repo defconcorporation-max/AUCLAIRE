@@ -1,57 +1,55 @@
 import { supabase } from '@/lib/supabase';
 
-export interface CatalogCategory {
+export interface CatalogNode {
     id: string;
-    name: string;
-    slug: string;
-    description?: string;
-}
-
-export interface CatalogItem {
-    id: string;
-    category_id: string;
-    name: string;
-    description?: string;
+    parent_id: string | null;
+    label: string;
+    type: 'category' | 'model' | 'style' | 'carat' | 'metal';
     image_url?: string;
-    base_price: number;
+    price?: number;
     specs: Record<string, any>;
+    sort_order: number;
 }
 
 export const apiCatalog = {
-    async getCategories() {
-        const { data, error } = await supabase
-            .from('catalog_categories')
+    async getNodes(parentId: string | null = null) {
+        let query = supabase
+            .from('catalog_tree')
             .select('*')
-            .order('name');
-        if (error) throw error;
-        return data as CatalogCategory[];
-    },
+            .order('sort_order', { ascending: true })
+            .order('label', { ascending: true });
 
-    async getItems(categoryId?: string) {
-        let query = supabase.from('catalog_items').select('*, category:catalog_categories(name)');
-        
-        if (categoryId) {
-            query = query.eq('category_id', categoryId);
+        if (parentId === null) {
+            query = query.is('parent_id', null);
+        } else {
+            query = query.eq('parent_id', parentId);
         }
-        
-        const { data, error } = await query.order('created_at', { ascending: false });
-        if (error) throw error;
-        return data;
+
+        const { data, error } = await query;
+        if (error) {
+            // If the table doesn't exist yet (migration failed), we'll return mock data for development
+            if (error.code === '42P01') {
+                console.warn("Catalog table not found, using mock data");
+                return this.getMockNodes(parentId);
+            }
+            throw error;
+        }
+        return data as CatalogNode[];
     },
 
-    async createItem(item: Omit<CatalogItem, 'id'>) {
+    async createNode(node: Omit<CatalogNode, 'id' | 'created_at' | 'updated_at'>) {
         const { data, error } = await supabase
-            .from('catalog_items')
-            .insert(item)
+            .from('catalog_tree')
+            .insert(node)
             .select()
             .single();
         if (error) throw error;
         return data;
     },
 
-    async updateItem(id: string, updates: Partial<CatalogItem>) {
+    async updateNode(id: string, updates: Partial<CatalogNode>) {
         const { data, error } = await supabase
-            .from('catalog_items')
+            .from('catalog_tree')
             .update(updates)
             .eq('id', id)
             .select()
@@ -60,11 +58,28 @@ export const apiCatalog = {
         return data;
     },
 
-    async deleteItem(id: string) {
+    async deleteNode(id: string) {
         const { error } = await supabase
-            .from('catalog_items')
+            .from('catalog_tree')
             .delete()
             .eq('id', id);
         if (error) throw error;
+    },
+
+    // Mock data for development when table is missing
+    getMockNodes(parentId: string | null): CatalogNode[] {
+        if (parentId === null) {
+            return [
+                { id: 'cat1', parent_id: null, label: 'Bagues', type: 'category', sort_order: 0, specs: {} },
+                { id: 'cat2', parent_id: null, label: 'Alliances', type: 'category', sort_order: 1, specs: {} }
+            ];
+        }
+        if (parentId === 'cat1') {
+            return [
+                { id: 'mod1', parent_id: 'cat1', label: 'Princess Cut', type: 'model', sort_order: 0, specs: {} },
+                { id: 'mod2', parent_id: 'cat1', label: 'Oval Cut', type: 'model', sort_order: 1, specs: {} }
+            ];
+        }
+        return [];
     }
 };

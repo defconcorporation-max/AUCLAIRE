@@ -1,23 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiCatalog } from '@/services/apiCatalog';
+import { apiCatalog, CatalogNode } from '@/services/apiCatalog';
 import { useAuth } from '@/context/AuthContext';
 import { 
-    Search, 
     Plus, 
     ArrowLeft, 
     ShoppingBag, 
-    Info, 
-    Tag,
     ChevronRight,
     Loader2,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Home,
+    Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
     Dialog, 
     DialogContent, 
@@ -27,8 +25,6 @@ import {
     DialogDescription 
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function ProductCatalog() {
     const navigate = useNavigate();
@@ -36,270 +32,252 @@ export default function ProductCatalog() {
     const queryClient = useQueryClient();
     const canManage = isAdmin || role === 'secretary' || role === 'admin';
 
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    // Navigation state
+    const [currentPath, setCurrentPath] = useState<CatalogNode[]>([]);
+    const currentParentId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : null;
+
+    // Add Node state
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-    // Queries
-    const { data: categories = [] } = useQuery({
-        queryKey: ['catalog-categories'],
-        queryFn: apiCatalog.getCategories
-    });
-
-    const { data: items = [], isLoading: isLoadingItems } = useQuery({
-        queryKey: ['catalog-items', selectedCategory],
-        queryFn: () => apiCatalog.getItems(selectedCategory === 'all' ? undefined : selectedCategory)
-    });
-
-    // Mutations
-    const addItemMutation = useMutation({
-        mutationFn: apiCatalog.createItem,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['catalog-items'] });
-            setIsAddDialogOpen(false);
-            setNewItem({
-                name: '',
-                description: '',
-                base_price: 0,
-                category_id: '',
-                image_url: '',
-                specs: {}
-            });
-        }
-    });
-
-    // Form State
-    const [newItem, setNewItem] = useState({
-        name: '',
-        description: '',
-        base_price: 0,
-        category_id: '',
+    const [newNode, setNewNode] = useState({
+        label: '',
         image_url: '',
+        price: 0,
+        sort_order: 0,
         specs: {}
     });
 
-    const filteredItems = items.filter((item: any) => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Queries
+    const { data: nodes = [], isLoading } = useQuery({
+        queryKey: ['catalog-nodes', currentParentId],
+        queryFn: () => apiCatalog.getNodes(currentParentId)
+    });
 
-    const handleAddItem = () => {
-        addItemMutation.mutate(newItem);
+    // Mutations
+    const addNodeMutation = useMutation({
+        mutationFn: (data: any) => apiCatalog.createNode({
+            ...data,
+            parent_id: currentParentId,
+            type: getNextType(currentPath.length)
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
+            setIsAddDialogOpen(false);
+            setNewNode({ label: '', image_url: '', price: 0, sort_order: 0, specs: {} });
+        }
+    });
+
+    const deleteNodeMutation = useMutation({
+        mutationFn: apiCatalog.deleteNode,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
+        }
+    });
+
+    const getNextType = (depth: number): any => {
+        const types = ['category', 'model', 'style', 'carat', 'metal'];
+        return types[Math.min(depth, types.length - 1)];
+    };
+
+    const handleNavigate = (node: CatalogNode) => {
+        if (node.type === 'metal') return; // Leaf node
+        setCurrentPath([...currentPath, node]);
+    };
+
+    const handleBreadcrumb = (index: number | 'home') => {
+        if (index === 'home') {
+            setCurrentPath([]);
+        } else {
+            setCurrentPath(currentPath.slice(0, index + 1));
+        }
     };
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Header & Controls */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <Button 
                     variant="ghost" 
                     onClick={() => navigate('/dashboard/resources')}
                     className="w-fit text-muted-foreground hover:text-white"
                 >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Retour
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Menu Ressources
                 </Button>
 
-                <div className="flex items-center gap-3">
-                    {canManage && (
-                        <Button 
-                            onClick={() => setIsAddDialogOpen(true)}
-                            className="bg-luxury-gold hover:bg-yellow-600 text-white"
-                        >
-                            <Plus className="w-4 h-4 mr-2" /> Ajouter un Modèle
-                        </Button>
-                    )}
-                </div>
+                {canManage && (
+                    <Button 
+                        onClick={() => setIsAddDialogOpen(true)}
+                        className="bg-luxury-gold hover:bg-yellow-600 text-white"
+                    >
+                        <Plus className="w-4 h-4 mr-2" /> 
+                        {currentPath.length === 0 ? 'Ajouter une Catégorie' : `Ajouter : ${getNextType(currentPath.length)}`}
+                    </Button>
+                )}
             </div>
+
+            {/* Breadcrumbs */}
+            <nav className="flex items-center flex-wrap gap-2 text-sm">
+                <button 
+                    onClick={() => handleBreadcrumb('home')}
+                    className={`flex items-center gap-1 hover:text-luxury-gold transition-colors ${currentPath.length === 0 ? 'text-luxury-gold font-bold' : 'text-muted-foreground'}`}
+                >
+                    <Home className="w-4 h-4" />
+                    Catalogue
+                </button>
+                {currentPath.map((node, i) => (
+                    <div key={node.id} className="flex items-center gap-2">
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        <button 
+                            onClick={() => handleBreadcrumb(i)}
+                            className={`hover:text-luxury-gold transition-colors ${i === currentPath.length - 1 ? 'text-luxury-gold font-bold' : 'text-muted-foreground'}`}
+                        >
+                            {node.label}
+                        </button>
+                    </div>
+                ))}
+            </nav>
 
             <header className="relative">
                 <div className="absolute -top-10 -left-10 w-48 h-48 bg-luxury-gold/5 rounded-full blur-[60px] -z-10" />
-                <h1 className="text-4xl font-serif text-white flex items-center gap-3">
+                <h1 className="text-4xl font-serif text-white flex items-center gap-3 lowercase first-letter:uppercase">
                     <ShoppingBag className="text-luxury-gold" />
-                    Catalogue & Estimations
+                    {currentPath.length === 0 ? "Nos Produits" : currentPath[currentPath.length - 1].label}
                 </h1>
-                <p className="text-muted-foreground mt-2 font-serif italic">
-                    Explorez les modèles Auclaire et estimez les prix pour vos clients.
+                <p className="text-muted-foreground mt-2 font-serif italic text-sm">
+                    {currentPath.length === 0 
+                        ? "Sélectionnez une catégorie pour commencer l'estimation." 
+                        : `Choisissez ${getNextType(currentPath.length)} pour continuer.`
+                    }
                 </p>
             </header>
 
-            <div className="flex flex-col lg:flex-row gap-8">
-                {/* Sidebar Filters */}
-                <div className="w-full lg:w-64 space-y-6">
-                    <div className="space-y-4">
-                        <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Recherche</Label>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Nom, description..." 
-                                className="pl-9 bg-white/5 border-white/10"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
+            {/* Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {isLoading ? (
+                    <div className="col-span-full flex h-64 items-center justify-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
                     </div>
-
-                    <div className="space-y-4">
-                        <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Catégories</Label>
-                        <div className="flex flex-col gap-1">
-                            <button
-                                onClick={() => setSelectedCategory('all')}
-                                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                                    selectedCategory === 'all' 
-                                    ? 'bg-luxury-gold/20 text-luxury-gold font-bold' 
-                                    : 'hover:bg-white/5 text-muted-foreground'
-                                }`}
-                            >
-                                Tous les produits
-                                <ChevronRight className={`w-4 h-4 ${selectedCategory === 'all' ? 'opacity-100' : 'opacity-0'}`} />
-                            </button>
-                            {categories.map((cat) => (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => setSelectedCategory(cat.id)}
-                                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                                        selectedCategory === cat.id 
-                                        ? 'bg-luxury-gold/20 text-luxury-gold font-bold' 
-                                        : 'hover:bg-white/5 text-muted-foreground'
-                                    }`}
-                                >
-                                    {cat.name}
-                                    <ChevronRight className={`w-4 h-4 ${selectedCategory === cat.id ? 'opacity-100' : 'opacity-0'}`} />
-                                </button>
-                            ))}
-                        </div>
+                ) : nodes.length === 0 ? (
+                    <div className="col-span-full py-20 text-center bg-white/5 rounded-2xl border border-dashed border-white/10">
+                        <Plus className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                        <h3 className="text-xl font-serif text-muted-foreground">Cette section est vide</h3>
+                        {canManage && <p className="text-sm text-muted-foreground mt-2">Cliquez sur le bouton ci-dessus pour ajouter des éléments.</p>}
                     </div>
-                </div>
+                ) : (
+                    nodes.map((node) => (
+                        <Card 
+                            key={node.id} 
+                            onClick={() => handleNavigate(node)}
+                            className={`group relative overflow-hidden bg-white/5 border-white/10 hover:border-luxury-gold/50 transition-all duration-500 cursor-pointer ${node.type === 'metal' ? 'cursor-default ring-1 ring-luxury-gold/20' : ''}`}
+                        >
+                            {/* Actions Overlay */}
+                            {canManage && (
+                                <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button 
+                                        variant="destructive" 
+                                        size="icon" 
+                                        className="h-8 w-8"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if(confirm('Supprimer cet élément et tous ses sous-éléments?')) deleteNodeMutation.mutate(node.id);
+                                        }}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
 
-                {/* Main Grid */}
-                <div className="flex-1">
-                    {isLoadingItems ? (
-                        <div className="flex h-64 items-center justify-center">
-                            <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
-                        </div>
-                    ) : filteredItems.length === 0 ? (
-                        <div className="bg-white/5 border border-dashed border-white/10 rounded-2xl p-12 text-center">
-                            <ShoppingBag className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                            <h3 className="text-lg font-serif">Aucun modèle trouvé</h3>
-                            <p className="text-muted-foreground text-sm mt-1">Ajustez vos filtres ou effectuez une nouvelle recherche.</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {filteredItems.map((item: any) => (
-                                <Card key={item.id} className="group overflow-hidden bg-white/5 border-white/10 hover:border-luxury-gold/30 transition-all duration-500 shadow-xl">
-                                    <div className="aspect-square relative overflow-hidden bg-zinc-900 flex items-center justify-center">
-                                        {item.image_url ? (
-                                            <img 
-                                                src={item.image_url} 
-                                                alt={item.name}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                            />
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-2 text-muted-foreground/50">
-                                                <ImageIcon className="w-12 h-12" />
-                                                <span className="text-[10px] uppercase tracking-widest">Image à venir</span>
-                                            </div>
-                                        )}
-                                        <div className="absolute top-3 right-3">
-                                            <Badge className="bg-black/60 backdrop-blur-md border-white/10 text-luxury-gold font-serif">
-                                                {item.category?.name}
-                                            </Badge>
+                            <div className="aspect-square relative flex items-center justify-center bg-zinc-900/50">
+                                {node.image_url ? (
+                                    <img 
+                                        src={node.image_url} 
+                                        alt={node.label} 
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    />
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2 text-muted-foreground/30">
+                                        <ImageIcon className="w-10 h-10" />
+                                        <span className="text-[10px] uppercase tracking-widest">{node.type}</span>
+                                    </div>
+                                )}
+                                
+                                {node.type !== 'metal' && (
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="px-4 py-2 border border-white/20 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-widest text-white shadow-xl">
+                                            Explorer
                                         </div>
                                     </div>
-                                    <CardHeader className="p-4 pb-2">
-                                        <CardTitle className="font-serif text-xl group-hover:text-luxury-gold transition-colors">
-                                            {item.name}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-4 pt-0 space-y-4">
-                                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                                            {item.description || "Aucune description fournie."}
-                                        </p>
-                                        <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">À partir de</span>
-                                                <span className="text-lg font-bold font-serif text-luxury-gold">
-                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(item.base_price)}
-                                                </span>
-                                            </div>
-                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white hover:bg-white/10">
-                                                <Info className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                )}
+                            </div>
+
+                            <CardHeader className="p-4">
+                                <CardTitle className="font-serif text-lg group-hover:text-luxury-gold transition-colors flex items-center justify-between">
+                                    {node.label}
+                                    {node.type !== 'metal' && <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />}
+                                </CardTitle>
+                                {node.price && node.price > 0 ? (
+                                    <div className="mt-2 text-xl font-bold font-serif text-luxury-gold">
+                                        {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(node.price)}
+                                    </div>
+                                ) : (
+                                    <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                                        {node.type}
+                                    </div>
+                                )}
+                            </CardHeader>
+                        </Card>
+                    ))
+                )}
             </div>
 
-            {/* Add Item Dialog */}
+            {/* Add Node Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent className="max-w-md bg-zinc-950 border-white/10">
+                <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="font-serif text-2xl text-white">Ajouter un Modèle</DialogTitle>
-                        <DialogDescription>Remplissez les détails pour ajouter un nouveau modèle au catalogue.</DialogDescription>
+                        <DialogTitle className="font-serif text-2xl">
+                            Ajouter {currentPath.length === 0 ? 'une Catégorie' : `un(e) ${getNextType(currentPath.length)}`}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Cet élément sera ajouté sous : <span className="text-luxury-gold font-bold">{currentParentId ? currentPath[currentPath.length - 1].label : 'Racine'}</span>
+                        </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4 px-4 overflow-y-auto max-h-[70vh]">
+                    
+                    <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Nom du Modèle</Label>
+                            <Label>Nom / Label</Label>
                             <Input 
-                                placeholder="ex: Solitaire Classique" 
-                                value={newItem.name}
-                                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                                placeholder="ex: 1.5ct, Or 18k, Oval Cut..." 
+                                value={newNode.label}
+                                onChange={(e) => setNewNode({...newNode, label: e.target.value})}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Catégorie</Label>
-                            <Select 
-                                onValueChange={(val) => setNewItem({ ...newItem, category_id: val })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Choisir une catégorie" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories.map((cat) => (
-                                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Description</Label>
-                            <Textarea 
-                                placeholder="Détails, matériaux, style..." 
-                                value={newItem.description}
-                                onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label>Prix de Base (CAD)</Label>
-                                <Tag className="w-3 h-3 text-luxury-gold" />
-                            </div>
-                            <Input 
-                                type="number" 
-                                placeholder="0.00" 
-                                value={newItem.base_price}
-                                onChange={(e) => setNewItem({ ...newItem, base_price: parseFloat(e.target.value) })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>URL de l'Image</Label>
+                            <Label>URL de l'Image (optionnel)</Label>
                             <Input 
                                 placeholder="https://..." 
-                                value={newItem.image_url}
-                                onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+                                value={newNode.image_url}
+                                onChange={(e) => setNewNode({...newNode, image_url: e.target.value})}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Prix (seulement pour l'étape finale)</Label>
+                            <Input 
+                                type="number"
+                                placeholder="0.00" 
+                                value={newNode.price}
+                                onChange={(e) => setNewNode({...newNode, price: parseFloat(e.target.value)})}
                             />
                         </div>
                     </div>
-                    <DialogFooter className="px-4">
+
+                    <DialogFooter>
                         <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Annuler</Button>
                         <Button 
                             className="bg-luxury-gold text-white"
-                            onClick={handleAddItem}
-                            disabled={addItemMutation.isPending || !newItem.name || !newItem.category_id}
+                            onClick={() => addNodeMutation.mutate(newNode)}
+                            disabled={!newNode.label || addNodeMutation.isPending}
                         >
-                            {addItemMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enregistrer'}
+                            {addNodeMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                            Enregistrer
                         </Button>
                     </DialogFooter>
                 </DialogContent>
