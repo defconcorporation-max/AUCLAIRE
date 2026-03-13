@@ -132,4 +132,33 @@
     0%, 100% { opacity: 1; }
     50% { opacity: .7; }
   }
+
+  .page-fade-in {
+    animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Custom Scrollbar for Luxury Feel */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(210, 181, 123, 0.2);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(210, 181, 123, 0.4);
+  }
+
+  /* Global Button Hover Glow */
+  button:hover:not(:disabled) {
+    box-shadow: 0 0 15px rgba(210, 181, 123, 0.15);
+  }
 }

@@ -25,7 +25,9 @@ IF %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [2/3] Committing changes...
-git commit -m "fix: resolve all TypeScript build errors - remove framer-motion"
+set MSG=%*
+if "%MSG%"=="" set MSG="Update: Auto-deploy %date% %time%"
+git commit -m %MSG%
 IF %ERRORLEVEL% NEQ 0 (
     echo NOTE: Nothing to commit or commit failed. Trying push anyway...
 )

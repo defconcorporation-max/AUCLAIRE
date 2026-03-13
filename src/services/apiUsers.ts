@@ -5,9 +5,11 @@ export interface UserProfile {
     id: string;
     full_name: string;
     role: UserRole;
-    email?: string; // Optional, might not be available in profiles table, but useful if we join
+    email?: string;
     created_at: string;
     monthly_goal?: number;
+    daily_capacity?: number;
+    specialty?: string[];
 }
 
 export const apiUsers = {
@@ -20,7 +22,7 @@ export const apiUsers = {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, role, email, created_at, monthly_goal')
+            .select('id, full_name, role, email, created_at, monthly_goal, daily_capacity, specialty')
             .order('created_at', { ascending: false });
 
         if (error) throw error;

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, FileText, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
+import { calculateCanadianTax, CanadianProvince, formatCurrency } from '@/utils/taxUtils';
 import {
     Dialog,
     DialogContent,
@@ -121,9 +122,22 @@ export default function InvoicesList() {
 
                             <div className="flex items-center gap-8">
                                 <div className="text-right">
-                                    <p className="font-bold text-lg">${invoice.amount.toLocaleString()}</p>
+                                    {invoice.project?.financials?.tax_province ? (
+                                        <div className="space-y-0.5">
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Total Gross</p>
+                                            <p className="font-bold text-lg text-luxury-gold">
+                                                {formatCurrency(invoice.amount + calculateCanadianTax(invoice.amount, invoice.project.financials.tax_province as CanadianProvince).total)}
+                                            </p>
+                                            <p className="text-[9px] text-muted-foreground">
+                                                Net: {formatCurrency(invoice.amount)} + Taxes ({invoice.project.financials.tax_province})
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="font-bold text-lg">{formatCurrency(invoice.amount)}</p>
+                                    )}
+                                    
                                     {(invoice.amount_paid || 0) > 0 && invoice.status !== 'paid' && (
-                                        <p className="text-xs text-green-600 font-medium">Paid: ${invoice.amount_paid?.toLocaleString()}</p>
+                                        <p className="text-xs text-green-600 font-medium">Paid: {formatCurrency(invoice.amount_paid)}</p>
                                     )}
                                     {invoice.status === 'paid' && (
                                         <p className="text-[10px] text-green-600/70 font-medium uppercase tracking-widest mt-1">

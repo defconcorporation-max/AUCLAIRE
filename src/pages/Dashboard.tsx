@@ -24,6 +24,8 @@ import { DesignReviewWidget } from '@/components/dashboard/DesignReviewWidget';
 import { CashRiskTracker } from '@/components/dashboard/CashRiskTracker';
 import { TimeBasedStats } from '@/components/dashboard/TimeBasedStats';
 import { ManufacturerDashboard } from '@/components/dashboard/ManufacturerDashboard';
+import { WorkloadMonitor } from '@/components/dashboard/WorkloadMonitor';
+import { BoutiqueMirror } from '@/components/dashboard/BoutiqueMirror';
 
 export default function Dashboard() {
     const { profile, role } = useAuth();
@@ -302,15 +304,27 @@ export default function Dashboard() {
                             />
                         </div>
                         <div className="space-y-6">
+                            <WorkloadMonitor />
                             <DesignReviewWidget projects={adminDesignReady} />
                             <AmbassadorLeaderboard leaderboard={leaderboard} />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <CashRiskTracker highRiskProjects={highRiskProjects} />
-                        <div className="relative z-20">
-                            <TimeBasedStats stats={statsData} />
+                    {/* Dashboard Insights Grid */}
+                    <div className="space-y-6">
+                        {/* 
+                          BOUTIQUE MIRROR (LIVE FEED)
+                          VISIBLE TO ADMINS, MANUFACTURERS, AND SECRETARIES
+                        */}
+                        {(role === 'admin' || role === 'secretary' || role === 'manufacturer') && (
+                            <BoutiqueMirror />
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <CashRiskTracker highRiskProjects={highRiskProjects} />
+                            <div className="relative z-20">
+                                <TimeBasedStats stats={statsData} />
+                            </div>
                         </div>
                     </div>
                 </div>

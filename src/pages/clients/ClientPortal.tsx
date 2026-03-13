@@ -8,6 +8,8 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Link } from 'react-router-dom';
 import { Package, FileText, CreditCard, Clock, CheckCircle2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { apiStories } from '@/services/apiStories';
+import { Camera } from 'lucide-react';
 
 export default function ClientPortal() {
     const { user, profile } = useAuth();
@@ -34,8 +36,21 @@ export default function ClientPortal() {
     const pendingApproval = myProjects.filter(p => p.status === 'design_ready');
     const unpaidInvoices = myInvoices.filter(inv => inv.status !== 'paid');
 
+    const { data: stories = [] } = useQuery({
+        queryKey: ['client_stories', user?.id],
+        queryFn: async () => {
+            const allStories: any[] = [];
+            for (const project of myProjects) {
+                const s = await apiStories.getClientStories(project.id);
+                allStories.push(...s);
+            }
+            return allStories.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        },
+        enabled: myProjects.length > 0
+    });
+
     return (
-        <div className="p-6 space-y-8 max-w-5xl mx-auto">
+        <div className="p-6 space-y-8 max-w-5xl mx-auto page-fade-in">
             {/* Welcome Header */}
             <div className="space-y-2">
                 <h1 className="text-3xl font-serif text-luxury-gold">
@@ -77,6 +92,35 @@ export default function ClientPortal() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Boutique Mirror - Live Workshop Feed */}
+            {stories.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-serif text-luxury-gold flex items-center gap-2">
+                            <Camera className="w-5 h-5" /> Live Workshop Feed
+                        </h2>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] bg-luxury-gold/10 px-2 py-1 rounded">Real-time Updates</span>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x">
+                        {stories.map((story) => (
+                            <div key={story.id} className="relative shrink-0 w-64 aspect-[4/5] rounded-2xl overflow-hidden glass-card snap-start">
+                                <img 
+                                    src={story.image_url} 
+                                    alt="Workshop WIP" 
+                                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
+                                />
+                                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                                    <p className="text-xs text-white/90 font-serif mb-1">{story.project?.title}</p>
+                                    <p className="text-[10px] text-luxury-gold/80 uppercase tracking-wider">
+                                        {new Date(story.created_at).toLocaleDateString()}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Pending Approval Banner */}
             {pendingApproval.length > 0 && (

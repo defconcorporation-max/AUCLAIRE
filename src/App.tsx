@@ -37,6 +37,7 @@ import SalesProcess from './pages/resources/SalesProcess';
 import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
 import ClientPortal from './pages/clients/ClientPortal';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
+import { LuxuryCursor } from './components/ui/LuxuryCursor';
 
 // Realtime sync component — must be inside Router + QueryClientProvider
 function RealtimeSync() {
@@ -71,6 +72,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="auclaire-theme">
+      <LuxuryCursor />
       <Toaster />
       <Router>
         <RealtimeSync />

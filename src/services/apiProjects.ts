@@ -19,6 +19,7 @@ export interface Project {
         design_notes?: string;
         sketch_files?: string[]; // Initial Design / Sketches
         design_files?: string[]; // 3D Renders (Legacy name kept for compatibility)
+        vault_files?: string[];
 
         // Version History
         design_versions?: {
@@ -59,6 +60,7 @@ export interface Project {
         }[];
 
         selling_price?: number; // Usually same as budget, but tracked separately
+        tax_province?: string;  // e.g. "QC", "ON"
         paid_amount?: number;   // Total amount paid by client
         exported_to_expenses?: boolean; // Flag to skip double-counting in dashboard
         commission_exported_to_expenses?: boolean; // Flag for affiliate commission

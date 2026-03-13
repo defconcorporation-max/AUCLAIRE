@@ -16,29 +16,41 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityLogList } from '@/components/ActivityLogList';
 import {
-    ArrowLeft,
-    User,
-    DollarSign,
+    LayoutDashboard,
+    Calendar,
     Clock,
+    Package,
+    MessageSquare,
+    Image as ImageIcon,
+    Upload,
+    FileText,
+    Trash2,
+    Plus,
+    CheckCircle2,
+    AlertCircle,
+    DollarSign,
+    ArrowLeft,
     Activity,
+    ShieldCheck,
+    Eye,
+    User,
     Shield,
     XCircle,
     Send,
     Factory,
-    CheckCircle2,
-    AlertCircle,
     ThumbsUp,
     ThumbsDown,
     Pencil,
     Save,
     X,
-    Trash2,
     Handshake,
     Link as LinkIcon
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
+import { toast } from '@/components/ui/use-toast';
+import { calculateCanadianTax, provinceNames, CanadianProvince, formatCurrency } from '@/utils/taxUtils';
 
 // Helper to resize/compress image to save LocalStorage space
 const compressImage = (file: File): Promise<string> => {
@@ -92,7 +104,8 @@ export default function ProjectDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { role, user } = useAuth(); // Get current role and user
+    const { user, role } = useAuth();
+ // Get current role and user
     const [isAddingRender, setIsAddingRender] = useState(false);
     const [isAddingSketch, setIsAddingSketch] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -1109,7 +1122,7 @@ export default function ProjectDetails() {
                         {role !== 'client' && role !== 'manufacturer' && (
                             <>
                                 <div className="flex items-center justify-between border-b pb-2">
-                                    <span className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="w-3 h-3" /> Sale Price</span>
+                                    <span className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="w-3 h-3" /> Sale Price (Net)</span>
                                     <input
                                         type="number"
                                         className="w-32 text-right border rounded px-2 py-1 text-sm font-medium bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
@@ -1128,12 +1141,64 @@ export default function ProjectDetails() {
                                                             details: `Updated Sale Price to $${val}`
                                                         });
                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                        queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                                                     });
                                             }
                                         }}
                                     />
                                 </div>
+
+                                {/* Tax Region Selector */}
+                                <div className="flex items-center justify-between border-b pb-2">
+                                    <span className="text-sm text-muted-foreground flex items-center gap-2">📍 Tax Region (Canada)</span>
+                                    <select
+                                        className="h-8 rounded border border-input bg-background text-xs px-1 w-32"
+                                        value={project.financials?.tax_province || ''}
+                                        onChange={(e) => {
+                                            const province = e.target.value;
+                                            apiProjects.updateFinancials(project.id, { tax_province: province || undefined })
+                                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }));
+                                        }}
+                                    >
+                                        <option value="">None / Intl</option>
+                                        {Object.entries(provinceNames).map(([code, name]) => (
+                                            <option key={code} value={code}>{name} ({code})</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {project.financials?.tax_province && (
+                                    <div className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-md space-y-1 text-xs border border-luxury-gold/10">
+                                        {(() => {
+                                            const net = project.budget || 0;
+                                            const breakdown = calculateCanadianTax(net, project.financials.tax_province as CanadianProvince);
+                                            return (
+                                                <>
+                                                    <div className="flex justify-between">
+                                                        <span>GST/TPS (5%):</span>
+                                                        <span>{formatCurrency(breakdown.gst)}</span>
+                                                    </div>
+                                                    {breakdown.pst > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span>PST/TVQ ({project.financials.tax_province === 'QC' ? '9.975%' : '7%'}):</span>
+                                                            <span>{formatCurrency(breakdown.pst)}</span>
+                                                        </div>
+                                                    )}
+                                                    {breakdown.hst > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span>HST ({breakdown.totalRate.toFixed(0)}%):</span>
+                                                            <span>{formatCurrency(breakdown.hst)}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between font-bold border-t pt-1 mt-1 text-luxury-gold">
+                                                        <span>Total Gross:</span>
+                                                        <span>{formatCurrency(net + breakdown.total)}</span>
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                )}
+
                                 {/* Payment Tracking */}
                                 <div className="space-y-2 pt-2">
                                     <div className="flex items-center justify-between text-sm">
@@ -1148,15 +1213,7 @@ export default function ProjectDetails() {
                                                 if (!isNaN(val)) {
                                                     apiProjects.updateFinancials(project.id, { paid_amount: val })
                                                         .then(() => {
-                                                            apiActivities.log({
-                                                                project_id: project.id,
-                                                                user_id: user?.id || 'admin',
-                                                                user_name: user?.user_metadata?.full_name || 'Admin',
-                                                                action: 'update',
-                                                                details: `Updated Paid Amount to $${val.toLocaleString()}`
-                                                            });
                                                             queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                            queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                                                         });
                                                 }
                                             }}
@@ -1164,15 +1221,28 @@ export default function ProjectDetails() {
                                     </div>
                                     <div className="flex items-center justify-between text-sm font-bold">
                                         <span>Balance Due</span>
-                                        <span className={(project.budget || 0) - (project.financials?.paid_amount || 0) > 0 ? "text-red-500" : "text-green-600"}>
-                                            ${((project.budget || 0) - (project.financials?.paid_amount || 0)).toLocaleString()}
-                                        </span>
+                                        {(() => {
+                                            const net = project.budget || 0;
+                                            const tax = project.financials?.tax_province 
+                                                ? calculateCanadianTax(net, project.financials.tax_province as CanadianProvince).total 
+                                                : 0;
+                                            const gross = net + tax;
+                                            const balance = gross - (project.financials?.paid_amount || 0);
+                                            return (
+                                                <span className={balance > 0 ? "text-red-500" : "text-green-600"}>
+                                                    {formatCurrency(balance)}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                     {/* Progress Bar */}
                                     <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-green-500 transition-all duration-500"
-                                            style={{ width: `${Math.min(100, ((project.financials?.paid_amount || 0) / (project.budget || 1)) * 100)}%` }}
+                                            style={{ 
+                                                width: `${Math.min(100, ((project.financials?.paid_amount || 0) / 
+                                                ((project.budget || 1) + (project.financials?.tax_province ? calculateCanadianTax(project.budget || 0, project.financials.tax_province as CanadianProvince).total : 0))) * 100)}%` 
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -1370,6 +1440,104 @@ export default function ProjectDetails() {
                                 {project.description || "No description provided. Custom design request."}
                             </p>
                         </div>
+
+                        {/* THE VAULT - CONCIERGE DOCUMENT STORAGE */}
+                        {(role === 'admin' || role === 'secretary' || (role === 'client' && project.stage_details?.vault_files?.length)) && (
+                            <div className="mt-8 pt-8 border-t border-luxury-gold/20">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 className="text-lg font-serif text-luxury-gold flex items-center gap-2">
+                                            <ShieldCheck className="w-5 h-5" /> The Vault
+                                        </h3>
+                                        <p className="text-[10px] uppercase tracking-widest text-luxury-gold/60">Concierge Document Storage</p>
+                                    </div>
+                                    {(role === 'admin' || role === 'secretary') && (
+                                        <label className="cursor-pointer">
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                multiple
+                                                onChange={async (e) => {
+                                                    const files = Array.from(e.target.files || []);
+                                                    if (files.length === 0) return;
+
+                                                    const uploadedUrls: string[] = [];
+                                                    for (const file of files) {
+                                                        const path = `vault/${project.id}/${Date.now()}_${file.name}`;
+                                                        const { error } = await supabase.storage.from('project-files').upload(path, file);
+                                                        if (!error) {
+                                                            const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(path);
+                                                            uploadedUrls.push(publicUrl);
+                                                        }
+                                                    }
+
+                                                    const currentVault = project.stage_details?.vault_files || [];
+                                                    await apiProjects.updateDetails(project.id, {
+                                                        vault_files: [...currentVault, ...uploadedUrls]
+                                                    });
+                                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                    toast({ title: "Documents secured in the Vault" });
+                                                }}
+                                            />
+                                            <Button size="sm" variant="outline" className="h-8 border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-all">
+                                                <Upload className="w-3 h-3 mr-2" /> Secure Doc
+                                            </Button>
+                                        </label>
+                                    )}
+                                </div>
+
+                                {(!project.stage_details?.vault_files || project.stage_details.vault_files.length === 0) ? (
+                                    <div className="text-center py-8 bg-zinc-900/20 rounded-lg border border-dashed border-luxury-gold/10 text-muted-foreground text-xs italic">
+                                        The vault is currently empty.
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {project.stage_details.vault_files.map((fileUrl: string, idx: number) => {
+                                            const fileName = decodeURIComponent(fileUrl.split('/').pop() || 'document').replace(/^\d+_/, '');
+                                            return (
+                                                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 hover:border-luxury-gold/30 transition-all group">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 rounded bg-luxury-gold/10 text-luxury-gold">
+                                                            <FileText className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-medium text-white/90 truncate max-w-[150px]">{fileName}</p>
+                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Secured Document</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 text-luxury-gold hover:text-luxury-gold hover:bg-luxury-gold/10"
+                                                            onClick={() => window.open(fileUrl, '_blank')}
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                        {(role === 'admin' || role === 'secretary') && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                onClick={async () => {
+                                                                    if (confirm("Remove this document from the Vault?")) {
+                                                                        const newVault = project.stage_details?.vault_files?.filter((_: any, i: number) => i !== idx);
+                                                                        await apiProjects.updateDetails(project.id, { vault_files: newVault });
+                                                                        queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
