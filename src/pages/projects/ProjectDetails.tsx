@@ -129,7 +129,7 @@ export default function ProjectDetails() {
                 alert(`Portal access link successfully sent to ${project.client.email}!`);
             } else {
                 // If they DON'T have an email, copy the anonymous share link to clipboard
-                const token = (project as any).share_token;
+                const token = (project as { share_token?: string }).share_token;
                 if (!token) {
                     alert("This project doesn't have a share token yet. Please contact admin.");
                     return;
@@ -138,9 +138,10 @@ export default function ProjectDetails() {
                 await navigator.clipboard.writeText(shareUrl);
                 alert("Client has no email. A direct access link has been copied to your clipboard. You can paste it in a message (WhatsApp, SMS, etc) to send to them.");
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            alert("Failed: " + err.message);
+            const message = err instanceof Error ? err.message : String(err);
+            alert("Failed: " + message);
         } finally {
             setIsSharing(false);
         }
@@ -511,7 +512,7 @@ export default function ProjectDetails() {
                                         value={selectedClientId}
                                         onChange={(e) => setSelectedClientId(e.target.value)}
                                     >
-                                        {clients?.map((client: any) => (
+                                        {clients?.map((client) => (
                                             <option key={client.id} value={client.id}>{client.full_name}</option>
                                         ))}
                                     </select>

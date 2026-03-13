@@ -59,10 +59,10 @@ export const apiInvoices = {
                 } else if (paid > 0) {
                     updates.status = 'partial';
                     // Clear paid_at if it was previously set (optional, but good for consistency)
-                    updates.paid_at = null as any;
+                    updates.paid_at = undefined;
                 } else {
                     updates.status = 'sent';
-                    updates.paid_at = null as any;
+                    updates.paid_at = undefined;
                 }
             }
         }

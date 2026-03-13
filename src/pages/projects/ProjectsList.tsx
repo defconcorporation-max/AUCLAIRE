@@ -106,7 +106,7 @@ export default function ProjectsList() {
         // Optimistic update
         queryClient.setQueryData(['projects'], (old: Project[] | undefined) => {
             if (!old) return []
-            return old.map(p => p.id === draggableId ? { ...p, status: newStatus } : p)
+            return old.map(p => p.id === draggableId ? { ...p, status: newStatus } as Project : p)
         })
 
         updateStatusMutation.mutate({ id: draggableId, status: newStatus })

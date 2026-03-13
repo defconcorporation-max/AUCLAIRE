@@ -136,8 +136,6 @@ export const apiAffiliates = {
     },
 
     async getAllAffiliatesWithStats() {
-        let allProfiles: any[] = [];
-
         try {
             // Attempt 1: Fetch Profiles first
             const { data, error } = await supabase
@@ -145,11 +143,11 @@ export const apiAffiliates = {
                 .select('*');
 
             if (error) throw error;
-            allProfiles = data || [];
+            const allProfiles = (data || []) as AffiliateProfile[];
 
             // Filter for affiliates/ambassadors
             const affiliateProfiles = allProfiles.filter(p =>
-                ['affiliate', 'ambassador'].includes((p as any).role?.toLowerCase())
+                ['affiliate', 'ambassador'].includes(p.role?.toLowerCase())
             );
 
             // Fetch generic stats for them (Batched or individual - keeping it simple/safe for now)

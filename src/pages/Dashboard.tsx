@@ -80,7 +80,7 @@ export default function Dashboard() {
         queryFn: apiUsers.getAll
     });
 
-    const { data: activities, isLoading: activitiesLoading } = useQuery<any[]>({ // Assuming activities type is not fully defined yet
+    const { data: activities, isLoading: activitiesLoading } = useQuery({
         queryKey: ['activities'],
         queryFn: apiActivities.getAll
     });
@@ -128,7 +128,6 @@ export default function Dashboard() {
 
     const projectIds = new Set(filteredProjects.map(p => p.id));
     const filteredInvoices = invoices?.filter(i => projectIds.has(i.project_id)) || [];
-    const filteredExpenses = (role === 'admin' || role === 'secretary') ? expenses : [];
 
     // Sorting Helper
     const sortByRush = (a: Project, b: Project) => {
@@ -161,7 +160,7 @@ export default function Dashboard() {
         return sum + getSalePrice(p);
     }, 0);
 
-    const totalRealExpenses = (filteredExpenses as any[])?.filter(e => e.status !== 'cancelled').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+    const totalRealExpenses = expenses?.filter(e => e.status !== 'cancelled').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
     const totalPendingCommissions = filteredProjects.reduce((sum, p) => p.financials?.commission_exported_to_expenses ? sum : sum + getCommissionEstimate(p), 0);
     const totalProductionCost = filteredProjects.reduce((sum, p) => {
         if (!['production', 'delivery', 'completed'].includes(p.status) || p.financials?.exported_to_expenses) return sum;
@@ -601,8 +600,8 @@ interface DashboardInsight {
 function generateDashboardInsights(
     projects: Project[],
     invoices: Invoice[],
-    expenses: any[],
-    leaderboard: any[]
+    expenses: { amount: number; status: string }[],
+    leaderboard: { name: string; volume: number }[]
 ): DashboardInsight[] {
     const insights: DashboardInsight[] = [];
     const now = new Date();

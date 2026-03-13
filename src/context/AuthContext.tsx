@@ -65,6 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => {
             clearTimeout(timeout);
             subscription.unsubscribe();
+            // Clear any user-specific data from memory if necessary
+            (window as any).currentUserRole = null;
         };
     }, []);
 

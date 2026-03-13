@@ -33,7 +33,7 @@ export default function AnalyticsDashboard() {
     const activeClients = clients.length;
 
     // Calculate Average Order Value (Panier Moyen) based on created invoices
-    const validInvoices = invoices.filter(i => (i as any).status !== 'cancelled' && (i as any).status !== 'void');
+    const validInvoices = invoices.filter(i => i.status !== 'void');
     const totalInvoiced = validInvoices.reduce((sum, i) => sum + i.amount, 0);
     const averageOrderValue = validInvoices.length > 0 ? Math.round(totalInvoiced / validInvoices.length) : 0;
 
@@ -46,7 +46,7 @@ export default function AnalyticsDashboard() {
         const dateStr = inv.paid_at || inv.created_at;
         const date = new Date(dateStr);
         // Cast inv as any or check valid statuses since types differ slightly per query
-        if (date.getFullYear() === currentYear && (inv as any).status !== 'cancelled') {
+        if (date.getFullYear() === currentYear && inv.status !== 'void') {
             const paid = getPaidAmount(inv);
             if (paid > 0) monthlyData[date.getMonth()].collected += paid;
         }
@@ -89,10 +89,10 @@ export default function AnalyticsDashboard() {
     });
 
     // Commissions come from expense rows (pending + paid), matching apiAffiliates.getStats
-    (expenses as unknown as { category: string; status: string; amount?: number; recipient_id?: string; description?: string }[]).filter(e => e.category === 'commission' && e.status !== 'cancelled' && !e.description?.includes('Commission Payout')).forEach(e => {
+    (expenses as { category: string; status: string; amount?: number; recipient_id?: string; description?: string }[]).filter(e => e.category === 'commission' && e.status !== 'cancelled' && !e.description?.includes('Commission Payout')).forEach(e => {
         const recipientId = e.recipient_id;
         if (recipientId && sellerStats[recipientId]) {
-            sellerStats[recipientId].commissions += Number(e.amount);
+            sellerStats[recipientId].commissions += Number(e.amount || 0);
         }
     });
 

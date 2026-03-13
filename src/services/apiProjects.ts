@@ -340,8 +340,8 @@ export const apiProjects = {
                 const newVal = financials[key];
                 if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
                     if (key === 'cost_items') {
-                        const oldCount = Array.isArray(oldVal) ? (oldVal as any[]).length : 0;
-                        const newCount = Array.isArray(newVal) ? (newVal as any[]).length : 0;
+                        const oldCount = Array.isArray(oldVal) ? oldVal.length : 0;
+                        const newCount = Array.isArray(newVal) ? newVal.length : 0;
                         changes.push(`cost_items: ${oldCount} → ${newCount} items`);
                     } else {
                         changes.push(`${key}: ${oldVal ?? 'N/A'} → ${newVal ?? 'N/A'}`);
