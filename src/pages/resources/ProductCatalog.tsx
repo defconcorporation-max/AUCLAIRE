@@ -11,7 +11,8 @@ import {
     Loader2,
     Image as ImageIcon,
     Home,
-    Trash2
+    Trash2,
+    Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,10 @@ export default function ProductCatalog() {
 
     const nextType = getNextType(currentPath.length);
 
+    // Edit Node state
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editingNode, setEditingNode] = useState<CatalogNode | null>(null);
+
     // Queries
     const { data: nodes = [], isLoading } = useQuery({
         queryKey: ['catalog-nodes', currentParentId],
@@ -70,12 +75,28 @@ export default function ProductCatalog() {
         }
     });
 
+    const updateNodeMutation = useMutation({
+        mutationFn: ({ id, updates }: { id: string, updates: Partial<CatalogNode> }) => 
+            apiCatalog.updateNode(id, updates),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
+            setIsEditDialogOpen(false);
+            setEditingNode(null);
+        }
+    });
+
     const deleteNodeMutation = useMutation({
         mutationFn: apiCatalog.deleteNode,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
         }
     });
+
+    const handleEditClick = (e: React.MouseEvent, node: CatalogNode) => {
+        e.stopPropagation();
+        setEditingNode(node);
+        setIsEditDialogOpen(true);
+    };
 
     const handleNavigate = (node: CatalogNode) => {
         if (node.type === 'metal') return; // Leaf node
@@ -175,7 +196,15 @@ export default function ProductCatalog() {
                         >
                             {/* Actions Overlay */}
                             {canManage && (
-                                <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                    <Button 
+                                        variant="secondary" 
+                                        size="icon" 
+                                        className="h-8 w-8 bg-zinc-800 border-white/10 hover:bg-zinc-700"
+                                        onClick={(e) => handleEditClick(e, node)}
+                                    >
+                                        <Pencil className="w-4 h-4 text-white" />
+                                    </Button>
                                     <Button 
                                         variant="destructive" 
                                         size="icon" 
@@ -308,6 +337,79 @@ export default function ProductCatalog() {
                         >
                             {addNodeMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                             Enregistrer
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            {/* Edit Node Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="max-w-md bg-zinc-950 border-white/10 text-white">
+                    <DialogHeader>
+                        <DialogTitle className="font-serif text-2xl">
+                            Modifier {editingNode?.label}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Type : <span className="text-luxury-gold uppercase tracking-widest text-xs font-bold">{editingNode?.type}</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {editingNode && (
+                        <div className="space-y-4 py-4 px-2 overflow-y-auto max-h-[60vh]">
+                            <div className="space-y-2">
+                                <Label>Nom / Label</Label>
+                                <Input 
+                                    className="bg-white/5 border-white/10"
+                                    value={editingNode.label}
+                                    onChange={(e) => setEditingNode({...editingNode, label: e.target.value})}
+                                />
+                            </div>
+
+                            {editingNode.type !== 'metal' && (
+                                <div className="space-y-2">
+                                    <Label>Description</Label>
+                                    <Textarea 
+                                        className="bg-white/5 border-white/10"
+                                        value={editingNode.description || ''}
+                                        onChange={(e) => setEditingNode({...editingNode, description: e.target.value})}
+                                    />
+                                </div>
+                            )}
+
+                            {editingNode.type !== 'category' && (
+                                <div className="space-y-2">
+                                    <Label>URL de l'Image</Label>
+                                    <Input 
+                                        className="bg-white/5 border-white/10"
+                                        placeholder="https://..." 
+                                        value={editingNode.image_url || ''}
+                                        onChange={(e) => setEditingNode({...editingNode, image_url: e.target.value})}
+                                    />
+                                </div>
+                            )}
+
+                            {editingNode.type === 'metal' && (
+                                <div className="space-y-2">
+                                    <Label>Prix (CAD)</Label>
+                                    <Input 
+                                        className="bg-white/5 border-white/10"
+                                        type="number"
+                                        value={editingNode.price}
+                                        onChange={(e) => setEditingNode({...editingNode, price: parseFloat(e.target.value)})}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter className="px-2">
+                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Annuler</Button>
+                        <Button 
+                            className="bg-luxury-gold text-white"
+                            onClick={() => editingNode && updateNodeMutation.mutate({ id: editingNode.id, updates: editingNode })}
+                            disabled={!editingNode?.label || updateNodeMutation.isPending}
+                        >
+                            {updateNodeMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                            Enregistrer les modifications
                         </Button>
                     </DialogFooter>
                 </DialogContent>
