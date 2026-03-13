@@ -415,18 +415,19 @@ export default function ProductCatalog() {
                             onChange={(url) => setNewNode({...newNode, image_url: url})}
                         />
 
-                        {/* Price field only for leaf nodes (metals) */}
-                        {nextType === 'metal' && (
-                            <div className="space-y-2">
-                                <Label>Prix (CAD)</Label>
-                                <Input 
-                                    type="number"
-                                    placeholder="0.00" 
-                                    value={newNode.price}
-                                    onChange={(e) => setNewNode({...newNode, price: parseFloat(e.target.value)})}
-                                />
-                            </div>
-                        )}
+                        {/* Price field for all types */}
+                        <div className="space-y-2">
+                            <Label>Prix par défaut (CAD)</Label>
+                            <Input 
+                                type="number"
+                                placeholder="0.00" 
+                                value={newNode.price}
+                                onChange={(e) => setNewNode({...newNode, price: parseFloat(e.target.value) || 0})}
+                            />
+                            <p className="text-[10px] text-muted-foreground italic">
+                                Ce prix sera cumulé dans le Flash Quote.
+                            </p>
+                        </div>
                     </div>
 
                     <DialogFooter className="px-2">
@@ -483,17 +484,19 @@ export default function ProductCatalog() {
                                  onChange={(url) => setEditingNode({...editingNode, image_url: url})}
                              />
 
-                            {editingNode.type === 'metal' && (
-                                <div className="space-y-2">
-                                    <Label>Prix (CAD)</Label>
-                                    <Input 
-                                        className="bg-white/5 border-white/10"
-                                        type="number"
-                                        value={editingNode.price}
-                                        onChange={(e) => setEditingNode({...editingNode, price: parseFloat(e.target.value)})}
-                                    />
-                                </div>
-                            )}
+                            {/* Price field for all types */}
+                            <div className="space-y-2">
+                                <Label>Prix par défaut (CAD)</Label>
+                                <Input 
+                                    className="bg-white/5 border-white/10"
+                                    type="number"
+                                    value={editingNode.price || 0}
+                                    onChange={(e) => setEditingNode({...editingNode, price: parseFloat(e.target.value) || 0})}
+                                />
+                                <p className="text-[10px] text-muted-foreground italic">
+                                    Ce prix sera cumulé dans le Flash Quote.
+                                </p>
+                            </div>
                         </div>
                     )}
 
