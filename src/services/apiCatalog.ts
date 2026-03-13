@@ -5,6 +5,7 @@ export interface CatalogNode {
     parent_id: string | null;
     label: string;
     type: 'category' | 'model' | 'style' | 'carat' | 'metal';
+    description?: string;
     image_url?: string;
     price?: number;
     specs: Record<string, any>;
@@ -27,7 +28,7 @@ export const apiCatalog = {
 
         const { data, error } = await query;
         if (error) {
-            // If the table doesn't exist yet (migration failed), we'll return mock data for development
+            // Table might not exist yet
             if (error.code === '42P01') {
                 console.warn("Catalog table not found, using mock data");
                 return this.getMockNodes(parentId);
@@ -37,7 +38,7 @@ export const apiCatalog = {
         return data as CatalogNode[];
     },
 
-    async createNode(node: Omit<CatalogNode, 'id' | 'created_at' | 'updated_at'>) {
+    async createNode(node: Omit<CatalogNode, 'id'>) {
         const { data, error } = await supabase
             .from('catalog_tree')
             .insert(node)
@@ -70,14 +71,14 @@ export const apiCatalog = {
     getMockNodes(parentId: string | null): CatalogNode[] {
         if (parentId === null) {
             return [
-                { id: 'cat1', parent_id: null, label: 'Bagues', type: 'category', sort_order: 0, specs: {} },
-                { id: 'cat2', parent_id: null, label: 'Alliances', type: 'category', sort_order: 1, specs: {} }
+                { id: 'cat1', parent_id: null, label: 'Bagues', type: 'category', description: 'Bagues de fiançailles haut de gamme', sort_order: 0, specs: {} },
+                { id: 'cat2', parent_id: null, label: 'Alliances', type: 'category', description: 'Alliances classiques et éternité', sort_order: 1, specs: {} }
             ];
         }
         if (parentId === 'cat1') {
             return [
-                { id: 'mod1', parent_id: 'cat1', label: 'Princess Cut', type: 'model', sort_order: 0, specs: {} },
-                { id: 'mod2', parent_id: 'cat1', label: 'Oval Cut', type: 'model', sort_order: 1, specs: {} }
+                { id: 'mod1', parent_id: 'cat1', label: 'Princess Cut', type: 'model', description: 'Taille princesse carrée', sort_order: 0, specs: {} },
+                { id: 'mod2', parent_id: 'cat1', label: 'Oval Cut', type: 'model', description: 'Taille ovale élégante', sort_order: 1, specs: {} }
             ];
         }
         return [];

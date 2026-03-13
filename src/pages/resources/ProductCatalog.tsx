@@ -25,6 +25,7 @@ import {
     DialogDescription 
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function ProductCatalog() {
     const navigate = useNavigate();
@@ -40,11 +41,14 @@ export default function ProductCatalog() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [newNode, setNewNode] = useState({
         label: '',
+        description: '',
         image_url: '',
         price: 0,
         sort_order: 0,
         specs: {}
     });
+
+    const nextType = getNextType(currentPath.length);
 
     // Queries
     const { data: nodes = [], isLoading } = useQuery({
@@ -57,12 +61,12 @@ export default function ProductCatalog() {
         mutationFn: (data: any) => apiCatalog.createNode({
             ...data,
             parent_id: currentParentId,
-            type: getNextType(currentPath.length)
+            type: nextType
         }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
             setIsAddDialogOpen(false);
-            setNewNode({ label: '', image_url: '', price: 0, sort_order: 0, specs: {} });
+            setNewNode({ label: '', description: '', image_url: '', price: 0, sort_order: 0, specs: {} });
         }
     });
 
@@ -72,11 +76,6 @@ export default function ProductCatalog() {
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
         }
     });
-
-    const getNextType = (depth: number): any => {
-        const types = ['category', 'model', 'style', 'carat', 'metal'];
-        return types[Math.min(depth, types.length - 1)];
-    };
 
     const handleNavigate = (node: CatalogNode) => {
         if (node.type === 'metal') return; // Leaf node
@@ -109,7 +108,7 @@ export default function ProductCatalog() {
                         className="bg-luxury-gold hover:bg-yellow-600 text-white"
                     >
                         <Plus className="w-4 h-4 mr-2" /> 
-                        {currentPath.length === 0 ? 'Ajouter une Catégorie' : `Ajouter : ${getNextType(currentPath.length)}`}
+                        {currentPath.length === 0 ? 'Ajouter une Catégorie' : `Ajouter : ${nextType}`}
                     </Button>
                 )}
             </div>
@@ -142,10 +141,15 @@ export default function ProductCatalog() {
                     <ShoppingBag className="text-luxury-gold" />
                     {currentPath.length === 0 ? "Nos Produits" : currentPath[currentPath.length - 1].label}
                 </h1>
-                <p className="text-muted-foreground mt-2 font-serif italic text-sm">
+                {currentPath.length > 0 && currentPath[currentPath.length - 1].description && (
+                    <p className="text-muted-foreground mt-2 font-serif italic text-sm">
+                        {currentPath[currentPath.length - 1].description}
+                    </p>
+                )}
+                <p className="text-luxury-gold/60 mt-2 font-serif italic text-xs uppercase tracking-widest">
                     {currentPath.length === 0 
                         ? "Sélectionnez une catégorie pour commencer l'estimation." 
-                        : `Choisissez ${getNextType(currentPath.length)} pour continuer.`
+                        : `Choisissez l'étape suivante : ${nextType}`
                     }
                 </p>
             </header>
@@ -214,12 +218,17 @@ export default function ProductCatalog() {
                                     {node.label}
                                     {node.type !== 'metal' && <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />}
                                 </CardTitle>
+                                {node.description && (
+                                    <p className="text-xs text-muted-foreground line-clamp-1 italic mt-1">
+                                        {node.description}
+                                    </p>
+                                )}
                                 {node.price && node.price > 0 ? (
                                     <div className="mt-2 text-xl font-bold font-serif text-luxury-gold">
                                         {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(node.price)}
                                     </div>
                                 ) : (
-                                    <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                                    <div className="mt-1 text-[10px] uppercase tracking-widest text-luxury-gold/40">
                                         {node.type}
                                     </div>
                                 )}
@@ -231,45 +240,66 @@ export default function ProductCatalog() {
 
             {/* Add Node Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-md bg-zinc-950 border-white/10">
                     <DialogHeader>
-                        <DialogTitle className="font-serif text-2xl">
-                            Ajouter {currentPath.length === 0 ? 'une Catégorie' : `un(e) ${getNextType(currentPath.length)}`}
+                        <DialogTitle className="font-serif text-2xl text-white">
+                            Ajouter {currentPath.length === 0 ? 'une Catégorie' : `un(e) ${nextType}`}
                         </DialogTitle>
                         <DialogDescription>
                             Cet élément sera ajouté sous : <span className="text-luxury-gold font-bold">{currentParentId ? currentPath[currentPath.length - 1].label : 'Racine'}</span>
                         </DialogDescription>
                     </DialogHeader>
                     
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-4 py-4 px-2 overflow-y-auto max-h-[60vh]">
                         <div className="space-y-2">
                             <Label>Nom / Label</Label>
                             <Input 
-                                placeholder="ex: 1.5ct, Or 18k, Oval Cut..." 
+                                placeholder={nextType === 'carat' ? 'ex: 1.5ct' : 'ex: Or 18k, Oval Cut...'} 
                                 value={newNode.label}
                                 onChange={(e) => setNewNode({...newNode, label: e.target.value})}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label>URL de l'Image (optionnel)</Label>
-                            <Input 
-                                placeholder="https://..." 
-                                value={newNode.image_url}
-                                onChange={(e) => setNewNode({...newNode, image_url: e.target.value})}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Prix (seulement pour l'étape finale)</Label>
-                            <Input 
-                                type="number"
-                                placeholder="0.00" 
-                                value={newNode.price}
-                                onChange={(e) => setNewNode({...newNode, price: parseFloat(e.target.value)})}
-                            />
-                        </div>
+
+                        {/* Description field for everything except metals */}
+                        {nextType !== 'metal' && (
+                            <div className="space-y-2">
+                                <Label>Description</Label>
+                                <Textarea 
+                                    placeholder="Détails descriptifs..." 
+                                    className="bg-white/5 border-white/10"
+                                    value={newNode.description}
+                                    onChange={(e) => setNewNode({...newNode, description: e.target.value})}
+                                />
+                            </div>
+                        )}
+
+                        {/* Image field for everything except categories */}
+                        {nextType !== 'category' && (
+                            <div className="space-y-2">
+                                <Label>URL de l'Image (optionnel)</Label>
+                                <Input 
+                                    placeholder="https://..." 
+                                    value={newNode.image_url}
+                                    onChange={(e) => setNewNode({...newNode, image_url: e.target.value})}
+                                />
+                            </div>
+                        )}
+
+                        {/* Price field only for leaf nodes (metals) */}
+                        {nextType === 'metal' && (
+                            <div className="space-y-2">
+                                <Label>Prix (CAD)</Label>
+                                <Input 
+                                    type="number"
+                                    placeholder="0.00" 
+                                    value={newNode.price}
+                                    onChange={(e) => setNewNode({...newNode, price: parseFloat(e.target.value)})}
+                                />
+                            </div>
+                        )}
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="px-2">
                         <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Annuler</Button>
                         <Button 
                             className="bg-luxury-gold text-white"
@@ -284,4 +314,9 @@ export default function ProductCatalog() {
             </Dialog>
         </div>
     );
+}
+
+function getNextType(depth: number): 'category' | 'model' | 'style' | 'carat' | 'metal' {
+    const types: Array<'category' | 'model' | 'style' | 'carat' | 'metal'> = ['category', 'model', 'style', 'carat', 'metal'];
+    return types[Math.min(depth, types.length - 1)];
 }
