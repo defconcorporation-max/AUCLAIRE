@@ -130,7 +130,7 @@ export const apiProjects = {
     },
 
     async getRevenueStats() {
-        const projects = await this.getAll();
+        const projects = await apiProjects.getAll();
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const currentYear = new Date().getFullYear();
 
