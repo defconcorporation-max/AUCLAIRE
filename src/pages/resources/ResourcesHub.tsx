@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Map, GraduationCap, Tag } from 'lucide-react';
+import { BookOpen, Map, GraduationCap, Tag, Calculator } from 'lucide-react';
 
 export default function ResourcesHub() {
     const navigate = useNavigate();
@@ -64,6 +64,30 @@ export default function ResourcesHub() {
 
                     <div className="flex items-center text-luxury-gold text-sm font-medium">
                         Accéder à l'Académie <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
+                    </div>
+                </button>
+
+                {/* Flash Calculator Card */}
+                <button
+                    onClick={() => navigate('/dashboard/resources/calculator')}
+                    className="group relative bg-white/5 dark:bg-black/40 border border-black/5 dark:border-white/10 p-8 rounded-2xl hover:border-luxury-gold/50 transition-all duration-300 text-left overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(210,181,123,0.15)]"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-luxury-gold/10 rounded-full blur-[40px] -mr-10 -mt-10 pointer-events-none transition-transform group-hover:scale-150 duration-500" />
+
+                    <div className="w-14 h-14 rounded-full bg-luxury-gold/10 border border-luxury-gold/30 flex items-center justify-center mb-6">
+                        <Calculator className="w-7 h-7 text-luxury-gold" />
+                    </div>
+
+                    <h2 className="text-2xl font-serif text-black dark:text-white mb-3 group-hover:text-luxury-gold transition-colors">
+                        Flash Quote (Calculateur)
+                    </h2>
+
+                    <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6">
+                        Estimez un projet en quelques secondes. Idéal en rendez-vous client pour donner une fourchette de prix précise basée sur le catalogue.
+                    </p>
+
+                    <div className="flex items-center text-luxury-gold text-sm font-medium">
+                        Lancer le calculateur <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
                     </div>
                 </button>
 

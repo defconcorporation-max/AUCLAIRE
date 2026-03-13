@@ -13,7 +13,7 @@ echo %date% %time% > force_deploy.txt
 echo [3/4] COMMITTING CHANGES...
 git add .
 :: Try to commit. Git will exit naturally if there's nothing new.
-git commit -m "Fix: Manus Audit Improvements - %date% %time%"
+git commit -m "Feature: Add Seller Flash Quote Calculator - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin main

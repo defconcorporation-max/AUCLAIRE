@@ -14,7 +14,8 @@ import {
     Trash2,
     Pencil,
     Upload,
-    X
+    X,
+    Calculator
 } from 'lucide-react';
 import { uploadImage } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
@@ -218,15 +219,25 @@ export default function ProductCatalog() {
                     <ArrowLeft className="w-4 h-4 mr-2" /> Menu Ressources
                 </Button>
 
-                {canManage && (
+                <div className="flex gap-2">
                     <Button 
-                        onClick={() => setIsAddDialogOpen(true)}
-                        className="bg-luxury-gold hover:bg-yellow-600 text-white"
+                        variant="outline"
+                        onClick={() => navigate('/dashboard/resources/calculator')}
+                        className="border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
                     >
-                        <Plus className="w-4 h-4 mr-2" /> 
-                        {currentPath.length === 0 ? 'Ajouter une Catégorie' : `Ajouter : ${nextType}`}
+                        <Calculator className="w-4 h-4 mr-2" /> Flash Quote
                     </Button>
-                )}
+
+                    {canManage && (
+                        <Button 
+                            onClick={() => setIsAddDialogOpen(true)}
+                            className="bg-luxury-gold hover:bg-yellow-600 text-white"
+                        >
+                            <Plus className="w-4 h-4 mr-2" /> 
+                            {currentPath.length === 0 ? 'Ajouter une Catégorie' : `Ajouter : ${nextType}`}
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Breadcrumbs */}

@@ -35,6 +35,7 @@ import LeadDetails from './pages/crm/LeadDetails';
 import ResourcesHub from './pages/resources/ResourcesHub';
 import SalesProcess from './pages/resources/SalesProcess';
 import ProductCatalog from './pages/resources/ProductCatalog';
+import FlashCalculator from './pages/resources/FlashCalculator';
 import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
 import ClientPortal from './pages/clients/ClientPortal';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
@@ -123,6 +124,7 @@ function App() {
               <Route path="resources" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ResourcesHub /></ProtectedRoute>} />
               <Route path="resources/sales-process" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><SalesProcess /></ProtectedRoute>} />
               <Route path="resources/catalog" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary', 'client']}><ProductCatalog /></ProtectedRoute>} />
+              <Route path="resources/calculator" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><FlashCalculator /></ProtectedRoute>} />
 
               <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliateDetails /></ProtectedRoute>} />
 
