@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 
 // --- TYPES ---
 export type ToolType = 'select' | 'move' | 'scale' | 'rotate' | 'sculpt' | 'prongs' | 'stones' | 'shank' | 'render'
@@ -153,6 +153,18 @@ export function RingProvider({ children }: { children: ReactNode }) {
     const [ringConfig, setRingConfig] = useState<RingConfig>(defaultConfig)
     const [materials, setMaterials] = useState<MaterialConfig>(defaultMaterials)
 
+    // Cleanup logic for memory management
+    useEffect(() => {
+        return () => {
+            // Reset global window assignments if any
+            if ((window as any).auclaireSettings) {
+                delete (window as any).auclaireSettings;
+            }
+        };
+    }, []);
+
+    const MAX_SAVES = 100;
+
     // Load initial saves
     // Load initial saves
     const [savedDesigns, setSavedDesigns] = useState<SavedDesign[]>(() => {
@@ -216,7 +228,8 @@ export function RingProvider({ children }: { children: ReactNode }) {
             config: ringConfig,
             materials: materials
         }
-        const newSaves = [newDesign, ...savedDesigns]
+        // Enforce MAX_SAVES limit to prevent localStorage bloat
+        const newSaves = [newDesign, ...savedDesigns].slice(0, MAX_SAVES)
         setSavedDesigns(newSaves)
         localStorage.setItem('auclaire_designs', JSON.stringify(newSaves))
     }

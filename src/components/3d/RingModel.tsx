@@ -16,6 +16,15 @@ const METALS: Record<string, string> = {
     "Platinum": "#E5E4E2"
 }
 
+// Material Cache for Performance (Pooling)
+const materialCache: Record<string, THREE.Material> = {}
+const getCachedMaterial = (key: string, creator: () => THREE.Material) => {
+    if (!materialCache[key]) {
+        materialCache[key] = creator()
+    }
+    return materialCache[key]
+}
+
 export default function RingModel({ config }: { config: RingConfig }) {
     const groupRef = useRef<THREE.Group>(null)
 
@@ -129,16 +138,18 @@ export default function RingModel({ config }: { config: RingConfig }) {
         }
     }, [config.gem.type])
 
-    const baseDiamondMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
-        metalness: 0.2,
-        roughness: 0.05,
-        transmission: 0.5,
-        ior: 2.4,
-        thickness: 0.2,
-        clearcoat: 1.0,
-        envMapIntensity: 2.5
-    }), [])
+    const baseDiamondMaterial = useMemo(() => {
+        return getCachedMaterial('baseDiamond', () => new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.2,
+            roughness: 0.05,
+            transmission: 0.5,
+            ior: 2.4,
+            thickness: 0.2,
+            clearcoat: 1.0,
+            envMapIntensity: 2.5
+        }))
+    }, [])
 
     // --- PRONG & HEAD LOGIC ---
     const prongStyle = config.head.prongStyle || 'Claw'

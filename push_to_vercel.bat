@@ -1,40 +1,26 @@
 @echo off
-setlocal
-echo ========================================
+title AUCLAIRE DEPLOYER
+echo ===========================================
 echo AUCLAIRE - VERCEL DEPLOYMENT TRIGGER
-echo ========================================
+echo ===========================================
 
-:: Check for git
-where git >nul 2>nul
-if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Git is not installed or not in PATH.
-    exit /b 1
-)
-
-:: Sync first
-echo [1/4] Syncing with remote...
+echo [1/4] SYNCING WITH GITHUB...
 git pull origin main --rebase
 
-:: Heartbeat
-echo [2/4] Updating heartbeat...
-echo Last deploy trigger: %date% %time% > force_deploy.txt
+echo [2/4] UPDATING HEARTBEAT...
+echo %date% %time% > force_deploy.txt
 
-:: Commit and Push
-echo [3/4] Staging and Committing...
+echo [3/4] COMMITTING CHANGES...
 git add .
-:: Use a more descriptive default or allow override
-set COMMIT_MSG="Update: Product Catalog refinements and category thumbnails (automated)"
-git commit -m %COMMIT_MSG%
+:: Try to commit. Git will exit naturally if there's nothing new.
+git commit -m "Fix: Manus Audit Improvements - %date% %time%"
 
-echo [4/4] Pushing to Vercel...
+echo [4/4] PUSHING TO PRODUCTION...
 git push origin main
 
-if %ERRORLEVEL% neq 0 (
-    echo.
-    echo [ERROR] Push failed. Please check your connection or git status.
-    pause
-) else (
-    echo.
-    echo [SUCCESS] Deployment trigger sent to Vercel successfully.
-    timeout /t 5
-)
+echo.
+echo ===========================================
+echo DEPLOYMENT TRIGGER COMPLETED
+echo PLEASE CHECK VERCEL DASHBOARD FOR STATUS
+echo ===========================================
+pause

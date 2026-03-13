@@ -15,35 +15,39 @@ export default function Dialer({ isOpen, onClose, contactName, phoneNumber }: Di
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
 
+    // Reset when opened
+    useEffect(() => {
+        if (isOpen) {
+            setCallState('calling'); // Start calling immediately when opened
+            setDuration(0);
+            setIsMuted(false);
+        } else {
+            setCallState('idle');
+        }
+    }, [isOpen]);
+
     // Mock call timer behavior
     useEffect(() => {
         let timer: NodeJS.Timeout;
+        let interval: NodeJS.Timeout;
+
         if (callState === 'calling') {
             timer = setTimeout(() => {
                 setCallState('connected');
             }, 3000); // Wait 3 seconds to "connect"
         }
-        return () => clearTimeout(timer);
-    }, [callState]);
 
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
         if (callState === 'connected') {
             interval = setInterval(() => {
                 setDuration(prev => prev + 1);
             }, 1000);
         }
-        return () => clearInterval(interval);
-    }, [callState]);
 
-    // Reset when opened
-    useEffect(() => {
-        if (isOpen) {
-            setCallState('idle');
-            setDuration(0);
-            setIsMuted(false);
-        }
-    }, [isOpen]);
+        return () => {
+            clearTimeout(timer);
+            clearInterval(interval);
+        };
+    }, [callState]);
 
     const handleStartCall = () => {
         setCallState('calling');

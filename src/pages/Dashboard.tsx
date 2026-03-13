@@ -50,7 +50,8 @@ export default function Dashboard() {
     useEffect(() => {
         apiSettings.get()
             .then(data => {
-                (window as any).auclaireSettings = data;
+                // @ts-expect-error - Global settings for legacy widgets
+                window.auclaireSettings = data;
             })
             .catch(err => {
                 console.warn("Failed to load settings in Dashboard, using defaults.", err);
@@ -79,13 +80,13 @@ export default function Dashboard() {
         queryFn: apiUsers.getAll
     });
 
-    const { data: activities, isLoading: activitiesLoading } = useQuery({
+    const { data: activities, isLoading: activitiesLoading } = useQuery<any[]>({ // Assuming activities type is not fully defined yet
         queryKey: ['activities'],
         queryFn: apiActivities.getAll
     });
 
     // Extract Filter Options
-    const affiliates = useMemo(() => users?.filter(u => u.role === 'affiliate') || [], [users]);
+    const affiliates = useMemo(() => users?.filter(u => u.role === 'affiliate' || u.role === 'admin') || [], [users]);
     const manufacturers = useMemo(() => users?.filter(u => u.role === 'manufacturer') || [], [users]);
 
     if (projectsLoading || invoicesLoading || expensesLoading || usersLoading || activitiesLoading) {
@@ -111,7 +112,7 @@ export default function Dashboard() {
         // First Level: Role constraints
         let passesRole = false;
         if (role === 'admin' || role === 'secretary') passesRole = true;
-        else if (role === 'manufacturer') passesRole = (p as any).manufacturer_id === profile?.id;
+        else if (role === 'manufacturer') passesRole = p.manufacturer_id === profile?.id;
         else if (role === 'affiliate') passesRole = p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
         
         if (!passesRole) return false;
@@ -119,7 +120,7 @@ export default function Dashboard() {
         // Second Level: Active UI Filters (for Admin/Secretary)
         if (role === 'admin' || role === 'secretary') {
             if (selectedAffiliate !== 'all' && p.affiliate_id !== selectedAffiliate && p.sales_agent_id !== selectedAffiliate) return false;
-            if (selectedManufacturer !== 'all' && (p as any).manufacturer_id !== selectedManufacturer) return false;
+            if (selectedManufacturer !== 'all' && p.manufacturer_id !== selectedManufacturer) return false;
         }
 
         return true;

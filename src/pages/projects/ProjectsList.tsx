@@ -29,8 +29,8 @@ export default function ProjectsList() {
         enabled: role === 'admin' || role === 'secretary'
     })
 
-    const affiliates = (users as any[]).filter(u => u.role === 'affiliate' || u.role === 'admin')
-    const manufacturers = (users as any[]).filter(u => u.role === 'manufacturer')
+    const affiliates = users.filter(u => u.role === 'affiliate' || u.role === 'admin')
+    const manufacturers = users.filter(u => u.role === 'manufacturer')
 
     const [filterAffiliate, setFilterAffiliate] = useState('')
     const [filterManufacturer, setFilterManufacturer] = useState('')
@@ -38,7 +38,7 @@ export default function ProjectsList() {
     // Role-based base filter
     const baseProjects = allProjects?.filter(p => {
         if (role === 'admin' || role === 'secretary') return true;
-        if (role === 'manufacturer') return (p as any).manufacturer_id === profile?.id;
+        if (role === 'manufacturer') return p.manufacturer_id === profile?.id;
         if (role === 'affiliate') {
             return p.sales_agent_id === profile?.id || p.affiliate_id === profile?.id;
         }
@@ -48,7 +48,7 @@ export default function ProjectsList() {
     // Admin/Secretary secondary filters
     const projects = (role === 'admin' || role === 'secretary') ? baseProjects.filter(p => {
         if (filterAffiliate && p.affiliate_id !== filterAffiliate) return false;
-        if (filterManufacturer && (p as any).manufacturer_id !== filterManufacturer) return false;
+        if (filterManufacturer && p.manufacturer_id !== filterManufacturer) return false;
         return true;
     }) : baseProjects;
 

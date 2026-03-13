@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiCatalog, CatalogNode } from '@/services/apiCatalog';
@@ -12,8 +12,11 @@ import {
     Image as ImageIcon,
     Home,
     Trash2,
-    Pencil
+    Pencil,
+    Upload,
+    X
 } from 'lucide-react';
+import { uploadImage } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +30,98 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+
+interface ImageUploaderProps {
+    value?: string;
+    onChange: (url: string) => void;
+    label?: string;
+}
+
+function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleUpload = async (file: File) => {
+        try {
+            setIsUploading(true);
+            const url = await uploadImage(file, 'catalog');
+            onChange(url);
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('L\'envoi de l\'image a échoué.');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const onDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            handleUpload(file);
+        }
+    };
+
+    return (
+        <div className="space-y-2">
+            {label && <Label>{label}</Label>}
+            <div 
+                className={`relative aspect-video rounded-xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center gap-3 overflow-hidden ${
+                    value ? 'border-luxury-gold/50 bg-luxury-gold/5' : 'border-white/10 bg-white/5 hover:border-luxury-gold/30 hover:bg-white/10'
+                }`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={onDrop}
+                onClick={() => fileInputRef.current?.click()}
+            >
+                <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUpload(file);
+                    }}
+                />
+
+                {isUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
+                        <span className="text-xs text-muted-foreground animate-pulse">Envoi en cours...</span>
+                    </div>
+                ) : value ? (
+                    <>
+                        <img src={value} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/20">
+                                <Upload className="w-5 h-5 text-white" />
+                            </div>
+                        </div>
+                        <button 
+                            className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 p-1 rounded-full text-white transition-colors"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onChange('');
+                            }}
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <div className="p-3 bg-white/5 rounded-full border border-white/10">
+                            <Upload className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                        <div className="text-center">
+                            <p className="text-sm text-white font-medium">Glisser une image ici</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">ou cliquez pour parcourir</p>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function ProductCatalog() {
     const navigate = useNavigate();
@@ -302,15 +397,12 @@ export default function ProductCatalog() {
                             </div>
                         )}
 
-                        {/* Image field for all types */}
-                        <div className="space-y-2">
-                            <Label>URL de l'Image (optionnel)</Label>
-                            <Input 
-                                placeholder="https://..." 
-                                value={newNode.image_url}
-                                onChange={(e) => setNewNode({...newNode, image_url: e.target.value})}
-                            />
-                        </div>
+                        {/* Image Uploader for all types */}
+                        <ImageUploader 
+                            label="Image de l'élément"
+                            value={newNode.image_url}
+                            onChange={(url) => setNewNode({...newNode, image_url: url})}
+                        />
 
                         {/* Price field only for leaf nodes (metals) */}
                         {nextType === 'metal' && (
@@ -373,16 +465,12 @@ export default function ProductCatalog() {
                                 </div>
                             )}
 
-                            {/* Image field for all types */}
-                            <div className="space-y-2">
-                                <Label>URL de l'Image</Label>
-                                <Input 
-                                    className="bg-white/5 border-white/10"
-                                    placeholder="https://..." 
-                                    value={editingNode.image_url || ''}
-                                    onChange={(e) => setEditingNode({...editingNode, image_url: e.target.value})}
-                                />
-                            </div>
+                             {/* Image Uploader for all types */}
+                             <ImageUploader 
+                                 label="Image de l'élément"
+                                 value={editingNode.image_url}
+                                 onChange={(url) => setEditingNode({...editingNode, image_url: url})}
+                             />
 
                             {editingNode.type === 'metal' && (
                                 <div className="space-y-2">
