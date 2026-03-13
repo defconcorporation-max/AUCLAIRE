@@ -12,29 +12,124 @@ import {
     ArrowLeft,
     RotateCcw,
     TrendingUp,
-    CheckCircle2
+    CheckCircle2,
+    Info
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+// --- SUB-COMPONENTS FOR PREMIUM UI ---
+
+interface SpecRowProps {
+    label: string;
+    type: string;
+    options: CatalogNode[];
+    selectedId?: string;
+    onSelect: (node: CatalogNode) => void;
+    isLoading?: boolean;
+    disabled?: boolean;
+}
+
+const SpecRow = ({ label, options, selectedId, onSelect, isLoading, disabled }: SpecRowProps) => {
+    if (disabled && !selectedId) return null;
+
+    return (
+        <div className={cn(
+            "group py-6 border-b border-white/5 last:border-0 transition-all duration-500",
+            disabled ? "opacity-30 grayscale pointer-events-none" : "opacity-100"
+        )}>
+            <div className="flex flex-col md:flex-row md:items-start gap-4">
+                {/* Side Label */}
+                <div className="w-full md:w-32 flex items-center gap-2 pt-2">
+                    <Info className="w-4 h-4 text-muted-foreground/50" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/70 whitespace-nowrap">
+                        {label}
+                    </span>
+                </div>
+
+                {/* Options Chips */}
+                <div className="flex-1 flex flex-wrap gap-3">
+                    {isLoading ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="h-10 w-24 rounded-lg bg-white/5 animate-pulse" />
+                        ))
+                    ) : (
+                        options.map((opt) => {
+                            const isMetal = opt.type === 'metal';
+                            return (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => onSelect(opt)}
+                                    className={cn(
+                                        "relative h-11 px-6 rounded-lg text-xs font-bold uppercase tracking-widest border transition-all duration-300 flex items-center justify-center gap-2 group/chip",
+                                        isMetal && "rounded-full px-4",
+                                        selectedId === opt.id 
+                                            ? "bg-luxury-gold border-luxury-gold text-white shadow-[0_0_20px_rgba(210,181,123,0.3)] ring-1 ring-luxury-gold" 
+                                            : "bg-white/5 border-white/10 text-muted-foreground hover:border-luxury-gold/50 hover:bg-white/10"
+                                    )}
+                                >
+                                    {opt.image_url && !isMetal && (
+                                        <div className="w-6 h-6 rounded bg-zinc-900 border border-white/10 overflow-hidden mr-1">
+                                            <img src={opt.image_url} alt="" className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
+                                    {isMetal && (
+                                        <div className={cn(
+                                            "w-4 h-4 rounded-full border border-white/20",
+                                            opt.label.toLowerCase().includes('jaune') || opt.label.includes('18k') ? "bg-yellow-400" : 
+                                            opt.label.toLowerCase().includes('rose') ? "bg-rose-300" : 
+                                            opt.label.toLowerCase().includes('blanc') || opt.label.includes('platine') ? "bg-slate-200" : "bg-zinc-400"
+                                        )} />
+                                    )}
+                                    {opt.label}
+                                </button>
+                            );
+                        })
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+function LevelRows({ depth, selections, onSelect }: { depth: number, selections: CatalogNode[], onSelect: (node: CatalogNode) => void }) {
+    const labels = ["Catégorie", "Modèle", "Style", "Carat", "Métal"];
+    const parentId = depth > 0 ? selections[depth - 1]?.id : null;
+    
+    const { data: options = [], isLoading } = useQuery({
+        queryKey: ['catalog-nodes', parentId],
+        queryFn: () => apiCatalog.getNodes(parentId),
+        enabled: depth === 0 || !!parentId
+    });
+
+    const selectedId = selections[depth]?.id;
+
+    return (
+        <>
+            <SpecRow 
+                label={labels[depth]} 
+                type={labels[depth]} 
+                options={options} 
+                selectedId={selectedId}
+                onSelect={onSelect}
+                isLoading={isLoading}
+                disabled={depth > 0 && !parentId}
+            />
+            {selectedId && depth < labels.length - 1 && (
+                <LevelRows 
+                    depth={depth + 1} 
+                    selections={selections} 
+                    onSelect={onSelect} 
+                />
+            )}
+        </>
+    );
+}
+
 export default function FlashCalculator() {
     const navigate = useNavigate();
     const [selections, setSelections] = useState<CatalogNode[]>([]);
-    const [currentOptions, setCurrentOptions] = useState<CatalogNode[]>([]);
     const [totalPrice, setTotalPrice] = useState(0);
-
-    const currentParentId = selections.length > 0 ? selections[selections.length - 1].id : null;
-
-    const { data: nodes = [], isLoading } = useQuery({
-        queryKey: ['catalog-nodes', currentParentId],
-        queryFn: () => apiCatalog.getNodes(currentParentId)
-    });
-
-    useEffect(() => {
-        if (!isLoading) {
-            setCurrentOptions(nodes);
-        }
-    }, [nodes, isLoading]);
 
     useEffect(() => {
         const total = selections.reduce((sum, node) => sum + (node.price || 0), 0);
@@ -42,15 +137,16 @@ export default function FlashCalculator() {
     }, [selections]);
 
     const handleSelect = (node: CatalogNode) => {
-        // Find existing selection at this level or deeper and replace/truncate
-        const levelIndex = selections.findIndex(s => s.type === node.type);
-        let newSelections;
+        // Types we care about in order
+        const types = ['category', 'model', 'style', 'carat', 'metal'];
+        const levelIndex = types.indexOf(node.type);
+
         if (levelIndex !== -1) {
-            newSelections = [...selections.slice(0, levelIndex), node];
+            setSelections(prev => [...prev.slice(0, levelIndex), node]);
         } else {
-            newSelections = [...selections, node];
+            // Fallback for unexpected types
+            setSelections(prev => [...prev, node]);
         }
-        setSelections(newSelections);
     };
 
     const handleReset = () => {
@@ -59,6 +155,12 @@ export default function FlashCalculator() {
 
     const handleBackStep = (index: number) => {
         setSelections(selections.slice(0, index + 1));
+    };
+
+    const handlePriceChange = (index: number, newPrice: number) => {
+        const newSelections = [...selections];
+        newSelections[index] = { ...newSelections[index], price: newPrice };
+        setSelections(newSelections);
     };
 
     return (
@@ -122,54 +224,24 @@ export default function FlashCalculator() {
                         ))}
                     </div>
 
-                    {/* Options Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {isLoading ? (
-                            Array.from({ length: 4 }).map((_, i) => (
-                                <div key={i} className="h-24 rounded-2xl bg-white/5 animate-pulse border border-white/5" />
-                            ))
-                        ) : currentOptions.length > 0 ? (
-                            currentOptions.map((option) => (
-                                <button
-                                    key={option.id}
-                                    onClick={() => handleSelect(option)}
-                                    className={cn(
-                                        "group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 text-left overflow-hidden",
-                                        "bg-white/5 border-white/10 hover:border-luxury-gold/50 hover:bg-white/10"
-                                    )}
-                                >
-                                    <div className="w-16 h-16 rounded-xl bg-zinc-900 border border-white/5 overflow-hidden shrink-0">
-                                        {option.image_url ? (
-                                            <img src={option.image_url} alt={option.label} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 uppercase text-[8px] font-bold">
-                                                {option.type}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-white font-serif font-bold group-hover:text-luxury-gold transition-colors truncate">
-                                            {option.label}
-                                        </h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                                            {option.type}
-                                        </p>
-                                        {option.price && option.price > 0 && (
-                                            <p className="text-xs text-luxury-gold font-bold mt-1">
-                                                +{new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(option.price)}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:border-luxury-gold/50 transition-colors">
-                                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-luxury-gold" />
-                                    </div>
-                                </button>
-                            ))
-                        ) : (
-                            <div className="col-span-full py-12 text-center bg-white/5 rounded-2xl border border-dashed border-white/10 flex flex-col items-center gap-3">
-                                <CheckCircle2 className="w-10 h-10 text-luxury-gold animate-bounce" />
-                                <h3 className="text-xl font-serif text-white">Configuration Terminée</h3>
-                                <p className="text-sm text-muted-foreground">Voici votre estimation finale pour ce projet.</p>
+                    <div className="bg-zinc-900/50 rounded-3xl border border-white/10 p-8 shadow-2xl overflow-hidden relative">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-luxury-gold/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
+                        
+                        {/* Recursive Rows based on hierarchy */}
+                        <div className="space-y-2">
+                            {/* Level 0: Categories */}
+                            <LevelRows 
+                                depth={0} 
+                                selections={selections} 
+                                onSelect={handleSelect} 
+                            />
+                        </div>
+
+                        {selections.length > 4 && (
+                            <div className="mt-12 py-12 text-center bg-luxury-gold/5 rounded-2xl border border-dashed border-luxury-gold/20 flex flex-col items-center gap-3 animate-in zoom-in duration-500">
+                                <CheckCircle2 className="w-12 h-12 text-luxury-gold" />
+                                <h3 className="text-2xl font-serif text-white">Prêt à Chiffrer</h3>
+                                <p className="text-sm text-muted-foreground">Toutes les spécifications ont été identifiées.</p>
                             </div>
                         )}
                     </div>
@@ -199,10 +271,16 @@ export default function FlashCalculator() {
                                                 <p className="text-sm font-serif font-bold text-white">{s.label}</p>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-xs font-mono font-bold text-luxury-gold">
-                                                {s.price && s.price > 0 ? `+${new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(s.price)}` : 'Inclus'}
-                                            </p>
+                                        <div className="text-right flex items-center gap-2">
+                                            <div className="relative">
+                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-luxury-gold font-bold opacity-50">+</span>
+                                                <input 
+                                                    type="number"
+                                                    value={s.price || 0}
+                                                    onChange={(e) => handlePriceChange(i, parseFloat(e.target.value) || 0)}
+                                                    className="w-24 bg-white/5 border border-white/10 rounded px-2 pl-4 py-1 text-xs font-mono font-bold text-luxury-gold text-right focus:outline-none focus:border-luxury-gold/50 transition-colors"
+                                                />
+                                            </div>
                                         </div>
                                     </li>
                                 ))}
