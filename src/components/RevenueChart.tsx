@@ -43,16 +43,22 @@ export function RevenueChart() {
                     tickFormatter={(value) => `$${value}`}
                 />
                 <Tooltip
-                    cursor={{ fill: 'transparent' }}
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                     contentStyle={{ 
                         borderRadius: '12px', 
                         border: '1px solid rgba(255,255,255,0.1)', 
-                        background: 'rgba(0,0,0,0.8)',
-                        backdropFilter: 'blur(8px)',
-                        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' 
+                        background: 'rgba(0,0,0,0.85)',
+                        backdropFilter: 'blur(12px)',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
+                        padding: '12px'
                     }}
+                    labelStyle={{ color: '#D4AF37', fontWeight: 'bold', marginBottom: '4px', fontFamily: 'serif' }}
+                    itemStyle={{ fontSize: '12px', padding: '2px 0' }}
+                    formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
                 />
-                <Bar dataKey="total" fill="#D4AF37" radius={[4, 4, 0, 0]} barSize={40} />
+                <Bar name="Encaissé" dataKey="collected" fill="#D4AF37" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar name="Facturé" dataKey="invoiced" fill="#E5E4E2" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar name="Potentiel" dataKey="potential" fill="#4B4B4B" radius={[4, 4, 0, 0]} barSize={20} />
             </BarChart>
         </ResponsiveContainer>
     )

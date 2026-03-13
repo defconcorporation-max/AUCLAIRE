@@ -130,26 +130,69 @@ export const apiProjects = {
     },
 
     async getRevenueStats() {
-        const projects = await apiProjects.getAll();
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const currentYear = new Date().getFullYear();
 
-        // Initialize with 0
-        const revenueMap = new Map<string, number>();
-        months.forEach(m => revenueMap.set(m, 0));
+        // 1. Fetch Projects & Invoices in parallel
+        const [projectsResponse, invoicesResponse] = await Promise.all([
+            apiProjects.getAll(),
+            supabase.from('invoices').select('project_id, amount, amount_paid, status, created_at, paid_at')
+        ]);
 
+        const projects = projectsResponse || [];
+        const invoices = invoicesResponse.data || [];
+
+        // Track which projects have invoices
+        const invoicedProjectIds = new Set(invoices.map(i => i.project_id));
+
+        // Initialize maps for each metric
+        const collectedMap = new Map<string, number>();
+        const invoicedMap = new Map<string, number>();
+        const potentialMap = new Map<string, number>();
+        
+        months.forEach(m => {
+            collectedMap.set(m, 0);
+            invoicedMap.set(m, 0);
+            potentialMap.set(m, 0);
+        });
+
+        // 2. Process Invoices (Collected & Invoiced)
+        invoices.forEach(inv => {
+            // Collected metric
+            const dateStr = inv.paid_at || inv.created_at;
+            const date = new Date(dateStr);
+            if (date.getFullYear() === currentYear && inv.status !== 'void') {
+                const month = months[date.getMonth()];
+                const paid = Number(inv.amount_paid && inv.amount_paid > 0 ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0));
+                collectedMap.set(month, (collectedMap.get(month) || 0) + paid);
+                
+                // Invoiced metric is tied to the creation of the invoice
+                const creationDate = new Date(inv.created_at);
+                if (creationDate.getFullYear() === currentYear) {
+                    const cMonth = months[creationDate.getMonth()];
+                    invoicedMap.set(cMonth, (invoicedMap.get(cMonth) || 0) + Number(inv.amount || 0));
+                }
+            }
+        });
+
+        // 3. Process Projects (Potential Revenue)
+        // Potential = Projects WITHOUT invoices and NOT cancelled
         projects.forEach(p => {
+            if (p.status === 'cancelled' || invoicedProjectIds.has(p.id)) return;
+            
             const date = new Date(p.created_at);
             if (date.getFullYear() === currentYear) {
                 const month = months[date.getMonth()];
                 const amount = Number(p.financials?.selling_price || p.budget || 0);
-                revenueMap.set(month, (revenueMap.get(month) || 0) + amount);
+                potentialMap.set(month, (potentialMap.get(month) || 0) + amount);
             }
         });
 
         return months.map(name => ({
             name,
-            total: revenueMap.get(name) || 0
+            collected: collectedMap.get(name) || 0,
+            invoiced: invoicedMap.get(name) || 0,
+            potential: potentialMap.get(name) || 0
         }));
     },
 
