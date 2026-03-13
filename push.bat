@@ -13,7 +13,7 @@ echo %date% %time% > force_deploy.txt
 echo [3/4] COMMITTING CHANGES...
 git add .
 :: Try to commit. Git will exit naturally if there's nothing new.
-git commit -m "Feature: Global Catalog Price Management - %date% %time%"
+git commit -m "UI: Remove annoying custom cursor and enable global catalog pricing - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin main
