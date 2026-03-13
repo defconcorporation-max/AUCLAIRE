@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
+import { apiSettings } from '@/services/apiSettings';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RecentActivityList } from "@/components/RecentActivityList";
@@ -42,6 +43,13 @@ export default function Dashboard() {
         }
     }, [role, navigate]);
 
+    // Fetch and expose settings for widgets
+    useEffect(() => {
+        apiSettings.get().then(data => {
+            (window as any).auclaireSettings = data;
+        });
+    }, []);
+
     // Data Fetching
     const { data: projects, isLoading: projectsLoading, error: projectsError } = useQuery({
         queryKey: ['projects'],
@@ -58,7 +66,7 @@ export default function Dashboard() {
         queryFn: apiExpenses.getAll
     });
 
-    const { data: users, isLoading: usersLoading } = useQuery({
+    const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
         queryKey: ['users'],
         queryFn: apiUsers.getAll
     });
@@ -80,7 +88,7 @@ export default function Dashboard() {
         );
     }
 
-    const hasError = projectsError || invoicesError || expensesError || !projects || !invoices || !expenses;
+    const hasError = projectsError || invoicesError || expensesError || usersError || !projects || !invoices || !expenses;
     if (hasError) {
         return (
             <div className="p-8 glass-card border-red-500/20 text-red-500 text-center">

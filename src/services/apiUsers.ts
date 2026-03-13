@@ -24,7 +24,7 @@ export const apiUsers = {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, role, email, created_at, monthly_goal, daily_capacity, design_capacity, production_capacity, specialty')
+            .select('id, full_name, role, email, created_at, monthly_goal, daily_capacity, specialty')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
