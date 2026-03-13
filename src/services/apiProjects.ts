@@ -142,7 +142,7 @@ export const apiProjects = {
             const date = new Date(p.created_at);
             if (date.getFullYear() === currentYear) {
                 const month = months[date.getMonth()];
-                const amount = p.financials?.selling_price || p.budget || 0;
+                const amount = Number(p.financials?.selling_price || p.budget || 0);
                 revenueMap.set(month, (revenueMap.get(month) || 0) + amount);
             }
         });
