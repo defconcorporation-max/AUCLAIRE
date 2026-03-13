@@ -1,4 +1,5 @@
 import { Project } from '@/services/apiProjects';
+import { Invoice } from '@/services/apiInvoices';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
@@ -13,7 +14,9 @@ import { useNavigate } from 'react-router-dom';
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers } from '@/services/apiUsers';
 import { apiActivities } from '@/services/apiActivities';
-import { Filter, User, Factory, X } from 'lucide-react';
+import { Filter, User, Factory, X, Briefcase } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 import { Button } from '@/components/ui/button';
 
 // New Modular Components
@@ -148,12 +151,15 @@ export default function Dashboard() {
         return (getSalePrice(p) * Number(p.affiliate_commission_rate || 0)) / 100;
     };
 
-    const PRODUCTION_READY_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
-    const isProjectASale = (p: Project) => PRODUCTION_READY_STATUSES.includes(p.status) || filteredInvoices.some(i => i.project_id === p.id);
-
-    const totalProjectValue = filteredProjects.filter(isProjectASale).reduce((sum, p) => sum + getSalePrice(p), 0);
     const totalCollected = filteredInvoices.reduce((sum, i) => sum + ((i.amount_paid && i.amount_paid > 0) ? i.amount_paid : (i.status === 'paid' ? i.amount : 0)), 0);
-    const totalPending = filteredInvoices.reduce((sum, i) => sum + Math.max(0, i.amount - ((i.amount_paid && i.amount_paid > 0) ? i.amount_paid : (i.status === 'paid' ? i.amount : 0))), 0);
+    const totalInvoiced = filteredInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+    
+    const invoicedProjectIds = new Set(filteredInvoices.map(i => i.project_id));
+    const potentialRevenue = filteredProjects.reduce((sum, p) => {
+        if (p.status === 'cancelled' || invoicedProjectIds.has(p.id)) return sum;
+        return sum + getSalePrice(p);
+    }, 0);
+
     const totalRealExpenses = (filteredExpenses as any[])?.filter(e => e.status !== 'cancelled').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
     const totalPendingCommissions = filteredProjects.reduce((sum, p) => p.financials?.commission_exported_to_expenses ? sum : sum + getCommissionEstimate(p), 0);
     const totalProductionCost = filteredProjects.reduce((sum, p) => {
@@ -163,7 +169,7 @@ export default function Dashboard() {
     }, 0);
 
     const totalProfit = totalCollected - totalRealExpenses;
-    const projectedProfit = totalProjectValue - totalRealExpenses - totalProductionCost - totalPendingCommissions;
+    const projectedProfit = (totalInvoiced + potentialRevenue) - totalRealExpenses - totalProductionCost - totalPendingCommissions;
 
     // Risk & Pipeline
     const highRiskProjects: any[] = [];
@@ -206,6 +212,8 @@ export default function Dashboard() {
         month: getStatsForPeriod(30)
     };
 
+    const isProjectASale = (p: Project) => invoicedProjectIds.has(p.id);
+
     // Leaderboard
     const sellerStats: Record<string, { id: string, name: string, volume: number, projectCount: number, profit: number, totalSalePrice: number }> = {};
     filteredProjects.filter(isProjectASale).forEach(p => {
@@ -224,6 +232,80 @@ export default function Dashboard() {
     const leaderboard = Object.values(sellerStats)
         .map(s => ({ ...s, marginPercent: s.totalSalePrice > 0 ? (s.profit / s.totalSalePrice) * 100 : 0 }))
         .sort((a, b) => b.volume - a.volume);
+
+    // Operational Velocity Logic (from Analytics)
+    const velocityData: Record<string, { totalDays: number, count: number }> = {
+        'designing': { totalDays: 0, count: 0 },
+        '3d_model': { totalDays: 0, count: 0 },
+        'approved_for_production': { totalDays: 0, count: 0 },
+        'production': { totalDays: 0, count: 0 },
+    };
+
+    const statusLogs = activities?.filter(a => a.action === 'status_change') || [];
+    const logsByProject: Record<string, any[]> = {};
+    statusLogs.forEach(log => {
+        if (log.project_id) {
+            if (!logsByProject[log.project_id]) logsByProject[log.project_id] = [];
+            logsByProject[log.project_id].push(log);
+        }
+    });
+
+    Object.values(logsByProject).forEach(logs => {
+        const sorted = logs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        for (let i = 0; i < sorted.length - 1; i++) {
+            const start = new Date(sorted[i].created_at);
+            const end = new Date(sorted[i+1].created_at);
+            const days = Math.max(0.1, (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            const prevStatusMsg = sorted[i].details.toLowerCase().split('to ')[1];
+            if (prevStatusMsg && velocityData[prevStatusMsg]) {
+                velocityData[prevStatusMsg].totalDays += days;
+                velocityData[prevStatusMsg].count++;
+            }
+        }
+    });
+
+    // Manufacturer Performance Logic
+    const manufacturerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, totalProdDays: number, prodCount: number, modCount: number }> = {};
+    manufacturers.forEach(u => {
+        manufacturerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, totalProdDays: 0, prodCount: 0, modCount: 0 };
+    });
+
+    filteredProjects.forEach(p => {
+        if (p.manufacturer_id && manufacturerStats[p.manufacturer_id]) {
+            manufacturerStats[p.manufacturer_id].projectCount++;
+            manufacturerStats[p.manufacturer_id].volume += getSalePrice(p);
+            const pLogs = logsByProject[p.id] || [];
+            const sorted = pLogs.sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            let prodStart: Date | null = null;
+            sorted.forEach(log => {
+                const details = log.details.toLowerCase();
+                if (details.includes('to production') || details.includes('to approved_for_production')) {
+                    prodStart = new Date(log.created_at);
+                }
+                if (details.includes('to completed') && prodStart) {
+                    const days = (new Date(log.created_at).getTime() - prodStart.getTime()) / (1000 * 60 * 60 * 24);
+                    manufacturerStats[p.manufacturer_id!].totalProdDays += days;
+                    manufacturerStats[p.manufacturer_id!].prodCount++;
+                    prodStart = null;
+                }
+                if (details.includes('to design_modification')) {
+                    manufacturerStats[p.manufacturer_id!].modCount++;
+                }
+            });
+        }
+    });
+
+    const manufacturerScorecard = Object.values(manufacturerStats)
+        .filter(s => s.projectCount > 0)
+        .map(s => ({
+            ...s,
+            avgSpeed: s.prodCount > 0 ? Math.round(s.totalProdDays / s.prodCount) : 0,
+            qualityRate: Math.max(0, 100 - (s.modCount / s.projectCount * 100))
+        }))
+        .sort((a, b) => b.qualityRate - a.qualityRate);
+
+    // AI Insights Logic
+    const insights = generateDashboardInsights(filteredProjects, filteredInvoices, expenses || [], leaderboard);
 
     return (
         <div className="space-y-8 pb-12">
@@ -298,11 +380,11 @@ export default function Dashboard() {
                 <div className="space-y-8">
                     <DashboardStats 
                         totalCollected={totalCollected} 
-                        totalPending={totalPending} 
+                        totalInvoiced={totalInvoiced}
+                        potentialRevenue={potentialRevenue}
                         totalProfit={totalProfit}
                         projectedProfit={projectedProfit}
                         expectedCashPipeline={expectedCashPipeline}
-                        totalCommissions={totalPendingCommissions}
                     />
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -335,9 +417,115 @@ export default function Dashboard() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <CashRiskTracker highRiskProjects={highRiskProjects} />
-                            <div>
-                                <TimeBasedStats stats={statsData} />
-                            </div>
+                            
+                            {/* AI Insights Engine Integration */}
+                            <Card className="border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent backdrop-blur-md shadow-xl">
+                                <CardHeader className="py-4">
+                                    <CardTitle className="font-serif text-lg tracking-wide flex items-center gap-2">
+                                        <span className="text-luxury-gold animate-pulse">✨</span>
+                                        AI Business Insights
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="pb-6">
+                                    <div className="grid gap-3 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin scrollbar-thumb-luxury-gold/20">
+                                        {insights.slice(0, 5).map((insight, i) => (
+                                            <div
+                                                key={i}
+                                                className={`p-3 rounded-xl border animate-in fade-in slide-in-from-right-2 duration-300 ${
+                                                    insight.type === 'success' ? 'border-green-500/20 bg-green-500/5' :
+                                                    insight.type === 'warning' ? 'border-amber-500/20 bg-amber-500/5' :
+                                                    insight.type === 'danger' ? 'border-red-500/20 bg-red-500/5' :
+                                                    'border-blue-500/20 bg-blue-500/5'
+                                                }`}
+                                                style={{ animationDelay: `${i * 100}ms` }}
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <span className="text-lg">{insight.icon}</span>
+                                                    <div>
+                                                        <p className="font-medium text-[12px] leading-tight text-foreground">{insight.title}</p>
+                                                        <p className="text-[10px] text-muted-foreground mt-0.5">{insight.description}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Manufacturer Performance Scorecards Integration */}
+                        <Card className="glass-card overflow-hidden mt-8">
+                            <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 py-4">
+                                <div>
+                                    <CardTitle className="font-serif text-xl tracking-wide flex items-center gap-2">
+                                        <Briefcase className="w-5 h-5 text-luxury-gold" />
+                                        Performance des Ateliers
+                                    </CardTitle>
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">Vitesse, Qualité et Volume de production</p>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader className="bg-white/5">
+                                        <TableRow className="border-white/5 hover:bg-transparent">
+                                            <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground py-3">Atelier</TableHead>
+                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">Projets</TableHead>
+                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">Vitesse Moy.</TableHead>
+                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">Score Qualité</TableHead>
+                                            <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground">Volume Total</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {manufacturerScorecard.map((m) => (
+                                            <TableRow key={m.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                                                <TableCell className="font-medium text-foreground py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-luxury-gold/10 flex items-center justify-center text-luxury-gold font-bold text-[10px] ring-1 ring-luxury-gold/20">
+                                                            {m.name.charAt(0)}
+                                                        </div>
+                                                        <span className="text-sm font-serif">{m.name}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-bold tracking-widest border-luxury-gold/30 text-luxury-gold bg-transparent uppercase">
+                                                        {m.projectCount}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center font-serif">
+                                                    {m.avgSpeed > 0 ? (
+                                                        <span className={`text-sm ${m.avgSpeed < 7 ? 'text-green-500' : m.avgSpeed > 14 ? 'text-red-500' : 'text-amber-500'}`}>
+                                                            {m.avgSpeed} Jours
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted-foreground text-[10px] italic">N/A</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className={`text-sm font-serif ${m.qualityRate > 90 ? 'text-green-500' : m.qualityRate < 70 ? 'text-red-500' : 'text-amber-500'}`}>
+                                                            {Math.round(m.qualityRate)}%
+                                                        </span>
+                                                        <div className="w-16 h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
+                                                            <div 
+                                                                className={`h-full ${m.qualityRate > 90 ? 'bg-green-500' : m.qualityRate < 70 ? 'bg-red-500' : 'bg-amber-500'}`} 
+                                                                style={{ width: `${m.qualityRate}%` }} 
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right font-serif text-sm font-bold text-luxury-gold">
+                                                    ${m.volume.toLocaleString()}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                            <TimeBasedStats stats={statsData} />
+                            {/* Potential for a mini forecast chart here */}
                         </div>
                     </div>
                 </div>
@@ -353,11 +541,11 @@ export default function Dashboard() {
                 <div className="space-y-8">
                     <DashboardStats 
                         totalCollected={totalCollected} 
-                        totalPending={totalPending} 
+                        totalInvoiced={totalInvoiced}
+                        potentialRevenue={potentialRevenue}
                         totalProfit={totalProfit}
                         projectedProfit={projectedProfit}
                         expectedCashPipeline={expectedCashPipeline}
-                        totalCommissions={totalPendingCommissions}
                     />
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2">
@@ -399,4 +587,76 @@ export default function Dashboard() {
             )}
         </div>
     );
+}
+
+// AI Insights Engine — generates smart observations from raw data
+interface DashboardInsight {
+    icon: string;
+    title: string;
+    description: string;
+    type: 'success' | 'warning' | 'danger' | 'info';
+}
+
+function generateDashboardInsights(
+    projects: Project[],
+    invoices: Invoice[],
+    expenses: any[],
+    leaderboard: any[]
+): DashboardInsight[] {
+    const insights: DashboardInsight[] = [];
+    const now = new Date();
+    const currentMonth = now.getMonth();
+
+    // 1. Collection Rate Analysis
+    const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
+    const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount_paid || i.amount), 0);
+    const collectionRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
+
+    if (collectionRate >= 80) {
+        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Excellent! Discipline de paiement client solide.`, type: 'success' });
+    } else if (collectionRate >= 50) {
+        insights.push({ icon: '⚠️', title: `Taux de recouvrement: ${collectionRate}%`, description: `Attention, $${(totalInvoiced - totalPaid).toLocaleString()} en attente.`, type: 'warning' });
+    }
+
+    // 2. Pipeline Balance
+    const designing = projects.filter(p => ['designing', '3d_model', 'design_ready'].includes(p.status)).length;
+    const inProduction = projects.filter(p => ['approved_for_production', 'production'].includes(p.status)).length;
+
+    if (designing > inProduction * 2 && inProduction > 0) {
+        insights.push({ icon: '🎨', title: `Pipeline Design Saturation`, description: `${designing} designs en cours vs ${inProduction} en production. Risque de goulot d'étranglement.`, type: 'warning' });
+    } else if (inProduction > 0) {
+        insights.push({ icon: '🏭', title: `Flux Production Sain`, description: `Équilibre maintenu entre la création et la fabrication.`, type: 'success' });
+    }
+
+    // 3. Profitability (Expense Ratio)
+    const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+    const totalRevenue = invoices.reduce((s, i) => s + Number(i.amount), 0);
+    if (totalRevenue > 0) {
+        const expenseRatio = Math.round((totalExpenses / totalRevenue) * 100);
+        if (expenseRatio < 40) {
+            insights.push({ icon: '✅', title: `Rentabilité Optimale`, description: `Ratio dépenses/revenus de ${expenseRatio}%. Marges préservées.`, type: 'success' });
+        } else if (expenseRatio > 70) {
+            insights.push({ icon: '🚨', title: `Marges sous Pression`, description: `Les dépenses représentent ${expenseRatio}% du CA. Audit recommandé.`, type: 'danger' });
+        }
+    }
+
+    // 4. Seller Performance Concentration
+    if (leaderboard.length >= 2) {
+        const totalVolume = leaderboard.reduce((s, l) => s + l.volume, 0);
+        const topSellerShare = Math.round((leaderboard[0].volume / totalVolume) * 100);
+        if (topSellerShare > 60) {
+            insights.push({ icon: '👤', title: `Dépendance Commerciale`, description: `${leaderboard[0].name} génère ${topSellerShare}% du volume. Risque de concentration élevé.`, type: 'danger' });
+        }
+    }
+
+    // 5. Monthly Velocity
+    const newThisMonth = projects.filter(p => {
+        const d = new Date(p.created_at);
+        return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
+    }).length;
+    if (newThisMonth > 5) {
+        insights.push({ icon: '🌟', title: `Forte Acquisition`, description: `${newThisMonth} nouveaux projets créés ce mois-ci. Belle dynamique!`, type: 'success' });
+    }
+
+    return insights;
 }

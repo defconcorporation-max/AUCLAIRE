@@ -3,51 +3,51 @@ import { Banknote, Clock, TrendingUp, HandCoins } from 'lucide-react';
 
 interface DashboardStatsProps {
     totalCollected: number;
-    totalPending: number;
+    totalInvoiced: number;
+    potentialRevenue: number;
     totalProfit: number;
     projectedProfit: number;
     expectedCashPipeline: number;
-    totalCommissions: number;
 }
 
 export function DashboardStats({
     totalCollected,
-    totalPending,
+    totalInvoiced,
+    potentialRevenue,
     totalProfit,
     projectedProfit,
-    expectedCashPipeline,
-    totalCommissions
+    expectedCashPipeline
 }: DashboardStatsProps) {
     const stats = [
         {
-            title: "Total Collected",
+            title: "Total Encaissé",
             value: totalCollected,
-            sub: "Cash Received",
+            sub: "Cash Reçu",
             icon: Banknote,
             color: "text-green-500",
             bg: "bg-green-500/10",
         },
         {
-            title: "Pending Payment",
-            value: totalPending,
-            sub: "Outstanding",
-            detail: `Exp: ~$${Math.round(expectedCashPipeline).toLocaleString()}`,
+            title: "Total Facturé",
+            value: totalInvoiced,
+            sub: `A Encaisser: $${(totalInvoiced - totalCollected).toLocaleString()}`,
             icon: Clock,
             color: "text-amber-500",
             bg: "bg-amber-500/10",
         },
         {
-            title: "Commissions",
-            value: totalCommissions,
-            sub: "Affiliate Payouts (Est)",
+            title: "Revenu Potentiel",
+            value: potentialRevenue,
+            sub: "Pipeline non-facturé",
+            detail: `Exp: ~$${Math.round(expectedCashPipeline).toLocaleString()}`,
             icon: HandCoins,
             color: "text-purple-500",
             bg: "bg-purple-500/10",
         },
         {
-            title: "Actual Profit",
+            title: "Marge Actualisée",
             value: totalProfit,
-            sub: "Net Income",
+            sub: "Revenu Net",
             detail: `/ $${projectedProfit.toLocaleString()} Proj.`,
             icon: TrendingUp,
             color: "text-luxury-gold",
