@@ -42,7 +42,7 @@ export function WorkloadMonitor() {
     const bestChoice = [...workshopLoads].sort((a, b) => a.loadPercentage - b.loadPercentage)[0];
 
     return (
-        <Card className="glass-card h-full overflow-hidden relative border-luxury-gold/20">
+        <Card className="glass-card overflow-hidden relative border-luxury-gold/20">
             <CardHeader className="py-4 border-b border-white/5">
                 <CardTitle className="text-lg font-serif tracking-wide flex items-center gap-2">
                     <Factory className="w-5 h-5 text-luxury-gold" />
