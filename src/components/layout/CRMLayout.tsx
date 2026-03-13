@@ -128,7 +128,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
 
             <div className="flex h-screen overflow-hidden lg:pt-0 pt-[73px]">
                 {/* Desktop Sidebar */}
-                <aside className="hidden lg:block w-[280px] shrink-0 relative z-20">
+                <aside className="hidden lg:block w-[280px] shrink-0 relative z-40">
                     <Sidebar role={role} profile={profile} signOut={signOut} setIsMobileOpen={setIsMobileOpen} />
                 </aside>
 
@@ -137,7 +137,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
                     {/* Subtle top gradient for depth */}
                     <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-luxury-gold/5 to-transparent pointer-events-none -z-10" />
 
-                    <header className="hidden lg:flex items-center justify-end px-8 py-4 z-10 gap-2">
+                    <header className="hidden lg:flex items-center justify-end px-8 py-4 z-30 gap-2">
                         <Button variant="outline" size="icon" onClick={toggleTheme} className="bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white rounded-full">
                             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                         </Button>
@@ -146,7 +146,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
                         </div>
                     </header>
 
-                    <main className="flex-1 overflow-auto p-6 lg:p-10 lg:pt-4 z-10 scroll-smooth">
+                    <main className="flex-1 overflow-auto p-6 lg:p-10 lg:pt-4 z-0 scroll-smooth">
                         <div className="max-w-[1800px] w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
                             {children}
                         </div>

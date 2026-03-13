@@ -322,7 +322,7 @@ export default function Dashboard() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <CashRiskTracker highRiskProjects={highRiskProjects} />
-                            <div className="relative z-20">
+                            <div>
                                 <TimeBasedStats stats={statsData} />
                             </div>
                         </div>
