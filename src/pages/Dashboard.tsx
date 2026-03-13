@@ -45,9 +45,14 @@ export default function Dashboard() {
 
     // Fetch and expose settings for widgets
     useEffect(() => {
-        apiSettings.get().then(data => {
-            (window as any).auclaireSettings = data;
-        });
+        apiSettings.get()
+            .then(data => {
+                (window as any).auclaireSettings = data;
+            })
+            .catch(err => {
+                console.warn("Failed to load settings in Dashboard, using defaults.", err);
+                // The service already returns defaults, so we just log.
+            });
     }, []);
 
     // Data Fetching

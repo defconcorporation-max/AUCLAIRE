@@ -40,19 +40,23 @@ const LOCAL_STORAGE_KEY = 'auclaire_settings';
 
 export const apiSettings = {
     async get(): Promise<CompanySettings> {
-        const { data, error } = await supabase.from('settings').select('*').eq('id', 1).single();
+        try {
+            const { data, error } = await supabase.from('settings').select('*').eq('id', 1).single();
 
-        if (error || !data) {
-            console.warn("Using Mock/Local Data for Settings");
-            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (stored) {
-                return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+            if (error || !data) {
+                console.warn("Settings fetch failed or returned no data, using defaults:", error?.message);
+                const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (stored) {
+                    return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+                }
+                return DEFAULT_SETTINGS;
             }
+
+            return data as CompanySettings;
+        } catch (err) {
+            console.error("Critical error in apiSettings.get:", err);
             return DEFAULT_SETTINGS;
         }
-
-        // Map DB fields back to interface if needed (though they match 1:1 currently)
-        return data as CompanySettings;
     },
 
     async save(settings: CompanySettings) {
