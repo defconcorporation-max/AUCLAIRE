@@ -24,7 +24,7 @@ export const apiUsers = {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, role, email, created_at, monthly_goal, daily_capacity, specialty')
+            .select('id, full_name, role, email, created_at, monthly_goal, daily_capacity, design_capacity, production_capacity, specialty')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -36,6 +36,18 @@ export const apiUsers = {
         const { data, error } = await supabase
             .from('profiles')
             .update({ role })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async updateCapacities(id: string, design_capacity: number, production_capacity: number) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ design_capacity, production_capacity })
             .eq('id', id)
             .select()
             .single();

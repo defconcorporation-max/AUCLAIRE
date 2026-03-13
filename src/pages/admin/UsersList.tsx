@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Shield, Briefcase, UserCircle, Clock, Trash2, KeyRound } from 'lucide-react';
+import { User, Shield, Briefcase, UserCircle, Clock, Trash2, KeyRound, Zap, Factory } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,18 @@ export default function UsersList() {
         mutationFn: (id: string) => apiUsers.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
+        }
+    });
+
+    const updateCapacitiesMutation = useMutation({
+        mutationFn: ({ id, design, production }: { id: string; design: number; production: number }) => 
+            apiUsers.updateCapacities(id, design, production),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+        },
+        onError: (error) => {
+            alert(`Failed to update capacities: ${error.message}`);
+            console.error(error);
         }
     });
 
@@ -104,8 +116,52 @@ export default function UsersList() {
                                         <div className="text-xs text-muted-foreground font-mono">ID: {user.id.slice(0, 8)}...</div>
                                     </div>
                                 </div>
-
                                 <div className="flex flex-col items-end gap-2 pr-4">
+                                    {user.role === 'manufacturer' && (
+                                        <div className="flex flex-col gap-2 mb-2 w-full max-w-[200px]">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[10px] text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                                                    <Zap className="w-2.5 h-2.5 text-luxury-gold" /> Design:
+                                                </span>
+                                                <input
+                                                    type="number"
+                                                    className="h-7 w-16 rounded-md border border-input bg-background px-2 py-1 text-[10px] shadow-sm font-mono"
+                                                    defaultValue={user.design_capacity || 1}
+                                                    onBlur={(e) => {
+                                                        const newVal = Number(e.target.value);
+                                                        if (!isNaN(newVal) && newVal !== user.design_capacity) {
+                                                            updateCapacitiesMutation.mutate({ 
+                                                                id: user.id, 
+                                                                design: newVal, 
+                                                                production: user.production_capacity || 3 
+                                                            });
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[10px] text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                                                    <Factory className="w-2.5 h-2.5 text-blue-400" /> Prod:
+                                                </span>
+                                                <input
+                                                    type="number"
+                                                    className="h-7 w-16 rounded-md border border-input bg-background px-2 py-1 text-[10px] shadow-sm font-mono"
+                                                    defaultValue={user.production_capacity || 3}
+                                                    onBlur={(e) => {
+                                                        const newVal = Number(e.target.value);
+                                                        if (!isNaN(newVal) && newVal !== user.production_capacity) {
+                                                            updateCapacitiesMutation.mutate({ 
+                                                                id: user.id, 
+                                                                design: user.design_capacity || 1, 
+                                                                production: newVal 
+                                                            });
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {user.role === 'affiliate' && (
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="text-xs text-muted-foreground uppercase tracking-widest">Goal:</span>
@@ -129,6 +185,7 @@ export default function UsersList() {
                                             </div>
                                         </div>
                                     )}
+
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-muted-foreground mr-2">Role:</span>
                                         <select
