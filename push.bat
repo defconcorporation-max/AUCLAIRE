@@ -13,7 +13,7 @@ echo %date% %time% > force_deploy.txt
 echo [3/4] COMMITTING CHANGES...
 git add .
 :: Try to commit. Git will exit naturally if there's nothing new.
-git commit -m "Feature: Bulk Catalog Propagation & Sync - %date% %time%"
+git commit -m "Fix: Catalog Bulk Propagation & UI Performance - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin main

@@ -167,7 +167,12 @@ export default function ProductCatalog() {
         }),
         onSuccess: async (data) => {
             if (propagateAll && data?.id) {
-                await apiCatalog.propagateNode(data.id);
+                try {
+                    await apiCatalog.propagateNode(data.id);
+                } catch (err) {
+                    console.error("Propagation failed:", err);
+                    alert("L'ajout a réussi, mais la synchronisation aux autres modèles a échoué.");
+                }
             }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
             setIsAddDialogOpen(false);
@@ -181,7 +186,12 @@ export default function ProductCatalog() {
             apiCatalog.updateNode(id, updates),
         onSuccess: async (_, { id }) => {
             if (propagateAll) {
-                await apiCatalog.propagateNode(id);
+                try {
+                    await apiCatalog.propagateNode(id);
+                } catch (err) {
+                    console.error("Propagation failed:", err);
+                    alert("La modification a réussi, mais la synchronisation aux autres modèles a échoué.");
+                }
             }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
             setIsEditDialogOpen(false);
