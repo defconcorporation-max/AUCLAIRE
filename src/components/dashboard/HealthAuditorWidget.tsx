@@ -60,15 +60,17 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
         const lastChangeDate = lastLog ? new Date(lastLog.created_at) : new Date(p.created_at);
         const daysInStatus = (Date.now() - lastChangeDate.getTime()) / (1000 * 60 * 60 * 24);
 
+        // CONFIGURABLE THRESHOLDS FROM SETTINGS
+        // Fallback to hardcoded defaults if settings are not available/passed
         let warnThreshold = 0;
         let dangerThreshold = 0;
 
         if (p.status === 'production') {
-            warnThreshold = 10;
-            dangerThreshold = 20;
+            warnThreshold = (window as any).auclaireSettings?.prod_warn_days || 10;
+            dangerThreshold = (window as any).auclaireSettings?.prod_danger_days || 20;
         } else if (p.status === '3d_model' || p.status === 'designing') {
-            warnThreshold = 1;
-            dangerThreshold = 2;
+            warnThreshold = (window as any).auclaireSettings?.design_warn_days || 1;
+            dangerThreshold = (window as any).auclaireSettings?.design_danger_days || 2;
         } else {
             const statusLower = p.status.toLowerCase().replace(/_/g, ' ');
             const avg = avgVelocity[statusLower] || 5;
@@ -105,7 +107,10 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
 
         if (price > 0) {
             const margin = (price - totalCosts) / price;
-            if (margin < 0.10 && totalCosts > 0) {
+            const marginWarn = ((window as any).auclaireSettings?.margin_warn_percent || 20) / 100;
+            const marginDanger = ((window as any).auclaireSettings?.margin_danger_percent || 10) / 100;
+
+            if (margin < marginDanger && totalCosts > 0) {
                 alerts.push({
                     id: `margin-danger-${p.id}`,
                     projectId: p.id,
@@ -114,7 +119,7 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
                     severity: 'danger',
                     message: `Critical Margin: ${Math.round(margin * 100)}%`
                 });
-            } else if (margin < 0.20 && totalCosts > 0) {
+            } else if (margin < marginWarn && totalCosts > 0) {
                 alerts.push({
                     id: `margin-warn-${p.id}`,
                     projectId: p.id,

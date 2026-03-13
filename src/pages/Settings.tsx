@@ -15,7 +15,13 @@ export default function Settings() {
         city: '',
         country: '',
         tax_rate: 0,
-        currency_symbol: '$'
+        currency_symbol: '$',
+        design_warn_days: 1,
+        design_danger_days: 2,
+        prod_warn_days: 10,
+        prod_danger_days: 20,
+        margin_warn_percent: 20,
+        margin_danger_percent: 10
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -111,24 +117,75 @@ export default function Settings() {
                     </div>
 
                     <div className="border-t pt-4">
-                        <h3 className="text-sm font-bold mb-3">Financials</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Currency Symbol</label>
-                                <Input
-                                    className="w-20"
-                                    value={settings.currency_symbol}
-                                    onChange={(e) => handleChange('currency_symbol', e.target.value)}
-                                />
+                        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+                            <Building className="w-4 h-4 text-luxury-gold" /> Personnalisation du Moniteur de Santé
+                        </h3>
+                        <p className="text-[11px] text-muted-foreground mb-4 font-mono uppercase tracking-tight">Ajustez les seuils d'alerte pour les projets en retard ou à faible marge.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">Délais Design (3D)</h4>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Avertissement (Jours)</label>
+                                    <Input 
+                                        type="number" 
+                                        value={settings.design_warn_days} 
+                                        onChange={(e) => handleChange('design_warn_days', parseInt(e.target.value))}
+                                        className="h-8 bg-black/40 border-white/10"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">Danger (Jours)</label>
+                                    <Input 
+                                        type="number" 
+                                        value={settings.design_danger_days} 
+                                        onChange={(e) => handleChange('design_danger_days', parseInt(e.target.value))}
+                                        className="h-8 bg-black/40 border-white/10"
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Tax Rate (%)</label>
-                                <Input
-                                    className="w-20"
-                                    type="number"
-                                    value={settings.tax_rate}
-                                    onChange={(e) => handleChange('tax_rate', parseFloat(e.target.value))}
-                                />
+
+                            <div className="space-y-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">Délais Production</h4>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Avertissement (Jours)</label>
+                                    <Input 
+                                        type="number" 
+                                        value={settings.prod_warn_days} 
+                                        onChange={(e) => handleChange('prod_warn_days', parseInt(e.target.value))}
+                                        className="h-8 bg-black/40 border-white/10"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">Danger (Jours)</label>
+                                    <Input 
+                                        type="number" 
+                                        value={settings.prod_danger_days} 
+                                        onChange={(e) => handleChange('prod_danger_days', parseInt(e.target.value))}
+                                        className="h-8 bg-black/40 border-white/10"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">Seuils de Marge</h4>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Marge Faible (%)</label>
+                                    <Input 
+                                        type="number" 
+                                        value={settings.margin_warn_percent} 
+                                        onChange={(e) => handleChange('margin_warn_percent', parseInt(e.target.value))}
+                                        className="h-8 bg-black/40 border-white/10"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">Marge Critique (%)</label>
+                                    <Input 
+                                        type="number" 
+                                        value={settings.margin_danger_percent} 
+                                        onChange={(e) => handleChange('margin_danger_percent', parseInt(e.target.value))}
+                                        className="h-8 bg-black/40 border-white/10"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
