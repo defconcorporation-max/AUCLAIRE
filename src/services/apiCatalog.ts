@@ -68,12 +68,12 @@ export const apiCatalog = {
     },
 
     /**
-     * Propagates a node and its entire sub-tree to all sibling branches.
-     * Useful for applying the same Style/Carat/Metal options to all Models in a Category.
+     * Propagates a node and its entire sub-tree to all compatible parents in the Category.
+     * Example: If propagating a Carat, it will hit ALL Styles across ALL Models in this Category.
      */
     async propagateNode(sourceNodeId: string) {
         try {
-            console.log("Starting propagation for node:", sourceNodeId);
+            console.log("Starting broad propagation for node:", sourceNodeId);
             
             // 1. Get the source node
             const { data: sourceNode, error: fetchErr } = await supabase
@@ -83,13 +83,11 @@ export const apiCatalog = {
                 .single();
             
             if (fetchErr || !sourceNode) throw fetchErr || new Error("Source node not found");
-            if (!sourceNode.parent_id) return; // Cannot propagate root nodes
+            if (!sourceNode.parent_id) return;
 
-            // 2. Build the path from Model to SourceNode parent
-            // We want to apply this across sibling models.
-            let pathFromModel: { label: string, type: CatalogNode['type'] }[] = [];
+            // 2. Identify the Category root
+            let categoryNode: CatalogNode | null = null;
             let currentParentId: string | null = sourceNode.parent_id;
-            let modelNode: CatalogNode | null = null;
 
             while (currentParentId) {
                 const { data: node, error } = await supabase
@@ -99,80 +97,68 @@ export const apiCatalog = {
                     .single();
                 
                 if (error || !node) break;
-                
-                if (node.type === 'model') {
-                    modelNode = node;
+                if (node.type === 'category') {
+                    categoryNode = node;
                     break;
                 }
-                
-                pathFromModel.unshift({ label: node.label, type: node.type });
                 currentParentId = node.parent_id;
             }
 
-            if (!modelNode || !modelNode.parent_id) {
-                console.warn("Could not find 'model' ancestor for propagation. Falling back to local sibling logic.");
-                // Fallback: propagate to direct siblings of the parent if no model ancestor found
-                return this.propagateToDirectSiblings(sourceNode);
+            if (!categoryNode) {
+                console.warn("Could not find 'category' ancestor. Propagation stopped.");
+                return;
             }
 
-            console.log(`Found Model ancestor: ${modelNode.label}. Path to target:`, pathFromModel);
+            console.log(`Propagating within Category: ${categoryNode.label}`);
 
-            // 3. Get all sibling Models in the Category
-            const { data: siblingModels, error: siblingsErr } = await supabase
-                .from('catalog_tree')
-                .select('*')
-                .eq('parent_id', modelNode.parent_id)
-                .neq('id', modelNode.id);
+            // 3. Find ALL nodes in this Category that can be a parent for the source node type
+            const targetParentType = this.getParentTypeFor(sourceNode.type);
+            if (!targetParentType) return;
 
-            if (siblingsErr) throw siblingsErr;
-            if (!siblingModels || siblingModels.length === 0) return;
+            const targetParents = await this.findAllNodesByTypeInCategory(categoryNode.id, targetParentType);
+            
+            // Exclude the current parent
+            const otherParents = targetParents.filter(p => p.id !== sourceNode.parent_id);
+            
+            console.log(`Found ${otherParents.length} other target parents of type ${targetParentType}`);
 
-            console.log(`Propagating to ${siblingModels.length} sibling models.`);
+            // 4. Parallelize propagation
+            if (otherParents.length > 0) {
+                await Promise.all(otherParents.map(parent => 
+                    this.duplicateSubTree(sourceNode, parent.id)
+                ));
+            }
 
-            // 4. Parallelize propagation to each Model branch
-            await Promise.all(siblingModels.map(async (targetModel) => {
-                try {
-                    // Navigate/Create the path under targetModel
-                    let targetParentId = targetModel.id;
-                    for (const step of pathFromModel) {
-                        targetParentId = await this.ensureNodeExists(targetParentId, step.label, step.type);
-                    }
-                    
-                    // Duplicate/Sync the source node
-                    await this.duplicateSubTree(sourceNode, targetParentId);
-                } catch (err) {
-                    console.error(`Failed to propagate to model ${targetModel.label}:`, err);
-                }
-            }));
-
-            console.log("Propagation completed successfully.");
+            console.log("Broad propagation completed successfully.");
         } catch (error) {
             console.error("Propagation error:", error);
             throw error;
         }
     },
 
-
-    async ensureNodeExists(parentId: string, label: string, type: CatalogNode['type']): Promise<string> {
-        const { data: existing } = await supabase
-            .from('catalog_tree')
-            .select('id')
-            .eq('parent_id', parentId)
-            .eq('label', label)
-            .maybeSingle();
-        
-        if (existing) return existing.id;
-
-        const newNode = await this.createNode({
-            parent_id: parentId,
-            label,
-            type,
-            sort_order: 0,
-            specs: {}
-        });
-        return newNode.id;
+    getParentTypeFor(type: CatalogNode['type']): CatalogNode['type'] | null {
+        const types: CatalogNode['type'][] = ['category', 'model', 'style', 'carat', 'metal'];
+        const index = types.indexOf(type);
+        if (index <= 0) return null;
+        return types[index - 1];
     },
 
+    async findAllNodesByTypeInCategory(categoryId: string, type: CatalogNode['type']): Promise<CatalogNode[]> {
+        const results: CatalogNode[] = [];
+        
+        const walk = async (parentId: string) => {
+            const children = await this.getNodes(parentId);
+            for (const child of children) {
+                if (child.type === type) {
+                    results.push(child);
+                }
+                await walk(child.id);
+            }
+        };
+
+        await walk(categoryId);
+        return results;
+    },
     async duplicateSubTree(sourceNode: any, targetParentId: string) {
         // 1. Check if node with same label already exists under targetParentId
         const { data: existing } = await supabase
