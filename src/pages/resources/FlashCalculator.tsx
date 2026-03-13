@@ -10,10 +10,10 @@ import {
     Layers, 
     ShoppingBag, 
     ArrowLeft,
-    RotateCcw,
-    TrendingUp,
     CheckCircle2,
-    Info
+    Info,
+    RotateCcw,
+    TrendingUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -92,8 +92,19 @@ const SpecRow = ({ label, options, selectedId, onSelect, isLoading, disabled }: 
     );
 };
 
-function LevelRows({ depth, selections, onSelect }: { depth: number, selections: CatalogNode[], onSelect: (node: CatalogNode) => void }) {
+function LevelRows({ 
+    depth, 
+    selections, 
+    onSelect, 
+    preferredLabels 
+}: { 
+    depth: number, 
+    selections: CatalogNode[], 
+    onSelect: (node: CatalogNode) => void,
+    preferredLabels: Record<string, string>
+}) {
     const labels = ["Catégorie", "Modèle", "Style", "Carat", "Métal"];
+    const types = ["category", "model", "style", "carat", "metal"];
     const parentId = depth > 0 ? selections[depth - 1]?.id : null;
     
     const { data: options = [], isLoading } = useQuery({
@@ -103,6 +114,18 @@ function LevelRows({ depth, selections, onSelect }: { depth: number, selections:
     });
 
     const selectedId = selections[depth]?.id;
+    const currentPreferredLabel = preferredLabels[types[depth]];
+
+    // --- AUTO-SELECTION LOGIC ---
+    useEffect(() => {
+        if (!isLoading && options.length > 0 && !selectedId && currentPreferredLabel) {
+            const match = options.find(o => o.label === currentPreferredLabel);
+            if (match) {
+                console.log(`Auto-selecting ${match.label} for level ${depth}`);
+                onSelect(match);
+            }
+        }
+    }, [options, selectedId, currentPreferredLabel, isLoading, onSelect, depth]);
 
     return (
         <>
@@ -120,6 +143,7 @@ function LevelRows({ depth, selections, onSelect }: { depth: number, selections:
                     depth={depth + 1} 
                     selections={selections} 
                     onSelect={onSelect} 
+                    preferredLabels={preferredLabels}
                 />
             )}
         </>
@@ -129,6 +153,7 @@ function LevelRows({ depth, selections, onSelect }: { depth: number, selections:
 export default function FlashCalculator() {
     const navigate = useNavigate();
     const [selections, setSelections] = useState<CatalogNode[]>([]);
+    const [preferredLabels, setPreferredLabels] = useState<Record<string, string>>({});
     const [totalPrice, setTotalPrice] = useState(0);
 
     useEffect(() => {
@@ -142,9 +167,14 @@ export default function FlashCalculator() {
         const levelIndex = types.indexOf(node.type);
 
         if (levelIndex !== -1) {
+            // Update mapping of "what I like for this level"
+            setPreferredLabels(prev => ({
+                ...prev,
+                [node.type]: node.label
+            }));
+            
             setSelections(prev => [...prev.slice(0, levelIndex), node]);
         } else {
-            // Fallback for unexpected types
             setSelections(prev => [...prev, node]);
         }
     };
@@ -233,7 +263,8 @@ export default function FlashCalculator() {
                             <LevelRows 
                                 depth={0} 
                                 selections={selections} 
-                                onSelect={handleSelect} 
+                                onSelect={handleSelect}
+                                preferredLabels={preferredLabels}
                             />
                         </div>
 
