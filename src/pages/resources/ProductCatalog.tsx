@@ -126,15 +126,111 @@ function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
     );
 }
 
+// --- RECURSIVE SIDEBAR TREE COMPONENT ---
+interface TreeItemProps {
+    node: CatalogNode;
+    allNodes: CatalogNode[];
+    currentId: string | null;
+    onSelect: (path: CatalogNode[]) => void;
+    onAdd?: (node: CatalogNode) => void;
+    level?: number;
+}
+
+function TreeItem({ node, allNodes, currentId, onSelect, onAdd, level = 0 }: TreeItemProps) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const children = allNodes.filter(n => n.parent_id === node.id);
+    const isActive = currentId === node.id;
+    const hasChildren = children.length > 0;
+
+    const findPath = (targetNode: CatalogNode): CatalogNode[] => {
+        const path = [targetNode];
+        let current = targetNode;
+        while (current.parent_id) {
+            const parent = allNodes.find(n => n.id === current.parent_id);
+            if (!parent) break;
+            path.unshift(parent);
+            current = parent;
+        }
+        return path;
+    };
+
+    return (
+        <div className="select-none">
+            <div 
+                className={cn(
+                    "group flex items-center gap-2 py-1 px-2 rounded-lg cursor-pointer transition-all border border-transparent",
+                    isActive ? "bg-luxury-gold/10 border-luxury-gold/20 text-luxury-gold" : "hover:bg-white/5 text-muted-foreground hover:text-white"
+                )}
+                style={{ paddingLeft: `${level * 12 + 8}px` }}
+                onClick={() => onSelect(findPath(node))}
+            >
+                <div onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="p-0.5 hover:bg-white/10 rounded">
+                    {hasChildren ? (
+                        <ChevronRight className={cn("w-3 h-3 transition-transform", isExpanded && "rotate-90")} />
+                    ) : (
+                        <div className="w-3" />
+                    )}
+                </div>
+                <span className={cn("text-xs font-medium truncate", isActive && "font-bold")}>{node.label}</span>
+                <span className="opacity-0 group-hover:opacity-40 text-[8px] uppercase tracking-tighter ml-auto">{node.type}</span>
+                
+                {/* QUICK ADD ICON */}
+                {onAdd && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onAdd(node); }}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-luxury-gold hover:text-white rounded transition-all ml-1"
+                    >
+                        <Plus className="w-2.5 h-2.5" />
+                    </button>
+                )}
+            </div>
+            
+            {isExpanded && hasChildren && (
+                <div className="animate-in slide-in-from-left-1 duration-200">
+                    {children.map(child => (
+                        <TreeItem 
+                            key={child.id} 
+                            node={child} 
+                            allNodes={allNodes} 
+                            currentId={currentId} 
+                            onSelect={onSelect}
+                            onAdd={onAdd}
+                            level={level + 1}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function ProductCatalog() {
     const navigate = useNavigate();
     const { role, isAdmin } = useAuth();
     const queryClient = useQueryClient();
     const canManage = isAdmin || role === 'secretary' || role === 'admin';
 
-    // Navigation state
+    // Navigation and Search state
     const [currentPath, setCurrentPath] = useState<CatalogNode[]>([]);
-    const currentParentId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : null;
+    const [searchTerm, setSearchTerm] = useState('');
+    const currentId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : null;
+
+    // Queries
+    const { data: allNodes = [], isLoading: isFullLoading } = useQuery({
+        queryKey: ['catalog-full-tree'],
+        queryFn: () => apiCatalog.getFullTree(),
+        enabled: canManage
+    });
+
+    const filteredSearch = allNodes.filter(node => 
+        searchTerm.length > 1 && node.label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const currentParentId = currentId;
+    const { data: nodes = [], isLoading } = useQuery({
+        queryKey: ['catalog-nodes', currentParentId],
+        queryFn: () => apiCatalog.getNodes(currentParentId)
+    });
 
     // Add Node state
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -149,16 +245,9 @@ export default function ProductCatalog() {
     });
     const [propagateAll, setPropagateAll] = useState(false);
 
-
     // Edit Node state
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editingNode, setEditingNode] = useState<CatalogNode | null>(null);
-
-    // Queries
-    const { data: nodes = [], isLoading } = useQuery({
-        queryKey: ['catalog-nodes', currentParentId],
-        queryFn: () => apiCatalog.getNodes(currentParentId)
-    });
 
     // Mutations
     const addNodeMutation = useMutation({
@@ -176,6 +265,7 @@ export default function ProductCatalog() {
                 }
             }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
+            queryClient.invalidateQueries({ queryKey: ['catalog-full-tree'] });
             setIsAddDialogOpen(false);
             setNewNode({ label: '', type: '', description: '', image_url: '', price: 0, sort_order: 0, specs: {} });
             setPropagateAll(false);
@@ -195,6 +285,7 @@ export default function ProductCatalog() {
                 }
             }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
+            queryClient.invalidateQueries({ queryKey: ['catalog-full-tree'] });
             setIsEditDialogOpen(false);
             setEditingNode(null);
             setPropagateAll(false);
@@ -205,6 +296,7 @@ export default function ProductCatalog() {
         mutationFn: apiCatalog.deleteNode,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
+            queryClient.invalidateQueries({ queryKey: ['catalog-full-tree'] });
         }
     });
 
@@ -212,6 +304,20 @@ export default function ProductCatalog() {
         e.stopPropagation();
         setEditingNode(node);
         setIsEditDialogOpen(true);
+    };
+
+    const handleQuickAdd = (node: CatalogNode) => {
+        // Find path to this node to set it as current context
+        const path = [node];
+        let current = node;
+        while (current.parent_id) {
+            const parent = allNodes.find(n => n.id === current.parent_id);
+            if (!parent) break;
+            path.unshift(parent);
+            current = parent;
+        }
+        setCurrentPath(path);
+        setIsAddDialogOpen(true);
     };
 
     const handleNavigate = (node: CatalogNode) => {
@@ -250,154 +356,227 @@ export default function ProductCatalog() {
                     {canManage && (
                         <Button 
                             onClick={() => setIsAddDialogOpen(true)}
-                            className="bg-luxury-gold hover:bg-yellow-600 text-white"
+                            className="bg-luxury-gold hover:bg-yellow-600 text-white shadow-lg shadow-luxury-gold/10"
                         >
                             <Plus className="w-4 h-4 mr-2" /> 
-                            Ajouter une variation
+                            Ajouter option
                         </Button>
                     )}
                 </div>
             </div>
 
-            {/* Breadcrumbs */}
-            <nav className="flex items-center flex-wrap gap-2 text-sm">
-                <button 
-                    onClick={() => handleBreadcrumb('home')}
-                    className={`flex items-center gap-1 hover:text-luxury-gold transition-colors ${currentPath.length === 0 ? 'text-luxury-gold font-bold' : 'text-muted-foreground'}`}
-                >
-                    <Home className="w-4 h-4" />
-                    Catalogue
-                </button>
-                {currentPath.map((node, i) => (
-                    <div key={node.id} className="flex items-center gap-2">
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        <button 
-                            onClick={() => handleBreadcrumb(i)}
-                            className={`hover:text-luxury-gold transition-colors ${i === currentPath.length - 1 ? 'text-luxury-gold font-bold' : 'text-muted-foreground'}`}
-                        >
-                            {node.label}
-                        </button>
+            {/* Layout Wrapper */}
+            <div className="flex gap-8 relative min-h-[70vh]">
+                
+                {/* SIDEBAR TREE */}
+                <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-4 overflow-hidden h-fit sticky top-24">
+                    <div className="flex items-center justify-between items-center mb-6 px-1">
+                        <div className="flex items-center gap-2">
+                            <ShoppingBag className="w-4 h-4 text-luxury-gold" />
+                            <h2 className="text-sm font-bold uppercase tracking-widest text-white/50">Explorateur</h2>
+                        </div>
                     </div>
-                ))}
-            </nav>
 
-            <header className="relative">
-                <div className="absolute -top-10 -left-10 w-48 h-48 bg-luxury-gold/5 rounded-full blur-[60px] -z-10" />
-                <h1 className="text-4xl font-serif text-white flex items-center gap-3 lowercase first-letter:uppercase">
-                    <ShoppingBag className="text-luxury-gold" />
-                    {currentPath.length === 0 ? "Nos Produits" : currentPath[currentPath.length - 1].label}
-                </h1>
-                {currentPath.length > 0 && currentPath[currentPath.length - 1].description && (
-                    <p className="text-muted-foreground mt-2 font-serif italic text-sm">
-                        {currentPath[currentPath.length - 1].description}
-                    </p>
-                )}
-                <p className="text-luxury-gold/60 mt-2 font-serif italic text-xs uppercase tracking-widest">
-                    {currentPath.length === 0 
-                        ? "Sélectionnez une catégorie pour commencer l'estimation." 
-                        : "Choisissez l'élément suivant ou explorez les variations."
-                    }
-                </p>
-            </header>
-
-            {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {isLoading ? (
-                    <div className="col-span-full flex h-64 items-center justify-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
+                    <div className="space-y-4 mb-6">
+                        <div className="relative">
+                            <Input 
+                                placeholder="Rechercher..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="bg-white/5 border-white/10 text-xs h-9 pl-8"
+                            />
+                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        </div>
                     </div>
-                ) : nodes.length === 0 ? (
-                    <div className="col-span-full py-20 text-center bg-white/5 rounded-2xl border border-dashed border-white/10">
-                        <Plus className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                        <h3 className="text-xl font-serif text-muted-foreground">Cette section est vide</h3>
-                        {canManage && <p className="text-sm text-muted-foreground mt-2">Cliquez sur le bouton ci-dessus pour ajouter des éléments.</p>}
-                    </div>
-                ) : (
-                    nodes.map((node) => (
-                        <Card 
-                            key={node.id} 
-                            onClick={() => handleNavigate(node)}
-                            className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-luxury-gold/50 transition-all duration-500 cursor-pointer"
-                        >
-                            {/* Actions Overlay */}
-                            {canManage && (
-                                <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                    <Button 
-                                        variant="secondary" 
-                                        size="icon" 
-                                        className="h-8 w-8 bg-zinc-800 border-white/10 hover:bg-zinc-700"
-                                        onClick={(e) => handleEditClick(e, node)}
-                                    >
-                                        <Pencil className="w-4 h-4 text-white" />
-                                    </Button>
-                                    <Button 
-                                        variant="destructive" 
-                                        size="icon" 
-                                        className="h-8 w-8"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if(confirm('Supprimer cet élément et tous ses sous-éléments?')) deleteNodeMutation.mutate(node.id);
-                                        }}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            )}
 
-                            <div className="aspect-square relative flex items-center justify-center bg-zinc-900/50">
-                                {node.image_url ? (
-                                    <img 
-                                        src={node.image_url} 
-                                        alt={node.label} 
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                    />
-                                ) : (
-                                    <div className="flex flex-col items-center gap-2 text-muted-foreground/30">
-                                        <ImageIcon className="w-10 h-10" />
-                                        <span className="text-[10px] uppercase tracking-widest">{node.type}</span>
-                                    </div>
-                                )}
-                                
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <div className="px-4 py-2 border border-white/20 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-widest text-white shadow-xl">
-                                            Explorer
-                                        </div>
-                                    </div>
+                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[50vh]">
+                        {isFullLoading ? (
+                            <div className="flex justify-center p-4">
+                                <Loader2 className="w-4 h-4 animate-spin text-luxury-gold/40" />
                             </div>
+                        ) : (
+                            <div className="space-y-1">
+                                {allNodes.filter(n => !n.parent_id).map(root => (
+                                    <TreeItem 
+                                        key={root.id} 
+                                        node={root} 
+                                        allNodes={allNodes} 
+                                        currentId={currentId} 
+                                        onSelect={setCurrentPath}
+                                        onAdd={handleQuickAdd}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                            <CardHeader className="p-4">
-                                <CardTitle className="font-serif text-lg group-hover:text-luxury-gold transition-colors flex items-center justify-between">
+                    {searchTerm.length > 1 && (
+                        <div className="mt-4 pt-4 border-t border-white/5">
+                            <p className="text-[10px] uppercase tracking-widest text-luxury-gold mb-2 font-bold">Résultats</p>
+                            <div className="space-y-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                {filteredSearch.map(res => (
+                                    <button 
+                                        key={res.id}
+                                        onClick={() => {
+                                            const path = [res];
+                                            let current = res;
+                                            while (current.parent_id) {
+                                                const parent = allNodes.find(n => n.id === current.parent_id);
+                                                if (!parent) break;
+                                                path.unshift(parent);
+                                                current = parent;
+                                            }
+                                            setCurrentPath(path);
+                                            setSearchTerm('');
+                                        }}
+                                        className="w-full text-left text-[11px] py-1.5 px-2 hover:bg-white/5 rounded text-muted-foreground hover:text-white truncate flex items-center gap-2"
+                                    >
+                                        <div className="w-1 h-1 rounded-full bg-luxury-gold/50" />
+                                        {res.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </aside>
+
+                {/* MAIN CONTENT AREA */}
+                <div className="flex-1 space-y-6">
+                    {/* Breadcrumbs */}
+                    <nav className="flex items-center flex-wrap gap-2 text-sm bg-white/5 border border-white/10 p-2 rounded-xl">
+                        <button 
+                            onClick={() => handleBreadcrumb('home')}
+                            className={`flex items-center gap-1 hover:text-luxury-gold transition-colors ${currentPath.length === 0 ? 'text-luxury-gold font-bold' : 'text-muted-foreground'}`}
+                        >
+                            <Home className="w-4 h-4" />
+                            <span className="text-xs uppercase tracking-widest">Catalogue</span>
+                        </button>
+                        {currentPath.map((node, i) => (
+                            <div key={node.id} className="flex items-center gap-2">
+                                <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
+                                <button 
+                                    onClick={() => handleBreadcrumb(i)}
+                                    className={`text-xs uppercase tracking-widest hover:text-luxury-gold transition-colors ${i === currentPath.length - 1 ? 'text-luxury-gold font-bold underline decoration-luxury-gold/30 underline-offset-4' : 'text-muted-foreground'}`}
+                                >
                                     {node.label}
-                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                                </CardTitle>
-                                {node.description && (
-                                    <p className="text-xs text-muted-foreground line-clamp-1 italic mt-1">
-                                        {node.description}
-                                    </p>
-                                )}
-                                {node.price && node.price > 0 ? (
-                                    <div className="mt-2 flex items-center justify-between">
-                                        <div className="text-xl font-bold font-serif text-luxury-gold">
-                                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(node.price)}
+                                </button>
+                            </div>
+                        ))}
+                    </nav>
+
+                    <header className="relative">
+                        <div className="absolute -top-10 -left-10 w-48 h-48 bg-luxury-gold/5 rounded-full blur-[60px] -z-10" />
+                        <h1 className="text-4xl font-serif text-white flex items-center gap-3 lowercase first-letter:uppercase">
+                            {currentPath.length === 0 ? "Nos Produits" : currentPath[currentPath.length - 1].label}
+                        </h1>
+                        <div className="flex items-center gap-2 mt-2">
+                            {currentPath.length > 0 && (
+                                <span className="bg-luxury-gold/10 text-luxury-gold px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-luxury-gold/20">
+                                    {currentPath[currentPath.length - 1].type}
+                                </span>
+                            )}
+                            <p className="text-muted-foreground italic text-sm font-serif">
+                                {currentPath.length === 0 
+                                    ? "Sélectionnez une catégorie pour commencer" 
+                                    : currentPath[currentPath.length - 1].description || "Aucune description"
+                                }
+                            </p>
+                        </div>
+                    </header>
+
+                    {/* Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {isLoading ? (
+                            <div className="col-span-full flex h-64 items-center justify-center">
+                                <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
+                            </div>
+                        ) : nodes.length === 0 ? (
+                            <div className="col-span-full py-20 text-center bg-white/5 rounded-3xl border border-dashed border-white/10">
+                                <Plus className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                                <h3 className="text-xl font-serif text-muted-foreground">Cette section est vide</h3>
+                                {canManage && <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Ajouter option" pour garnir ce niveau.</p>}
+                            </div>
+                        ) : (
+                            nodes.map((node) => (
+                                <Card 
+                                    key={node.id} 
+                                    onClick={() => handleNavigate(node)}
+                                    className="group relative overflow-hidden bg-white/5 border-white/5 hover:border-luxury-gold/30 transition-all duration-500 cursor-pointer shadow-none hover:shadow-2xl hover:shadow-luxury-gold/5"
+                                >
+                                    {/* Actions Overlay */}
+                                    {canManage && (
+                                        <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                            <Button 
+                                                variant="secondary" 
+                                                size="icon" 
+                                                className="h-8 w-8 bg-black/60 backdrop-blur-md border-white/10 hover:bg-white/10"
+                                                onClick={(e) => handleEditClick(e, node)}
+                                            >
+                                                <Pencil className="w-3.5 h-3.5 text-white" />
+                                            </Button>
+                                            <Button 
+                                                variant="destructive" 
+                                                size="icon" 
+                                                className="h-8 w-8 bg-red-500/80 hover:bg-red-500"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if(confirm('Supprimer cet élément et tous ses sous-éléments?')) deleteNodeMutation.mutate(node.id);
+                                                }}
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </Button>
                                         </div>
-                                        {/* Hint that even if it has a price, it might have sub-variations */}
-                                        <div className="flex items-center gap-1 text-[8px] uppercase tracking-[0.2em] text-white/20">
-                                            <span>Sub</span>
-                                            <ChevronRight className="w-2 h-2" />
+                                    )}
+
+                                    <div className="aspect-[4/3] relative flex items-center justify-center bg-zinc-900/40">
+                                        {node.image_url ? (
+                                            <img 
+                                                src={node.image_url} 
+                                                alt={node.label} 
+                                                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                                            />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2 text-muted-foreground/20">
+                                                <ImageIcon className="w-8 h-8" />
+                                                <span className="text-[8px] uppercase tracking-[0.3em]">{node.type}</span>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                                        <div className="absolute bottom-4 left-4">
+                                            <span className="text-[8px] uppercase tracking-[0.2em] text-luxury-gold font-bold">
+                                                {node.type}
+                                            </span>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="mt-1 flex items-center justify-between">
-                                        <div className="text-[10px] uppercase tracking-widest text-luxury-gold/40">
-                                            {node.type}
+
+                                    <CardHeader className="p-5">
+                                        <CardTitle className="font-serif text-xl text-white/90 group-hover:text-luxury-gold transition-colors flex items-center justify-between">
+                                            {node.label}
+                                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                        </CardTitle>
+                                        
+                                        <div className="flex items-center justify-between mt-4">
+                                            {node.price && node.price > 0 ? (
+                                                <div className="text-lg font-serif text-luxury-gold/90">
+                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(node.price)}
+                                                </div>
+                                            ) : (
+                                                <div className="h-6" />
+                                            )}
+                                            
+                                            <div className="flex gap-1">
+                                                <div className="w-1 h-1 rounded-full bg-white/10" />
+                                                <div className="w-1 h-1 rounded-full bg-white/20" />
+                                                <div className="w-1 h-1 rounded-full bg-white/30" />
+                                            </div>
                                         </div>
-                                        <ChevronRight className="w-3 h-3 text-luxury-gold/20" />
-                                    </div>
-                                )}
-                            </CardHeader>
-                        </Card>
-                    ))
-                )}
+                                    </CardHeader>
+                                </Card>
+                            ))
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* Add Node Dialog */}

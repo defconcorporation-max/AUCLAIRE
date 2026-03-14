@@ -12,8 +12,8 @@ echo %date% %time% > force_deploy.txt
 
 echo [3/4] COMMITTING CHANGES...
 git add .
-:: Comprehensive commit message for Selection Preservation and Label Formatting
-git commit -m "Feature: Flash Calculator Selection Memory & Label Polish - %date% %time%"
+:: Comprehensive commit message for Catalog Tree Manager and Search Features
+git commit -m "Feature: Hierarchical Catalog Tree Sidebar & Global Search - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin main

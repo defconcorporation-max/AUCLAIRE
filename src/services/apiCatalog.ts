@@ -13,6 +13,17 @@ export interface CatalogNode {
 }
 
 export const apiCatalog = {
+    async getFullTree() {
+        const { data, error } = await supabase
+            .from('catalog_tree')
+            .select('*')
+            .order('sort_order', { ascending: true })
+            .order('label', { ascending: true });
+        
+        if (error) throw error;
+        return data as CatalogNode[];
+    },
+
     async getNodes(parentId: string | null = null) {
         let query = supabase
             .from('catalog_tree')
