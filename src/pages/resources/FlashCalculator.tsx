@@ -102,6 +102,15 @@ interface CalculatorRowProps {
     preferredLabels: Record<string, string>;
 }
 
+// Utility to format type labels (e.g., 'custom_level' -> 'Custom Level')
+const formatTypeLabel = (type: string) => {
+    if (!type) return '';
+    return type
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+};
+
 const CalculatorRow = ({ depth, type, parentId, selectedId, onSelect, preferredLabels }: CalculatorRowProps) => {
     const { data: options = [], isLoading } = useQuery({
         queryKey: ['catalog-nodes', parentId],
@@ -137,7 +146,7 @@ const CalculatorRow = ({ depth, type, parentId, selectedId, onSelect, preferredL
 
     return (
         <SpecRow 
-            label={rowType} 
+            label={formatTypeLabel(rowType)} 
             type={rowType} 
             options={options} 
             selectedId={selectedId}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiCatalog, CatalogNode } from '@/services/apiCatalog';
 import { useAuth } from '@/context/AuthContext';
@@ -15,7 +16,8 @@ import {
     Pencil,
     Upload,
     X,
-    Calculator
+    Calculator,
+    Info
 } from 'lucide-react';
 import { uploadImage } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
@@ -420,15 +422,34 @@ export default function ProductCatalog() {
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label>Type de variation</Label>
+                        <div className="space-y-3">
+                            <Label className="flex items-center justify-between">
+                                Type de variation
+                                <span className="text-[10px] text-luxury-gold uppercase tracking-tighter">Crucial</span>
+                            </Label>
                             <Input 
-                                placeholder="ex: category, model, style, carat, metal..." 
+                                placeholder="ex: style, carat, metal, model..." 
                                 value={newNode.type}
-                                onChange={(e) => setNewNode({...newNode, type: e.target.value})}
+                                onChange={(e) => setNewNode({...newNode, type: e.target.value.toLowerCase()})}
+                                className="bg-white/5 border-white/10"
                             />
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                                Indispensable pour la synchronisation automatique.
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                {['model', 'style', 'carat', 'metal', 'color'].map(t => (
+                                    <button 
+                                        key={t}
+                                        type="button"
+                                        onClick={() => setNewNode({...newNode, type: t})}
+                                        className={cn(
+                                            "px-2 py-1 rounded-md text-[9px] uppercase tracking-widest border transition-all",
+                                            newNode.type === t ? "bg-luxury-gold/20 border-luxury-gold text-luxury-gold" : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                        )}
+                                    >
+                                        {t}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground italic leading-tight">
+                                Le type définit le nom de la ligne dans le calculateur. Utilisez des minuscules et des underscores (ex: `metal_color`).
                             </p>
                         </div>
 
@@ -500,8 +521,16 @@ export default function ProductCatalog() {
                         <DialogTitle className="font-serif text-2xl">
                             Modifier {editingNode?.label}
                         </DialogTitle>
-                        <DialogDescription>
-                            Type : <span className="text-luxury-gold uppercase tracking-widest text-xs font-bold">{editingNode?.type}</span>
+                        <DialogDescription className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span>Type : <span className="text-luxury-gold uppercase tracking-widest text-xs font-bold">{editingNode?.type}</span></span>
+                            </div>
+                            <div className="bg-luxury-gold/5 p-3 rounded-lg border border-luxury-gold/10">
+                                <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                    <Info className="w-3 h-3 text-luxury-gold" />
+                                    Le "Type" détermine comment cet élément est groupé et nommé dans le calculateur.
+                                </p>
+                            </div>
                         </DialogDescription>
                     </DialogHeader>
                     
