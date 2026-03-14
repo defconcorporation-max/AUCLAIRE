@@ -35,7 +35,7 @@ const SpecRow = ({ label, options, selectedId, onSelect, isLoading, disabled }: 
 
     return (
         <div className={cn(
-            "group py-6 border-b border-white/5 last:border-0 transition-all duration-300",
+            "group py-4 md:py-6 border-b border-white/5 last:border-0 transition-all duration-300",
             disabled ? "opacity-30 grayscale pointer-events-none" : "opacity-100"
         )}>
             <div className="flex flex-col md:flex-row md:items-start gap-4">
@@ -61,8 +61,8 @@ const SpecRow = ({ label, options, selectedId, onSelect, isLoading, disabled }: 
                                     key={opt.id}
                                     onClick={() => onSelect(opt)}
                                     className={cn(
-                                        "relative h-11 px-6 rounded-lg text-xs font-bold uppercase tracking-widest border transition-all duration-300 flex items-center justify-center gap-2 group/chip",
-                                        isMetal && "rounded-full px-4",
+                                        "relative h-10 md:h-11 px-4 md:px-6 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest border transition-all duration-300 flex items-center justify-center gap-2 group/chip",
+                                        isMetal && "rounded-full px-3 md:px-4",
                                         selectedId === opt.id 
                                             ? "bg-luxury-gold border-luxury-gold text-white shadow-[0_0_20px_rgba(210,181,123,0.3)] ring-1 ring-luxury-gold" 
                                             : "bg-white/5 border-white/10 text-muted-foreground hover:border-luxury-gold/50 hover:bg-white/10"
@@ -241,7 +241,7 @@ export default function FlashCalculator() {
                         ))}
                     </div>
 
-                    <div className="bg-zinc-900/50 rounded-3xl border border-white/10 p-8 shadow-2xl overflow-hidden relative">
+                    <div className="bg-zinc-900/50 rounded-2xl md:rounded-3xl border border-white/10 p-4 md:p-8 shadow-2xl overflow-hidden relative">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-luxury-gold/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
                         
                         <div className="space-y-2">
@@ -363,6 +363,28 @@ export default function FlashCalculator() {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* Mobile Sticky Action Bar */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-zinc-900/95 backdrop-blur-md border-t border-white/10 p-4 pb-8 z-50 flex items-center justify-between gap-4">
+                <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Total Estimé</span>
+                    <span className="text-xl font-serif text-white">
+                        {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(totalPrice)}
+                    </span>
+                </div>
+                <Button 
+                    className="bg-luxury-gold hover:bg-yellow-600 text-white font-bold h-12 px-6"
+                    disabled={selections.length < 3}
+                    onClick={() => navigate('/dashboard/projects/new', { 
+                        state: { 
+                            designNotes: selections.map(s => `${s.type}: ${s.label}`).join(', '),
+                            estimatedPrice: totalPrice
+                        } 
+                    })}
+                >
+                    Créer Projet
+                </Button>
             </div>
         </div>
     );

@@ -12,8 +12,8 @@ echo %date% %time% > force_deploy.txt
 
 echo [3/4] COMMITTING CHANGES...
 git add .
-:: Try to commit. Git will exit naturally if there's nothing new.
-git commit -m "Feature: Broad Sync & Selection Memory - %date% %time%"
+:: Comprehensive commit message for all recent features
+git commit -m "Feature: Smooth Flash Quote v2 (Selection Memory, Mobile Optimization, Zero Flicker, Category Sync) - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin main
