@@ -286,27 +286,27 @@ export default function FlashCalculator() {
                         <CardContent className="p-0">
                             <ul className="divide-y divide-white/5">
                                 {selections.map((s, i) => (
-                                    <li key={i} className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 group hover:bg-white/[0.02]">
+                                    <li key={i} className="p-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4 group hover:bg-white/[0.02]">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-luxury-gold/10 flex items-center justify-center border border-luxury-gold/20">
-                                                {s.type === 'category' ? <ShoppingBag className="w-4 h-4 text-luxury-gold" /> : 
-                                                 s.type === 'carat' ? <Diamond className="w-4 h-4 text-luxury-gold" /> :
-                                                 <Layers className="w-4 h-4 text-luxury-gold" />}
+                                            <div className="w-10 h-10 rounded-xl bg-luxury-gold/5 flex items-center justify-center border border-luxury-gold/10 group-hover:scale-110 transition-transform">
+                                                {s.type === 'category' ? <ShoppingBag className="w-5 h-5 text-luxury-gold" /> : 
+                                                 s.type === 'carat' ? <Diamond className="w-5 h-5 text-luxury-gold" /> :
+                                                 <Layers className="w-5 h-5 text-luxury-gold" />}
                                             </div>
                                             <div>
-                                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{s.type}</p>
-                                                <p className="text-sm font-serif font-bold text-white">{s.label}</p>
+                                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">{s.type}</p>
+                                                <p className="text-sm font-serif font-bold text-white group-hover:text-luxury-gold transition-colors">{s.label}</p>
                                             </div>
                                         </div>
-                                        <div className="flex justify-end items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                            <div className="relative w-full sm:w-24">
-                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-luxury-gold font-bold opacity-50">+</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="relative flex-1 md:w-32">
                                                 <input 
                                                     type="number"
                                                     value={s.price || 0}
                                                     onChange={(e) => handlePriceChange(i, parseFloat(e.target.value) || 0)}
-                                                    className="w-full bg-white/5 border border-white/10 rounded px-2 pl-4 py-2 text-xs font-mono font-bold text-luxury-gold text-right focus:outline-none focus:border-luxury-gold/50 transition-colors"
+                                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm font-mono font-bold text-luxury-gold text-right focus:ring-1 focus:ring-luxury-gold/50 focus:bg-white/10 transition-all"
                                                 />
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-luxury-gold font-bold opacity-30">$</span>
                                             </div>
                                         </div>
                                     </li>
@@ -344,24 +344,25 @@ export default function FlashCalculator() {
                                     Créer le Projet
                                 </Button>
                             </div>
+
+                            {/* Visual Preview (Latest Image) - Moved inside card for stability */}
+                            {[...selections].reverse().find(s => !!s.image_url) && (
+                                <div className="border-t border-white/10 overflow-hidden relative group aspect-video">
+                                    <img 
+                                        src={[...selections].reverse().find(s => !!s.image_url)?.image_url} 
+                                        alt="Visual Preview" 
+                                        className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" 
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                                    <div className="absolute bottom-4 left-4">
+                                        <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Aperçu Visuel</p>
+                                        <p className="text-sm font-serif text-white">{[...selections].reverse().find(s => !!s.image_url)?.label}</p>
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                     
-                    {/* Visual Preview (Latest Image) */}
-                    {[...selections].reverse().find(s => !!s.image_url) && (
-                        <div className="rounded-2xl overflow-hidden border border-white/10 bg-black/40 aspect-video relative group">
-                            <img 
-                                src={[...selections].reverse().find(s => !!s.image_url)?.image_url} 
-                                alt="Visual Preview" 
-                                className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" 
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                            <div className="absolute bottom-4 left-4">
-                                <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Aperçu Visuel</p>
-                                <p className="text-sm font-serif text-white">{[...selections].reverse().find(s => !!s.image_url)?.label}</p>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 
