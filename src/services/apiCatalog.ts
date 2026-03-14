@@ -69,76 +69,21 @@ export const apiCatalog = {
 
     /**
      * Propagates a node and its entire sub-tree to all compatible parents in the Category.
-     * Example: If propagating a Carat, it will hit ALL Styles across ALL Models in this Category.
+     * Uses a high-performance database RPC to avoid network round-trips.
      */
     async propagateNode(sourceNodeId: string) {
         try {
-            console.log("Starting broad propagation for node:", sourceNodeId);
-            
-            // 1. Get the source node
-            const { data: sourceNode, error: fetchErr } = await supabase
-                .from('catalog_tree')
-                .select('*')
-                .eq('id', sourceNodeId)
-                .single();
-            
-            if (fetchErr || !sourceNode) throw fetchErr || new Error("Source node not found");
-            if (!sourceNode.parent_id) return;
-
-            // 2. Identify the Category root
-            let categoryNode: CatalogNode | null = null;
-            let currentParentId: string | null = sourceNode.parent_id;
-            let immediateParent: CatalogNode | null = null;
-
-            while (currentParentId) {
-                const { data: node, error } = await supabase
-                    .from('catalog_tree')
-                    .select('*')
-                    .eq('id', currentParentId)
-                    .single();
-                
-                if (error || !node) break;
-                if (!immediateParent) immediateParent = node;
-                if (node.type === 'category') {
-                    categoryNode = node;
-                    break;
-                }
-                currentParentId = node.parent_id;
-            }
-
-            if (!categoryNode || !immediateParent) {
-                console.warn("Could not find 'category' ancestor or immediate parent. Propagation stopped.");
-                return;
-            }
-
-            console.log(`Propagating within Category: ${categoryNode.label}`);
-
-            // 3. Find ALL nodes in this Category that match the immediate parent's type
-            const targetParentType = immediateParent.type;
-            const targetParents = await this.findAllNodesByTypeInCategory(categoryNode.id, targetParentType);
-            
-            // Exclude the current parent
-            const otherParents = targetParents.filter(p => p.id !== sourceNode.parent_id);
-            
-            console.log(`Found ${otherParents.length} other target parents of type ${targetParentType}`);
-
-            // 4. Parallelize propagation
-            if (otherParents.length > 0) {
-                await Promise.all(otherParents.map(parent => 
-                    this.duplicateSubTree(sourceNode, parent.id)
-                ));
-            }
-
-            console.log("Broad propagation completed successfully.");
+            console.log("Starting optimized database-side propagation for node:", sourceNodeId);
+            const { error } = await supabase.rpc('propagate_catalog_node', { source_id: sourceNodeId });
+            if (error) throw error;
+            console.log("Optimized propagation completed successfully.");
         } catch (error) {
             console.error("Propagation error:", error);
             throw error;
         }
     },
 
-
-
-    async findAllNodesByTypeInCategory(categoryId: string, type: CatalogNode['type']): Promise<CatalogNode[]> {
+    async findAllNodesByTypeInCategory(categoryId: string, type: string): Promise<CatalogNode[]> {
         const results: CatalogNode[] = [];
         
         const walk = async (parentId: string) => {
@@ -154,8 +99,10 @@ export const apiCatalog = {
         await walk(categoryId);
         return results;
     },
+
     async duplicateSubTree(sourceNode: any, targetParentId: string) {
-        // 1. Check if node with same label already exists under targetParentId
+        // This client-side method is now deprecated in favor of internal_duplicate_subtree (DB-side)
+        // for propagation, but we keep it if needed for other one-off client-side clones.
         const { data: existing } = await supabase
             .from('catalog_tree')
             .select('*')
@@ -168,7 +115,6 @@ export const apiCatalog = {
 
         if (existing) {
             targetNodeId = existing.id;
-            // Update to sync
             await this.updateNode(targetNodeId, {
                 price: sourceNode.price,
                 image_url: sourceNode.image_url,
@@ -176,7 +122,6 @@ export const apiCatalog = {
                 specs: sourceNode.specs
             });
         } else {
-            // Create new node
             const newNode = await this.createNode({
                 parent_id: targetParentId,
                 label: sourceNode.label,
@@ -190,7 +135,6 @@ export const apiCatalog = {
             targetNodeId = newNode.id;
         }
 
-        // 2. Recursively duplicate children
         const children = await this.getNodes(sourceNode.id);
         if (children && children.length > 0) {
             await Promise.all(children.map(child => this.duplicateSubTree(child, targetNodeId)));
