@@ -375,13 +375,16 @@ export default function ProductCatalog() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header & Controls */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <Button 
-                    variant="ghost" 
-                    onClick={() => navigate('/dashboard/resources')}
-                    className="w-fit text-muted-foreground hover:text-white"
-                >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Menu Ressources
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => navigate('/dashboard/resources')}
+                        className="w-fit text-muted-foreground hover:text-white"
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Menu Ressources
+                    </Button>
+                    <span className="text-[10px] text-white/20 uppercase tracking-[0.3em] font-mono">v3.3.5</span>
+                </div>
 
                 <div className="flex gap-2">
                     <Button 
