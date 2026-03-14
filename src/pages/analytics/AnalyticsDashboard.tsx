@@ -10,9 +10,12 @@ import { apiActivities } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp } from 'lucide-react';
+import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function AnalyticsDashboard() {
+    const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('month');
     const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
@@ -27,6 +30,69 @@ export default function AnalyticsDashboard() {
     // Helpers to prevent string concatenation
     const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
     const getPaidAmount = (inv: Invoice) => Number((inv.amount_paid && inv.amount_paid > 0) ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0));
+
+    // Generic Stat Calculator for Trends
+    const getStatsForRange = (start: Date, end: Date) => {
+        const periodInvoices = invoices.filter(inv => {
+            const date = new Date(inv.paid_at || inv.created_at);
+            return date >= start && date <= end && inv.status !== 'void';
+        });
+        const periodClients = clients.filter(c => {
+            const date = new Date(c.created_at);
+            return date >= start && date <= end;
+        });
+
+        const collected = periodInvoices.reduce((sum, i) => sum + getPaidAmount(i), 0);
+        const invoiced = periodInvoices.reduce((sum, i) => sum + i.amount, 0);
+        const count = periodInvoices.length;
+        const avgOrder = count > 0 ? Math.round(invoiced / count) : 0;
+        
+        return { collected, invoiced, avgOrder, clients: periodClients.length };
+    };
+
+    // Calculate Trend Data
+    const getTrendData = () => {
+        const now = new Date();
+        let startCurr = new Date();
+        let startPrev = new Date();
+        let label = "";
+
+        if (timeframe === 'day') {
+            startCurr.setHours(0, 0, 0, 0);
+            startPrev.setDate(startPrev.getDate() - 1);
+            startPrev.setHours(0, 0, 0, 0);
+            label = "hier";
+        } else if (timeframe === 'week') {
+            startCurr.setDate(startCurr.getDate() - 7);
+            startPrev.setDate(startPrev.getDate() - 14);
+            label = "semaine dernière";
+        } else {
+            startCurr.setMonth(startCurr.getMonth() - 1);
+            startPrev.setMonth(startPrev.getMonth() - 2);
+            label = "mois dernier";
+        }
+
+        const current = getStatsForRange(startCurr, now);
+        const previous = getStatsForRange(startPrev, startCurr);
+
+        const calcGrowth = (curr: number, prev: number) => {
+            if (prev === 0) return curr > 0 ? 100 : 0;
+            return Math.round(((curr - prev) / prev) * 100);
+        };
+
+        return {
+            current,
+            previous,
+            label,
+            growth: {
+                collected: calcGrowth(current.collected, previous.collected),
+                avgOrder: calcGrowth(current.avgOrder, previous.avgOrder),
+                clients: calcGrowth(current.clients, previous.clients)
+            }
+        };
+    };
+
+    const trendData = getTrendData();
 
     // 1. Global KPIs
     const totalCollected = invoices.reduce((sum, i) => sum + getPaidAmount(i), 0);
@@ -218,10 +284,28 @@ export default function AnalyticsDashboard() {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">Business Analytics</h1>
                     <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Global performance & seller leaderboard.</p>
+                </div>
+                
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl backdrop-blur-md border border-black/10 dark:border-white/10">
+                    {(['day', 'week', 'month'] as const).map((t) => (
+                        <Button
+                            key={t}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setTimeframe(t)}
+                            className={`rounded-lg px-4 transition-all duration-300 ${
+                                timeframe === t 
+                                ? 'bg-luxury-gold text-white shadow-lg' 
+                                : 'hover:bg-luxury-gold/10 text-muted-foreground'
+                            }`}
+                        >
+                            {t === 'day' ? 'Jour' : t === 'week' ? 'Semaine' : 'Mois'}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
@@ -233,7 +317,10 @@ export default function AnalyticsDashboard() {
                         <Briefcase className="h-4 w-4 text-luxury-gold" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif text-black dark:text-white">${averageOrderValue.toLocaleString()}</div>
+                        <div className="flex items-baseline justify-between">
+                            <div className="text-3xl font-serif text-black dark:text-white">${averageOrderValue.toLocaleString()}</div>
+                            <TrendBadge value={trendData.growth.avgOrder} label={trendData.label} />
+                        </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
@@ -242,7 +329,10 @@ export default function AnalyticsDashboard() {
                         <Banknote className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif text-black dark:text-white">${totalCollected.toLocaleString()}</div>
+                        <div className="flex items-baseline justify-between">
+                            <div className="text-3xl font-serif text-black dark:text-white">${totalCollected.toLocaleString()}</div>
+                            <TrendBadge value={trendData.growth.collected} label={trendData.label} />
+                        </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
@@ -251,7 +341,10 @@ export default function AnalyticsDashboard() {
                         <Users className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif text-black dark:text-white">{activeClients}</div>
+                        <div className="flex items-baseline justify-between">
+                            <div className="text-3xl font-serif text-black dark:text-white">{activeClients}</div>
+                            <TrendBadge value={trendData.growth.clients} label={trendData.label} />
+                        </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/20 relative overflow-hidden ring-1 ring-luxury-gold/20 shadow-lg shadow-luxury-gold/5">
@@ -582,6 +675,36 @@ export default function AnalyticsDashboard() {
                 </CardContent>
             </Card>
 
+        </div>
+    );
+}
+
+
+// UI Component for Growth Trend Badges
+function TrendBadge({ value, label }: { value: number; label: string }) {
+    if (value === 0) return (
+        <div className="flex flex-col items-end">
+            <div className="flex items-center gap-1 text-gray-400 text-xs font-medium">
+                <Minus className="w-3 h-3" />
+                <span>0%</span>
+            </div>
+            <span className="text-[9px] text-gray-400 uppercase tracking-tighter">vs {label}</span>
+        </div>
+    );
+
+    const isPositive = value > 0;
+    
+    return (
+        <div className="flex flex-col items-end">
+            <div className={`flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                isPositive 
+                ? 'text-green-600 bg-green-500/10' 
+                : 'text-red-600 bg-red-500/10'
+            }`}>
+                {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                <span>{Math.abs(value)}%</span>
+            </div>
+            <span className="text-[9px] text-muted-foreground uppercase tracking-tighter mt-1 italic">vs {label}</span>
         </div>
     );
 }
