@@ -8,6 +8,7 @@ interface DashboardStatsProps {
     totalProfit: number;
     projectedProfit: number;
     expectedCashPipeline: number;
+    waitingCollection: number;
 }
 
 export function DashboardStats({
@@ -16,7 +17,8 @@ export function DashboardStats({
     potentialRevenue,
     totalProfit,
     projectedProfit,
-    expectedCashPipeline
+    expectedCashPipeline,
+    waitingCollection
 }: DashboardStatsProps) {
     const stats = [
         {
@@ -26,6 +28,14 @@ export function DashboardStats({
             icon: Banknote,
             color: "text-green-500",
             bg: "bg-green-500/10",
+        },
+        {
+            title: "En Attente de Collection",
+            value: waitingCollection,
+            sub: "Prêt à être encaissé",
+            icon: HandCoins,
+            color: "text-blue-500",
+            bg: "bg-blue-500/10",
         },
         {
             title: "Total Facturé",
@@ -40,7 +50,7 @@ export function DashboardStats({
             value: potentialRevenue,
             sub: "Pipeline non-facturé",
             detail: `Exp: ~$${Math.round(expectedCashPipeline).toLocaleString()}`,
-            icon: HandCoins,
+            icon: Clock,
             color: "text-purple-500",
             bg: "bg-purple-500/10",
         },
@@ -57,7 +67,7 @@ export function DashboardStats({
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {stats.map((stat, index) => (
                 <div
                     key={stat.title}

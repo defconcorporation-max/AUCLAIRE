@@ -194,6 +194,16 @@ export default function Dashboard() {
         }
     });
 
+    // Expected collection for ready items
+    const waitingCollection = filteredProjects.reduce((sum, p) => {
+        if (!['delivery', 'completed'].includes(p.status)) return sum;
+        const price = getSalePrice(p);
+        const collected = filteredInvoices
+            .filter(i => i.project_id === p.id)
+            .reduce((s, i) => s + (i.amount_paid || (i.status === 'paid' ? i.amount : 0)), 0);
+        return sum + Math.max(0, price - collected);
+    }, 0);
+
     // Stats calculations
     const getStatsForPeriod = (days: number) => {
         const threshold = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -314,7 +324,7 @@ export default function Dashboard() {
                 <div className="animate-in fade-in slide-in-from-left-4">
                     <h1 className="text-4xl font-serif text-luxury-gradient tracking-tight mb-2">Tableau de Bord</h1>
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
-                        Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        v3.4.8 • Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                 </div>
 
@@ -385,6 +395,7 @@ export default function Dashboard() {
                         totalProfit={totalProfit}
                         projectedProfit={projectedProfit}
                         expectedCashPipeline={expectedCashPipeline}
+                        waitingCollection={waitingCollection}
                     />
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -546,6 +557,7 @@ export default function Dashboard() {
                         totalProfit={totalProfit}
                         projectedProfit={projectedProfit}
                         expectedCashPipeline={expectedCashPipeline}
+                        waitingCollection={waitingCollection}
                     />
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2">
