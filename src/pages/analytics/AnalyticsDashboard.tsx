@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 export default function AnalyticsDashboard() {
-    const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('month');
+    const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
@@ -66,10 +66,15 @@ export default function AnalyticsDashboard() {
             startCurr.setDate(startCurr.getDate() - 7);
             startPrev.setDate(startPrev.getDate() - 14);
             label = "semaine dernière";
-        } else {
+        } else if (timeframe === 'month') {
             startCurr.setMonth(startCurr.getMonth() - 1);
             startPrev.setMonth(startPrev.getMonth() - 2);
             label = "mois dernier";
+        } else {
+            // Total mode
+            const firstInvoice = invoices[0]?.created_at ? new Date(invoices[0].created_at) : new Date(2024, 0, 1);
+            startCurr = firstInvoice;
+            label = "total";
         }
 
         const current = getStatsForRange(startCurr, now);
@@ -93,15 +98,6 @@ export default function AnalyticsDashboard() {
     };
 
     const trendData = getTrendData();
-
-    // 1. Global KPIs
-    const totalCollected = invoices.reduce((sum, i) => sum + getPaidAmount(i), 0);
-    const activeClients = clients.length;
-
-    // Calculate Average Order Value (Panier Moyen) based on created invoices
-    const validInvoices = invoices.filter(i => i.status !== 'void');
-    const totalInvoiced = validInvoices.reduce((sum, i) => sum + i.amount, 0);
-    const averageOrderValue = validInvoices.length > 0 ? Math.round(totalInvoiced / validInvoices.length) : 0;
 
     // 2. Monthly Revenue Chart (Paid Invoices)
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -291,7 +287,7 @@ export default function AnalyticsDashboard() {
                 </div>
                 
                 <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl backdrop-blur-md border border-black/10 dark:border-white/10">
-                    {(['day', 'week', 'month'] as const).map((t) => (
+                    {(['day', 'week', 'month', 'total'] as const).map((t) => (
                         <Button
                             key={t}
                             variant="ghost"
@@ -303,7 +299,7 @@ export default function AnalyticsDashboard() {
                                 : 'hover:bg-luxury-gold/10 text-muted-foreground'
                             }`}
                         >
-                            {t === 'day' ? 'Jour' : t === 'week' ? 'Semaine' : 'Mois'}
+                            {t === 'day' ? 'Jour' : t === 'week' ? 'Semaine' : t === 'month' ? 'Mois' : 'Total'}
                         </Button>
                     ))}
                 </div>
@@ -318,32 +314,32 @@ export default function AnalyticsDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">${averageOrderValue.toLocaleString()}</div>
-                            <TrendBadge value={trendData.growth.avgOrder} label={trendData.label} />
+                            <div className="text-3xl font-serif text-black dark:text-white">${trendData.current.avgOrder.toLocaleString()}</div>
+                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.avgOrder} label={trendData.label} />}
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Cash Encaissé Total</CardTitle>
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Cash Encaissé</CardTitle>
                         <Banknote className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">${totalCollected.toLocaleString()}</div>
-                            <TrendBadge value={trendData.growth.collected} label={trendData.label} />
+                            <div className="text-3xl font-serif text-black dark:text-white">${trendData.current.collected.toLocaleString()}</div>
+                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.collected} label={trendData.label} />}
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Clients Actifs</CardTitle>
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Nouveaux Clients</CardTitle>
                         <Users className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">{activeClients}</div>
-                            <TrendBadge value={trendData.growth.clients} label={trendData.label} />
+                            <div className="text-3xl font-serif text-black dark:text-white">{trendData.current.clients}</div>
+                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.clients} label={trendData.label} />}
                         </div>
                     </CardContent>
                 </Card>
