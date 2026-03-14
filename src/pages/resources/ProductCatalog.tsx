@@ -374,12 +374,22 @@ export default function ProductCatalog() {
                                     </p>
                                 )}
                                 {node.price && node.price > 0 ? (
-                                    <div className="mt-2 text-xl font-bold font-serif text-luxury-gold">
-                                        {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(node.price)}
+                                    <div className="mt-2 flex items-center justify-between">
+                                        <div className="text-xl font-bold font-serif text-luxury-gold">
+                                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(node.price)}
+                                        </div>
+                                        {/* Hint that even if it has a price, it might have sub-variations */}
+                                        <div className="flex items-center gap-1 text-[8px] uppercase tracking-[0.2em] text-white/20">
+                                            <span>Sub</span>
+                                            <ChevronRight className="w-2 h-2" />
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="mt-1 text-[10px] uppercase tracking-widest text-luxury-gold/40">
-                                        {node.type}
+                                    <div className="mt-1 flex items-center justify-between">
+                                        <div className="text-[10px] uppercase tracking-widest text-luxury-gold/40">
+                                            {node.type}
+                                        </div>
+                                        <ChevronRight className="w-3 h-3 text-luxury-gold/20" />
                                     </div>
                                 )}
                             </CardHeader>

@@ -108,8 +108,11 @@ const CalculatorRow = ({ depth, label, type, parentId, selectedId, onSelect, pre
         queryKey: ['catalog-nodes', parentId],
         queryFn: () => apiCatalog.getNodes(parentId),
         enabled: depth === 0 || !!parentId,
-        staleTime: 1000 * 60 * 5 // Cache to prevent flickering on quick toggles
+        staleTime: 1000 * 60 * 5
     });
+
+    // Determine the real label from the children's type if available
+    const rowLabel = options.length > 0 ? options[0].type : label;
 
     // --- AUTO-SELECTION LOGIC ---
     useEffect(() => {
@@ -121,9 +124,11 @@ const CalculatorRow = ({ depth, label, type, parentId, selectedId, onSelect, pre
         }
     }, [options, selectedId, preferredLabel, isLoading, onSelect]);
 
+    if (options.length === 0 && !isLoading) return null;
+
     return (
         <SpecRow 
-            label={label} 
+            label={rowLabel} 
             type={type} 
             options={options} 
             selectedId={selectedId}
@@ -146,24 +151,35 @@ export default function FlashCalculator() {
     }, [selections]);
 
     const handleSelect = (node: CatalogNode) => {
-        // Types we care about in order
-        const types = ['category', 'model', 'style', 'carat', 'metal'];
-        const levelIndex = types.indexOf(node.type);
-
-        if (levelIndex !== -1) {
-            // Update mapping of "what I like for this level"
-            setPreferredLabels(prev => ({
-                ...prev,
-                [node.type]: node.label
-            }));
+        setSelections(prev => {
+            // Find if this node type already exists in our hierarchy levels
+            // Logic: if we select something at level X, we truncate everything below it.
+            // But how do we know X? We can't use hardcoded 'types'.
+            // Instead, we find the depth based on the parent of the node we're selecting.
             
-            setSelections(prev => {
-                if (prev[levelIndex]?.id === node.id) return prev;
-                return [...prev.slice(0, levelIndex), node];
-            });
-        } else {
-            setSelections(prev => [...prev, node]);
-        }
+            // For categories (root), parentId is null
+            if (!node.parent_id) {
+                if (prev[0]?.id === node.id) return prev;
+                return [node];
+            }
+
+            // Find at which index the parent of this node exists
+            const parentIndex = prev.findIndex(s => s.id === node.parent_id);
+            if (parentIndex !== -1) {
+                const newDepth = parentIndex + 1;
+                if (prev[newDepth]?.id === node.id) return prev;
+                return [...prev.slice(0, newDepth), node];
+            }
+
+            // Fallback for safety (should not happen if UI is linear)
+            return [...prev, node];
+        });
+
+        // Update preferred labels to try and auto-select in other paths
+        setPreferredLabels(prev => ({
+            ...prev,
+            [node.type]: node.label
+        }));
     };
 
     const handleReset = () => {
@@ -245,30 +261,44 @@ export default function FlashCalculator() {
                         <div className="absolute top-0 right-0 w-64 h-64 bg-luxury-gold/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
                         
                         <div className="space-y-2">
-                            {["Catégorie", "Modèle", "Style", "Carat", "Métal"].map((label, depth) => {
-                                const types = ["category", "model", "style", "carat", "metal"];
-                                const type = types[depth];
-                                const parentId = depth > 0 ? selections[depth - 1]?.id : null;
+                            {/* Level 0: Categories (Always visible) */}
+                            <CalculatorRow 
+                                depth={0}
+                                label="Catégorie"
+                                type="category"
+                                parentId={null}
+                                selectedId={selections[0]?.id}
+                                onSelect={handleSelect}
+                                preferredLabel={preferredLabels["category"]}
+                            />
+
+                            {/* Dynamic Levels: Rendered based on previous selections */}
+                            {selections.map((selectedNode, index) => {
+                                const nextDepth = index + 1;
+                                
+                                // We determine the label of the row by looking at the FIRST child's type
+                                // or defaulting to 'Variation' if not known yet.
+                                // The label is passed down to SpecRow.
                                 return (
                                     <CalculatorRow 
-                                        key={depth} // Stable key based on depth
-                                        depth={depth}
-                                        label={label}
-                                        type={type}
-                                        parentId={parentId}
-                                        selectedId={selections[depth]?.id}
+                                        key={`level-${nextDepth}`}
+                                        depth={nextDepth}
+                                        label={index === selections.length - 1 ? 'Suivant' : (selections[nextDepth]?.type || 'Variation')}
+                                        type={selections[nextDepth]?.type || 'any'}
+                                        parentId={selectedNode.id}
+                                        selectedId={selections[nextDepth]?.id}
                                         onSelect={handleSelect}
-                                        preferredLabel={preferredLabels[type]}
+                                        preferredLabel={preferredLabels[selections[nextDepth]?.type || '']}
                                     />
                                 );
                             })}
                         </div>
 
-                        {selections.length > 4 && (
+                        {selections.length > 0 && selections[selections.length - 1]?.price !== undefined && (
                             <div className="mt-12 py-12 text-center bg-luxury-gold/5 rounded-2xl border border-dashed border-luxury-gold/20 flex flex-col items-center gap-3 animate-in fade-in duration-500">
                                 <CheckCircle2 className="w-12 h-12 text-luxury-gold" />
                                 <h3 className="text-2xl font-serif text-white">Prêt à Chiffrer</h3>
-                                <p className="text-sm text-muted-foreground">Toutes les spécifications ont été identifiées.</p>
+                                <p className="text-sm text-muted-foreground">Spécifications identifiées pour {selections[selections.length-1].label}.</p>
                             </div>
                         )}
                     </div>
