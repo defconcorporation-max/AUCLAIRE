@@ -384,7 +384,7 @@ export default function ProductCatalog() {
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" /> Menu Ressources
                     </Button>
-                    <span className="text-[10px] text-white/20 uppercase tracking-[0.3em] font-mono">v3.4.3</span>
+                    <span className="text-[10px] text-white/20 uppercase tracking-[0.3em] font-mono">v3.4.4</span>
                 </div>
 
                 <div className="flex gap-2">
