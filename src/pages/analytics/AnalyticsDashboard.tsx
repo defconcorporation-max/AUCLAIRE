@@ -40,28 +40,34 @@ export default function AnalyticsDashboard() {
     // 2. Monthly Revenue Chart (Paid Invoices)
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentYear = new Date().getFullYear();
-    const monthlyData = months.map(m => ({ month: m, collected: 0, volume: 0 }));
+    const monthlyData = months.map(m => ({ month: m, collected: 0, invoiced: 0, expenses: 0 }));
 
     invoices.forEach(inv => {
         const dateStr = inv.paid_at || inv.created_at;
         const date = new Date(dateStr);
-        // Cast inv as any or check valid statuses since types differ slightly per query
         if (date.getFullYear() === currentYear && inv.status !== 'void') {
             const paid = getPaidAmount(inv);
             if (paid > 0) monthlyData[date.getMonth()].collected += paid;
+            
+            // Also track invoiced amount by month of creation
+            const createdDate = new Date(inv.created_at);
+            if (createdDate.getFullYear() === currentYear) {
+                monthlyData[createdDate.getMonth()].invoiced += Number(inv.amount || 0);
+            }
+        }
+    });
+
+    // Aggregate expenses by month
+    expenses.forEach(exp => {
+        if (exp.status === 'cancelled') return;
+        const date = new Date(exp.created_at);
+        if (date.getFullYear() === currentYear) {
+            monthlyData[date.getMonth()].expenses += Number(exp.amount || 0);
         }
     });
 
     const PRODUCTION_READY_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
     const isProjectASale = (p: Project) => PRODUCTION_READY_STATUSES.includes(p.status) || invoices.some(inv => inv.project_id === p.id);
-
-    projects.forEach(p => {
-        if (!isProjectASale(p)) return;
-        const date = new Date(p.created_at);
-        if (date.getFullYear() === currentYear) {
-            monthlyData[date.getMonth()].volume += getSalePrice(p);
-        }
-    });
 
     // 3. Seller/Affiliate Leaderboard
     // Commission totals come from expense rows (same source of truth as apiAffiliates.getStats)
@@ -268,20 +274,24 @@ export default function AnalyticsDashboard() {
                 <Card className="md:col-span-2 border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
                     <CardHeader>
                         <CardTitle className="font-serif text-xl">Croissance Annuelle ({currentYear})</CardTitle>
-                        <CardDescription>Volume généré vs. Cash réellement encaissé</CardDescription>
+                        <CardDescription>Facturé vs Encaissé vs Dépensé</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px] w-full mt-4">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                     <defs>
-                                        <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+                                        <linearGradient id="colorInvoiced" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#A68A56" stopOpacity={0.3} />
                                             <stop offset="95%" stopColor="#A68A56" stopOpacity={0} />
                                         </linearGradient>
                                         <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
                                             <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
@@ -297,8 +307,9 @@ export default function AnalyticsDashboard() {
                                         formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
                                         contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
                                     />
-                                    <Area type="monotone" name="Volume ($)" dataKey="volume" stroke="#A68A56" fillOpacity={1} fill="url(#colorVolume)" />
+                                    <Area type="monotone" name="Facturé ($)" dataKey="invoiced" stroke="#A68A56" fillOpacity={1} fill="url(#colorInvoiced)" />
                                     <Area type="monotone" name="Encaissé ($)" dataKey="collected" stroke="#22c55e" fillOpacity={1} fill="url(#colorCollected)" />
+                                    <Area type="monotone" name="Dépensé ($)" dataKey="expenses" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpenses)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -587,7 +598,7 @@ function generateInsights(
     projects: Project[],
     invoices: Invoice[],
     expenses: any[],
-    monthlyData: { month: string; collected: number; volume: number }[],
+    monthlyData: { month: string; collected: number; invoiced: number; expenses: number }[],
     leaderboard: { name: string; projectCount: number; volume: number }[],
     clients: any[]
 ): Insight[] {
@@ -639,12 +650,12 @@ function generateInsights(
     // 4. Best Season
     const busyMonths = monthlyData
         .map((m, i) => ({ ...m, index: i }))
-        .filter(m => m.volume > 0)
-        .sort((a, b) => b.volume - a.volume);
+        .filter(m => m.invoiced > 0)
+        .sort((a, b) => b.invoiced - a.invoiced);
 
     if (busyMonths.length >= 2) {
         const topMonth = busyMonths[0];
-        insights.push({ icon: '📅', title: `Peak month: ${topMonth.month}`, description: `$${topMonth.volume.toLocaleString()} in project volume. Ensure design/production capacity is scaled up ahead of peak periods.`, type: 'info' });
+        insights.push({ icon: '📅', title: `Peak month: ${topMonth.month}`, description: `$${topMonth.invoiced.toLocaleString()} in project volume. Ensure design/production capacity is scaled up ahead of peak periods.`, type: 'info' });
     }
 
     // 5. Top Client Concentration
