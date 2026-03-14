@@ -14,13 +14,16 @@ export interface CatalogNode {
 
 export const apiCatalog = {
     async getFullTree() {
+        // Request a large range to avoid truncation in large catalogs
         const { data, error } = await supabase
             .from('catalog_tree')
             .select('*')
+            .range(0, 10000)
             .order('sort_order', { ascending: true })
             .order('label', { ascending: true });
         
         if (error) throw error;
+        console.log(`[FullTree] Fetched ${data?.length} nodes`);
         return data as CatalogNode[];
     },
 

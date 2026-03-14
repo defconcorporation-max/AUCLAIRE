@@ -242,6 +242,13 @@ export default function ProductCatalog() {
         searchTerm.length > 1 && node.label.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Debug log for allNodes
+    React.useEffect(() => {
+        if (allNodes.length > 0) {
+            console.log(`[ProductCatalog] Loaded ${allNodes.length} nodes for the tree.`);
+        }
+    }, [allNodes.length]);
+
     const currentParentId = currentId;
     const { data: nodes = [], isLoading } = useQuery({
         queryKey: ['catalog-nodes', currentParentId],
@@ -384,7 +391,7 @@ export default function ProductCatalog() {
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" /> Menu Ressources
                     </Button>
-                    <span className="text-[10px] text-white/20 uppercase tracking-[0.3em] font-mono">v3.4.5</span>
+                    <span className="text-[10px] text-white/20 uppercase tracking-[0.3em] font-mono">v3.4.6</span>
                 </div>
 
                 <div className="flex gap-2">
