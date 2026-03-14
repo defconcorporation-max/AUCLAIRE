@@ -18,7 +18,8 @@ import {
     X,
     Calculator,
     Info,
-    Search
+    Search,
+    Layers
 } from 'lucide-react';
 import { uploadImage } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
@@ -127,17 +128,17 @@ function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
     );
 }
 
-// --- RECURSIVE SIDEBAR TREE COMPONENT ---
 interface TreeItemProps {
     node: CatalogNode;
     allNodes: CatalogNode[];
     currentId: string | null;
     onSelect: (path: CatalogNode[]) => void;
     onAdd?: (node: CatalogNode) => void;
+    onBulkAdd?: (node: CatalogNode) => void;
     level?: number;
 }
 
-function TreeItem({ node, allNodes, currentId, onSelect, onAdd, level = 0 }: TreeItemProps) {
+function TreeItem({ node, allNodes, currentId, onSelect, onAdd, onBulkAdd, level = 0 }: TreeItemProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const children = allNodes.filter(n => n.parent_id === node.id);
     const isActive = currentId === node.id;
@@ -179,9 +180,21 @@ function TreeItem({ node, allNodes, currentId, onSelect, onAdd, level = 0 }: Tre
                 {onAdd && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onAdd(node); }}
+                        title="Ajouter un enfant"
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-luxury-gold hover:text-white rounded transition-all ml-1"
                     >
                         <Plus className="w-2.5 h-2.5" />
+                    </button>
+                )}
+
+                {/* BULK ADD ICON */}
+                {onBulkAdd && hasChildren && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onBulkAdd(node); }}
+                        title="Ajouter une option à TOUS les enfants"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-600 hover:text-white rounded transition-all ml-1"
+                    >
+                        <Layers className="w-2.5 h-2.5" />
                     </button>
                 )}
             </div>
@@ -196,6 +209,7 @@ function TreeItem({ node, allNodes, currentId, onSelect, onAdd, level = 0 }: Tre
                             currentId={currentId} 
                             onSelect={onSelect}
                             onAdd={onAdd}
+                            onBulkAdd={onBulkAdd}
                             level={level + 1}
                         />
                     ))}
@@ -250,24 +264,37 @@ export default function ProductCatalog() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editingNode, setEditingNode] = useState<CatalogNode | null>(null);
 
+    // Bulk Add state
+    const [bulkParentNodes, setBulkParentNodes] = useState<CatalogNode[]>([]);
+    const isBulkMode = bulkParentNodes.length > 0;
+
     // Mutations
     const addNodeMutation = useMutation({
-        mutationFn: (data: any) => apiCatalog.createNode({
-            ...data,
-            parent_id: currentParentId
-        }),
-        onSuccess: async (data) => {
-            if (propagateAll && data?.id) {
-                try {
-                    await apiCatalog.propagateNode(data.id);
-                } catch (err) {
-                    console.error("Propagation failed:", err);
-                    alert("L'ajout a réussi, mais la synchronisation aux autres modèles a échoué.");
+        mutationFn: (data: any) => {
+            if (isBulkMode) {
+                return apiCatalog.bulkCreateNode(bulkParentNodes.map(n => n.id), data);
+            }
+            return apiCatalog.createNode({
+                ...data,
+                parent_id: currentParentId
+            });
+        },
+        onSuccess: async (data: any) => {
+            if (propagateAll) {
+                const nodeToPropagateId = Array.isArray(data) ? data[0]?.id : data?.id;
+                if (nodeToPropagateId) {
+                    try {
+                        await apiCatalog.propagateNode(nodeToPropagateId);
+                    } catch (err) {
+                        console.error("Propagation failed:", err);
+                        alert("L'ajout a réussi, mais la synchronisation globale a échoué.");
+                    }
                 }
             }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
             queryClient.invalidateQueries({ queryKey: ['catalog-full-tree'] });
             setIsAddDialogOpen(false);
+            setBulkParentNodes([]);
             setNewNode({ label: '', type: '', description: '', image_url: '', price: 0, sort_order: 0, specs: {} });
             setPropagateAll(false);
         }
@@ -318,6 +345,17 @@ export default function ProductCatalog() {
             current = parent;
         }
         setCurrentPath(path);
+        setBulkParentNodes([]); // Ensure not in bulk mode
+        setIsAddDialogOpen(true);
+    };
+
+    const handleBulkAdd = (parentCategoryNode: CatalogNode) => {
+        const childrenNodes = allNodes.filter(n => n.parent_id === parentCategoryNode.id);
+        if (childrenNodes.length === 0) {
+            alert("Cette catégorie n'a pas d'enfants. Utilisez l'ajout classique (+).");
+            return;
+        }
+        setBulkParentNodes(childrenNodes);
         setIsAddDialogOpen(true);
     };
 
@@ -405,6 +443,7 @@ export default function ProductCatalog() {
                                         currentId={currentId} 
                                         onSelect={setCurrentPath}
                                         onAdd={handleQuickAdd}
+                                        onBulkAdd={handleBulkAdd}
                                     />
                                 ))}
                             </div>
@@ -581,14 +620,28 @@ export default function ProductCatalog() {
             </div>
 
             {/* Add Node Dialog */}
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+                setIsAddDialogOpen(open);
+                if (!open) setBulkParentNodes([]);
+            }}>
                 <DialogContent className="max-w-md bg-zinc-950 border-white/10">
                     <DialogHeader>
                         <DialogTitle className="font-serif text-2xl text-white">
                             Ajouter une variation
                         </DialogTitle>
                         <DialogDescription>
-                            Cet élément sera ajouté sous : <span className="text-luxury-gold font-bold">{currentParentId ? currentPath[currentPath.length - 1].label : 'Racine'}</span>
+                            {isBulkMode ? (
+                                <div className="bg-blue-600/10 border border-blue-600/20 p-2 rounded-lg mt-2">
+                                    <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                                        <Layers className="w-3 h-3" /> Mode Groupé (Bulk)
+                                    </p>
+                                    <p className="text-xs text-blue-200 mt-1">
+                                        Cet élément sera ajouté à <strong>{bulkParentNodes.length}</strong> modèles enfants.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>Cet élément sera ajouté sous : <span className="text-luxury-gold font-bold">{currentParentId ? currentPath[currentPath.length - 1].label : 'Racine'}</span></>
+                            )}
                         </DialogDescription>
                     </DialogHeader>
                     
