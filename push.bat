@@ -12,8 +12,8 @@ echo %date% %time% > force_deploy.txt
 
 echo [3/4] COMMITTING CHANGES...
 git add .
-:: Comprehensive commit message for all recent features
-git commit -m "Feature: Smooth Flash Quote v2 (Selection Memory, Mobile Optimization, Zero Flicker, Category Sync) - %date% %time%"
+:: Comprehensive commit message for all recent features and fixes
+git commit -m "Feature: Flash Quote v3 (Mobile Layout Refinement, Selection Memory, Stability, Category Sync) - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin main

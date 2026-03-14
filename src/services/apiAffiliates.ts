@@ -183,7 +183,28 @@ export const apiAffiliates = {
     },
 
     async payCommission(affiliateId: string, amount: number, notes?: string) {
-        // Create an expense record for the commission payment
+        // 1. Find all pending commissions for this affiliate
+        const { data: pendingExpenses, error: findError } = await supabase
+            .from('expenses')
+            .select('id, amount')
+            .eq('recipient_id', affiliateId)
+            .eq('category', 'commission')
+            .eq('status', 'pending')
+            .not('description', 'ilike', '%Commission Payout%');
+
+        if (findError) throw findError;
+
+        // 2. Mark matches as paid
+        if (pendingExpenses && pendingExpenses.length > 0) {
+            const { error: updateError } = await supabase
+                .from('expenses')
+                .update({ status: 'paid' })
+                .in('id', pendingExpenses.map(e => e.id));
+            
+            if (updateError) throw updateError;
+        }
+
+        // 3. Create a summary payout record for tracking (excluded from earned/pending/paid stats by description)
         const { data, error } = await supabase
             .from('expenses')
             .insert([{

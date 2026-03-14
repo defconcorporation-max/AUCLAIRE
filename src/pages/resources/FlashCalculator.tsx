@@ -276,7 +276,7 @@ export default function FlashCalculator() {
 
                 {/* Right: Summary & Quote */}
                 <div className="space-y-6">
-                    <Card className="glass-card border-luxury-gold/20 sticky top-6">
+                    <Card className="glass-card border-luxury-gold/20 lg:sticky lg:top-6 mb-24 lg:mb-0">
                         <CardHeader className="border-b border-white/5 pb-4">
                             <CardTitle className="font-serif text-xl flex items-center gap-2">
                                 <TrendingUp className="w-5 h-5 text-luxury-gold" />
@@ -286,7 +286,7 @@ export default function FlashCalculator() {
                         <CardContent className="p-0">
                             <ul className="divide-y divide-white/5">
                                 {selections.map((s, i) => (
-                                    <li key={i} className="p-4 flex justify-between items-center group hover:bg-white/[0.02]">
+                                    <li key={i} className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 group hover:bg-white/[0.02]">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg bg-luxury-gold/10 flex items-center justify-center border border-luxury-gold/20">
                                                 {s.type === 'category' ? <ShoppingBag className="w-4 h-4 text-luxury-gold" /> : 
@@ -298,14 +298,14 @@ export default function FlashCalculator() {
                                                 <p className="text-sm font-serif font-bold text-white">{s.label}</p>
                                             </div>
                                         </div>
-                                        <div className="text-right flex items-center gap-2">
-                                            <div className="relative">
+                                        <div className="flex justify-end items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                            <div className="relative w-full sm:w-24">
                                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-luxury-gold font-bold opacity-50">+</span>
                                                 <input 
                                                     type="number"
                                                     value={s.price || 0}
                                                     onChange={(e) => handlePriceChange(i, parseFloat(e.target.value) || 0)}
-                                                    className="w-24 bg-white/5 border border-white/10 rounded px-2 pl-4 py-1 text-xs font-mono font-bold text-luxury-gold text-right focus:outline-none focus:border-luxury-gold/50 transition-colors"
+                                                    className="w-full bg-white/5 border border-white/10 rounded px-2 pl-4 py-2 text-xs font-mono font-bold text-luxury-gold text-right focus:outline-none focus:border-luxury-gold/50 transition-colors"
                                                 />
                                             </div>
                                         </div>
