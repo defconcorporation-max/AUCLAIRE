@@ -192,9 +192,10 @@ function TreeItem({ node, allNodes, currentId, onSelect, onAdd, onBulkAdd, level
                     <button 
                         onClick={(e) => { e.stopPropagation(); onBulkAdd(node); }}
                         title="Ajouter une option à TOUS les enfants"
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-600 hover:text-white rounded transition-all ml-1"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-600 hover:text-white rounded transition-all ml-1 flex items-center gap-1"
                     >
                         <Layers className="w-2.5 h-2.5" />
+                        <span className="text-[6px] font-bold">BULK</span>
                     </button>
                 )}
             </div>
@@ -383,7 +384,7 @@ export default function ProductCatalog() {
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" /> Menu Ressources
                     </Button>
-                    <span className="text-[10px] text-white/20 uppercase tracking-[0.3em] font-mono">v3.3.5</span>
+                    <span className="text-[10px] text-white/20 uppercase tracking-[0.3em] font-mono">v3.4.3</span>
                 </div>
 
                 <div className="flex gap-2">
