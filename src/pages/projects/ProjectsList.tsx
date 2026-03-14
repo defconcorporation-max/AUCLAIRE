@@ -8,8 +8,9 @@ import { apiUsers } from '@/services/apiUsers'
 import { apiActivities } from '@/services/apiActivities'
 import { ProjectCard } from '@/components/ui/ProjectCard'
 import { Button } from '@/components/ui/button'
-import { Plus, LayoutGrid, List as ListIcon, Loader2, Filter, X } from 'lucide-react'
+import { Plus, LayoutGrid, List as ListIcon, Loader2, Filter, X, Search } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import { Input } from '@/components/ui/input'
 
 export default function ProjectsList() {
     const queryClient = useQueryClient()
@@ -34,6 +35,7 @@ export default function ProjectsList() {
 
     const [filterAffiliate, setFilterAffiliate] = useState('')
     const [filterManufacturer, setFilterManufacturer] = useState('')
+    const [searchQuery, setSearchQuery] = useState('')
 
     // Role-based base filter
     const baseProjects = allProjects?.filter(p => {
@@ -45,14 +47,26 @@ export default function ProjectsList() {
         return false;
     }) || []
 
-    // Admin/Secretary secondary filters
-    const projects = (role === 'admin' || role === 'secretary') ? baseProjects.filter(p => {
-        if (filterAffiliate && p.affiliate_id !== filterAffiliate) return false;
-        if (filterManufacturer && p.manufacturer_id !== filterManufacturer) return false;
-        return true;
-    }) : baseProjects;
+    // Final Filter Application
+    const projects = baseProjects.filter(p => {
+        // Search Query Filter
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            const matchesName = p.title?.toLowerCase().includes(query);
+            const matchesRef = p.reference_number?.toLowerCase().includes(query);
+            if (!matchesName && !matchesRef) return false;
+        }
 
-    const hasActiveFilter = !!filterAffiliate || !!filterManufacturer;
+        // Admin/Secretary filters
+        if (role === 'admin' || role === 'secretary') {
+            if (filterAffiliate && p.affiliate_id !== filterAffiliate) return false;
+            if (filterManufacturer && p.manufacturer_id !== filterManufacturer) return false;
+        }
+
+        return true;
+    });
+
+    const hasActiveFilter = !!filterAffiliate || !!filterManufacturer || !!searchQuery;
 
     const updateStatusMutation = useMutation({
         mutationFn: ({ id, status }: { id: string, status: ProjectStatus }) =>
@@ -138,6 +152,23 @@ export default function ProjectsList() {
                     <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Manage your design pipeline.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <div className="relative w-64 md:w-80 group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-luxury-gold transition-colors" />
+                        <Input 
+                            placeholder="Rechercher nom ou numéro..." 
+                            className="pl-10 bg-white/5 border-white/10 focus:border-luxury-gold/50 transition-all"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button 
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
                     <div className="bg-muted p-1 rounded-md flex">
                         <Button
                             variant="ghost"
@@ -203,7 +234,7 @@ export default function ProjectsList() {
                             variant="ghost"
                             size="sm"
                             className="text-xs text-gray-400 hover:text-white gap-1 h-7 px-2"
-                            onClick={() => { setFilterAffiliate(''); setFilterManufacturer(''); }}
+                            onClick={() => { setFilterAffiliate(''); setFilterManufacturer(''); setSearchQuery(''); }}
                         >
                             <X className="w-3 h-3" /> Clear
                         </Button>
