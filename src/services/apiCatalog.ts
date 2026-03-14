@@ -59,6 +59,21 @@ export const apiCatalog = {
         return data;
     },
 
+    async bulkCreateNode(parentIds: string[], nodeData: Omit<CatalogNode, 'id' | 'parent_id'>) {
+        const insertions = parentIds.map(parentId => ({
+            ...nodeData,
+            parent_id: parentId
+        }));
+
+        const { data, error } = await supabase
+            .from('catalog_tree')
+            .insert(insertions)
+            .select();
+
+        if (error) throw error;
+        return data;
+    },
+
     async updateNode(id: string, updates: Partial<CatalogNode>) {
         const { data, error } = await supabase
             .from('catalog_tree')
