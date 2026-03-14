@@ -194,7 +194,7 @@ export default function FlashCalculator() {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-8 pb-20">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <Button 
@@ -269,7 +269,7 @@ export default function FlashCalculator() {
                         </div>
 
                         {selections.length > 4 && (
-                            <div className="mt-12 py-12 text-center bg-luxury-gold/5 rounded-2xl border border-dashed border-luxury-gold/20 flex flex-col items-center gap-3 animate-in zoom-in duration-500">
+                            <div className="mt-12 py-12 text-center bg-luxury-gold/5 rounded-2xl border border-dashed border-luxury-gold/20 flex flex-col items-center gap-3 animate-in fade-in duration-500">
                                 <CheckCircle2 className="w-12 h-12 text-luxury-gold" />
                                 <h3 className="text-2xl font-serif text-white">Prêt à Chiffrer</h3>
                                 <p className="text-sm text-muted-foreground">Toutes les spécifications ont été identifiées.</p>
