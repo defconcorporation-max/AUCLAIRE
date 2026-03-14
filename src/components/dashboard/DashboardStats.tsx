@@ -40,7 +40,7 @@ export function DashboardStats({
         {
             title: "Total Facturé",
             value: totalInvoiced,
-            sub: `A Encaisser: $${(totalInvoiced - totalCollected).toLocaleString()}`,
+            sub: "Montant des factures émises",
             icon: Clock,
             color: "text-amber-500",
             bg: "bg-amber-500/10",
