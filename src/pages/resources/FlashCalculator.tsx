@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiCatalog, CatalogNode } from '@/services/apiCatalog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,15 +95,14 @@ const SpecRow = ({ label, options, selectedId, onSelect, isLoading, disabled }: 
 // Stable Row Component that manages its own query
 interface CalculatorRowProps {
     depth: number;
-    label: string;
     type: string;
     parentId: string | null;
     selectedId?: string;
     onSelect: (node: CatalogNode) => void;
-    preferredLabel?: string;
+    preferredLabels: Record<string, string>;
 }
 
-const CalculatorRow = ({ depth, label, type, parentId, selectedId, onSelect, preferredLabel }: CalculatorRowProps) => {
+const CalculatorRow = ({ depth, type, parentId, selectedId, onSelect, preferredLabels }: CalculatorRowProps) => {
     const { data: options = [], isLoading } = useQuery({
         queryKey: ['catalog-nodes', parentId],
         queryFn: () => apiCatalog.getNodes(parentId),
@@ -111,25 +110,35 @@ const CalculatorRow = ({ depth, label, type, parentId, selectedId, onSelect, pre
         staleTime: 1000 * 60 * 5
     });
 
-    // Determine the real label from the children's type if available
-    const rowLabel = options.length > 0 ? options[0].type : label;
+    const rowType = options.length > 0 ? options[0].type : type;
 
     // --- AUTO-SELECTION LOGIC ---
     useEffect(() => {
-        if (!isLoading && options.length > 0 && !selectedId && preferredLabel) {
-            const match = options.find(o => o.label === preferredLabel);
-            if (match) {
-                onSelect(match);
+        if (!isLoading && options.length > 0 && !selectedId) {
+            const preferredLabel = preferredLabels[rowType];
+            
+            if (preferredLabel) {
+                // Case-insensitive match for robustness
+                const match = options.find(o => o.label.toLowerCase() === preferredLabel.toLowerCase());
+                if (match) {
+                    console.log(`[AutoSelect] Match found for ${rowType}: ${match.label}`);
+                    onSelect(match);
+                } else {
+                    console.log(`[AutoSelect] No match for ${rowType} with preferred label: ${preferredLabel}`);
+                }
+            } else if (options.length === 1 && depth > 0) {
+                console.log(`[AutoSelect] Single option auto-select for depth ${depth}: ${options[0].label}`);
+                onSelect(options[0]);
             }
         }
-    }, [options, selectedId, preferredLabel, isLoading, onSelect]);
+    }, [options, selectedId, preferredLabels, rowType, isLoading, onSelect, depth]);
 
     if (options.length === 0 && !isLoading) return null;
 
     return (
         <SpecRow 
-            label={rowLabel} 
-            type={type} 
+            label={rowType} 
+            type={rowType} 
             options={options} 
             selectedId={selectedId}
             onSelect={onSelect}
@@ -150,20 +159,15 @@ export default function FlashCalculator() {
         setTotalPrice(total);
     }, [selections]);
 
-    const handleSelect = (node: CatalogNode) => {
+    const handleSelect = useCallback((node: CatalogNode) => {
+        console.log(`[FlashCalculator] Selecting node: ${node.label} (${node.type})`);
+        
         setSelections(prev => {
-            // Find if this node type already exists in our hierarchy levels
-            // Logic: if we select something at level X, we truncate everything below it.
-            // But how do we know X? We can't use hardcoded 'types'.
-            // Instead, we find the depth based on the parent of the node we're selecting.
-            
-            // For categories (root), parentId is null
             if (!node.parent_id) {
                 if (prev[0]?.id === node.id) return prev;
                 return [node];
             }
 
-            // Find at which index the parent of this node exists
             const parentIndex = prev.findIndex(s => s.id === node.parent_id);
             if (parentIndex !== -1) {
                 const newDepth = parentIndex + 1;
@@ -171,16 +175,18 @@ export default function FlashCalculator() {
                 return [...prev.slice(0, newDepth), node];
             }
 
-            // Fallback for safety (should not happen if UI is linear)
             return [...prev, node];
         });
 
-        // Update preferred labels to try and auto-select in other paths
         setPreferredLabels(prev => ({
             ...prev,
             [node.type]: node.label
         }));
-    };
+    }, []);
+
+    useEffect(() => {
+        console.log('[FlashCalculator] Path update:', selections.map(s => s.label).join(' > '));
+    }, [selections]);
 
     const handleReset = () => {
         setSelections([]);
@@ -264,12 +270,11 @@ export default function FlashCalculator() {
                             {/* Level 0: Categories (Always visible) */}
                             <CalculatorRow 
                                 depth={0}
-                                label="Catégorie"
                                 type="category"
                                 parentId={null}
                                 selectedId={selections[0]?.id}
                                 onSelect={handleSelect}
-                                preferredLabel={preferredLabels["category"]}
+                                preferredLabels={preferredLabels}
                             />
 
                             {/* Dynamic Levels: Rendered based on previous selections */}
@@ -283,12 +288,11 @@ export default function FlashCalculator() {
                                     <CalculatorRow 
                                         key={`level-${nextDepth}`}
                                         depth={nextDepth}
-                                        label={index === selections.length - 1 ? 'Suivant' : (selections[nextDepth]?.type || 'Variation')}
                                         type={selections[nextDepth]?.type || 'any'}
                                         parentId={selectedNode.id}
                                         selectedId={selections[nextDepth]?.id}
                                         onSelect={handleSelect}
-                                        preferredLabel={preferredLabels[selections[nextDepth]?.type || '']}
+                                        preferredLabels={preferredLabels}
                                     />
                                 );
                             })}
