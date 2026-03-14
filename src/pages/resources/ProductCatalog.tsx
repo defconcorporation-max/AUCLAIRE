@@ -17,7 +17,8 @@ import {
     Upload,
     X,
     Calculator,
-    Info
+    Info,
+    Search
 } from 'lucide-react';
 import { uploadImage } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
