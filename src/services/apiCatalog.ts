@@ -4,7 +4,7 @@ export interface CatalogNode {
     id: string;
     parent_id: string | null;
     label: string;
-    type: 'category' | 'model' | 'style' | 'carat' | 'metal';
+    type: string; // 'category', 'model', 'style', 'carat', 'metal' or any custom variation type
     description?: string;
     image_url?: string;
     price?: number;
@@ -88,6 +88,7 @@ export const apiCatalog = {
             // 2. Identify the Category root
             let categoryNode: CatalogNode | null = null;
             let currentParentId: string | null = sourceNode.parent_id;
+            let immediateParent: CatalogNode | null = null;
 
             while (currentParentId) {
                 const { data: node, error } = await supabase
@@ -97,6 +98,7 @@ export const apiCatalog = {
                     .single();
                 
                 if (error || !node) break;
+                if (!immediateParent) immediateParent = node;
                 if (node.type === 'category') {
                     categoryNode = node;
                     break;
@@ -104,17 +106,15 @@ export const apiCatalog = {
                 currentParentId = node.parent_id;
             }
 
-            if (!categoryNode) {
-                console.warn("Could not find 'category' ancestor. Propagation stopped.");
+            if (!categoryNode || !immediateParent) {
+                console.warn("Could not find 'category' ancestor or immediate parent. Propagation stopped.");
                 return;
             }
 
             console.log(`Propagating within Category: ${categoryNode.label}`);
 
-            // 3. Find ALL nodes in this Category that can be a parent for the source node type
-            const targetParentType = this.getParentTypeFor(sourceNode.type);
-            if (!targetParentType) return;
-
+            // 3. Find ALL nodes in this Category that match the immediate parent's type
+            const targetParentType = immediateParent.type;
             const targetParents = await this.findAllNodesByTypeInCategory(categoryNode.id, targetParentType);
             
             // Exclude the current parent
@@ -136,12 +136,7 @@ export const apiCatalog = {
         }
     },
 
-    getParentTypeFor(type: CatalogNode['type']): CatalogNode['type'] | null {
-        const types: CatalogNode['type'][] = ['category', 'model', 'style', 'carat', 'metal'];
-        const index = types.indexOf(type);
-        if (index <= 0) return null;
-        return types[index - 1];
-    },
+
 
     async findAllNodesByTypeInCategory(categoryId: string, type: CatalogNode['type']): Promise<CatalogNode[]> {
         const results: CatalogNode[] = [];

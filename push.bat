@@ -13,7 +13,7 @@ echo %date% %time% > force_deploy.txt
 echo [3/4] COMMITTING CHANGES...
 git add .
 :: Comprehensive commit message for all recent features, fixes, mobile polish and catalog assets
-git commit -m "Feature: Catalog Premium Images (12 Luxury Assets, Relative Paths, UI Fix) & Flash Quote v5 Polish - %date% %time%"
+git commit -m "Feature: Flexible Catalog Hierarchy (Infinite Nesting, Custom Types) & Premium Assets Sync - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin main

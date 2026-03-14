@@ -138,6 +138,7 @@ export default function ProductCatalog() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [newNode, setNewNode] = useState({
         label: '',
+        type: '',
         description: '',
         image_url: '',
         price: 0,
@@ -146,7 +147,6 @@ export default function ProductCatalog() {
     });
     const [propagateAll, setPropagateAll] = useState(false);
 
-    const nextType = getNextType(currentPath.length);
 
     // Edit Node state
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -162,8 +162,7 @@ export default function ProductCatalog() {
     const addNodeMutation = useMutation({
         mutationFn: (data: any) => apiCatalog.createNode({
             ...data,
-            parent_id: currentParentId,
-            type: nextType
+            parent_id: currentParentId
         }),
         onSuccess: async (data) => {
             if (propagateAll && data?.id) {
@@ -176,7 +175,7 @@ export default function ProductCatalog() {
             }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
             setIsAddDialogOpen(false);
-            setNewNode({ label: '', description: '', image_url: '', price: 0, sort_order: 0, specs: {} });
+            setNewNode({ label: '', type: '', description: '', image_url: '', price: 0, sort_order: 0, specs: {} });
             setPropagateAll(false);
         }
     });
@@ -214,7 +213,6 @@ export default function ProductCatalog() {
     };
 
     const handleNavigate = (node: CatalogNode) => {
-        if (node.type === 'metal') return; // Leaf node
         setCurrentPath([...currentPath, node]);
     };
 
@@ -253,7 +251,7 @@ export default function ProductCatalog() {
                             className="bg-luxury-gold hover:bg-yellow-600 text-white"
                         >
                             <Plus className="w-4 h-4 mr-2" /> 
-                            {currentPath.length === 0 ? 'Ajouter une Catégorie' : `Ajouter : ${nextType}`}
+                            Ajouter une variation
                         </Button>
                     )}
                 </div>
@@ -295,7 +293,7 @@ export default function ProductCatalog() {
                 <p className="text-luxury-gold/60 mt-2 font-serif italic text-xs uppercase tracking-widest">
                     {currentPath.length === 0 
                         ? "Sélectionnez une catégorie pour commencer l'estimation." 
-                        : `Choisissez l'étape suivante : ${nextType}`
+                        : "Choisissez l'élément suivant ou explorez les variations."
                     }
                 </p>
             </header>
@@ -317,7 +315,7 @@ export default function ProductCatalog() {
                         <Card 
                             key={node.id} 
                             onClick={() => handleNavigate(node)}
-                            className={`group relative overflow-hidden bg-white/5 border-white/10 hover:border-luxury-gold/50 transition-all duration-500 cursor-pointer ${node.type === 'metal' ? 'cursor-default ring-1 ring-luxury-gold/20' : ''}`}
+                            className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-luxury-gold/50 transition-all duration-500 cursor-pointer"
                         >
                             {/* Actions Overlay */}
                             {canManage && (
@@ -358,19 +356,17 @@ export default function ProductCatalog() {
                                     </div>
                                 )}
                                 
-                                {node.type !== 'metal' && (
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <div className="px-4 py-2 border border-white/20 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-widest text-white shadow-xl">
                                             Explorer
                                         </div>
                                     </div>
-                                )}
                             </div>
 
                             <CardHeader className="p-4">
                                 <CardTitle className="font-serif text-lg group-hover:text-luxury-gold transition-colors flex items-center justify-between">
                                     {node.label}
-                                    {node.type !== 'metal' && <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />}
+                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                                 </CardTitle>
                                 {node.description && (
                                     <p className="text-xs text-muted-foreground line-clamp-1 italic mt-1">
@@ -397,7 +393,7 @@ export default function ProductCatalog() {
                 <DialogContent className="max-w-md bg-zinc-950 border-white/10">
                     <DialogHeader>
                         <DialogTitle className="font-serif text-2xl text-white">
-                            Ajouter {currentPath.length === 0 ? 'une Catégorie' : `un(e) ${nextType}`}
+                            Ajouter une variation
                         </DialogTitle>
                         <DialogDescription>
                             Cet élément sera ajouté sous : <span className="text-luxury-gold font-bold">{currentParentId ? currentPath[currentPath.length - 1].label : 'Racine'}</span>
@@ -408,24 +404,33 @@ export default function ProductCatalog() {
                         <div className="space-y-2">
                             <Label>Nom / Label</Label>
                             <Input 
-                                placeholder={nextType === 'carat' ? 'ex: 1.5ct' : 'ex: Or 18k, Oval Cut...'} 
+                                placeholder="ex: 1.5ct, Or 18k, Oval Cut..." 
                                 value={newNode.label}
                                 onChange={(e) => setNewNode({...newNode, label: e.target.value})}
                             />
                         </div>
 
-                        {/* Description field for everything except metals */}
-                        {nextType !== 'metal' && (
-                            <div className="space-y-2">
-                                <Label>Description</Label>
-                                <Textarea 
-                                    placeholder="Détails descriptifs..." 
-                                    className="bg-white/5 border-white/10"
-                                    value={newNode.description}
-                                    onChange={(e) => setNewNode({...newNode, description: e.target.value})}
-                                />
-                            </div>
-                        )}
+                        <div className="space-y-2">
+                            <Label>Type de variation</Label>
+                            <Input 
+                                placeholder="ex: category, model, style, carat, metal..." 
+                                value={newNode.type}
+                                onChange={(e) => setNewNode({...newNode, type: e.target.value})}
+                            />
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                                Indispensable pour la synchronisation automatique.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Description</Label>
+                            <Textarea 
+                                placeholder="Détails descriptifs (optionnel)..." 
+                                className="bg-white/5 border-white/10"
+                                value={newNode.description}
+                                onChange={(e) => setNewNode({...newNode, description: e.target.value})}
+                            />
+                        </div>
 
                         {/* Image Uploader for all types */}
                         <ImageUploader 
@@ -449,7 +454,7 @@ export default function ProductCatalog() {
                         </div>
 
                         {/* Bulk Propagation Checkbox */}
-                        {(nextType === 'style' || nextType === 'carat' || nextType === 'metal') && (
+                        {currentPath.length > 0 && (
                             <div className="flex items-center gap-3 p-3 bg-luxury-gold/5 rounded-xl border border-luxury-gold/20">
                                 <input 
                                     type="checkbox" 
@@ -459,7 +464,7 @@ export default function ProductCatalog() {
                                     className="w-4 h-4 accent-luxury-gold"
                                 />
                                 <Label htmlFor="propagateAdd" className="cursor-pointer text-xs font-bold text-luxury-gold uppercase tracking-widest">
-                                    Appliquer à tous les modèles de cette catégorie
+                                    Synchroniser cet élément avec les autres parents du même type
                                 </Label>
                             </div>
                         )}
@@ -470,7 +475,7 @@ export default function ProductCatalog() {
                         <Button 
                             className="bg-luxury-gold text-white"
                             onClick={() => addNodeMutation.mutate(newNode)}
-                            disabled={!newNode.label || addNodeMutation.isPending}
+                            disabled={!newNode.label || !newNode.type || addNodeMutation.isPending}
                         >
                             {addNodeMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                             Enregistrer
@@ -501,16 +506,14 @@ export default function ProductCatalog() {
                                 />
                             </div>
 
-                            {editingNode.type !== 'metal' && (
-                                <div className="space-y-2">
-                                    <Label>Description</Label>
-                                    <Textarea 
-                                        className="bg-white/5 border-white/10"
-                                        value={editingNode.description || ''}
-                                        onChange={(e) => setEditingNode({...editingNode, description: e.target.value})}
-                                    />
-                                </div>
-                            )}
+                            <div className="space-y-2">
+                                <Label>Description</Label>
+                                <Textarea 
+                                    className="bg-white/5 border-white/10"
+                                    value={editingNode.description || ''}
+                                    onChange={(e) => setEditingNode({...editingNode, description: e.target.value})}
+                                />
+                            </div>
 
                              {/* Image Uploader for all types */}
                              <ImageUploader 
@@ -534,7 +537,7 @@ export default function ProductCatalog() {
                             </div>
 
                             {/* Bulk Propagation Checkbox */}
-                            {(editingNode.type === 'style' || editingNode.type === 'carat' || editingNode.type === 'metal') && (
+                            {currentPath.length > 0 && (
                                 <div className="flex items-center gap-3 p-3 bg-luxury-gold/5 rounded-xl border border-luxury-gold/20">
                                     <input 
                                         type="checkbox" 
@@ -544,7 +547,7 @@ export default function ProductCatalog() {
                                         className="w-4 h-4 accent-luxury-gold"
                                     />
                                     <Label htmlFor="propagateEdit" className="cursor-pointer text-xs font-bold text-luxury-gold uppercase tracking-widest">
-                                        Synchroniser ce changement sur tous les modèles
+                                        Synchroniser ce changement sur les éléments similaires
                                     </Label>
                                 </div>
                             )}
@@ -568,7 +571,3 @@ export default function ProductCatalog() {
     );
 }
 
-function getNextType(depth: number): 'category' | 'model' | 'style' | 'carat' | 'metal' {
-    const types: Array<'category' | 'model' | 'style' | 'carat' | 'metal'> = ['category', 'model', 'style', 'carat', 'metal'];
-    return types[Math.min(depth, types.length - 1)];
-}
