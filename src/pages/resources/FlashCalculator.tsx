@@ -35,7 +35,7 @@ const SpecRow = ({ label, options, selectedId, onSelect, isLoading, disabled }: 
 
     return (
         <div className={cn(
-            "group py-6 border-b border-white/5 last:border-0 transition-all duration-500",
+            "group py-6 border-b border-white/5 last:border-0 transition-all duration-300",
             disabled ? "opacity-30 grayscale pointer-events-none" : "opacity-100"
         )}>
             <div className="flex flex-col md:flex-row md:items-start gap-4">
@@ -48,10 +48,10 @@ const SpecRow = ({ label, options, selectedId, onSelect, isLoading, disabled }: 
                 </div>
 
                 {/* Options Chips */}
-                <div className="flex-1 flex flex-wrap gap-3">
+                <div className="flex-1 flex flex-wrap gap-3 min-h-[44px]">
                     {isLoading ? (
                         Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="h-10 w-24 rounded-lg bg-white/5 animate-pulse" />
+                            <div key={i} className="h-11 w-24 rounded-lg bg-white/5 animate-[pulse_3s_ease-in-out_infinite]" />
                         ))
                     ) : (
                         options.map((opt) => {
@@ -92,63 +92,47 @@ const SpecRow = ({ label, options, selectedId, onSelect, isLoading, disabled }: 
     );
 };
 
-function LevelRows({ 
-    depth, 
-    selections, 
-    onSelect, 
-    preferredLabels 
-}: { 
-    depth: number, 
-    selections: CatalogNode[], 
-    onSelect: (node: CatalogNode) => void,
-    preferredLabels: Record<string, string>
-}) {
-    const labels = ["Catégorie", "Modèle", "Style", "Carat", "Métal"];
-    const types = ["category", "model", "style", "carat", "metal"];
-    const parentId = depth > 0 ? selections[depth - 1]?.id : null;
-    
+// Stable Row Component that manages its own query
+interface CalculatorRowProps {
+    depth: number;
+    label: string;
+    type: string;
+    parentId: string | null;
+    selectedId?: string;
+    onSelect: (node: CatalogNode) => void;
+    preferredLabel?: string;
+}
+
+const CalculatorRow = ({ depth, label, type, parentId, selectedId, onSelect, preferredLabel }: CalculatorRowProps) => {
     const { data: options = [], isLoading } = useQuery({
         queryKey: ['catalog-nodes', parentId],
         queryFn: () => apiCatalog.getNodes(parentId),
-        enabled: depth === 0 || !!parentId
+        enabled: depth === 0 || !!parentId,
+        staleTime: 1000 * 60 * 5 // Cache to prevent flickering on quick toggles
     });
-
-    const selectedId = selections[depth]?.id;
-    const currentPreferredLabel = preferredLabels[types[depth]];
 
     // --- AUTO-SELECTION LOGIC ---
     useEffect(() => {
-        if (!isLoading && options.length > 0 && !selectedId && currentPreferredLabel) {
-            const match = options.find(o => o.label === currentPreferredLabel);
+        if (!isLoading && options.length > 0 && !selectedId && preferredLabel) {
+            const match = options.find(o => o.label === preferredLabel);
             if (match) {
-                console.log(`Auto-selecting ${match.label} for level ${depth}`);
                 onSelect(match);
             }
         }
-    }, [options, selectedId, currentPreferredLabel, isLoading, onSelect, depth]);
+    }, [options, selectedId, preferredLabel, isLoading, onSelect]);
 
     return (
-        <>
-            <SpecRow 
-                label={labels[depth]} 
-                type={labels[depth]} 
-                options={options} 
-                selectedId={selectedId}
-                onSelect={onSelect}
-                isLoading={isLoading}
-                disabled={depth > 0 && !parentId}
-            />
-            {selectedId && depth < labels.length - 1 && (
-                <LevelRows 
-                    depth={depth + 1} 
-                    selections={selections} 
-                    onSelect={onSelect} 
-                    preferredLabels={preferredLabels}
-                />
-            )}
-        </>
+        <SpecRow 
+            label={label} 
+            type={type} 
+            options={options} 
+            selectedId={selectedId}
+            onSelect={onSelect}
+            isLoading={isLoading}
+            disabled={depth > 0 && !parentId}
+        />
     );
-}
+};
 
 export default function FlashCalculator() {
     const navigate = useNavigate();
@@ -173,7 +157,10 @@ export default function FlashCalculator() {
                 [node.type]: node.label
             }));
             
-            setSelections(prev => [...prev.slice(0, levelIndex), node]);
+            setSelections(prev => {
+                if (prev[levelIndex]?.id === node.id) return prev;
+                return [...prev.slice(0, levelIndex), node];
+            });
         } else {
             setSelections(prev => [...prev, node]);
         }
@@ -257,15 +244,24 @@ export default function FlashCalculator() {
                     <div className="bg-zinc-900/50 rounded-3xl border border-white/10 p-8 shadow-2xl overflow-hidden relative">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-luxury-gold/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
                         
-                        {/* Recursive Rows based on hierarchy */}
                         <div className="space-y-2">
-                            {/* Level 0: Categories */}
-                            <LevelRows 
-                                depth={0} 
-                                selections={selections} 
-                                onSelect={handleSelect}
-                                preferredLabels={preferredLabels}
-                            />
+                            {["Catégorie", "Modèle", "Style", "Carat", "Métal"].map((label, depth) => {
+                                const types = ["category", "model", "style", "carat", "metal"];
+                                const type = types[depth];
+                                const parentId = depth > 0 ? selections[depth - 1]?.id : null;
+                                return (
+                                    <CalculatorRow 
+                                        key={depth} // Stable key based on depth
+                                        depth={depth}
+                                        label={label}
+                                        type={type}
+                                        parentId={parentId}
+                                        selectedId={selections[depth]?.id}
+                                        onSelect={handleSelect}
+                                        preferredLabel={preferredLabels[type]}
+                                    />
+                                );
+                            })}
                         </div>
 
                         {selections.length > 4 && (
