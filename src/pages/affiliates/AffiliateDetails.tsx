@@ -158,7 +158,13 @@ export default function AffiliateDetails() {
                         {affiliate.full_name}
                     </h1>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Badge variant="outline">{affiliate.role}</Badge>
+                        <Badge variant="outline" className={`text-xs ${
+                            affiliate.role === 'admin' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+                            affiliate.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border-luxury-gold/20' : 
+                            'bg-zinc-100 dark:bg-zinc-800'
+                        }`}>
+                            {affiliate.role === 'admin' ? 'Admin' : affiliate.role === 'ambassador' ? 'Ambassadeur' : 'Vendeur'}
+                        </Badge>
                         <span className="text-luxury-gold uppercase font-bold text-xs tracking-wider">
                             {affiliate.affiliate_level}
                         </span>

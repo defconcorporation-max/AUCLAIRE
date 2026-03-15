@@ -59,7 +59,7 @@ export const apiAffiliates = {
         const { data: projects, error: projectsError } = await supabase
             .from('projects')
             .select('id, title, client_id, budget, financials, status, affiliate_commission_rate, affiliate_commission_type')
-            .eq('affiliate_id', affiliateId)
+            .or(`affiliate_id.eq.${affiliateId},sales_agent_id.eq.${affiliateId}`)
             .neq('status', 'cancelled');
 
         if (projectsError) throw projectsError;
@@ -145,9 +145,9 @@ export const apiAffiliates = {
             if (error) throw error;
             const allProfiles = (data || []) as AffiliateProfile[];
 
-            // Filter for affiliates/ambassadors
+            // Filter for affiliates/ambassadors AND admins
             const affiliateProfiles = allProfiles.filter(p =>
-                ['affiliate', 'ambassador'].includes(p.role?.toLowerCase())
+                ['affiliate', 'ambassador', 'admin'].includes(p.role?.toLowerCase())
             );
 
             // Fetch generic stats for them (Batched or individual - keeping it simple/safe for now)

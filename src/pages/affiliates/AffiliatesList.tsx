@@ -79,8 +79,8 @@ export default function AffiliatesList() {
         <div className="space-y-8 max-w-7xl mx-auto p-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-serif text-luxury-gold">Ambassadors & Affiliates</h1>
-                    <p className="text-muted-foreground mt-1">Track partner performance and commission payouts.</p>
+                    <h1 className="text-3xl font-serif text-luxury-gold">Ambassadeurs & Admins</h1>
+                    <p className="text-muted-foreground mt-1">Suivez les performances et les commissions des partenaires et administrateurs.</p>
                 </div>
                 {totalPending > 0 && (
                     <div className="bg-amber-500/10 text-amber-500 px-4 py-2 rounded-lg border border-amber-500/20 flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function AffiliatesList() {
                     <Card className="bg-zinc-50/50 dark:bg-zinc-900/50 border-dashed">
                         <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
                             <Users size={48} className="mb-4 opacity-20" />
-                            <p>No ambassadors found.</p>
+                            <p>Aucun partenaire ou administrateur trouvé.</p>
                         </CardContent>
                     </Card>
                 ) : (
@@ -114,8 +114,12 @@ export default function AffiliatesList() {
                                         <div>
                                             <h3 className="font-bold text-lg">{affiliate.full_name}</h3>
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Badge variant="secondary" className="text-xs bg-zinc-100 dark:bg-zinc-800">
-                                                    {affiliate.role}
+                                                <Badge variant="secondary" className={`text-xs ${
+                                                    affiliate.role === 'admin' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+                                                    affiliate.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border-luxury-gold/20' : 
+                                                    'bg-zinc-100 dark:bg-zinc-800'
+                                                }`}>
+                                                    {affiliate.role === 'admin' ? 'Admin' : affiliate.role === 'ambassador' ? 'Ambassadeur' : 'Vendeur'}
                                                 </Badge>
                                                 <span>• {affiliate.email}</span>
                                             </div>
