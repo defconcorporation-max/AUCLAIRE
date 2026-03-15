@@ -1,6 +1,4 @@
 @echo off
-echo Deploying Auclaire App v3.6.7...
 git add .
-git commit -m "Fix Snapshot Accuracy & Analytics Predictions v3.6.7"
-git push
-echo Done! 
+git commit -m "Deployment: v3.8.0 - Project & Finance Refinements"
+git push origin main

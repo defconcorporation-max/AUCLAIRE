@@ -21,7 +21,7 @@ export const financialUtils = {
     /**
      * Gets start of period dates for calendar logic
      */
-    getPeriodRange: (mode: 'day' | 'today' | 'week' | 'month' | 'total') => {
+    getPeriodRange: (mode: 'day' | 'today' | 'week' | 'month' | 'year' | 'total') => {
         const now = new Date();
         const start = new Date();
         start.setHours(0, 0, 0, 0);
@@ -34,6 +34,8 @@ export const financialUtils = {
             start.setDate(diff);
         } else if (mode === 'month') {
             start.setDate(1);
+        } else if (mode === 'year') {
+            start.setMonth(0, 1);
         } else if (mode === 'total') {
             return { start: new Date(2024, 0, 1), end: now };
         }

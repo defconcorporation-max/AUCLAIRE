@@ -39,6 +39,7 @@ export default function Dashboard() {
     // Filters State
     const [selectedAffiliate, setSelectedAffiliate] = useState<string>('all');
     const [selectedManufacturer, setSelectedManufacturer] = useState<string>('all');
+    const [timeframe, setTimeframe] = useState<'today' | 'week' | 'month' | 'year' | 'total'>('total');
 
     // Redirect clients to their portal
     useEffect(() => {
@@ -142,7 +143,7 @@ export default function Dashboard() {
     const manufacturerPendingProduction = filteredProjects.filter(p => p.status === 'approved_for_production').sort(sortByRush);
     const manufacturerOngoingProduction = filteredProjects.filter(p => p.status === 'production').sort(sortByRush);
     const manufacturerInDelivery = filteredProjects.filter(p => p.status === 'delivery').sort(sortByRush);
-    const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready' || p.status === 'waiting_for_approval');
+    const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready' || p.status === 'waiting_for_approval').sort(sortByRush);
 
     // Financial Logic
     const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
@@ -171,6 +172,33 @@ export default function Dashboard() {
 
     const totalProfit = totalCollected - totalRealExpenses;
     const projectedProfit = (totalInvoiced + potentialRevenue) - totalRealExpenses - totalProductionCost - totalPendingCommissions;
+
+    // Time-filtered Stats for DashboardStats
+    const { start: periodStart, end: periodEnd } = financialUtils.getPeriodRange(timeframe);
+    
+    const periodProjects = filteredProjects.filter(p => {
+        const date = new Date(p.created_at);
+        return timeframe === 'total' || (date >= periodStart && date <= periodEnd);
+    });
+
+    const periodInvoices = filteredInvoices.filter(i => {
+        const date = new Date(i.created_at);
+        return timeframe === 'total' || (date >= periodStart && date <= periodEnd);
+    });
+
+    const periodCollected = financialUtils.getCollectedFromLogs(activities || [], periodStart, periodEnd);
+    const periodInvoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+    const periodPotential = periodProjects.reduce((sum, p) => {
+        if (p.status === 'cancelled' || invoicedProjectIds.has(p.id)) return sum;
+        return sum + getSalePrice(p);
+    }, 0);
+
+    const periodExpenses = expenses?.filter(e => {
+        const date = new Date(e.created_at);
+        return e.status !== 'cancelled' && (timeframe === 'total' || (date >= periodStart && date <= periodEnd));
+    }).reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+
+    const periodProfit = periodCollected - periodExpenses;
 
     // Risk & Pipeline
     const highRiskProjects: any[] = [];
@@ -392,14 +420,32 @@ export default function Dashboard() {
             {/* ADMIN / SECRETARY VIEW */}
             {(role === 'admin' || role === 'secretary') && (
                 <div className="space-y-8">
+                    <div className="flex justify-center mb-4">
+                        <div className="flex bg-white/5 p-1 rounded-full border border-white/10 gap-1">
+                            {['today', 'week', 'month', 'year', 'total'].map((t) => (
+                                <button
+                                    key={t}
+                                    onClick={() => setTimeframe(t as any)}
+                                    className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
+                                        timeframe === t 
+                                        ? 'bg-luxury-gold text-black shadow-lg shadow-luxury-gold/20' 
+                                        : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    {t === 'today' ? "Aujourd'hui" : t === 'week' ? "Cette Semaine" : t === 'month' ? "Ce Mois" : t === 'year' ? "Cette Année" : "Total"}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <DashboardStats 
-                        totalCollected={totalCollected} 
-                        totalInvoiced={totalInvoiced}
-                        potentialRevenue={potentialRevenue}
-                        totalProfit={totalProfit}
+                        totalCollected={periodCollected} 
+                        totalInvoiced={periodInvoiced}
+                        potentialRevenue={periodPotential}
+                        totalProfit={periodProfit}
                         projectedProfit={projectedProfit}
                         expectedCashPipeline={expectedCashPipeline}
-                        waitingCollection={waitingCollection}
+                        waitingCollection={totalInvoiced - totalCollected}
                     />
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -554,14 +600,32 @@ export default function Dashboard() {
             {/* AFFILIATE VIEW */}
             {role === 'affiliate' && (
                 <div className="space-y-8">
+                    <div className="flex justify-center mb-4">
+                        <div className="flex bg-white/5 p-1 rounded-full border border-white/10 gap-1">
+                            {['today', 'week', 'month', 'year', 'total'].map((t) => (
+                                <button
+                                    key={t}
+                                    onClick={() => setTimeframe(t as any)}
+                                    className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
+                                        timeframe === t 
+                                        ? 'bg-luxury-gold text-black shadow-lg shadow-luxury-gold/20' 
+                                        : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    {t === 'today' ? "Aujourd'hui" : t === 'week' ? "Cette Semaine" : t === 'month' ? "Ce Mois" : t === 'year' ? "Cette Année" : "Total"}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <DashboardStats 
-                        totalCollected={totalCollected} 
-                        totalInvoiced={totalInvoiced}
-                        potentialRevenue={potentialRevenue}
-                        totalProfit={totalProfit}
+                        totalCollected={periodCollected} 
+                        totalInvoiced={periodInvoiced}
+                        potentialRevenue={periodPotential}
+                        totalProfit={periodProfit}
                         projectedProfit={projectedProfit}
                         expectedCashPipeline={expectedCashPipeline}
-                        waitingCollection={waitingCollection}
+                        waitingCollection={totalInvoiced - totalCollected}
                     />
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2">

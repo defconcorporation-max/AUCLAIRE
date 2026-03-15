@@ -19,7 +19,7 @@ export function DesignReviewWidget({ projects }: DesignReviewWidgetProps) {
                 <CardDescription className="text-[10px] uppercase tracking-widest text-luxury-gold/70">Awaiting Admin Approval</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-                <div className="divide-y divide-white/5">
+                <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-luxury-gold/20">
                     {projects.length === 0 ? (
                         <div className="p-12 text-center text-muted-foreground">
                             <p className="text-xs uppercase tracking-widest">Aucun design à valider</p>

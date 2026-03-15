@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: v3.7.3 Beta Feedback System + Storage Migration
-console.log("App Version: v3.7.3 - Beta Feedback System");
+// Force new deployment: v3.8.0 - UI Refinements & Feedback Fixes
+console.log("App Version: v3.8.0 - Project & Finance Refinements");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';

@@ -1504,10 +1504,21 @@ export default function ProjectDetails() {
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Design Notes</label>
                                     <textarea
-                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none overflow-hidden"
                                         placeholder="Add notes about sketches, stones, etc."
                                         defaultValue={project.stage_details?.design_notes}
+                                        onInput={(e) => {
+                                            const target = e.target as HTMLTextAreaElement;
+                                            target.style.height = 'auto';
+                                            target.style.height = `${target.scrollHeight}px`;
+                                        }}
                                         onBlur={(e) => apiProjects.updateDetails(project.id, { design_notes: e.target.value })}
+                                        ref={(el) => {
+                                            if (el) {
+                                                el.style.height = 'auto';
+                                                el.style.height = `${el.scrollHeight}px`;
+                                            }
+                                        }}
                                     />
                                     <div className="pt-2">
                                         <label className="text-sm font-medium mb-2 block">Reference Images / Sketches</label>
@@ -1596,25 +1607,46 @@ export default function ProjectDetails() {
 
                                     {/* Version History */}
                                     {project.stage_details?.design_versions && project.stage_details.design_versions.length > 0 && (
-                                        <div className="border border-zinc-200 dark:border-zinc-800 rounded-md p-3 bg-zinc-50 dark:bg-zinc-900 mb-4">
-                                            <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                                                < Clock className="w-3 h-3" /> Previous Versions
+                                        <div className="border border-luxury-gold/20 rounded-lg p-4 bg-luxury-gold/5 mb-6">
+                                            <h5 className="text-sm font-serif text-luxury-gold mb-3 flex items-center gap-2">
+                                                <Clock className="w-4 h-4" /> Historique des Itérations ({project.stage_details.design_versions.length})
                                             </h5>
-                                            <div className="space-y-2">
-                                                {project.stage_details.design_versions.map((ver, idx) => (
-                                                    <div key={idx} className="text-xs p-2 bg-white dark:bg-zinc-950 border rounded-sm">
-                                                        <div className="flex justify-between font-medium">
-                                                            <span>Version {ver.version_number}</span>
-                                                            <span className="text-muted-foreground">{new Date(ver.created_at).toLocaleDateString()}</span>
+                                            <div className="space-y-3">
+                                                {[...project.stage_details.design_versions].reverse().map((ver, idx) => (
+                                                    <div key={idx} className="text-xs p-3 bg-white/40 dark:bg-black/40 backdrop-blur-sm border border-white/10 rounded-md group hover:border-luxury-gold/30 transition-all">
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <span className="font-bold text-luxury-gold uppercase tracking-widest text-[10px]">Version {ver.version_number}</span>
+                                                            <span className="text-[10px] text-muted-foreground">{new Date(ver.created_at).toLocaleDateString()}</span>
                                                         </div>
-                                                        {ver.model_link && (
-                                                            <a href={ver.model_link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block mt-1 truncate">
-                                                                CAD: {ver.model_link}
-                                                            </a>
-                                                        )}
-                                                        <p className="text-muted-foreground mt-1 text-[10px]">Notes: {ver.notes}</p>
-                                                        <div className="mt-1 pt-1 border-t border-zinc-100 dark:border-zinc-800 text-amber-600 font-medium">
-                                                            Feedback: {ver.feedback}
+                                                        
+                                                        <div className="space-y-2">
+                                                            {ver.notes && <p className="text-foreground italic leading-relaxed">"{ver.notes}"</p>}
+                                                            
+                                                            {ver.model_link && (
+                                                                <a href={ver.model_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 transition-colors">
+                                                                    <LinkIcon className="w-3 h-3" /> <span className="underline">Modèle 3D (CAD)</span>
+                                                                </a>
+                                                            )}
+
+                                                            {ver.files && ver.files.length > 0 && (
+                                                                <div className="flex gap-2 mt-2">
+                                                                    {ver.files.map((f, i) => (
+                                                                        <img 
+                                                                            key={i} 
+                                                                            src={f} 
+                                                                            className="w-12 h-12 object-cover rounded border border-white/10 cursor-pointer hover:scale-105 transition-transform" 
+                                                                            onClick={() => setPreviewImage(f)}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {ver.feedback && (
+                                                                <div className="mt-2 pt-2 border-t border-white/5 flex items-start gap-2">
+                                                                    <AlertCircle className="w-3 h-3 text-amber-500 mt-0.5" />
+                                                                    <div className="text-amber-500/80 italic font-medium">Rejet: {ver.feedback}</div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1824,11 +1856,47 @@ export default function ProjectDetails() {
 
                                     {/* SUBMIT BUTTON FOR MANUFACTURER */}
                                     {role === 'manufacturer' && (project.status === '3d_model' || project.status === 'design_modification') && (
-                                        <div className="pt-4 border-t flex justify-end">
-                                            <Button className="w-full md:w-auto gap-2" size="lg" onClick={() => handleStatusUpdate('design_ready')}>
-                                                <Send className="w-4 h-4" />
-                                                Submit Design for Approval
-                                            </Button>
+                                        <div className="pt-4 border-t space-y-3">
+                                            <div className="flex flex-col md:flex-row gap-3">
+                                                <Button 
+                                                    variant="outline"
+                                                    className="flex-1 gap-2 border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
+                                                    onClick={async () => {
+                                                        if (!confirm("This will archive current renders and nodes into a new version history entry. Continue?")) return;
+                                                        
+                                                        const currentVersions = project.stage_details?.design_versions || [];
+                                                        const newVersion = {
+                                                            version_number: currentVersions.length + 1,
+                                                            created_at: new Date().toISOString(),
+                                                            notes: project.stage_details?.model_notes || '',
+                                                            files: project.stage_details?.design_files || [],
+                                                            model_link: project.stage_details?.model_link || '',
+                                                            status: 'submitted' as const
+                                                        };
+
+                                                        await apiProjects.updateDetails(project.id, {
+                                                            design_versions: [...currentVersions, newVersion],
+                                                            // We clear current ones to signify a "new" iteration if desired, 
+                                                            // but usually easier to keep them and just update.
+                                                            // For now, let's keep them so they don't "disappear" until updated.
+                                                        });
+
+                                                        toast({ title: `Version ${newVersion.version_number} archived.` });
+                                                        queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                    }}
+                                                >
+                                                    <Clock className="w-4 h-4" />
+                                                    Archive as Version (History)
+                                                </Button>
+
+                                                <Button className="flex-1 gap-2 bg-luxury-gold text-black hover:bg-gold-600" onClick={() => handleStatusUpdate('design_ready')}>
+                                                    <Send className="w-4 h-4" />
+                                                    Submit Final Design
+                                                </Button>
+                                            </div>
+                                            <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest">
+                                                Archive before marking as 'Design Ready' to keep track of iterations.
+                                            </p>
                                         </div>
                                     )}
                                 </>

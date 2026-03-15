@@ -37,6 +37,12 @@ export default function ProjectsList() {
     const [filterManufacturer, setFilterManufacturer] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
 
+    const sortByRush = (a: Project, b: Project) => {
+        if (a.priority === 'rush' && b.priority !== 'rush') return -1;
+        if (a.priority !== 'rush' && b.priority === 'rush') return 1;
+        return 0;
+    };
+
     // Role-based base filter
     const baseProjects = allProjects?.filter(p => {
         if (role === 'admin' || role === 'secretary') return true;
@@ -64,7 +70,7 @@ export default function ProjectsList() {
         }
 
         return true;
-    });
+    }).sort(sortByRush);
 
     const hasActiveFilter = !!filterAffiliate || !!filterManufacturer || !!searchQuery;
 

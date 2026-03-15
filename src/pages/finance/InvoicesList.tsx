@@ -39,6 +39,8 @@ export default function InvoicesList() {
     const [editingInvoice, setEditingInvoice] = useState<any>(null);
     const [paymentLink, setPaymentLink] = useState('');
     const [paymentAmount, setPaymentAmount] = useState('');
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
     // Edit Link Handlers
     const openEditModal = (invoice: Invoice) => {
@@ -81,6 +83,11 @@ export default function InvoicesList() {
 
     // Manual Sync Removed - Now handled automatically in apiInvoices.getAll()
 
+    const openDetailsModal = (invoice: Invoice) => {
+        setSelectedInvoice(invoice);
+        setIsDetailsModalOpen(true);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -107,7 +114,7 @@ export default function InvoicesList() {
                     </div>
                 ) : (
                     invoices?.map(invoice => (
-                        <Card key={invoice.id} className="flex items-center justify-between p-4 bg-card hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
+                        <Card key={invoice.id} className="flex items-center justify-between p-4 bg-card hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer" onClick={() => openDetailsModal(invoice)}>
                             <div className="flex items-center gap-4">
                                 <div className="p-2 bg-luxury-gold/20 rounded text-luxury-gold">
                                     <FileText className="w-6 h-6" />
@@ -255,6 +262,97 @@ export default function InvoicesList() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancel</Button>
                         <Button onClick={handleRecordPayment}>Record Payment</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Invoice Details Modal */}
+            <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-serif">Invoice Summary</DialogTitle>
+                        <DialogDescription>
+                            Detailed breakdown of invoice #{selectedInvoice?.id.slice(0, 8)}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {selectedInvoice && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4 border-b pb-4">
+                                <div>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Project</Label>
+                                    <p className="font-serif text-lg">{selectedInvoice.project?.title}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Client</Label>
+                                    <p className="font-medium">{selectedInvoice.project?.client?.full_name || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">Financial Breakdown</Label>
+                                <div className="space-y-1 bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 font-mono text-sm">
+                                    <div className="flex justify-between">
+                                        <span>Amount (Net)</span>
+                                        <span>{formatCurrency(selectedInvoice.amount)}</span>
+                                    </div>
+                                    {selectedInvoice.project?.financials?.tax_province && (
+                                        <>
+                                            <div className="flex justify-between text-muted-foreground text-xs mt-1">
+                                                <span>Tax ({selectedInvoice.project.financials.tax_province})</span>
+                                                <span>+ {formatCurrency(calculateCanadianTax(selectedInvoice.amount, selectedInvoice.project.financials.tax_province as CanadianProvince).total)}</span>
+                                            </div>
+                                            <div className="flex justify-between font-bold border-t pt-2 mt-2 text-luxury-gold text-lg">
+                                                <span>Total Gross</span>
+                                                <span>{formatCurrency(selectedInvoice.amount + calculateCanadianTax(selectedInvoice.amount, selectedInvoice.project.financials.tax_province as CanadianProvince).total)}</span>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Status & Payment</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant={selectedInvoice.status === 'paid' ? 'default' : 'secondary'}>
+                                            {selectedInvoice.status.toUpperCase()}
+                                        </Badge>
+                                        <span className="text-sm font-medium">
+                                            {formatCurrency(selectedInvoice.amount_paid || 0)} Paid
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Dates</Label>
+                                    <p className="text-xs">Created: {new Date(selectedInvoice.created_at).toLocaleDateString()}</p>
+                                    <p className="text-xs">Due: {selectedInvoice.due_date ? new Date(selectedInvoice.due_date).toLocaleDateString() : 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            {selectedInvoice.stripe_payment_link && (
+                                <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-md">
+                                    <Label className="text-[10px] uppercase text-green-600 font-bold mb-1 block">Payment Link</Label>
+                                    <a href={selectedInvoice.stripe_payment_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline break-all">
+                                        {selectedInvoice.stripe_payment_link}
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter className="flex gap-2">
+                        <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
+                        <Button
+                            variant="default"
+                            className="bg-luxury-gold text-black hover:bg-gold-600"
+                            onClick={async () => {
+                                const settings = await apiSettings.get();
+                                if (selectedInvoice) generateInvoicePDF(selectedInvoice, settings);
+                            }}
+                        >
+                            Download PDF
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
