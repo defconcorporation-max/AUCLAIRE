@@ -74,7 +74,7 @@ export const apiInvoices = {
                         user_id: 'system', // Default if context isn't passed yet, will be improved in next steps if needed
                         user_name: 'Système',
                         action: 'financial',
-                        details: `Paiement enregistré: ${delta > 0 ? '+' : ''}${delta}$ (Total: ${paid}$)`
+                        details: `Paiement enregistré: ${delta > 0 ? '+' : ''}${delta}$ (Total: ${paid}$, Inv: ${id.substring(0,8)})`
                     }).catch(console.error);
                 }
             }
