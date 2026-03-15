@@ -49,7 +49,7 @@ export const apiInvoices = {
 
         // LOGIC PARITY: Retrieve current invoice to calculate status if amount_paid changes
         if (updates.amount_paid !== undefined) {
-            const { data: current } = await supabase.from('invoices').select('amount, amount_paid').eq('id', id).single();
+            const { data: current } = await supabase.from('invoices').select('amount, amount_paid, project_id').eq('id', id).single();
             if (current) {
                 const total = updates.amount !== undefined ? updates.amount : current.amount;
                 const paid = updates.amount_paid;
@@ -70,7 +70,7 @@ export const apiInvoices = {
                 const delta = paid - (current.amount_paid || 0);
                 if (delta !== 0) {
                     apiActivities.log({
-                        project_id: id, // apiActivities handle project_id as optional, but it's good here
+                        project_id: current.project_id, 
                         user_id: 'system', // Default if context isn't passed yet, will be improved in next steps if needed
                         user_name: 'Système',
                         action: 'financial',

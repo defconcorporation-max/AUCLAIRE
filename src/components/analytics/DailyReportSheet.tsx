@@ -55,7 +55,6 @@ export default function DailyReportSheet() {
 
         // Financials
         const filteredInvoices = invoices.filter(inv => isInRange(inv.created_at));
-        const filteredPayments = invoices.filter(inv => inv.paid_at && isInRange(inv.paid_at));
         const filteredExpenses = expenses.filter(exp => isInRange(exp.created_at) && exp.status !== 'cancelled');
 
         const invoiced = filteredInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
@@ -84,7 +83,9 @@ export default function DailyReportSheet() {
             profit,
             advancements: filteredAdvancements,
             invoiceCount: filteredInvoices.length,
-            paymentCount: filteredPayments.length,
+            paymentCount: activities.filter(act => 
+                act.action === 'financial' && act.details.includes('Paiement enregistré:') && isInRange(act.created_at)
+            ).length,
             label: timeframe === 'day' ? "aujourd'hui" : 
                    timeframe === 'week' ? "7 derniers jours" : 
                    timeframe === 'month' ? "30 derniers jours" : "tout l'historique"
