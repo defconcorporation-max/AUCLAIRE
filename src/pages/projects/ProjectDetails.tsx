@@ -41,58 +41,13 @@ import {
     Link as LinkIcon
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
+import { uploadImage } from '@/utils/storage';
 import { supabase } from '@/lib/supabase';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 import { toast } from '@/components/ui/use-toast';
 import { calculateCanadianTax, provinceNames, CanadianProvince, formatCurrency } from '@/utils/taxUtils';
 
-// Helper to resize/compress image to save LocalStorage space
-const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target?.result as string;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600; // Stricter limit for LocalStorage
-                const MAX_HEIGHT = 600;
-                let width = img.width;
-                let height = img.height;
 
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx?.drawImage(img, 0, 0, width, height);
-                // Compress to JPEG 0.6 and reduced size
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-
-                // Validate
-                if (dataUrl.length < 100 || !dataUrl.startsWith('data:image/')) {
-                    reject(new Error("Compression failed: Invalid data URL"));
-                    return;
-                }
-
-                resolve(dataUrl);
-            };
-            img.onerror = (err) => reject(err);
-        };
-        reader.onerror = (err) => reject(err);
-    });
-};
 
 export default function ProjectDetails() {
     const { id } = useParams<{ id: string }>();
@@ -397,11 +352,10 @@ export default function ProjectDetails() {
         }
 
         try {
-            const compressedBase64 = await compressImage(file);
-
             if (type === 'sketch') {
+                const imageUrl = await uploadImage(file, 'sketches');
                 const current = project.stage_details?.sketch_files || [];
-                await apiProjects.updateDetails(project.id, { sketch_files: [...current, compressedBase64] });
+                await apiProjects.updateDetails(project.id, { sketch_files: [...current, imageUrl] });
                 apiActivities.log({
                     project_id: project.id,
                     user_id: user?.id || 'admin',
@@ -420,8 +374,9 @@ export default function ProjectDetails() {
                 }
                 setIsAddingSketch(false);
             } else {
+                const imageUrl = await uploadImage(file, 'designs');
                 const current = project.stage_details?.design_files || [];
-                await apiProjects.updateDetails(project.id, { design_files: [...current, compressedBase64] });
+                await apiProjects.updateDetails(project.id, { design_files: [...current, imageUrl] });
                 apiActivities.log({
                     project_id: project.id,
                     user_id: user?.id || 'admin',

@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: v3.7.1 Fixed build error and reporting
-console.log("App Version: v3.7.1 - Fixed build error and reporting");
+// Force new deployment: v3.7.2 Technical Audit Fixes (Void Sync, Calendar Logic, Storage)
+console.log("App Version: v3.7.2 - Technical Audit Fixes");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';

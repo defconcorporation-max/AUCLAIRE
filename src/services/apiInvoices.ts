@@ -126,7 +126,8 @@ export const apiInvoices = {
         const { data: invoices } = await supabase
             .from('invoices')
             .select('amount_paid')
-            .eq('project_id', projectId);
+            .eq('project_id', projectId)
+            .neq('status', 'void');
 
         const totalPaid = (invoices || []).reduce((sum, inv) => sum + (Number(inv.amount_paid) || 0), 0);
 

@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { financialUtils } from '@/utils/financialUtils';
 
 export default function AnalyticsDashboard() {
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
@@ -30,38 +31,22 @@ export default function AnalyticsDashboard() {
     // Helpers to prevent string concatenation
     const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
 
-
-
     // Calculate Trend Data
     const getTrendData = () => {
-        const now = new Date();
-        let startCurr = new Date();
-        let startPrev = new Date();
+        const { start: startCurr } = financialUtils.getPeriodRange(timeframe);
+        let startPrev = new Date(startCurr);
         let label = "";
 
         if (timeframe === 'day') {
-            startCurr.setHours(0, 0, 0, 0);
             startPrev.setDate(startPrev.getDate() - 1);
-            startPrev.setHours(0, 0, 0, 0);
             label = "hier";
         } else if (timeframe === 'week') {
-            // Calendar Week: Start of current week (Monday)
-            const day = now.getDay();
-            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-            startCurr = new Date(now.setDate(diff));
-            startCurr.setHours(0, 0, 0, 0);
-            
-            startPrev = new Date(startCurr);
             startPrev.setDate(startPrev.getDate() - 7);
             label = "semaine dernière";
         } else if (timeframe === 'month') {
-            // Calendar Month: 1st of current month
-            startCurr = new Date(now.getFullYear(), now.getMonth(), 1);
-            startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            startPrev.setMonth(startPrev.getMonth() - 1);
             label = "mois dernier";
         } else {
-            // Total mode: Earliest possible date
-            startCurr = new Date(2024, 0, 1);
             label = "total";
         }
 
@@ -79,17 +64,8 @@ export default function AnalyticsDashboard() {
                 return date >= start && date <= end && exp.status !== 'cancelled';
             });
 
-            // Source of Truth for Cash: activity_logs
-            const collected = activities.reduce((sum, act) => {
-                if (act.action === 'financial' && act.details.includes('Paiement enregistré:') ) {
-                    const date = new Date(act.created_at);
-                    if (date >= start && date <= end) {
-                        const match = act.details.match(/([+-]?\d+(\.\d+)?)\$/);
-                        if (match) return sum + Number(match[1]);
-                    }
-                }
-                return sum;
-            }, 0);
+            // Source of Truth for Cash: activity_logs via shared Utils
+            const collected = financialUtils.getCollectedFromLogs(activities || [], start, end);
 
             const invoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
             const expAmount = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);

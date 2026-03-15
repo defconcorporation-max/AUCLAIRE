@@ -29,6 +29,7 @@ import { CashRiskTracker } from '@/components/dashboard/CashRiskTracker';
 import { TimeBasedStats } from '@/components/dashboard/TimeBasedStats';
 import { ManufacturerDashboard } from '@/components/dashboard/ManufacturerDashboard';
 import { WorkloadMonitor } from '@/components/dashboard/WorkloadMonitor';
+import { financialUtils } from '@/utils/financialUtils';
 import { BoutiqueMirror } from '@/components/dashboard/BoutiqueMirror';
 
 export default function Dashboard() {
@@ -198,21 +199,31 @@ export default function Dashboard() {
     const waitingCollection = totalInvoiced - totalCollected;
 
     // Stats calculations
-    const getStatsForPeriod = (days: number) => {
-        const threshold = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-        const periodProjects = filteredProjects.filter(p => new Date(p.created_at) >= threshold);
-        const periodInvoices = filteredInvoices.filter(i => new Date(i.created_at) >= threshold);
+    const getCalendarStats = (mode: 'today' | 'week' | 'month') => {
+        const { start, end } = financialUtils.getPeriodRange(mode);
+        
+        const periodProjects = filteredProjects.filter(p => {
+            const date = new Date(p.created_at);
+            return date >= start && date <= end;
+        });
+
+        // Use activity logs for accurate collection timing if available, 
+        // fallback to invoice timing for legacy (though activities are preferred and synced now)
+        const collected = financialUtils.getCollectedFromLogs(activities || [], start, end);
+
+        const volume = periodProjects.reduce((s, p) => s + getSalePrice(p), 0);
+        
         return {
             count: periodProjects.length,
-            volume: periodProjects.reduce((s, p) => s + getSalePrice(p), 0),
-            collected: periodInvoices.reduce((s, i) => s + (i.amount_paid || (i.status === 'paid' ? i.amount : 0)), 0)
+            volume: volume,
+            collected: collected
         };
     };
 
     const statsData = {
-        today: getStatsForPeriod(1),
-        week: getStatsForPeriod(7),
-        month: getStatsForPeriod(30)
+        today: getCalendarStats('today'),
+        week: getCalendarStats('week'),
+        month: getCalendarStats('month')
     };
 
     const isProjectASale = (p: Project) => invoicedProjectIds.has(p.id);
