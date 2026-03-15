@@ -142,10 +142,10 @@ export default function AnalyticsDashboard() {
 
     // 3. Seller/Affiliate Leaderboard
     // Commission totals come from expense rows (same source of truth as apiAffiliates.getStats)
-    const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, commissions: number, cashCollected: number }> = {};
+    const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, commissions: number, cashCollected: number }> = {};
 
     users.filter(u => (u.role as string) === 'affiliate' || (u.role as string) === 'admin' || (u.role as string) === 'ambassador').forEach(u => {
-        sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, commissions: 0, cashCollected: 0 };
+        sellerStats[u.id] = { id: u.id, name: u.full_name, role: u.role as string, projectCount: 0, volume: 0, commissions: 0, cashCollected: 0 };
     });
 
     // Volume and project count from projects - Strictly Production Ready or Invoiced
@@ -621,8 +621,8 @@ export default function AnalyticsDashboard() {
 
             <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
                 <CardHeader>
-                    <CardTitle className="font-serif text-2xl tracking-wide">Palmarès Ambassadeurs & Vendeurs</CardTitle>
-                    <CardDescription>Classement par volume de projets apportés.</CardDescription>
+                    <CardTitle className="font-serif text-2xl tracking-wide">Palmarès Admins & Ambassadeurs</CardTitle>
+                    <CardDescription>Classement par volume de projets apportés (Ventes directes).</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
@@ -643,8 +643,17 @@ export default function AnalyticsDashboard() {
                                         {idx === 0 ? <span className="text-luxury-gold">1</span> : idx + 1}
                                     </TableCell>
                                     <TableCell className="font-medium text-black dark:text-white text-base">
-                                        {seller.name}
-                                        {idx === 0 && <ChevronUp className="inline-block w-4 h-4 ml-2 text-green-500" />}
+                                        <div className="flex items-center gap-2">
+                                            {seller.name}
+                                            <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tighter ${
+                                                seller.role === 'admin' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                                                seller.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20' :
+                                                'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                                            }`}>
+                                                {seller.role === 'admin' ? 'Admin' : seller.role === 'ambassador' ? 'Ambassadeur' : 'Vendeur'}
+                                            </span>
+                                            {idx === 0 && <ChevronUp className="inline-block w-4 h-4 text-green-500" />}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium tracking-widest border-luxury-gold/30 text-luxury-gold bg-transparent uppercase">
