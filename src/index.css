@@ -6,28 +6,28 @@
 
 @layer base {
   :root {
-    /* DEFAULT LIGHT MODE */
-    --background: 0 0% 100%;
-    /* Pure white */
-    --foreground: 240 10% 10%;
-    /* Almost black text */
+    /* DEFAULT LIGHT MODE - Softened & Improved Contrast */
+    --background: 240 5% 98%;
+    /* Soft off-white */
+    --foreground: 240 10% 5%;
+    /* High contrast text */
 
     /* Cards */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --card-foreground: 240 10% 5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover-foreground: 240 10% 5%;
 
     /* Luxury Gold (Soft Champagne Gold) - Same in both modes for consistency */
     --primary: 43 60% 65%;
     --primary-foreground: 240 10% 2%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 10% 10%;
+    --secondary: 240 5% 94%;
+    --secondary-foreground: 240 10% 5%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 5% 40%;
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 5% 30%;
 
     --accent: 43 60% 65%;
     --accent-foreground: 240 10% 2%;
@@ -35,8 +35,9 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 90%;
-    --input: 240 5% 90%;
+    --border: 240 5% 85%;
+    /* Darker border for better separation */
+    --input: 240 5% 85%;
 
     --ring: 43 60% 65%;
 

@@ -610,7 +610,33 @@ export default function ProjectDetails() {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" className="border-red-200 hover:bg-red-50 text-red-600" onClick={() => handleStatusUpdate('design_modification')}>
+                            <Button 
+                                variant="outline" 
+                                className="border-red-200 hover:bg-red-50 text-red-600" 
+                                onClick={async () => {
+                                    const notes = prompt("Internal notes for modification request:");
+                                    if (notes !== null) {
+                                        // 1. Archive current design
+                                        const currentVersions = project.stage_details?.design_versions || [];
+                                        const newVersion = {
+                                            version_number: currentVersions.length + 1,
+                                            created_at: new Date().toISOString(),
+                                            notes: project.stage_details?.model_notes || '',
+                                            files: project.stage_details?.design_files || [],
+                                            model_link: project.stage_details?.model_link || '',
+                                            status: 'rejected' as const,
+                                            feedback: notes
+                                        };
+
+                                        apiProjects.updateDetails(project.id, {
+                                            design_versions: [...currentVersions, newVersion]
+                                        }).then(() => {
+                                            handleStatusUpdate('design_modification');
+                                            toast({ title: "Modifications requested & design archived." });
+                                        });
+                                    }
+                                }}
+                            >
                                 Request Changes
                             </Button>
                             <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleStatusUpdate('approved_for_production')}>
@@ -716,13 +742,30 @@ export default function ProjectDetails() {
                                 <Button
                                     variant="outline"
                                     className="flex-1 border-red-200 text-red-600 hover:bg-red-50 gap-2"
-                                    onClick={() => {
+                                    onClick={async () => {
                                         const notes = prompt("Please describe what changes you would like:");
                                         if (notes) {
+                                            // 1. Archive current design to version history
+                                            const currentVersions = project.stage_details?.design_versions || [];
+                                            const newVersion = {
+                                                version_number: currentVersions.length + 1,
+                                                created_at: new Date().toISOString(),
+                                                notes: project.stage_details?.model_notes || '',
+                                                files: project.stage_details?.design_files || [],
+                                                model_link: project.stage_details?.model_link || '',
+                                                status: 'rejected' as const,
+                                                feedback: notes
+                                            };
+
                                             apiProjects.updateDetails(project.id, {
                                                 client_approval_status: 'changes_requested',
-                                                client_notes: notes
-                                            }).then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }));
+                                                client_notes: notes,
+                                                design_versions: [...currentVersions, newVersion]
+                                            }).then(() => {
+                                                apiProjects.updateStatus(project.id, 'design_modification');
+                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                toast({ title: "Modifications requested & design archived." });
+                                            });
                                         }
                                     }}
                                 >

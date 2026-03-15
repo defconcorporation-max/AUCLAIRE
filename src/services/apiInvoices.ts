@@ -20,7 +20,7 @@ export const apiInvoices = {
     async getAll() {
         const { data, error } = await supabase
             .from('invoices')
-            .select('*, project:projects(title, budget, financials, client:clients(full_name))')
+            .select('*, project:projects(title, budget, financials, stage_details, client:clients(full_name))')
             .order('created_at', { ascending: false });
 
         if (error) {

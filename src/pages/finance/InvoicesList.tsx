@@ -338,6 +338,34 @@ export default function InvoicesList() {
                                     </a>
                                 </div>
                             )}
+
+                            {/* New: Project Content */}
+                            {(selectedInvoice.project?.stage_details?.design_notes || 
+                              (selectedInvoice.project?.stage_details?.sketch_files?.length || 0) > 0 ||
+                              (selectedInvoice.project?.stage_details?.design_files?.length || 0) > 0) && (
+                                <div className="space-y-4 pt-4 border-t">
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Project Content & Designs</Label>
+                                    
+                                    {selectedInvoice.project.stage_details.design_notes && (
+                                        <div className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded border border-black/5 text-sm italic text-muted-foreground whitespace-pre-wrap">
+                                            "{selectedInvoice.project.stage_details.design_notes}"
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-wrap gap-2">
+                                        {[...(selectedInvoice.project.stage_details.sketch_files || []), ...(selectedInvoice.project.stage_details.design_files || [])].map((url, idx) => (
+                                            <div key={idx} className="relative group">
+                                                <img 
+                                                    src={url} 
+                                                    alt={`Design ${idx}`} 
+                                                    className="w-24 h-24 object-cover rounded border border-black/10 shadow-sm transition-transform hover:scale-110 cursor-zoom-in"
+                                                    onClick={() => window.open(url, '_blank')}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

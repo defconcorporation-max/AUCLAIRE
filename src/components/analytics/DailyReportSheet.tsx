@@ -38,13 +38,12 @@ export default function DailyReportSheet() {
         if (timeframe === 'day') {
             startOfRange.setHours(0, 0, 0, 0);
         } else if (timeframe === 'week') {
-            // Calendar Week: Start of current week (Monday)
             const day = now.getDay();
             const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-            startOfRange = new Date(now.setDate(diff));
+            startOfRange = new Date(now);
+            startOfRange.setDate(diff);
             startOfRange.setHours(0, 0, 0, 0);
         } else if (timeframe === 'month') {
-            // Calendar Month: 1st of current month
             startOfRange = new Date(now.getFullYear(), now.getMonth(), 1);
             startOfRange.setHours(0, 0, 0, 0);
         } else {
