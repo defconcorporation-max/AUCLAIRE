@@ -7,27 +7,25 @@
 @layer base {
   :root {
     /* DEFAULT LIGHT MODE - Softened & Improved Contrast */
-    --background: 240 5% 98%;
-    /* Soft off-white */
-    --foreground: 240 10% 5%;
-    /* High contrast text */
+    --background: 240 5% 96%; /* Slightly deeper off-white */
+    --foreground: 240 10% 4%; /* Near black for punchy text */
 
     /* Cards */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 5%;
+    --card-foreground: 240 10% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 5%;
+    --popover-foreground: 240 10% 4%;
 
     /* Luxury Gold (Soft Champagne Gold) - Same in both modes for consistency */
     --primary: 43 60% 65%;
     --primary-foreground: 240 10% 2%;
 
-    --secondary: 240 5% 94%;
-    --secondary-foreground: 240 10% 5%;
+    --secondary: 240 5% 92%;
+    --secondary-foreground: 240 10% 4%;
 
-    --muted: 240 5% 94%;
-    --muted-foreground: 240 5% 30%;
+    --muted: 240 5% 92%;
+    --muted-foreground: 240 5% 25%; /* Darker for better accessibility */
 
     --accent: 43 60% 65%;
     --accent-foreground: 240 10% 2%;
@@ -35,9 +33,8 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 85%;
-    /* Darker border for better separation */
-    --input: 240 5% 85%;
+    --border: 240 5% 82%; /* Darker borders for better separation */
+    --input: 240 5% 82%;
 
     --ring: 43 60% 65%;
 
@@ -106,7 +103,7 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/40 dark:bg-black/60 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+    @apply bg-white/60 dark:bg-black/60 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.08)];
   }
   
   .glass-card {

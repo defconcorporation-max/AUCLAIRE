@@ -45,6 +45,15 @@ import { uploadImage } from '@/utils/storage';
 import { supabase } from '@/lib/supabase';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 import { toast } from '@/components/ui/use-toast';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { calculateCanadianTax, provinceNames, CanadianProvince, formatCurrency } from '@/utils/taxUtils';
 
 
@@ -68,6 +77,9 @@ export default function ProjectDetails() {
     const [localPriority, setLocalPriority] = useState<string | null>(null);
     const [localStatus, setLocalStatus] = useState<string | null>(null);
     const [isSharing, setIsSharing] = useState(false);
+    const [modNotes, setModNotes] = useState('');
+    const [isModDialogOpen, setIsModDialogOpen] = useState(false);
+    const [editingModVersion, setEditingModVersion] = useState<number | null>(null);
 
     const handleSendClientAccessLink = async () => {
         setIsSharing(true);
@@ -328,6 +340,70 @@ export default function ProjectDetails() {
                     });
                 }
             });
+    };
+
+    const handleSubmitModification = async () => {
+        if (!modNotes.trim()) return;
+
+        const currentVersions = project.stage_details?.design_versions || [];
+        
+        try {
+            if (editingModVersion !== null) {
+                // EDITING EXISTING VERSION
+                const newVersions = currentVersions.map(v => 
+                    v.version_number === editingModVersion 
+                        ? { ...v, feedback: modNotes } 
+                        : v
+                );
+                await apiProjects.updateDetails(project.id, {
+                    design_versions: newVersions,
+                    client_notes: role === 'client' ? modNotes : project.stage_details?.client_notes
+                });
+                toast({ title: "Modification updated." });
+            } else {
+                // NEW MOD REQUEST
+                const newVersion = {
+                    version_number: currentVersions.length + 1,
+                    created_at: new Date().toISOString(),
+                    notes: project.stage_details?.model_notes || '',
+                    files: project.stage_details?.design_files || [],
+                    model_link: project.stage_details?.model_link || '',
+                    status: 'rejected' as const,
+                    feedback: modNotes
+                };
+
+                await apiProjects.updateDetails(project.id, {
+                    design_versions: [...currentVersions, newVersion],
+                    client_notes: role === 'client' ? modNotes : project.stage_details?.client_notes
+                });
+                await handleStatusUpdate('design_modification');
+                toast({ title: "Modifications requested & design archived." });
+            }
+
+            setIsModDialogOpen(false);
+            setModNotes('');
+            setEditingModVersion(null);
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        } catch (err) {
+            toast({ title: "Failed to save modification", variant: "destructive" });
+        }
+    };
+
+    const handleDeleteMod = async (verNumber: number) => {
+        if (!confirm("Are you sure you want to delete this historical iteration? This cannot be undone.")) return;
+        
+        try {
+            const currentVersions = project.stage_details?.design_versions || [];
+            const newVersions = currentVersions.filter(v => v.version_number !== verNumber);
+            
+            await apiProjects.updateDetails(project.id, {
+                design_versions: newVersions
+            });
+            toast({ title: "Iteration deleted." });
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        } catch (err) {
+            toast({ title: "Delete failed", variant: "destructive" });
+        }
     };
 
     // Helper to check active status for timeline
@@ -613,28 +689,10 @@ export default function ProjectDetails() {
                             <Button 
                                 variant="outline" 
                                 className="border-red-200 hover:bg-red-50 text-red-600" 
-                                onClick={async () => {
-                                    const notes = prompt("Internal notes for modification request:");
-                                    if (notes !== null) {
-                                        // 1. Archive current design
-                                        const currentVersions = project.stage_details?.design_versions || [];
-                                        const newVersion = {
-                                            version_number: currentVersions.length + 1,
-                                            created_at: new Date().toISOString(),
-                                            notes: project.stage_details?.model_notes || '',
-                                            files: project.stage_details?.design_files || [],
-                                            model_link: project.stage_details?.model_link || '',
-                                            status: 'rejected' as const,
-                                            feedback: notes
-                                        };
-
-                                        apiProjects.updateDetails(project.id, {
-                                            design_versions: [...currentVersions, newVersion]
-                                        }).then(() => {
-                                            handleStatusUpdate('design_modification');
-                                            toast({ title: "Modifications requested & design archived." });
-                                        });
-                                    }
+                                onClick={() => {
+                                    setModNotes('');
+                                    setEditingModVersion(null);
+                                    setIsModDialogOpen(true);
                                 }}
                             >
                                 Request Changes
@@ -742,31 +800,10 @@ export default function ProjectDetails() {
                                 <Button
                                     variant="outline"
                                     className="flex-1 border-red-200 text-red-600 hover:bg-red-50 gap-2"
-                                    onClick={async () => {
-                                        const notes = prompt("Please describe what changes you would like:");
-                                        if (notes) {
-                                            // 1. Archive current design to version history
-                                            const currentVersions = project.stage_details?.design_versions || [];
-                                            const newVersion = {
-                                                version_number: currentVersions.length + 1,
-                                                created_at: new Date().toISOString(),
-                                                notes: project.stage_details?.model_notes || '',
-                                                files: project.stage_details?.design_files || [],
-                                                model_link: project.stage_details?.model_link || '',
-                                                status: 'rejected' as const,
-                                                feedback: notes
-                                            };
-
-                                            apiProjects.updateDetails(project.id, {
-                                                client_approval_status: 'changes_requested',
-                                                client_notes: notes,
-                                                design_versions: [...currentVersions, newVersion]
-                                            }).then(() => {
-                                                apiProjects.updateStatus(project.id, 'design_modification');
-                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                toast({ title: "Modifications requested & design archived." });
-                                            });
-                                        }
+                                    onClick={() => {
+                                        setModNotes('');
+                                        setEditingModVersion(null);
+                                        setIsModDialogOpen(true);
                                     }}
                                 >
                                     <ThumbsDown className="w-4 h-4" /> Request Changes
@@ -1535,6 +1572,104 @@ export default function ProjectDetails() {
                     </CardContent>
                 </Card>
 
+                {/* VERSION HISTORY - Prominent Section Requested by User */}
+                {project.stage_details?.design_versions && project.stage_details.design_versions.length > 0 && (
+                    <Card className="md:col-span-3 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl transition-all hover:border-luxury-gold/20">
+                        <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02] flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide flex items-center gap-2">
+                                    <Clock className="w-5 h-5" /> Design History & Versions
+                                </CardTitle>
+                                <CardDescription className="text-xs uppercase tracking-widest text-gray-500">Historical iterations and archived design snapshots.</CardDescription>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {[...project.stage_details.design_versions].reverse().map((ver: any, idx: number) => (
+                                    <div key={idx} className="p-4 rounded-xl bg-white/5 dark:bg-zinc-900/50 border border-black/5 dark:border-white/10 hover:border-luxury-gold/30 transition-all flex flex-col justify-between group/ver">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30">
+                                                        v{ver.version_number}
+                                                    </span>
+                                                    <span className="text-[10px] text-zinc-500 uppercase tracking-tight">
+                                                        {new Date(ver.created_at).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-1 items-center">
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-tighter font-bold ${ver.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-500'}`}>
+                                                        {ver.status}
+                                                    </span>
+                                                    {(role === 'admin' || role === 'secretary' || (role === 'client' && ver.status === 'rejected')) && (
+                                                        <div className="flex gap-0.5 opacity-0 group-hover/ver:opacity-100 transition-opacity">
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-6 w-6 text-gray-400 hover:text-luxury-gold"
+                                                                onClick={() => {
+                                                                    setModNotes(ver.feedback || '');
+                                                                    setEditingModVersion(ver.version_number);
+                                                                    setIsModDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <Pencil className="w-3 h-3" />
+                                                            </Button>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-6 w-6 text-gray-400 hover:text-red-500"
+                                                                onClick={() => handleDeleteMod(ver.version_number)}
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                                {ver.notes && <p className="text-xs text-foreground/80 italic leading-relaxed line-clamp-2">"{ver.notes}"</p>}
+                                                
+                                                {ver.model_link && (
+                                                    <a href={ver.model_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 transition-colors text-xs">
+                                                        <LinkIcon className="w-3 h-3" /> <span className="underline">Modèle 3D (CAD)</span>
+                                                    </a>
+                                                )}
+
+                                                {ver.files && ver.files.length > 0 && (
+                                                    <div className="flex gap-2 mt-2">
+                                                        {ver.files.slice(0, 3).map((f: string, i: number) => (
+                                                            <img 
+                                                                key={i} 
+                                                                src={f} 
+                                                                className="w-10 h-10 object-cover rounded border border-black/5 dark:border-white/10 cursor-pointer hover:scale-105 transition-transform" 
+                                                                onClick={() => setPreviewImage(f)}
+                                                            />
+                                                        ))}
+                                                        {ver.files.length > 3 && (
+                                                            <div className="w-10 h-10 rounded border border-black/5 dark:border-white/10 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold">
+                                                                +{ver.files.length - 3}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {ver.feedback && (
+                                                    <div className="mt-2 pt-2 border-t border-black/5 dark:border-white/5 flex items-start gap-2">
+                                                        <AlertCircle className="w-3 h-3 text-red-500 mt-0.5" />
+                                                        <div className="text-red-500/80 text-[10px] italic font-medium line-clamp-2">Rejet: {ver.feedback}</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* Stage Specific Data Form */}
                 <Card className="md:col-span-3 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl group">
                     <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02]">
@@ -1647,56 +1782,6 @@ export default function ProjectDetails() {
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* Version History */}
-                                    {project.stage_details?.design_versions && project.stage_details.design_versions.length > 0 && (
-                                        <div className="border border-luxury-gold/20 rounded-lg p-4 bg-luxury-gold/5 mb-6">
-                                            <h5 className="text-sm font-serif text-luxury-gold mb-3 flex items-center gap-2">
-                                                <Clock className="w-4 h-4" /> Historique des Itérations ({project.stage_details.design_versions.length})
-                                            </h5>
-                                            <div className="space-y-3">
-                                                {[...project.stage_details.design_versions].reverse().map((ver, idx) => (
-                                                    <div key={idx} className="text-xs p-3 bg-white/40 dark:bg-black/40 backdrop-blur-sm border border-white/10 rounded-md group hover:border-luxury-gold/30 transition-all">
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <span className="font-bold text-luxury-gold uppercase tracking-widest text-[10px]">Version {ver.version_number}</span>
-                                                            <span className="text-[10px] text-muted-foreground">{new Date(ver.created_at).toLocaleDateString()}</span>
-                                                        </div>
-                                                        
-                                                        <div className="space-y-2">
-                                                            {ver.notes && <p className="text-foreground italic leading-relaxed">"{ver.notes}"</p>}
-                                                            
-                                                            {ver.model_link && (
-                                                                <a href={ver.model_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 transition-colors">
-                                                                    <LinkIcon className="w-3 h-3" /> <span className="underline">Modèle 3D (CAD)</span>
-                                                                </a>
-                                                            )}
-
-                                                            {ver.files && ver.files.length > 0 && (
-                                                                <div className="flex gap-2 mt-2">
-                                                                    {ver.files.map((f, i) => (
-                                                                        <img 
-                                                                            key={i} 
-                                                                            src={f} 
-                                                                            className="w-12 h-12 object-cover rounded border border-white/10 cursor-pointer hover:scale-105 transition-transform" 
-                                                                            onClick={() => setPreviewImage(f)}
-                                                                        />
-                                                                    ))}
-                                                                </div>
-                                                            )}
-
-                                                            {ver.feedback && (
-                                                                <div className="mt-2 pt-2 border-t border-white/5 flex items-start gap-2">
-                                                                    <AlertCircle className="w-3 h-3 text-amber-500 mt-0.5" />
-                                                                    <div className="text-amber-500/80 italic font-medium">Rejet: {ver.feedback}</div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Model Link (CAD)</label>
                                         <input
@@ -2025,6 +2110,42 @@ export default function ProjectDetails() {
                 onClose={() => setPreviewImage(null)}
                 imageUrl={previewImage}
             />
+
+            <Dialog open={isModDialogOpen} onOpenChange={setIsModDialogOpen}>
+                <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-luxury-gold/20 shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-serif text-luxury-gold flex items-center gap-2">
+                            <Pencil className="w-5 h-5" />
+                            {editingModVersion ? "Edit Modification Request" : "Request Design Changes"}
+                        </DialogTitle>
+                        <DialogDescription className="text-muted-foreground">
+                            {editingModVersion 
+                                ? "Update your feedback for this design iteration." 
+                                : "Describe exactly what you would like to change. The current design will be archived automatically."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <Textarea 
+                            placeholder="Example: Make the band slightly thinner, or change the center stone to a square cut..."
+                            className="min-h-[120px] bg-neutral-50 dark:bg-zinc-900/50 border-input focus:ring-luxury-gold"
+                            value={modNotes}
+                            onChange={(e) => setModNotes(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter className="flex gap-2 sm:justify-end">
+                        <Button variant="ghost" onClick={() => setIsModDialogOpen(false)} className="hover:bg-neutral-100 dark:hover:bg-zinc-800">
+                            Cancel
+                        </Button>
+                        <Button 
+                            className="bg-luxury-gold text-black hover:bg-gold-600 transition-all shadow-lg"
+                            onClick={handleSubmitModification}
+                            disabled={!modNotes.trim()}
+                        >
+                            {editingModVersion ? "Save Changes" : "Submit Request"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

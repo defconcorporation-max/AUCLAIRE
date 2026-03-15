@@ -31,11 +31,8 @@ export default function BetaFeedback() {
         }
     };
 
-    const handleToggleStatus = async (id: string, currentStatus: FeedbackEntry['status']) => {
-        let newStatus: FeedbackEntry['status'] = 'pending';
-        if (currentStatus === 'pending') newStatus = 'in_review';
-        else if (currentStatus === 'in_review') newStatus = 'done';
-        else newStatus = 'pending';
+    const handleToggleStatus = async (id: string, currentStatus: FeedbackEntry['status'], targetStatus?: FeedbackEntry['status']) => {
+        const newStatus = targetStatus || (currentStatus === 'pending' ? 'in_review' : 'pending');
 
         try {
             await apiFeedback.updateStatus(id, newStatus);
@@ -149,27 +146,39 @@ export default function BetaFeedback() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col gap-2">
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    className={`
-                                                        gap-2 text-[10px] uppercase font-bold tracking-widest px-3 py-1 h-auto rounded-full justify-start w-fit border border-black/5 dark:border-white/5
-                                                        ${item.status === 'in_review'
-                                                            ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg'
-                                                            : item.status === 'done'
-                                                                ? 'bg-green-500 text-white hover:bg-green-600 shadow-lg'
-                                                                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'}
-                                                    `}
-                                                    onClick={() => handleToggleStatus(item.id, item.status)}
-                                                >
-                                                    {item.status === 'in_review' ? (
-                                                        <><Clock className="w-3 h-3" /> Review</>
-                                                    ) : item.status === 'done' ? (
-                                                        <><CheckCircle2 className="w-3 h-3" /> Done</>
-                                                    ) : (
-                                                        <><Circle className="w-3 h-3" /> Todo</>
+                                                <div className="flex gap-1 items-center">
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        className={`
+                                                            gap-2 text-[10px] uppercase font-bold tracking-widest px-3 py-1 h-auto rounded-full justify-start w-fit border border-black/5 dark:border-white/5
+                                                            ${item.status === 'in_review'
+                                                                ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg'
+                                                                : item.status === 'done'
+                                                                    ? 'bg-green-500 text-white hover:bg-green-600 shadow-lg'
+                                                                    : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'}
+                                                        `}
+                                                        onClick={() => handleToggleStatus(item.id, item.status)}
+                                                    >
+                                                        {item.status === 'in_review' ? (
+                                                            <><Clock className="w-3 h-3" /> In Review</>
+                                                        ) : item.status === 'done' ? (
+                                                            <><CheckCircle2 className="w-3 h-3" /> Verified</>
+                                                        ) : (
+                                                            <><Circle className="w-3 h-3" /> Todo</>
+                                                        )}
+                                                    </Button>
+                                                    {item.status === 'in_review' && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-6 px-2 text-[9px] bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+                                                            onClick={() => handleToggleStatus(item.id, item.status, 'done')}
+                                                        >
+                                                            Mark Done
+                                                        </Button>
                                                     )}
-                                                </Button>
+                                                </div>
                                                 
                                                 <Button
                                                     variant="ghost"
