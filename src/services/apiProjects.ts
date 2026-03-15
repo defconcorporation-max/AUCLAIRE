@@ -226,9 +226,9 @@ export const apiProjects = {
             await apiActivities.log({
                 project_id: id,
                 user_id: userContext?.id || 'system',
-                user_name: userContext?.name || 'System',
+                user_name: userContext?.name || 'Système',
                 action: 'status_change',
-                details: `Status updated to ${status.replace(/_/g, ' ')}`
+                details: `Statut mis à jour: ${status.replace(/_/g, ' ')}`
             });
         } catch (logErr) {
             console.warn("Failed to log status change:", logErr);

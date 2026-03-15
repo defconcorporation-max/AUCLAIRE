@@ -59,9 +59,16 @@ export default function DailyReportSheet() {
         const filteredExpenses = expenses.filter(exp => isInRange(exp.created_at) && exp.status !== 'cancelled');
 
         const invoiced = filteredInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
-        const collected = filteredPayments.reduce((sum, inv) => {
-             return sum + (Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : Number(inv.amount || 0));
+        
+        // Accurate Collection: sum all "Paiement enregistré" from activities
+        const collected = activities.reduce((sum, act) => {
+            if (act.action === 'financial' && act.details.includes('Paiement enregistré:') && isInRange(act.created_at)) {
+                const match = act.details.match(/([+-]?\d+(\.\d+)?)\$/);
+                if (match) return sum + Number(match[1]);
+            }
+            return sum;
         }, 0);
+
         const spent = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
         const profit = collected - spent;
 

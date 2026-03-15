@@ -226,7 +226,8 @@ export default function ProjectDetails() {
     if (!project) return <div>Project not found</div>;
 
     const handleStatusUpdate = (status: ProjectStatus) => {
-        apiProjects.updateStatus(project.id, status)
+        const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || 'Utilisateur' } : undefined;
+        apiProjects.updateStatus(project.id, status, userContext)
             .then(async () => {
                 queryClient.invalidateQueries({ queryKey: ['projects'] });
 

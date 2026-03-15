@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { Project } from './apiProjects';
+import { apiActivities } from './apiActivities';
 
 export interface Invoice {
     id: string;
@@ -48,7 +49,7 @@ export const apiInvoices = {
 
         // LOGIC PARITY: Retrieve current invoice to calculate status if amount_paid changes
         if (updates.amount_paid !== undefined) {
-            const { data: current } = await supabase.from('invoices').select('amount').eq('id', id).single();
+            const { data: current } = await supabase.from('invoices').select('amount, amount_paid').eq('id', id).single();
             if (current) {
                 const total = updates.amount !== undefined ? updates.amount : current.amount;
                 const paid = updates.amount_paid;
@@ -63,6 +64,18 @@ export const apiInvoices = {
                 } else {
                     updates.status = 'sent';
                     updates.paid_at = undefined;
+                }
+
+                // Log the payment delta for accurate financial snapshots
+                const delta = paid - (current.amount_paid || 0);
+                if (delta !== 0) {
+                    apiActivities.log({
+                        project_id: id, // apiActivities handle project_id as optional, but it's good here
+                        user_id: 'system', // Default if context isn't passed yet, will be improved in next steps if needed
+                        user_name: 'Système',
+                        action: 'financial',
+                        details: `Paiement enregistré: ${delta > 0 ? '+' : ''}${delta}$ (Total: ${paid}$)`
+                    }).catch(console.error);
                 }
             }
         }

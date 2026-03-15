@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, AlertCircle, TrendingUp, Package, ChevronRight, HandCoins } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface ProjectPipelineProps {
     design: Project[];
@@ -15,6 +16,7 @@ interface ProjectPipelineProps {
 }
 
 export function ProjectPipeline({ design, pending, ongoing, delivery, role: _role }: ProjectPipelineProps) {
+    const { user } = useAuth();
     const categories = [
         { id: 'design', label: 'Design', icon: Clock, data: design, color: 'text-blue-500' },
         { id: 'pending', label: 'Ready', icon: AlertCircle, data: pending, color: 'text-green-500' },
@@ -24,7 +26,8 @@ export function ProjectPipeline({ design, pending, ongoing, delivery, role: _rol
 
     const handleAction = async (id: string, status: string, confirmMsg: string) => {
         if (confirm(confirmMsg)) {
-            await apiProjects.updateStatus(id, status as any);
+            const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || 'Utilisateur' } : undefined;
+            await apiProjects.updateStatus(id, status as any, userContext);
             window.location.reload();
         }
     };
