@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: v3.7.0 Unified Financial Reporting (Calendar-based)
-console.log("App Version: v3.7.0 - Unified Financial Reporting (Calendar-based)");
+// Force new deployment: v3.7.1 Fixed build error and reporting
+console.log("App Version: v3.7.1 - Fixed build error and reporting");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
