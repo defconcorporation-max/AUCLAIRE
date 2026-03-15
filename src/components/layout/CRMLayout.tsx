@@ -24,6 +24,7 @@ import { useState } from 'react'
 import NotificationBell from '@/components/NotificationBell'
 import { useTheme } from '@/components/ThemeProvider'
 import { Sun, Moon } from 'lucide-react'
+import DailyReportSheet from '../analytics/DailyReportSheet'
 
 const navItems = [
     // Client-specific
@@ -137,7 +138,8 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
                     {/* Subtle top gradient for depth */}
                     <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-luxury-gold/5 to-transparent pointer-events-none -z-10" />
 
-                    <header className="hidden lg:flex items-center justify-end px-8 py-4 z-30 gap-2">
+                    <header className="hidden lg:flex items-center justify-end px-8 py-4 z-30 gap-3">
+                        <DailyReportSheet />
                         <Button variant="outline" size="icon" onClick={toggleTheme} className="bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white rounded-full">
                             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                         </Button>

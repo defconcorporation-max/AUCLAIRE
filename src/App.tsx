@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: V2.5 Added Formation Guide
-console.log("App Version: V2.5 - Added Formation Guide");
+// Force new deployment: v3.6.1 Added Multi-Timeframe Business Snapshot
+console.log("App Version: v3.6.1 - Added Multi-Timeframe Business Snapshot");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';

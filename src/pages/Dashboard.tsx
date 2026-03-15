@@ -317,7 +317,7 @@ export default function Dashboard() {
                 <div className="animate-in fade-in slide-in-from-left-4">
                     <h1 className="text-4xl font-serif text-luxury-gradient tracking-tight mb-2">Tableau de Bord</h1>
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
-                        v3.4.9 • Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        v3.6.1 • Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                 </div>
 
