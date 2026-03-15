@@ -13,7 +13,6 @@ import {
     Settings,
     Banknote,
     GraduationCap,
-    PhoneCall,
     BookOpen,
     BarChart3,
     Eye,

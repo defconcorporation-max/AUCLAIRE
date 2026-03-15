@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: v3.8.1 - Fix build errors
-console.log("App Version: v3.8.1 - Build Fix");
+// Force new deployment: v3.8.2 - Final build fix
+console.log("App Version: v3.8.2 - Build Fix");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
