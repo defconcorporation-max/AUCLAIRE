@@ -58,7 +58,7 @@ export const apiAffiliates = {
         // 1. Get Projects Stats (Sales & Active count)
         const { data: projects, error: projectsError } = await supabase
             .from('projects')
-            .select('id, title, client_id, budget, financials, status, affiliate_commission_rate, affiliate_commission_type')
+            .select('id, title, client_id, budget, financials, status, affiliate_commission_rate, affiliate_commission_type, client:clients(full_name)')
             .or(`affiliate_id.eq.${affiliateId},sales_agent_id.eq.${affiliateId}`)
             .neq('status', 'cancelled');
 

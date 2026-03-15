@@ -385,6 +385,61 @@ export default function AffiliateDetails() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Sales History Table (Comprehensive) */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Briefcase className="w-4 h-4 text-luxury-gold" />
+                        Historique des Ventes & Projets
+                    </CardTitle>
+                    <CardDescription>Tous les projets attribués à ce membre, incluant ceux sans commission.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {stats?.projects?.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">Aucun projet attribué.</p>
+                    ) : (
+                        <div className="rounded-md border overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                                        <TableHead>Projet</TableHead>
+                                        <TableHead>Client</TableHead>
+                                        <TableHead>Statut</TableHead>
+                                        <TableHead className="text-right">Prix de Vente</TableHead>
+                                        <TableHead className="text-right text-luxury-gold">Com. %</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {stats?.projects?.map((p: any) => {
+                                        const price = Number(p.financials?.selling_price || p.budget || 0);
+                                        const commRate = p.affiliate_commission_rate || 0;
+                                        return (
+                                            <TableRow key={p.id} className="border-zinc-100 dark:border-zinc-800">
+                                                <TableCell className="font-medium">{p.title}</TableCell>
+                                                <TableCell className="text-sm text-muted-foreground">{p.client?.full_name || 'Inconnu'}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="text-[10px] uppercase tracking-tighter">
+                                                        {p.status.replace(/_/g, ' ')}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right font-mono font-bold">
+                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(price)}
+                                                </TableCell>
+                                                <TableCell className="text-right text-xs">
+                                                    <span className={commRate > 0 ? 'text-luxury-gold font-bold' : 'text-gray-400'}>
+                                                        {commRate}%
+                                                    </span>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
