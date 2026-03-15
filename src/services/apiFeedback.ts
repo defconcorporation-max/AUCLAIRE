@@ -8,13 +8,14 @@ export interface FeedbackEntry {
     page_url: string;
     comment: string;
     screenshots: string[];
+    status: 'pending' | 'implemented' | 'reviewed';
 }
 
 export const apiFeedback = {
-    async submit(feedback: Omit<FeedbackEntry, 'id' | 'created_at'>) {
+    async submit(feedback: Omit<FeedbackEntry, 'id' | 'created_at' | 'status'>) {
         const { data, error } = await supabase
             .from('beta_feedback')
-            .insert(feedback)
+            .insert({ ...feedback, status: 'pending' })
             .select()
             .single();
 
@@ -30,6 +31,15 @@ export const apiFeedback = {
 
         if (error) throw error;
         return data as FeedbackEntry[];
+    },
+
+    async updateStatus(id: string, status: FeedbackEntry['status']) {
+        const { error } = await supabase
+            .from('beta_feedback')
+            .update({ status })
+            .eq('id', id);
+
+        if (error) throw error;
     },
 
     async delete(id: string) {

@@ -4,7 +4,7 @@ import { apiFeedback, FeedbackEntry } from '@/services/apiFeedback';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Calendar, ExternalLink, Trash2 } from 'lucide-react';
+import { MessageSquare, Calendar, ExternalLink, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 import { toast } from '@/components/ui/use-toast';
@@ -26,6 +26,17 @@ export default function BetaFeedback() {
             queryClient.invalidateQueries({ queryKey: ['beta-feedback'] });
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete feedback.", variant: "destructive" });
+        }
+    };
+
+    const handleToggleStatus = async (id: string, currentStatus: FeedbackEntry['status']) => {
+        const newStatus = currentStatus === 'implemented' ? 'pending' : 'implemented';
+        try {
+            await apiFeedback.updateStatus(id, newStatus);
+            toast({ title: "Status Updated", description: `Feedback marked as ${newStatus}.` });
+            queryClient.invalidateQueries({ queryKey: ['beta-feedback'] });
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to update status. Make sure the database has been updated.", variant: "destructive" });
         }
     };
 
@@ -52,6 +63,7 @@ export default function BetaFeedback() {
                             <TableHead className="w-[150px]">User</TableHead>
                             <TableHead className="w-[200px]">Page Context</TableHead>
                             <TableHead>Comment</TableHead>
+                            <TableHead className="w-[100px]">Status</TableHead>
                             <TableHead className="w-[120px]">Screenshots</TableHead>
                             <TableHead className="w-[80px] text-right">Actions</TableHead>
                         </TableRow>
@@ -65,7 +77,15 @@ export default function BetaFeedback() {
                             </TableRow>
                         ) : (
                             feedbackItems.map((item) => (
-                                <TableRow key={item.id} className="border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] group">
+                                <TableRow 
+                                    key={item.id} 
+                                    className={`
+                                        border-black/5 dark:border-white/5 group transition-colors
+                                        ${item.status === 'implemented' 
+                                            ? 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20' 
+                                            : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'}
+                                    `}
+                                >
                                     <TableCell className="font-mono text-xs text-gray-500">
                                         <div className="flex items-center gap-2">
                                             <Calendar className="w-3 h-3 text-luxury-gold/50" />
@@ -99,6 +119,25 @@ export default function BetaFeedback() {
                                         <p className="text-sm whitespace-pre-wrap leading-relaxed max-w-md">
                                             {item.comment}
                                         </p>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={`
+                                                gap-2 text-[10px] uppercase font-bold tracking-widest px-2 py-1 h-auto rounded-full
+                                                ${item.status === 'implemented'
+                                                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                                                    : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 hover:bg-gray-200'}
+                                            `}
+                                            onClick={() => handleToggleStatus(item.id, item.status)}
+                                        >
+                                            {item.status === 'implemented' ? (
+                                                <><CheckCircle2 className="w-3 h-3" /> Done</>
+                                            ) : (
+                                                <><Circle className="w-3 h-3" /> Todo</>
+                                            )}
+                                        </Button>
                                     </TableCell>
                                     <TableCell>
                                         {item.screenshots && item.screenshots.length > 0 ? (

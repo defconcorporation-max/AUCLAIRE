@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: v3.8.2 - Final build fix
-console.log("App Version: v3.8.2 - Build Fix");
+// Force new deployment: v3.8.3 - Blue Feedback Highlighting
+console.log("App Version: v3.8.3 - UI Features");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
