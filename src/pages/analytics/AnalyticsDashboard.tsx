@@ -31,31 +31,6 @@ export default function AnalyticsDashboard() {
     const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
     const getPaidAmount = (inv: Invoice) => Number((inv.amount_paid && inv.amount_paid > 0) ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0));
 
-    const getStatsForRange = (start: Date, end: Date) => {
-        const periodInvoices = invoices.filter(inv => {
-            const date = new Date(inv.paid_at || inv.created_at);
-            return date >= start && date <= end && inv.status !== 'void';
-        });
-        const periodClients = clients.filter(c => {
-            const date = new Date(c.created_at);
-            return date >= start && date <= end;
-        });
-        const periodExpenses = expenses.filter(exp => {
-            const date = new Date(exp.created_at);
-            return date >= start && date <= end && exp.status !== 'cancelled';
-        });
-
-        const collected = periodInvoices.reduce((sum, i) => sum + getPaidAmount(i), 0);
-        const invoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
-        const expAmount = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-        
-        const count = periodInvoices.length;
-        const avgOrder = count > 0 ? Math.round(invoiced / count) : 0;
-        const profit = collected - expAmount;
-        const outstanding = invoiced - collected;
-        
-        return { collected, invoiced, avgOrder, clients: periodClients.length, expenses: expAmount, profit, outstanding };
-    };
 
     // Calculate Trend Data
     const getTrendData = () => {
@@ -70,22 +45,65 @@ export default function AnalyticsDashboard() {
             startPrev.setHours(0, 0, 0, 0);
             label = "hier";
         } else if (timeframe === 'week') {
-            startCurr.setDate(startCurr.getDate() - 7);
-            startPrev.setDate(startPrev.getDate() - 14);
+            // Calendar Week: Start of current week (Monday)
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            startCurr = new Date(now.setDate(diff));
+            startCurr.setHours(0, 0, 0, 0);
+            
+            startPrev = new Date(startCurr);
+            startPrev.setDate(startPrev.getDate() - 7);
             label = "semaine dernière";
         } else if (timeframe === 'month') {
-            startCurr.setMonth(startCurr.getMonth() - 1);
-            startPrev.setMonth(startPrev.getMonth() - 2);
+            // Calendar Month: 1st of current month
+            startCurr = new Date(now.getFullYear(), now.getMonth(), 1);
+            startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             label = "mois dernier";
         } else {
-            // Total mode
-            const firstInvoice = invoices[0]?.created_at ? new Date(invoices[0].created_at) : new Date(2024, 0, 1);
-            startCurr = firstInvoice;
+            // Total mode: Earliest possible date
+            startCurr = new Date(2024, 0, 1);
             label = "total";
         }
 
-        const current = getStatsForRange(startCurr, now);
-        const previous = getStatsForRange(startPrev, startCurr);
+        const getStatsForRangeStandard = (start: Date, end: Date) => {
+            const periodInvoices = invoices.filter(inv => {
+                const date = new Date(inv.created_at);
+                return date >= start && date <= end && inv.status !== 'void';
+            });
+            const periodClients = clients.filter(c => {
+                const date = new Date(c.created_at);
+                return date >= start && date <= end;
+            });
+            const periodExpenses = expenses.filter(exp => {
+                const date = new Date(exp.created_at);
+                return date >= start && date <= end && exp.status !== 'cancelled';
+            });
+
+            // Source of Truth for Cash: activity_logs
+            const collected = activities.reduce((sum, act) => {
+                if (act.action === 'financial' && act.details.includes('Paiement enregistré:') ) {
+                    const date = new Date(act.created_at);
+                    if (date >= start && date <= end) {
+                        const match = act.details.match(/([+-]?\d+(\.\d+)?)\$/);
+                        if (match) return sum + Number(match[1]);
+                    }
+                }
+                return sum;
+            }, 0);
+
+            const invoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+            const expAmount = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+            
+            const count = periodInvoices.length;
+            const avgOrder = count > 0 ? Math.round(invoiced / count) : 0;
+            const profit = collected - expAmount;
+            const outstanding = invoiced - collected;
+            
+            return { collected, invoiced, avgOrder, clients: periodClients.length, expenses: expAmount, profit, outstanding };
+        };
+
+        const current = getStatsForRangeStandard(startCurr, new Date());
+        const previous = getStatsForRangeStandard(startPrev, startCurr);
 
         const calcGrowth = (curr: number, prev: number) => {
             if (prev === 0) return curr > 0 ? 100 : 0;
@@ -113,18 +131,23 @@ export default function AnalyticsDashboard() {
     const currentYear = new Date().getFullYear();
     const monthlyData = months.map(m => ({ month: m, collected: 0, invoiced: 0, expenses: 0 }));
 
-    invoices.forEach(inv => {
-        const dateStr = inv.paid_at || inv.created_at;
-        const date = new Date(dateStr);
-        if (date.getFullYear() === currentYear && inv.status !== 'void') {
-            const paid = getPaidAmount(inv);
-            if (paid > 0) monthlyData[date.getMonth()].collected += paid;
-            
-            // Also track invoiced amount by month of creation
-            const createdDate = new Date(inv.created_at);
-            if (createdDate.getFullYear() === currentYear) {
-                monthlyData[createdDate.getMonth()].invoiced += Number(inv.amount || 0);
+    // Aggregate collections by month from activity_logs
+    activities.forEach(act => {
+        if (act.action === 'financial' && act.details.includes('Paiement enregistré:')) {
+            const date = new Date(act.created_at);
+            if (date.getFullYear() === currentYear) {
+                const match = act.details.match(/([+-]?\d+(\.\d+)?)\$/);
+                if (match) monthlyData[date.getMonth()].collected += Number(match[1]);
             }
+        }
+    });
+
+    // Handle invoiced and expenses as before but ensure year check
+    invoices.forEach(inv => {
+        if (inv.status === 'void') return;
+        const createdDate = new Date(inv.created_at);
+        if (createdDate.getFullYear() === currentYear) {
+            monthlyData[createdDate.getMonth()].invoiced += Number(inv.amount || 0);
         }
     });
 

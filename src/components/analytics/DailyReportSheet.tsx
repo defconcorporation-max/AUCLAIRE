@@ -33,19 +33,23 @@ export default function DailyReportSheet() {
 
     const stats = useMemo(() => {
         const now = new Date();
-        const startOfRange = new Date();
+        let startOfRange = new Date();
 
         if (timeframe === 'day') {
             startOfRange.setHours(0, 0, 0, 0);
         } else if (timeframe === 'week') {
-            startOfRange.setDate(now.getDate() - 7);
+            // Calendar Week: Start of current week (Monday)
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            startOfRange = new Date(now.setDate(diff));
             startOfRange.setHours(0, 0, 0, 0);
         } else if (timeframe === 'month') {
-            startOfRange.setMonth(now.getMonth() - 1);
+            // Calendar Month: 1st of current month
+            startOfRange = new Date(now.getFullYear(), now.getMonth(), 1);
             startOfRange.setHours(0, 0, 0, 0);
         } else {
-            // Total: far enough back
-            startOfRange.setFullYear(2020, 0, 1);
+            // Total: Earliest possible date
+            startOfRange = new Date(2024, 0, 1);
         }
 
         const isInRange = (dateStr: string) => {

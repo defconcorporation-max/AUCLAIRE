@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: v3.6.7 Fix Snapshot Accuracy & Analytics Predictions
-console.log("App Version: v3.6.7 - Fix Snapshot Accuracy & Analytics Predictions");
+// Force new deployment: v3.7.0 Unified Financial Reporting (Calendar-based)
+console.log("App Version: v3.7.0 - Unified Financial Reporting (Calendar-based)");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
