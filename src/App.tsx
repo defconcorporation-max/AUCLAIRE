@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: v3.8.4 - Beta Feedback Collaboration
-console.log("App Version: v3.8.4 - Team Collaboration Features");
+// Force new deployment: v3.8.5 - Beta Feedback Robustness
+console.log("App Version: v3.8.5 - UI Fixes");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';

@@ -21,7 +21,8 @@ export default function BetaFeedback() {
     const [newCommentText, setNewCommentText] = useState<Record<string, string>>({});
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this feedback?')) return;
+        console.log('Attempting to delete feedback:', id);
+        if (!window.confirm('Are you sure you want to delete this feedback?')) return;
         try {
             await apiFeedback.delete(id);
             toast({ title: "Deleted", description: "Feedback report removed." });
@@ -150,17 +151,20 @@ export default function BetaFeedback() {
                                     <TableCell>
                                         <div className="flex flex-col gap-2">
                                             <Button
-                                                variant="ghost"
+                                                variant="outline"
                                                 size="sm"
                                                 className={`
-                                                    gap-2 text-[10px] uppercase font-bold tracking-widest px-2 py-1 h-auto rounded-full justify-start w-fit
+                                                    gap-2 text-[10px] uppercase font-bold tracking-widest px-3 py-1 h-auto rounded-full justify-start w-fit border-0
                                                     ${item.status === 'in_review'
                                                         ? 'bg-blue-500 text-white hover:bg-blue-600'
                                                         : item.status === 'done'
                                                             ? 'bg-green-500 text-white hover:bg-green-600'
-                                                                : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 hover:bg-gray-200'}
+                                                                : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'}
                                                 `}
-                                                onClick={() => handleToggleStatus(item.id, item.status)}
+                                                onClick={() => {
+                                                    console.log('Toggling status for:', item.id);
+                                                    handleToggleStatus(item.id, item.status);
+                                                }}
                                             >
                                                 {item.status === 'in_review' ? (
                                                     <><Clock className="w-3 h-3" /> In Review</>
@@ -172,10 +176,13 @@ export default function BetaFeedback() {
                                             </Button>
                                             
                                             <Button
-                                                variant="ghost"
+                                                variant="secondary"
                                                 size="sm"
-                                                className="text-[10px] text-gray-400 hover:text-luxury-gold gap-1 h-auto p-0 justify-start"
-                                                onClick={() => setExpandedComments(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                                                className="text-[10px] bg-zinc-900 text-luxury-gold hover:bg-zinc-800 gap-1 h-auto py-1 px-3 justify-start rounded-full"
+                                                onClick={() => {
+                                                    console.log('Toggling comments for:', item.id);
+                                                    setExpandedComments(prev => ({ ...prev, [item.id]: !prev[item.id] }));
+                                                }}
                                             >
                                                 {expandedComments[item.id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                                                 {item.comments?.length || 0} Comments
@@ -201,9 +208,9 @@ export default function BetaFeedback() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button 
-                                            variant="ghost" 
+                                            variant="destructive" 
                                             size="icon" 
-                                            className="h-8 w-8 text-red-500 opacity-50 hover:opacity-100 transition-opacity"
+                                            className="h-8 w-8 rounded-full"
                                             onClick={() => handleDelete(item.id)}
                                         >
                                             <Trash2 className="w-4 h-4" />
