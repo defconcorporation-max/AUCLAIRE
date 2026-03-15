@@ -16,7 +16,8 @@ import {
     PhoneCall,
     BookOpen,
     BarChart3,
-    Eye
+    Eye,
+    MessageSquarePlus
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -25,6 +26,7 @@ import NotificationBell from '@/components/NotificationBell'
 import { useTheme } from '@/components/ThemeProvider'
 import { Sun, Moon } from 'lucide-react'
 import DailyReportSheet from '../analytics/DailyReportSheet'
+import FeedbackWidget from '../FeedbackWidget'
 
 const navItems = [
     // Client-specific
@@ -43,6 +45,7 @@ const navItems = [
     { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'QCM Academy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
     { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'secretary'] },
+    { label: 'Beta Feedback', href: '/dashboard/feedback', icon: MessageSquarePlus, roles: ['admin'] },
 ]
 
 const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, profile: any, signOut: () => void, setIsMobileOpen: (v: boolean) => void }) => (
@@ -71,6 +74,7 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, pr
                         {item.label}
                     </NavLink>
                 ))}
+            <FeedbackWidget />
         </nav>
 
         <div className="p-6 border-t border-black/5 dark:border-white/5">

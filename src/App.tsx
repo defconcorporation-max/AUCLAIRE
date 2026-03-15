@@ -1,7 +1,7 @@
 import React from 'react';
 
-// Force new deployment: v3.7.2 Technical Audit Fixes (Void Sync, Calendar Logic, Storage)
-console.log("App Version: v3.7.2 - Technical Audit Fixes");
+// Force new deployment: v3.7.3 Beta Feedback System + Storage Migration
+console.log("App Version: v3.7.3 - Beta Feedback System");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
@@ -38,6 +38,7 @@ import ProductCatalog from './pages/resources/ProductCatalog';
 import FlashCalculator from './pages/resources/FlashCalculator';
 import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
 import ClientPortal from './pages/clients/ClientPortal';
+import BetaFeedback from './pages/BetaFeedback';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
 
 // Realtime sync component — must be inside Router + QueryClientProvider
@@ -128,6 +129,7 @@ function App() {
 
               {/* Debugging - Admin only */}
               <Route path="debug" element={<ProtectedRoute allowedRoles={['admin']}><DebugPage /></ProtectedRoute>} />
+              <Route path="feedback" element={<ProtectedRoute allowedRoles={['admin']}><BetaFeedback /></ProtectedRoute>} />
             </Route>
 
 
