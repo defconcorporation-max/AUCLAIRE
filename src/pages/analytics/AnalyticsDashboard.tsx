@@ -31,7 +31,6 @@ export default function AnalyticsDashboard() {
     const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
     const getPaidAmount = (inv: Invoice) => Number((inv.amount_paid && inv.amount_paid > 0) ? inv.amount_paid : (inv.status === 'paid' ? inv.amount : 0));
 
-    // Generic Stat Calculator for Trends
     const getStatsForRange = (start: Date, end: Date) => {
         const periodInvoices = invoices.filter(inv => {
             const date = new Date(inv.paid_at || inv.created_at);
@@ -41,13 +40,21 @@ export default function AnalyticsDashboard() {
             const date = new Date(c.created_at);
             return date >= start && date <= end;
         });
+        const periodExpenses = expenses.filter(exp => {
+            const date = new Date(exp.created_at);
+            return date >= start && date <= end && exp.status !== 'cancelled';
+        });
 
         const collected = periodInvoices.reduce((sum, i) => sum + getPaidAmount(i), 0);
-        const invoiced = periodInvoices.reduce((sum, i) => sum + i.amount, 0);
+        const invoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+        const expAmount = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+        
         const count = periodInvoices.length;
         const avgOrder = count > 0 ? Math.round(invoiced / count) : 0;
+        const profit = collected - expAmount;
+        const outstanding = invoiced - collected;
         
-        return { collected, invoiced, avgOrder, clients: periodClients.length };
+        return { collected, invoiced, avgOrder, clients: periodClients.length, expenses: expAmount, profit, outstanding };
     };
 
     // Calculate Trend Data
@@ -92,7 +99,9 @@ export default function AnalyticsDashboard() {
             growth: {
                 collected: calcGrowth(current.collected, previous.collected),
                 avgOrder: calcGrowth(current.avgOrder, previous.avgOrder),
-                clients: calcGrowth(current.clients, previous.clients)
+                clients: calcGrowth(current.clients, previous.clients),
+                profit: calcGrowth(current.profit, previous.profit),
+                outstanding: calcGrowth(current.outstanding, previous.outstanding)
             }
         };
     };
@@ -306,7 +315,7 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Top KPIs */}
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Panier Moyen</CardTitle>
@@ -340,6 +349,34 @@ export default function AnalyticsDashboard() {
                         <div className="flex items-baseline justify-between">
                             <div className="text-3xl font-serif text-black dark:text-white">{trendData.current.clients}</div>
                             {timeframe !== 'total' && <TrendBadge value={trendData.growth.clients} label={trendData.label} />}
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden border-l-green-500/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Profit Réel</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-baseline justify-between">
+                            <div className={`text-3xl font-serif ${trendData.current.profit >= 0 ? 'text-black dark:text-white' : 'text-red-500'}`}>
+                                ${trendData.current.profit.toLocaleString()}
+                            </div>
+                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.profit} label={trendData.label} />}
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden border-l-red-500/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">À Récolter</CardTitle>
+                        <Banknote className="h-4 w-4 text-orange-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-baseline justify-between">
+                            <div className="text-3xl font-serif text-black dark:text-white">
+                                ${trendData.current.outstanding.toLocaleString()}
+                            </div>
+                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.outstanding} label={trendData.label} />}
                         </div>
                     </CardContent>
                 </Card>
