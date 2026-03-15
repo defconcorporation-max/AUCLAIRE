@@ -170,7 +170,6 @@ export default function Dashboard() {
         return sum + Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0) + Number(p.financials?.customs_fee || 0) + dynamicCosts;
     }, 0);
 
-    const totalProfit = totalCollected - totalRealExpenses;
     const projectedProfit = (totalInvoiced + potentialRevenue) - totalRealExpenses - totalProductionCost - totalPendingCommissions;
 
     // Time-filtered Stats for DashboardStats
@@ -224,7 +223,6 @@ export default function Dashboard() {
     });
 
     // Total outstanding balance across all invoices
-    const waitingCollection = totalInvoiced - totalCollected;
 
     // Stats calculations
     const getCalendarStats = (mode: 'today' | 'week' | 'month') => {
