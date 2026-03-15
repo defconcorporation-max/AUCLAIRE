@@ -1,6 +1,7 @@
 import { Outlet, NavLink } from "react-router-dom"
 import { LayoutDashboard, Users, Gem, Settings, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
+import DailyReportSheet from "../analytics/DailyReportSheet"
 
 function Sidebar() {
     const navItems = [
@@ -53,7 +54,7 @@ function Header() {
     return (
         <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ml-64 flex items-center justify-between px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
-                {/* Breadcrumb or Title placeholder */}
+                <DailyReportSheet />
                 <h2 className="text-sm font-medium text-muted-foreground">Welcome back, Artisan</h2>
             </div>
             <div className="flex items-center gap-4">
