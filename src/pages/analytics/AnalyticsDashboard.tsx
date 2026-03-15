@@ -191,24 +191,29 @@ export default function AnalyticsDashboard() {
     };
 
     // Calculate Projected Cash Flow for next 3 months
+    const currentMonthIdx = new Date().getMonth();
     const next3MonthsData = [
-        { name: 'Ce mois', projected: 0 },
+        { name: 'Ce mois', projected: monthlyData[currentMonthIdx].collected },
         { name: 'Mois +1', projected: 0 },
         { name: 'Mois +2', projected: 0 },
     ];
 
     projects.forEach(p => {
         if (p.status === 'completed' || p.status === 'cancelled') return;
-        const value = getSalePrice(p);
+        
+        const totalValue = getSalePrice(p);
+        const paidSoFar = Number(p.financials?.paid_amount || 0);
+        const remainingValue = Math.max(0, totalValue - paidSoFar);
+        
         const prob = PROBABILITY_MAP[p.status] || 0;
-        const weightedValue = value * prob;
+        const weightedRemaining = remainingValue * prob;
 
         if (['production', 'delivery', 'approved_for_production'].includes(p.status)) {
-            next3MonthsData[0].projected += weightedValue;
+            next3MonthsData[0].projected += weightedRemaining;
         } else if (['3d_model', 'design_ready', 'waiting_for_approval'].includes(p.status)) {
-            next3MonthsData[1].projected += weightedValue;
+            next3MonthsData[1].projected += weightedRemaining;
         } else {
-            next3MonthsData[2].projected += weightedValue;
+            next3MonthsData[2].projected += weightedRemaining;
         }
     });
 

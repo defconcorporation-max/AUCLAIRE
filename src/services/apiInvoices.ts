@@ -38,6 +38,17 @@ export const apiInvoices = {
             throw error;
         }
 
+        // Log initial payment if present
+        if (data?.amount_paid && data.amount_paid > 0) {
+            apiActivities.log({
+                project_id: data.project_id,
+                user_id: 'system',
+                user_name: 'Système',
+                action: 'financial',
+                details: `Paiement enregistré: +${data.amount_paid}$ (Initial, Inv: ${data.id.substring(0,8)})`
+            }).catch(console.error);
+        }
+
         if (data?.project_id) {
             await apiInvoices.syncProjectPaidAmount(data.project_id);
         }
