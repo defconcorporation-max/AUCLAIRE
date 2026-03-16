@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityLogList } from '@/components/ActivityLogList';
 import { ProjectChat } from '@/components/project/ProjectChat';
+import { ProjectFinancialDashboard } from '@/components/project/ProjectFinancialDashboard';
 import {
     Clock,
     Upload,
@@ -823,10 +824,13 @@ export default function ProjectDetails() {
             <div className="grid gap-6 md:grid-cols-3">
                 <div className="md:col-span-2">
                     <Tabs defaultValue="timeline" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className={`grid w-full ${(role === 'admin' || role === 'secretary') ? 'grid-cols-4' : 'grid-cols-3'}`}>
                             <TabsTrigger value="timeline">Timeline</TabsTrigger>
                             <TabsTrigger value="activity">Activity Log</TabsTrigger>
                             <TabsTrigger value="messages">Messages</TabsTrigger>
+                            {(role === 'admin' || role === 'secretary') && (
+                                <TabsTrigger value="finance" className="text-luxury-gold">Intelligence</TabsTrigger>
+                            )}
                         </TabsList>
                         <TabsContent value="timeline">
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/5 dark:border-white/5 shadow-xl">
@@ -893,6 +897,19 @@ export default function ProjectDetails() {
                                 </Tabs>
                             </Card>
                         </TabsContent>
+                        {(role === 'admin' || role === 'secretary') && (
+                            <TabsContent value="finance">
+                                <ProjectFinancialDashboard 
+                                    budget={project.budget}
+                                    financials={project.financials}
+                                    commission={(() => {
+                                        const salePrice = Number(project.financials?.selling_price || project.budget || 0);
+                                        if (project.affiliate_commission_type === 'fixed') return Number(project.affiliate_commission_rate || 0);
+                                        return (salePrice * (Number(project.affiliate_commission_rate) || 0) / 100);
+                                    })()}
+                                />
+                            </TabsContent>
+                        )}
                     </Tabs>
                 </div>
 
@@ -1509,6 +1526,7 @@ export default function ProjectDetails() {
                         {/* THE VAULT - CONCIERGE DOCUMENT STORAGE */}
                         {(role === 'admin' || role === 'secretary' || (role === 'client' && project.stage_details?.vault_files?.length)) && (
                             <div className="mt-8 pt-8 border-t border-luxury-gold/20">
+                                <Card className="glass-card gold-glow-hover border-none bg-white/5 dark:bg-black/20 p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <div>
                                         <h3 className="text-lg font-serif text-luxury-gold flex items-center gap-2">
@@ -1601,6 +1619,7 @@ export default function ProjectDetails() {
                                         })}
                                     </div>
                                 )}
+                                </Card>
                             </div>
                         )}
                     </CardContent>
@@ -1608,7 +1627,7 @@ export default function ProjectDetails() {
 
                 {/* VERSION HISTORY - Prominent Section Requested by User */}
                 {project.stage_details?.design_versions && project.stage_details.design_versions.length > 0 && (
-                    <Card className="md:col-span-3 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl transition-all hover:border-luxury-gold/20">
+                    <Card className="md:col-span-3 glass-card gold-glow-hover border-none shadow-xl transition-all">
                         <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02] flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide flex items-center gap-2">

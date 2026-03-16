@@ -107,11 +107,46 @@
   }
   
   .glass-card {
-    @apply bg-white/30 dark:bg-zinc-900/40 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-xl transition-all duration-300;
+    @apply bg-white/30 dark:bg-zinc-900/40 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-xl transition-all duration-500 overflow-hidden relative;
   }
 
   .glass-card:hover {
     @apply border-primary/40 shadow-primary/10 -translate-y-1;
+  }
+
+  .shimmer-luxury {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-luxury::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 20%;
+    height: 200%;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(210, 181, 123, 0.1),
+      transparent
+    );
+    transform: rotate(30deg);
+    animation: luxuryShimmer 6s infinite ease-in-out;
+  }
+
+  @keyframes luxuryShimmer {
+    0% { left: -60%; }
+    20%, 100% { left: 120%; }
+  }
+
+  .gold-glow-hover {
+    @apply transition-all duration-300;
+  }
+
+  .gold-glow-hover:hover {
+    @apply shadow-[0_0_20px_-5px_rgba(210,181,123,0.4)] border-primary/50;
   }
 
   .text-luxury-gradient {

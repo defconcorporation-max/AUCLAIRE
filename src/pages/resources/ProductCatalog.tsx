@@ -19,7 +19,9 @@ import {
     Calculator,
     Info,
     Search,
-    Layers
+    Layers,
+    Sparkles,
+    EyeOff
 } from 'lucide-react';
 import { uploadImage } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
@@ -229,6 +231,7 @@ export default function ProductCatalog() {
     // Navigation and Search state
     const [currentPath, setCurrentPath] = useState<CatalogNode[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showroomMode, setShowroomMode] = useState(false);
     const currentId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : null;
 
     // Queries
@@ -412,14 +415,29 @@ export default function ProductCatalog() {
                             Ajouter option
                         </Button>
                     )}
+
+                    <Button 
+                        variant={showroomMode ? "default" : "outline"}
+                        onClick={() => setShowroomMode(!showroomMode)}
+                        className={cn(
+                            "transition-all duration-500",
+                            showroomMode 
+                            ? "bg-luxury-gold text-black hover:bg-luxury-gold/90 animate-pulse-slow" 
+                            : "border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
+                        )}
+                    >
+                        {showroomMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                        {showroomMode ? "Mode Edit" : "Mode Showroom"}
+                    </Button>
                 </div>
             </div>
 
             {/* Layout Wrapper */}
             <div className="flex gap-8 relative min-h-[70vh]">
                 
-                {/* SIDEBAR TREE */}
-                <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-4 overflow-hidden h-fit sticky top-24">
+                {/* SIDEBAR TREE - Hidden in Showroom Mode */}
+                {!showroomMode && (
+                    <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-white/5 border border-white/10 rounded-2xl p-4 overflow-hidden h-fit sticky top-24">
                     <div className="flex items-center justify-between items-center mb-6 px-1">
                         <div className="flex items-center gap-2">
                             <ShoppingBag className="w-4 h-4 text-luxury-gold" />
@@ -490,6 +508,7 @@ export default function ProductCatalog() {
                         </div>
                     )}
                 </aside>
+                )}
 
                 {/* MAIN CONTENT AREA */}
                 <div className="flex-1 space-y-6">
@@ -552,10 +571,13 @@ export default function ProductCatalog() {
                                 <Card 
                                     key={node.id} 
                                     onClick={() => handleNavigate(node)}
-                                    className="group relative overflow-hidden bg-white/5 border-white/5 hover:border-luxury-gold/30 transition-all duration-500 cursor-pointer shadow-none hover:shadow-2xl hover:shadow-luxury-gold/5"
+                                    className={cn(
+                                        "group relative overflow-hidden bg-white/5 border-white/5 transition-all duration-500 cursor-pointer shadow-none hover:shadow-2xl hover:shadow-luxury-gold/5 glass-card gold-glow-hover",
+                                        showroomMode && "shimmer-luxury"
+                                    )}
                                 >
-                                    {/* Actions Overlay */}
-                                    {canManage && (
+                                    {/* Actions Overlay - Hidden in Showroom Mode */}
+                                    {canManage && !showroomMode && (
                                         <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                             <Button 
                                                 variant="secondary" 
@@ -608,7 +630,7 @@ export default function ProductCatalog() {
                                         </CardTitle>
                                         
                                         <div className="flex items-center justify-between mt-4">
-                                            {node.price && node.price > 0 ? (
+                                            {(node.price && node.price > 0 && !showroomMode) ? (
                                                 <div className="text-lg font-serif text-luxury-gold/90">
                                                     {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(node.price)}
                                                 </div>

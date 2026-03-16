@@ -12,8 +12,8 @@ echo %date% %time% > force_deploy.txt
 
 echo [3/4] COMMITTING CHANGES...
 git add .
-:: Comprehensive commit message for Contextual Project Chat
-git commit -m "Feature: Contextual Project Chat (Internal/Client) - %date% %time%"
+:: Comprehensive commit message for Finance Intelligence & Luxury UI
+git commit -m "Feature: Finance Intelligence & Luxury UI Refresh - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin main
