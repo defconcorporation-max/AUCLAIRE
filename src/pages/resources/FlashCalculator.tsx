@@ -13,7 +13,10 @@ import {
     CheckCircle2,
     Info,
     RotateCcw,
-    TrendingUp
+    TrendingUp,
+    Sparkles,
+    EyeOff,
+    Coins
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -162,6 +165,8 @@ export default function FlashCalculator() {
     const [selections, setSelections] = useState<CatalogNode[]>([]);
     const [preferredLabels, setPreferredLabels] = useState<Record<string, string>>({});
     const [totalPrice, setTotalPrice] = useState(0);
+    const [showroomMode, setShowroomMode] = useState(false);
+    const [priceCalculated, setPriceCalculated] = useState(false);
 
     useEffect(() => {
         const total = selections.reduce((sum, node) => sum + (node.price || 0), 0);
@@ -170,7 +175,7 @@ export default function FlashCalculator() {
 
     const handleSelect = useCallback((node: CatalogNode) => {
         console.log(`[FlashCalculator] Selecting node: ${node.label} (${node.type})`);
-        
+        setPriceCalculated(false); // Reset calculation when selection changes
         setSelections(prev => {
             if (!node.parent_id) {
                 if (prev[0]?.id === node.id) return prev;
@@ -223,13 +228,32 @@ export default function FlashCalculator() {
                     <ArrowLeft className="w-4 h-4 mr-2" /> Retour Ressources
                 </Button>
                 
-                <Button 
-                    variant="outline"
-                    onClick={handleReset}
-                    className="border-white/10 hover:bg-white/5"
-                >
-                    <RotateCcw className="w-4 h-4 mr-2" /> Réinitialiser
-                </Button>
+                <div className="flex gap-2">
+                    <Button 
+                        variant={showroomMode ? "default" : "outline"}
+                        onClick={() => {
+                            setShowroomMode(!showroomMode);
+                            setPriceCalculated(false);
+                        }}
+                        className={cn(
+                            "transition-all duration-500",
+                            showroomMode 
+                            ? "bg-luxury-gold text-black hover:bg-luxury-gold/90 animate-pulse-slow font-bold" 
+                            : "border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
+                        )}
+                    >
+                        {showroomMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                        {showroomMode ? "Mode Edit" : "Mode Showroom"}
+                    </Button>
+
+                    <Button 
+                        variant="outline"
+                        onClick={handleReset}
+                        className="border-white/10 hover:bg-white/5"
+                    >
+                        <RotateCcw className="w-4 h-4 mr-2" /> Réinitialiser
+                    </Button>
+                </div>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
@@ -341,17 +365,23 @@ export default function FlashCalculator() {
                                                 <p className="text-sm font-serif font-bold text-white group-hover:text-luxury-gold transition-colors">{s.label}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="relative flex-1 md:w-32">
-                                                <input 
-                                                    type="number"
-                                                    value={s.price || 0}
-                                                    onChange={(e) => handlePriceChange(i, parseFloat(e.target.value) || 0)}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm font-mono font-bold text-luxury-gold text-right focus:ring-1 focus:ring-luxury-gold/50 focus:bg-white/10 transition-all"
-                                                />
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-luxury-gold font-bold opacity-30">$</span>
+                                        {!showroomMode ? (
+                                            <div className="flex items-center gap-2">
+                                                <div className="relative flex-1 md:w-32">
+                                                    <input 
+                                                        type="number"
+                                                        value={s.price || 0}
+                                                        onChange={(e) => handlePriceChange(i, parseFloat(e.target.value) || 0)}
+                                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm font-mono font-bold text-luxury-gold text-right focus:ring-1 focus:ring-luxury-gold/50 focus:bg-white/10 transition-all"
+                                                    />
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-luxury-gold font-bold opacity-30">$</span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        ) : (
+                                            <div className="p-2">
+                                                <div className="w-2 h-2 rounded-full bg-luxury-gold/20" />
+                                            </div>
+                                        )}
                                     </li>
                                 ))}
                                 {selections.length === 0 && (
@@ -361,11 +391,20 @@ export default function FlashCalculator() {
                                 )}
                             </ul>
 
-                            <div className="p-6 bg-luxury-gold/5 border-t border-luxury-gold/20">
+                             <div className="p-6 bg-luxury-gold/5 border-t border-luxury-gold/20">
                                 <div className="flex justify-between items-end mb-4">
                                     <div className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Total Estimé (HT)</div>
                                     <div className="text-4xl font-serif font-bold text-luxury-gold">
-                                        {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(totalPrice)}
+                                        {(!showroomMode || priceCalculated) ? (
+                                            new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(totalPrice)
+                                        ) : (
+                                            <Button 
+                                                onClick={() => setPriceCalculated(true)}
+                                                className="bg-luxury-gold text-black hover:bg-luxury-gold/90 font-bold px-6 py-2 h-auto text-lg animate-in zoom-in-50 duration-500"
+                                            >
+                                                <Coins className="w-5 h-5 mr-2" /> Calculer le Prix
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                                 <p className="text-[9px] text-muted-foreground italic text-center leading-relaxed">
