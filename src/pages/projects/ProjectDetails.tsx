@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityLogList } from '@/components/ActivityLogList';
+import { ProjectChat } from '@/components/project/ProjectChat';
 import {
     Clock,
     Upload,
@@ -822,9 +823,10 @@ export default function ProjectDetails() {
             <div className="grid gap-6 md:grid-cols-3">
                 <div className="md:col-span-2">
                     <Tabs defaultValue="timeline" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="timeline">Timeline</TabsTrigger>
                             <TabsTrigger value="activity">Activity Log</TabsTrigger>
+                            <TabsTrigger value="messages">Messages</TabsTrigger>
                         </TabsList>
                         <TabsContent value="timeline">
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/5 dark:border-white/5 shadow-xl">
@@ -858,6 +860,38 @@ export default function ProjectDetails() {
                         </TabsContent>
                         <TabsContent value="activity">
                             <ActivityLogList projectId={project.id} />
+                        </TabsContent>
+                        <TabsContent value="messages">
+                            <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl overflow-hidden">
+                                <Tabs defaultValue={role === 'client' ? 'client' : 'internal'} className="w-full">
+                                    <div className="px-4 pt-4 border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-white/[0.02]">
+                                        <TabsList className="bg-transparent h-auto p-0 gap-6">
+                                            {(role === 'admin' || role === 'secretary' || role === 'affiliate' || role === 'manufacturer') && (
+                                                <TabsTrigger 
+                                                    value="internal" 
+                                                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-luxury-gold rounded-none px-0 pb-2 text-xs uppercase tracking-widest"
+                                                >
+                                                    Canal Interne
+                                                </TabsTrigger>
+                                            )}
+                                            {(role === 'admin' || role === 'secretary' || role === 'affiliate' || role === 'client') && (
+                                                <TabsTrigger 
+                                                    value="client" 
+                                                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-luxury-gold rounded-none px-0 pb-2 text-xs uppercase tracking-widest"
+                                                >
+                                                    Canal Client
+                                                </TabsTrigger>
+                                            )}
+                                        </TabsList>
+                                    </div>
+                                    <TabsContent value="internal" className="m-0">
+                                        <ProjectChat projectId={project.id} channel="internal" />
+                                    </TabsContent>
+                                    <TabsContent value="client" className="m-0">
+                                        <ProjectChat projectId={project.id} channel="client" />
+                                    </TabsContent>
+                                </Tabs>
+                            </Card>
                         </TabsContent>
                     </Tabs>
                 </div>
