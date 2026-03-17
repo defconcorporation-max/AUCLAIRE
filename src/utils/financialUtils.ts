@@ -29,11 +29,24 @@ export const financialUtils = {
 
     /**
      * Utility: checks whether a given ISO date string falls within [start, end].
-     * Used to keep all date-range checks consistent.
+     * Date-only strings (YYYY-MM-DD) are parsed as local midnight so "today" works in all timezones.
      */
     isInRange(dateStr: string, start: Date, end: Date): boolean {
-        const d = new Date(dateStr);
+        const d = financialUtils.toLocalDate(dateStr);
         return d >= start && d <= end;
+    },
+
+    /**
+     * Parse date string for range checks. Date-only (YYYY-MM-DD) → local midnight; with time → normal parse.
+     */
+    toLocalDate(dateStr: string): Date {
+        const s = dateStr.trim();
+        if (!s) return new Date(0);
+        if (s.length === 10 && s[4] === "-" && s[7] === "-") {
+            const [y, m, d] = s.split("-").map(Number);
+            return new Date(y, m - 1, d, 0, 0, 0, 0);
+        }
+        return new Date(s);
     },
 
     /**
@@ -53,17 +66,28 @@ export const financialUtils = {
     },
 
     /**
-     * Fallback: total collected from invoices whose payment date (paid_at or created_at if paid) falls in [start, end].
-     * Use when activity logs are missing so encaissé stays aligned with real payment dates.
+     * Fallback: total collected from invoices whose payment date falls in [start, end].
+     * Uses paid_at, or created_at if paid, or updated_at for partial (when payment was last recorded).
+     * Date-only strings are treated as local so "today" works in all timezones.
      */
     getCollectedFromInvoices(
-        invoices: { paid_at?: string; created_at: string; amount_paid?: number; amount?: number; status: string }[],
+        invoices: {
+            paid_at?: string;
+            created_at: string;
+            updated_at?: string;
+            amount_paid?: number;
+            amount?: number;
+            status: string;
+        }[],
         start: Date,
         end: Date
     ): number {
         if (!invoices?.length) return 0;
         return invoices.reduce((sum, inv) => {
-            const paidAt = inv.paid_at || (inv.status === "paid" ? inv.created_at : null);
+            const paidAt =
+                inv.paid_at ||
+                (inv.status === "paid" ? inv.created_at : null) ||
+                (Number(inv.amount_paid) > 0 ? inv.updated_at ?? inv.created_at : null);
             if (!paidAt || !financialUtils.isInRange(paidAt, start, end)) return sum;
             const paidValue =
                 Number(inv.amount_paid) > 0
