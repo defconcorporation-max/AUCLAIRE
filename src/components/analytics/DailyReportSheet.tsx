@@ -21,7 +21,8 @@ import {
 import { apiInvoices } from '@/services/apiInvoices';
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiActivities } from '@/services/apiActivities';
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
+import { financialUtils } from "@/utils/financialUtils";
 
 export default function DailyReportSheet() {
     const [open, setOpen] = useState(false);
@@ -32,29 +33,14 @@ export default function DailyReportSheet() {
     const { data: activities = [] } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll, enabled: open });
 
     const stats = useMemo(() => {
-        const now = new Date();
-        let startOfRange = new Date();
+        const { start, end } = financialUtils.getPeriodRange(
+            timeframe === "day" ? "day" :
+            timeframe === "week" ? "week" :
+            timeframe === "month" ? "month" : "total"
+        );
 
-        if (timeframe === 'day') {
-            startOfRange.setHours(0, 0, 0, 0);
-        } else if (timeframe === 'week') {
-            const day = now.getDay();
-            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-            startOfRange = new Date(now);
-            startOfRange.setDate(diff);
-            startOfRange.setHours(0, 0, 0, 0);
-        } else if (timeframe === 'month') {
-            startOfRange = new Date(now.getFullYear(), now.getMonth(), 1);
-            startOfRange.setHours(0, 0, 0, 0);
-        } else {
-            // Total: Earliest possible date
-            startOfRange = new Date(2024, 0, 1);
-        }
-
-        const isInRange = (dateStr: string) => {
-            const d = new Date(dateStr);
-            return d >= startOfRange && d <= now;
-        };
+        const isInRange = (dateStr: string) =>
+            financialUtils.isInRange(dateStr, start, end);
 
         // Financials
         const filteredInvoices = invoices.filter(inv => isInRange(inv.created_at));
@@ -62,14 +48,8 @@ export default function DailyReportSheet() {
 
         const invoiced = filteredInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
         
-        // Accurate Collection: sum all "Paiement enregistré" from activities
-        const collected = activities.reduce((sum, act) => {
-            if (act.action === 'financial' && act.details.includes('Paiement enregistré:') && isInRange(act.created_at)) {
-                const match = act.details.match(/([+-]?\d+(\.\d+)?)\$/);
-                if (match) return sum + Number(match[1]);
-            }
-            return sum;
-        }, 0);
+        // Accurate Collection: shared helper reading from activity_logs
+        const collected = financialUtils.getCollectedFromLogs(activities || [], start, end);
 
         const spent = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
         const profit = collected - spent;
@@ -94,9 +74,6 @@ export default function DailyReportSheet() {
                    timeframe === 'month' ? "30 derniers jours" : "tout l'historique"
         };
     }, [invoices, expenses, activities, timeframe]);
-
-    const formatCurrency = (val: number) => 
-        new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(val);
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -129,7 +106,7 @@ export default function DailyReportSheet() {
                         ].map((t) => (
                             <button
                                 key={t.id}
-                                onClick={() => setTimeframe(t.id as any)}
+                                onClick={() => setTimeframe(t.id as 'day' | 'week' | 'month' | 'total')}
                                 className={cn(
                                     "px-4 py-1.5 text-xs font-medium rounded-md transition-all",
                                     timeframe === t.id 

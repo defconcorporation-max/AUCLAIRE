@@ -1,12 +1,10 @@
-import { Invoice } from '@/services/apiInvoices';
-import { Project } from '@/services/apiProjects';
+import { apiClients, Client } from '@/services/apiClients';
+import { apiInvoices, Invoice } from '@/services/apiInvoices';
+import { apiProjects, Project } from '@/services/apiProjects';
 import { useQuery } from '@tanstack/react-query';
-import { apiProjects } from '@/services/apiProjects';
-import { apiClients } from '@/services/apiClients';
-import { apiInvoices } from '@/services/apiInvoices';
 import { apiUsers } from '@/services/apiUsers';
-import { apiExpenses } from '@/services/apiExpenses';
-import { apiActivities } from '@/services/apiActivities';
+import { apiExpenses, Expense } from '@/services/apiExpenses';
+import { apiActivities, ActivityLog } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -107,15 +105,11 @@ export default function AnalyticsDashboard() {
     const currentYear = new Date().getFullYear();
     const monthlyData = months.map(m => ({ month: m, collected: 0, invoiced: 0, expenses: 0 }));
 
-    // Aggregate collections by month from activity_logs
-    activities.forEach(act => {
-        if (act.action === 'financial' && act.details.includes('Paiement enregistré:')) {
-            const date = new Date(act.created_at);
-            if (date.getFullYear() === currentYear) {
-                const match = act.details.match(/([+-]?\d+(\.\d+)?)\$/);
-                if (match) monthlyData[date.getMonth()].collected += Number(match[1]);
-            }
-        }
+    // Aggregate collections by month from activity_logs using shared cash helper
+    months.forEach((_, monthIdx) => {
+        const start = new Date(currentYear, monthIdx, 1, 0, 0, 0, 0);
+        const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59, 999);
+        monthlyData[monthIdx].collected = financialUtils.getCollectedFromLogs(activities || [], start, end);
     });
 
     // Handle invoiced and expenses as before but ensure year check
@@ -225,7 +219,7 @@ export default function AnalyticsDashboard() {
         'production': { totalDays: 0, count: 0 },
     };
 
-    const logsByProject: Record<string, any[]> = {};
+    const logsByProject: Record<string, ActivityLog[]> = {};
     statusLogs.forEach(log => {
         if (log.project_id) {
             if (!logsByProject[log.project_id]) logsByProject[log.project_id] = [];
@@ -766,10 +760,10 @@ interface Insight {
 function generateInsights(
     projects: Project[],
     invoices: Invoice[],
-    expenses: any[],
+    expenses: Expense[],
     monthlyData: { month: string; collected: number; invoiced: number; expenses: number }[],
     leaderboard: { name: string; projectCount: number; volume: number }[],
-    clients: any[]
+    clients: Client[]
 ): Insight[] {
     const insights: Insight[] = [];
     const now = new Date();
