@@ -59,8 +59,9 @@ export const BoutiqueMirror: React.FC = () => {
 
             toast({ title: "Story uploaded! Awaiting admin approval." });
             queryClient.invalidateQueries({ queryKey: ['wip_stories'] });
-        } catch (error: any) {
-            toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+            toast({ title: "Upload failed", description: message, variant: "destructive" });
         } finally {
             setIsUploading(false);
         }

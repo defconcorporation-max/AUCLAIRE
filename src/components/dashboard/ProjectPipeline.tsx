@@ -1,4 +1,4 @@
-import { Project, apiProjects } from '@/services/apiProjects';
+import { Project, apiProjects, ProjectStatus } from '@/services/apiProjects';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,10 +24,10 @@ export function ProjectPipeline({ design, pending, ongoing, delivery, role: _rol
         { id: 'delivery', label: 'Delivery', icon: Package, data: delivery, color: 'text-amber-500' },
     ];
 
-    const handleAction = async (id: string, status: string, confirmMsg: string) => {
+    const handleAction = async (id: string, status: ProjectStatus, confirmMsg: string) => {
         if (confirm(confirmMsg)) {
             const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || 'Utilisateur' } : undefined;
-            await apiProjects.updateStatus(id, status as any, userContext);
+            await apiProjects.updateStatus(id, status, userContext);
             window.location.reload();
         }
     };

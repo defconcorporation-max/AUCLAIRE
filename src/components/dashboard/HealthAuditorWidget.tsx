@@ -1,5 +1,6 @@
 import { Project } from '@/services/apiProjects';
 import { ActivityLog } from '@/services/apiActivities';
+import { CompanySettings } from '@/services/apiSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -23,7 +24,7 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
 
     const statusLogs = activities.filter(a => a.action === 'status_change');
     const velocityData: Record<string, { totalDays: number, count: number }> = {};
-    const logsByProject: Record<string, any[]> = {};
+    const logsByProject: Record<string, ActivityLog[]> = {};
 
     statusLogs.forEach(log => {
         if (log.project_id) {
@@ -64,15 +65,16 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
 
         // CONFIGURABLE THRESHOLDS FROM SETTINGS
         // Fallback to hardcoded defaults if settings are not available/passed
+        const settings = (window as any).auclaireSettings as CompanySettings | undefined;
         let warnThreshold = 0;
         let dangerThreshold = 0;
 
         if (p.status === 'production') {
-            warnThreshold = (window as any).auclaireSettings?.prod_warn_days || 10;
-            dangerThreshold = (window as any).auclaireSettings?.prod_danger_days || 20;
+            warnThreshold = settings?.prod_warn_days || 10;
+            dangerThreshold = settings?.prod_danger_days || 20;
         } else if (p.status === '3d_model' || p.status === 'designing') {
-            warnThreshold = (window as any).auclaireSettings?.design_warn_days || 1;
-            dangerThreshold = (window as any).auclaireSettings?.design_danger_days || 2;
+            warnThreshold = settings?.design_warn_days || 1;
+            dangerThreshold = settings?.design_danger_days || 2;
         } else {
             const statusLower = p.status.toLowerCase().replace(/_/g, ' ');
             const avg = avgVelocity[statusLower] || 5;
@@ -109,8 +111,8 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
 
         if (price > 0) {
             const margin = (price - totalCosts) / price;
-            const marginWarn = ((window as any).auclaireSettings?.margin_warn_percent || 20) / 100;
-            const marginDanger = ((window as any).auclaireSettings?.margin_danger_percent || 10) / 100;
+            const marginWarn = (settings?.margin_warn_percent || 20) / 100;
+            const marginDanger = (settings?.margin_danger_percent || 10) / 100;
 
             if (margin < marginDanger && totalCosts > 0) {
                 alerts.push({

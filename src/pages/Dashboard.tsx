@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers } from '@/services/apiUsers';
-import { apiActivities } from '@/services/apiActivities';
+import { apiActivities, ActivityLog } from '@/services/apiActivities';
 import { Filter, User, Factory, X, Briefcase } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -39,7 +39,9 @@ export default function Dashboard() {
     // Filters State
     const [selectedAffiliate, setSelectedAffiliate] = useState<string>('all');
     const [selectedManufacturer, setSelectedManufacturer] = useState<string>('all');
-    const [timeframe, setTimeframe] = useState<'today' | 'week' | 'month' | 'year' | 'total'>('total');
+    
+    type TimeFrame = 'today' | 'week' | 'month' | 'year' | 'total';
+    const [timeframe, setTimeframe] = useState<TimeFrame>('total');
 
     // Redirect clients to their portal
     useEffect(() => {
@@ -200,7 +202,7 @@ export default function Dashboard() {
     const periodProfit = periodCollected - periodExpenses;
 
     // Risk & Pipeline
-    const highRiskProjects: any[] = [];
+    const highRiskProjects: { project: Project, deficit: number, committed: number, deposited: number }[] = [];
     let expectedCashPipeline = 0;
     filteredProjects.forEach(p => {
         if (p.status === 'cancelled') return;
@@ -282,7 +284,7 @@ export default function Dashboard() {
     };
 
     const statusLogs = activities?.filter(a => a.action === 'status_change') || [];
-    const logsByProject: Record<string, any[]> = {};
+    const logsByProject: Record<string, ActivityLog[]> = {};
     statusLogs.forEach(log => {
         if (log.project_id) {
             if (!logsByProject[log.project_id]) logsByProject[log.project_id] = [];
@@ -423,7 +425,7 @@ export default function Dashboard() {
                             {['today', 'week', 'month', 'year', 'total'].map((t) => (
                                 <button
                                     key={t}
-                                    onClick={() => setTimeframe(t as any)}
+                                    onClick={() => setTimeframe(t as TimeFrame)}
                                     className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
                                         timeframe === t 
                                         ? 'bg-luxury-gold text-black shadow-lg shadow-luxury-gold/20' 
@@ -603,7 +605,7 @@ export default function Dashboard() {
                             {['today', 'week', 'month', 'year', 'total'].map((t) => (
                                 <button
                                     key={t}
-                                    onClick={() => setTimeframe(t as any)}
+                                    onClick={() => setTimeframe(t as TimeFrame)}
                                     className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
                                         timeframe === t 
                                         ? 'bg-luxury-gold text-black shadow-lg shadow-luxury-gold/20' 

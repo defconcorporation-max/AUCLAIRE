@@ -1000,9 +1000,9 @@ export default function ProjectDetails() {
                                         </span>
                                         {!isEditingManufacturer ? (
                                             <div className="flex items-center gap-2">
-                                                <span className="font-medium">{(project as any).manufacturer?.full_name || 'None'}</span>
+                                                <span className="font-medium">{project.manufacturer?.full_name || 'None'}</span>
                                                 <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => {
-                                                    setSelectedManufacturerId((project as any).manufacturer_id || '');
+                                                    setSelectedManufacturerId(project.manufacturer_id || '');
                                                     setIsEditingManufacturer(true);
                                                 }}>
                                                     <Pencil className="w-3 h-3" />
@@ -1021,7 +1021,7 @@ export default function ProjectDetails() {
                                                     ))}
                                                 </select>
                                                 <Button size="icon" variant="ghost" className="h-5 w-5 text-green-600" onClick={() => {
-                                                    apiProjects.update(project.id, { manufacturer_id: selectedManufacturerId || null } as any)
+                                                    apiProjects.update(project.id, { manufacturer_id: selectedManufacturerId || null })
                                                         .then(() => {
                                                             const mfg = manufacturers?.find((m: UserProfile) => m.id === selectedManufacturerId);
                                                             queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -1077,7 +1077,7 @@ export default function ProjectDetails() {
                                                     className="h-6 rounded border border-input bg-background text-xs px-1"
                                                     value={project.affiliate_commission_type || 'percent'}
                                                     onChange={(e) => {
-                                                        apiProjects.update(project.id, { affiliate_commission_type: e.target.value as any })
+                                                        apiProjects.update(project.id, { affiliate_commission_type: e.target.value as 'percent' | 'fixed' })
                                                             .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
                                                             .catch(err => alert(err.message));
                                                     }}
@@ -1604,7 +1604,7 @@ export default function ProjectDetails() {
                                                                 className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
                                                                 onClick={async () => {
                                                                     if (confirm("Remove this document from the Vault?")) {
-                                                                        const newVault = project.stage_details?.vault_files?.filter((_: any, i: number) => i !== idx);
+                                                                        const newVault = project.stage_details?.vault_files?.filter((_file: string, i: number) => i !== idx);
                                                                         await apiProjects.updateDetails(project.id, { vault_files: newVault });
                                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                                     }
@@ -1638,7 +1638,7 @@ export default function ProjectDetails() {
                         </CardHeader>
                         <CardContent className="pt-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {[...project.stage_details.design_versions].reverse().map((ver: any, idx: number) => (
+                                {([...(project.stage_details?.design_versions || [])]).reverse().map((ver, idx) => (
                                     <div key={idx} className="p-4 rounded-xl bg-white/5 dark:bg-zinc-900/50 border border-black/5 dark:border-white/10 hover:border-luxury-gold/30 transition-all flex flex-col justify-between group/ver">
                                         <div className="space-y-4">
                                             <div className="flex items-center justify-between mb-2">

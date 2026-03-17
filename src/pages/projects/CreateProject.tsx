@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { toast } from '@/components/ui/use-toast';
 import { ArrowLeft, Loader2, Link, Calendar as CalendarIcon } from 'lucide-react';
 import { apiProjects } from '@/services/apiProjects';
 import { apiClients } from '@/services/apiClients';
@@ -48,9 +49,9 @@ export default function CreateProject() {
             await queryClient.invalidateQueries({ queryKey: ['projects'] });
 
             navigate(`/dashboard/projects/${newProject.id}`);
-        } catch (error: any) {
-            console.error("Create Project Failed:", error);
-            alert(`Failed to create project: ${error.message || 'Unknown error'}`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+            toast({ title: "Failed to create project", description: message, variant: "destructive" });
         } finally {
             setLoading(false);
         }

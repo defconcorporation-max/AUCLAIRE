@@ -1,3 +1,4 @@
+import { Project } from '@/services/apiProjects';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface RiskProject {
-    project: any;
+    project: Project;
     committed: number;
     deposited: number;
     deficit: number;
