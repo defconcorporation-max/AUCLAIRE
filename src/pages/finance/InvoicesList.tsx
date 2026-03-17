@@ -34,7 +34,6 @@ export default function InvoicesList() {
     })
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [editingInvoice, setEditingInvoice] = useState<any>(null);
     const [paymentLink, setPaymentLink] = useState('');
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
