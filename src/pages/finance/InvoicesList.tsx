@@ -92,14 +92,20 @@ export default function InvoicesList() {
         if (isNaN(amount) || amount <= 0) return;
         setSaving(true);
         try {
-            await apiInvoices.addPayment(selectedInvoice.id, {
+            const result = await apiInvoices.addPayment(selectedInvoice.id, {
                 amount,
                 date: new Date(newPayDate + 'T12:00:00').toISOString(),
                 note: newPayNote || undefined,
             });
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            await refreshInvoice();
+            if (result?.payment_history) {
+                setSelectedInvoice(prev => prev ? { ...prev, ...result } as Invoice : null);
+            } else {
+                await refreshInvoice();
+            }
             resetNewPaymentForm();
+        } catch (err: any) {
+            console.error('Add payment error:', err);
         } finally { setSaving(false); }
     };
 
@@ -116,14 +122,20 @@ export default function InvoicesList() {
         if (isNaN(amount) || amount <= 0) return;
         setSaving(true);
         try {
-            await apiInvoices.updatePayment(selectedInvoice.id, editingPaymentId, {
+            const result = await apiInvoices.updatePayment(selectedInvoice.id, editingPaymentId, {
                 amount,
                 date: new Date(editPayDate + 'T12:00:00').toISOString(),
                 note: editPayNote || undefined,
             });
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            await refreshInvoice();
+            if (result?.payment_history) {
+                setSelectedInvoice(prev => prev ? { ...prev, ...result } as Invoice : null);
+            } else {
+                await refreshInvoice();
+            }
             setEditingPaymentId(null);
+        } catch (err: any) {
+            console.error('Edit payment error:', err);
         } finally { setSaving(false); }
     };
 
@@ -132,9 +144,15 @@ export default function InvoicesList() {
         if (!confirm('Supprimer ce paiement ?')) return;
         setSaving(true);
         try {
-            await apiInvoices.deletePayment(selectedInvoice.id, paymentId);
+            const result = await apiInvoices.deletePayment(selectedInvoice.id, paymentId);
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            await refreshInvoice();
+            if (result?.payment_history) {
+                setSelectedInvoice(prev => prev ? { ...prev, ...result } as Invoice : null);
+            } else {
+                await refreshInvoice();
+            }
+        } catch (err: any) {
+            console.error('Delete payment error:', err);
         } finally { setSaving(false); }
     };
 

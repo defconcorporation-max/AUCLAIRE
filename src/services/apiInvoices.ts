@@ -81,21 +81,17 @@ export const apiInvoices = {
         return data;
     },
 
-    /**
-     * Add a payment entry to an invoice's payment_history and recalculate totals.
-     */
     async addPayment(invoiceId: string, entry: Omit<PaymentEntry, 'id'>) {
-        const { data: current } = await supabase.from('invoices').select('amount, amount_paid, project_id, payment_history').eq('id', invoiceId).single();
+        const { data: current } = await supabase.from('invoices').select('*').eq('id', invoiceId).single();
         if (!current) throw new Error('Invoice not found');
 
         const history: PaymentEntry[] = Array.isArray(current.payment_history) ? [...current.payment_history] : [];
 
-        // Migrate: if history is empty but amount_paid > 0, create a legacy entry
         if (history.length === 0 && (Number(current.amount_paid) || 0) > 0) {
             history.push({
                 id: crypto.randomUUID(),
                 amount: Number(current.amount_paid),
-                date: new Date().toISOString(),
+                date: current.paid_at || new Date().toISOString(),
                 note: 'Paiement précédent',
             });
         }
@@ -105,14 +101,25 @@ export const apiInvoices = {
 
         const derived = deriveStatusAndPaidAt(current.amount, history);
 
-        const { data, error } = await supabase.from('invoices').update({
+        // Try with payment_history first, fall back to legacy fields only
+        let data, error;
+        ({ data, error } = await supabase.from('invoices').update({
             payment_history: history,
             amount_paid: derived.amount_paid,
             status: derived.status,
             paid_at: derived.paid_at,
-        }).eq('id', invoiceId).select().single();
+        }).eq('id', invoiceId).select().single());
 
-        if (error) { toast({ title: 'Error adding payment', description: error.message, variant: 'destructive' }); throw error; }
+        if (error && error.message?.includes('payment_history')) {
+            console.warn('payment_history column missing, falling back to legacy fields');
+            ({ data, error } = await supabase.from('invoices').update({
+                amount_paid: derived.amount_paid,
+                status: derived.status,
+                paid_at: derived.paid_at,
+            }).eq('id', invoiceId).select().single());
+        }
+
+        if (error) { toast({ title: 'Erreur ajout paiement', description: error.message, variant: 'destructive' }); throw error; }
 
         apiActivities.log({
             project_id: current.project_id,
@@ -123,14 +130,11 @@ export const apiInvoices = {
         }).catch(console.error);
 
         if (data?.project_id) await apiInvoices.syncProjectPaidAmount(data.project_id);
-        return data;
+        return { ...data, payment_history: history };
     },
 
-    /**
-     * Update a specific payment entry (amount, date, note).
-     */
     async updatePayment(invoiceId: string, paymentId: string, updates: Partial<Omit<PaymentEntry, 'id'>>) {
-        const { data: current } = await supabase.from('invoices').select('amount, payment_history, project_id').eq('id', invoiceId).single();
+        const { data: current } = await supabase.from('invoices').select('*').eq('id', invoiceId).single();
         if (!current) throw new Error('Invoice not found');
 
         const history: PaymentEntry[] = Array.isArray(current.payment_history) ? [...current.payment_history] : [];
@@ -140,38 +144,53 @@ export const apiInvoices = {
         history[idx] = { ...history[idx], ...updates };
         const derived = deriveStatusAndPaidAt(current.amount, history);
 
-        const { data, error } = await supabase.from('invoices').update({
+        let data, error;
+        ({ data, error } = await supabase.from('invoices').update({
             payment_history: history,
             amount_paid: derived.amount_paid,
             status: derived.status,
             paid_at: derived.paid_at,
-        }).eq('id', invoiceId).select().single();
+        }).eq('id', invoiceId).select().single());
 
-        if (error) { toast({ title: 'Error updating payment', description: error.message, variant: 'destructive' }); throw error; }
+        if (error && error.message?.includes('payment_history')) {
+            ({ data, error } = await supabase.from('invoices').update({
+                amount_paid: derived.amount_paid,
+                status: derived.status,
+                paid_at: derived.paid_at,
+            }).eq('id', invoiceId).select().single());
+        }
+
+        if (error) { toast({ title: 'Erreur mise à jour paiement', description: error.message, variant: 'destructive' }); throw error; }
         if (data?.project_id) await apiInvoices.syncProjectPaidAmount(data.project_id);
-        return data;
+        return { ...data, payment_history: history };
     },
 
-    /**
-     * Delete a payment entry from payment_history.
-     */
     async deletePayment(invoiceId: string, paymentId: string) {
-        const { data: current } = await supabase.from('invoices').select('amount, payment_history, project_id').eq('id', invoiceId).single();
+        const { data: current } = await supabase.from('invoices').select('*').eq('id', invoiceId).single();
         if (!current) throw new Error('Invoice not found');
 
         const history: PaymentEntry[] = (Array.isArray(current.payment_history) ? current.payment_history : []).filter((p: PaymentEntry) => p.id !== paymentId);
         const derived = deriveStatusAndPaidAt(current.amount, history);
 
-        const { data, error } = await supabase.from('invoices').update({
+        let data, error;
+        ({ data, error } = await supabase.from('invoices').update({
             payment_history: history,
             amount_paid: derived.amount_paid,
             status: derived.status,
             paid_at: derived.paid_at,
-        }).eq('id', invoiceId).select().single();
+        }).eq('id', invoiceId).select().single());
 
-        if (error) { toast({ title: 'Error deleting payment', description: error.message, variant: 'destructive' }); throw error; }
+        if (error && error.message?.includes('payment_history')) {
+            ({ data, error } = await supabase.from('invoices').update({
+                amount_paid: derived.amount_paid,
+                status: derived.status,
+                paid_at: derived.paid_at,
+            }).eq('id', invoiceId).select().single());
+        }
+
+        if (error) { toast({ title: 'Erreur suppression paiement', description: error.message, variant: 'destructive' }); throw error; }
         if (data?.project_id) await apiInvoices.syncProjectPaidAmount(data.project_id);
-        return data;
+        return { ...data, payment_history: history };
     },
 
     async update(id: string, updates: Partial<Invoice>) {
