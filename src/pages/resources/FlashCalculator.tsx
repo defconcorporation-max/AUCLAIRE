@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiCatalog, CatalogNode } from '@/services/apiCatalog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
