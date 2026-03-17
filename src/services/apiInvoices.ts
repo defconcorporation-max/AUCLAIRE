@@ -6,8 +6,29 @@ import { apiActivities } from './apiActivities';
 export interface PaymentEntry {
     id: string;
     amount: number;
-    date: string;   // ISO string
-    note?: string;   // e.g. "Dépôt", "Solde"
+    date: string;
+    note?: string;
+}
+
+// Persistent local store for payment history (works even without DB column)
+const STORAGE_KEY = 'auclaire_payment_history';
+
+function loadLocalHistory(): Record<string, PaymentEntry[]> {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+}
+
+function saveLocalHistory(all: Record<string, PaymentEntry[]>) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+}
+
+function getLocalPayments(invoiceId: string): PaymentEntry[] {
+    return loadLocalHistory()[invoiceId] || [];
+}
+
+function setLocalPayments(invoiceId: string, payments: PaymentEntry[]) {
+    const all = loadLocalHistory();
+    all[invoiceId] = payments;
+    saveLocalHistory(all);
 }
 
 export interface Invoice {
@@ -50,10 +71,15 @@ export const apiInvoices = {
             toast({ title: 'Error fetching invoices', description: error.message, variant: 'destructive' });
             throw error;
         }
-        return (data || []).map(inv => ({
-            ...inv,
-            payment_history: Array.isArray(inv.payment_history) ? inv.payment_history : [],
-        })) as Invoice[];
+        const localStore = loadLocalHistory();
+        return (data || []).map(inv => {
+            const dbHistory = Array.isArray(inv.payment_history) ? inv.payment_history : [];
+            const localHistory = localStore[inv.id] || [];
+            return {
+                ...inv,
+                payment_history: dbHistory.length > 0 ? dbHistory : localHistory,
+            };
+        }) as Invoice[];
     },
 
     async create(invoice: Partial<Invoice>) {
@@ -85,14 +111,19 @@ export const apiInvoices = {
         const { data: current } = await supabase.from('invoices').select('*').eq('id', invoiceId).single();
         if (!current) throw new Error('Invoice not found');
 
-        const history: PaymentEntry[] = Array.isArray(current.payment_history) ? [...current.payment_history] : [];
+        const dbHistory = Array.isArray(current.payment_history) ? current.payment_history : [];
+        const localHistory = getLocalPayments(invoiceId);
+        const history: PaymentEntry[] = [...(dbHistory.length > 0 ? dbHistory : localHistory)];
 
         const newEntry: PaymentEntry = { ...entry, id: crypto.randomUUID() };
         history.push(newEntry);
 
         const derived = deriveStatusAndPaidAt(current.amount, history);
 
-        // Try with payment_history first, fall back to legacy fields only
+        // Always save to localStorage first (guaranteed persistence)
+        setLocalPayments(invoiceId, history);
+
+        // Try DB with payment_history column, fall back to core fields only
         let data, error;
         ({ data, error } = await supabase.from('invoices').update({
             payment_history: history,
@@ -101,8 +132,7 @@ export const apiInvoices = {
             paid_at: derived.paid_at,
         }).eq('id', invoiceId).select().single());
 
-        if (error && error.message?.includes('payment_history')) {
-            console.warn('payment_history column missing, falling back to legacy fields');
+        if (error) {
             ({ data, error } = await supabase.from('invoices').update({
                 amount_paid: derived.amount_paid,
                 status: derived.status,
@@ -128,12 +158,17 @@ export const apiInvoices = {
         const { data: current } = await supabase.from('invoices').select('*').eq('id', invoiceId).single();
         if (!current) throw new Error('Invoice not found');
 
-        const history: PaymentEntry[] = Array.isArray(current.payment_history) ? [...current.payment_history] : [];
+        const dbHistory = Array.isArray(current.payment_history) ? current.payment_history : [];
+        const localHistory = getLocalPayments(invoiceId);
+        const history: PaymentEntry[] = [...(dbHistory.length > 0 ? dbHistory : localHistory)];
+
         const idx = history.findIndex(p => p.id === paymentId);
         if (idx === -1) throw new Error('Payment entry not found');
 
         history[idx] = { ...history[idx], ...updates };
         const derived = deriveStatusAndPaidAt(current.amount, history);
+
+        setLocalPayments(invoiceId, history);
 
         let data, error;
         ({ data, error } = await supabase.from('invoices').update({
@@ -143,7 +178,7 @@ export const apiInvoices = {
             paid_at: derived.paid_at,
         }).eq('id', invoiceId).select().single());
 
-        if (error && error.message?.includes('payment_history')) {
+        if (error) {
             ({ data, error } = await supabase.from('invoices').update({
                 amount_paid: derived.amount_paid,
                 status: derived.status,
@@ -160,8 +195,13 @@ export const apiInvoices = {
         const { data: current } = await supabase.from('invoices').select('*').eq('id', invoiceId).single();
         if (!current) throw new Error('Invoice not found');
 
-        const history: PaymentEntry[] = (Array.isArray(current.payment_history) ? current.payment_history : []).filter((p: PaymentEntry) => p.id !== paymentId);
+        const dbHistory = Array.isArray(current.payment_history) ? current.payment_history : [];
+        const localHistory = getLocalPayments(invoiceId);
+        const history: PaymentEntry[] = (dbHistory.length > 0 ? dbHistory : localHistory).filter((p: PaymentEntry) => p.id !== paymentId);
+
         const derived = deriveStatusAndPaidAt(current.amount, history);
+
+        setLocalPayments(invoiceId, history);
 
         let data, error;
         ({ data, error } = await supabase.from('invoices').update({
@@ -171,7 +211,7 @@ export const apiInvoices = {
             paid_at: derived.paid_at,
         }).eq('id', invoiceId).select().single());
 
-        if (error && error.message?.includes('payment_history')) {
+        if (error) {
             ({ data, error } = await supabase.from('invoices').update({
                 amount_paid: derived.amount_paid,
                 status: derived.status,
