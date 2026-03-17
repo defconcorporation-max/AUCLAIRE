@@ -39,6 +39,7 @@ export default function InvoicesList() {
     const [editingInvoice, setEditingInvoice] = useState<any>(null);
     const [paymentLink, setPaymentLink] = useState('');
     const [paymentAmount, setPaymentAmount] = useState('');
+    const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
@@ -60,6 +61,7 @@ export default function InvoicesList() {
     const openPaymentModal = (invoice: Invoice) => {
         setEditingInvoice(invoice);
         setPaymentAmount('');
+        setPaymentDate(new Date().toISOString().slice(0, 10));
         setIsPaymentModalOpen(true);
     };
 
@@ -71,9 +73,11 @@ export default function InvoicesList() {
         const currentPaid = editingInvoice.amount_paid || 0;
         const newTotalPaid = currentPaid + addAmount;
 
+        const paidAtISO = paymentDate ? new Date(paymentDate + 'T12:00:00').toISOString() : undefined;
+
         await apiInvoices.update(editingInvoice.id, {
             amount_paid: newTotalPaid,
-            // Status auto-updated in API
+            paid_at: paidAtISO,
         });
         queryClient.invalidateQueries({ queryKey: ['invoices'] });
         setIsPaymentModalOpen(false);
@@ -241,7 +245,7 @@ export default function InvoicesList() {
                     <DialogHeader>
                         <DialogTitle>Record Payment</DialogTitle>
                         <DialogDescription>
-                            Enter the amount received.
+                            Enter the amount received and the date of payment (for correct encaissé by day).
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -254,8 +258,19 @@ export default function InvoicesList() {
                                 onChange={(e) => setPaymentAmount(e.target.value)}
                             />
                             <p className="text-xs text-muted-foreground">
-                                Total Due: ${editingInvoice?.amount?.toLocaleString()} <br />
-                                Remaining: ${(editingInvoice?.amount - (editingInvoice?.amount_paid || 0))?.toLocaleString()}
+                                Total Due: {formatCurrency(editingInvoice?.amount ?? 0)} <br />
+                                Remaining: {formatCurrency((editingInvoice?.amount ?? 0) - (editingInvoice?.amount_paid || 0))}
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Date du paiement</Label>
+                            <Input
+                                type="date"
+                                value={paymentDate}
+                                onChange={(e) => setPaymentDate(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Cette date sera utilisée pour le total encaissé (jour / semaine / mois).
                             </p>
                         </div>
                     </div>

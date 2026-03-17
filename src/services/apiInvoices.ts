@@ -64,14 +64,14 @@ export const apiInvoices = {
             if (current) {
                 const total = updates.amount !== undefined ? updates.amount : current.amount;
                 const paid = updates.amount_paid;
+                const userProvidedPaidAt = updates.paid_at;
 
                 if (paid >= total) {
                     updates.status = 'paid';
-                    updates.paid_at = new Date().toISOString();
+                    updates.paid_at = userProvidedPaidAt || new Date().toISOString();
                 } else if (paid > 0) {
                     updates.status = 'partial';
-                    // Clear paid_at if it was previously set (optional, but good for consistency)
-                    updates.paid_at = undefined;
+                    updates.paid_at = userProvidedPaidAt ?? undefined;
                 } else {
                     updates.status = 'sent';
                     updates.paid_at = undefined;
