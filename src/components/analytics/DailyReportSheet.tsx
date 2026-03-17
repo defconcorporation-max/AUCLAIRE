@@ -47,9 +47,23 @@ export default function DailyReportSheet() {
         const filteredExpenses = expenses.filter(exp => isInRange(exp.created_at) && exp.status !== 'cancelled');
 
         const invoiced = filteredInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
-        
-        // Accurate Collection: shared helper reading from activity_logs
-        const collected = financialUtils.getCollectedFromLogs(activities || [], start, end);
+
+        // Primary source of truth: activity_logs
+        const collectedFromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
+
+        // Fallback: if no payment logs found but invoices show payments in this range,
+        // approximate collections from invoice amounts to avoid showing 0 to the user.
+        const collectedFromInvoices = filteredInvoices.reduce((sum, inv) => {
+            const paidValue =
+                Number(inv.amount_paid) > 0
+                    ? Number(inv.amount_paid)
+                    : inv.status === 'paid'
+                        ? Number(inv.amount || 0)
+                        : 0;
+            return sum + paidValue;
+        }, 0);
+
+        const collected = collectedFromLogs > 0 ? collectedFromLogs : collectedFromInvoices;
 
         const spent = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
         const profit = collected - spent;
