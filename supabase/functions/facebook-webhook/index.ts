@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface FacebookWebhookBody {
+  object: string;
+  entry: {
+    messaging: {
+      sender: { id: string };
+      message: { text?: string; mid: string };
+    }[];
+  }[];
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -37,7 +47,7 @@ serve(async (req) => {
   // 2. HANDLE INCOMING MESSAGES (POST)
   if (method === 'POST') {
     try {
-      const body = await req.json()
+      const body = (await req.json()) as FacebookWebhookBody
       console.log('Incoming Webhook:', JSON.stringify(body, null, 2))
 
       if (body.object === 'page') {
@@ -56,11 +66,13 @@ serve(async (req) => {
             if (!text) continue; // Ignore attachments for now to keep it simple
 
             // A. Find or Create Lead
-            let { data: lead, error: leadError } = await supabase
+            const { data: existingLead, error: leadError } = await supabase
               .from('leads')
               .select('id')
               .eq('fb_psid', psid)
               .single()
+
+            let lead = existingLead
 
             if (!lead && !leadError) {
               // Create a new lead if not found

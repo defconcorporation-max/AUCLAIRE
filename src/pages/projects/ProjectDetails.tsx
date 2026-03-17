@@ -98,7 +98,7 @@ export default function ProjectDetails() {
                 alert(`Portal access link successfully sent to ${project.client.email}!`);
             } else {
                 // If they DON'T have an email, copy the anonymous share link to clipboard
-                const token = (project as { share_token?: string }).share_token;
+                const token = project.share_token;
                 if (!token) {
                     alert("This project doesn't have a share token yet. Please contact admin.");
                     return;
@@ -237,7 +237,7 @@ export default function ProjectDetails() {
                             }
 
                             // 2. Email Notification via Edge Function
-                            const emailAddress = userToNotify.email || (userToNotify as any).user_metadata?.email;
+                            const emailAddress = userToNotify.email;
                             if (emailAddress) {
                                 console.log(`[Notifications] Sending email to ${emailAddress}...`);
                                 supabase.functions.invoke('send-email', {
@@ -279,7 +279,7 @@ export default function ProjectDetails() {
                     try {
                         const allUsers = await apiUsers.getAll();
                         allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
-                            const email = u.email || (u as any).user_metadata?.email;
+                            const email = u.email;
                             if (email) {
                                 supabase.functions.invoke('send-email', {
                                     body: { to: email, subject: `Production Started: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Production Started</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has entered production.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
@@ -301,7 +301,7 @@ export default function ProjectDetails() {
                     try {
                         const allUsers = await apiUsers.getAll();
                         allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
-                            const email = u.email || (u as any).user_metadata?.email;
+                            const email = u.email;
                             if (email) {
                                 supabase.functions.invoke('send-email', {
                                     body: { to: email, subject: `Shipped: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Order Shipped</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has been shipped for delivery.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
@@ -323,7 +323,7 @@ export default function ProjectDetails() {
                     try {
                         const allUsers = await apiUsers.getAll();
                         allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
-                            const email = u.email || (u as any).user_metadata?.email;
+                            const email = u.email;
                             if (email) {
                                 supabase.functions.invoke('send-email', {
                                     body: { to: email, subject: `Completed: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Project Completed 🎉</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has been marked as completed.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
@@ -332,9 +332,9 @@ export default function ProjectDetails() {
                         });
                     } catch (err) { /* silent */ }
 
-                } else if (status === 'design_modification' && (project as any).manufacturer_id) {
+                } else if (status === 'design_modification' && project.manufacturer_id) {
                     apiNotifications.create({
-                        user_id: (project as any).manufacturer_id,
+                        user_id: project.manufacturer_id,
                         title: 'Modifications Requested',
                         message: `Changes have been requested on "${project.title}".`,
                         type: 'warning',
@@ -553,7 +553,7 @@ export default function ProjectDetails() {
                                     <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => {
                                         apiProjects.update(project.id, { client_id: selectedClientId })
                                             .then(() => {
-                                                const newClient = clients?.find((c: any) => c.id === selectedClientId);
+                                                const newClient = clients?.find(c => c.id === selectedClientId);
                                                 apiActivities.log({
                                                     project_id: project.id,
                                                     user_id: user?.id || 'admin',

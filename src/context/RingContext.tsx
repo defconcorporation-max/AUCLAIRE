@@ -60,7 +60,7 @@ export interface RingConfig {
     }
 }
 
-interface MaterialConfig {
+export interface MaterialConfig {
     metal: MetalType
     gem: GemType
 }
@@ -157,8 +157,8 @@ export function RingProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         return () => {
             // Reset global window assignments if any
-            if ((window as any).auclaireSettings) {
-                delete (window as any).auclaireSettings;
+            if ((window as Window & { auclaireSettings?: any }).auclaireSettings) {
+                delete (window as Window & { auclaireSettings?: any }).auclaireSettings;
             }
         };
     }, []);
@@ -170,9 +170,9 @@ export function RingProvider({ children }: { children: ReactNode }) {
     const [savedDesigns, setSavedDesigns] = useState<SavedDesign[]>(() => {
         try {
             const saved = localStorage.getItem('auclaire_designs')
-            const parsed = saved ? JSON.parse(saved) : []
+            const parsed: SavedDesign[] = saved ? JSON.parse(saved) : []
             // Defensive: Ensure loaded configs have all new fields
-            return parsed.map((d: any) => ({
+            return parsed.map((d) => ({
                 ...d,
                 config: {
                     ...defaultConfig,
@@ -190,14 +190,19 @@ export function RingProvider({ children }: { children: ReactNode }) {
         }
     })
 
-    const deepMerge = (target: any, source: any) => {
+    const deepMerge = <T extends Record<string, any>>(target: T, source: RecursivePartial<T>): T => {
+        const result = { ...target };
         for (const key of Object.keys(source)) {
-            if (source[key] instanceof Object && key in target) {
-                Object.assign(source[key], deepMerge(target[key], source[key]))
+            const sourceValue = (source as any)[key];
+            const targetValue = (target as any)[key];
+            
+            if (sourceValue instanceof Object && key in target && targetValue instanceof Object) {
+                (result as any)[key] = deepMerge(targetValue, sourceValue);
+            } else {
+                (result as any)[key] = sourceValue;
             }
         }
-        Object.assign(target || {}, source)
-        return target
+        return result;
     }
 
     const updateRing = (updates: RecursivePartial<RingConfig>) => {

@@ -8,7 +8,7 @@ export interface CatalogNode {
     description?: string;
     image_url?: string;
     price?: number;
-    specs: Record<string, any>;
+    specs: Record<string, unknown>;
     sort_order: number;
 }
 
@@ -129,7 +129,7 @@ export const apiCatalog = {
         return results;
     },
 
-    async duplicateSubTree(sourceNode: any, targetParentId: string) {
+    async duplicateSubTree(sourceNode: CatalogNode, targetParentId: string) {
         // This client-side method is now deprecated in favor of internal_duplicate_subtree (DB-side)
         // for propagation, but we keep it if needed for other one-off client-side clones.
         const { data: existing } = await supabase

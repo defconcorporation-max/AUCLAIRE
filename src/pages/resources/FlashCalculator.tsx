@@ -164,13 +164,11 @@ export default function FlashCalculator() {
     const navigate = useNavigate();
     const [selections, setSelections] = useState<CatalogNode[]>([]);
     const [preferredLabels, setPreferredLabels] = useState<Record<string, string>>({});
-    const [totalPrice, setTotalPrice] = useState(0);
     const [showroomMode, setShowroomMode] = useState(false);
     const [priceCalculated, setPriceCalculated] = useState(false);
 
-    useEffect(() => {
-        const total = selections.reduce((sum, node) => sum + (node.price || 0), 0);
-        setTotalPrice(total);
+    const totalPrice = useMemo(() => {
+        return selections.reduce((sum, node) => sum + (node.price || 0), 0);
     }, [selections]);
 
     const handleSelect = useCallback((node: CatalogNode) => {

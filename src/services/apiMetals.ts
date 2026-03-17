@@ -21,8 +21,8 @@ export const apiMetals = {
      * This bypasses all Frontend CORS restrictions and API Key exposure.
      */
     async getLatestPrices(): Promise<MetalsPricing> {
-        let xauPrice = 4315.50; // Fallback offline mock price (per Ounce)
-        let xagPrice = 52.30;   // Fallback offline mock price (per Ounce)
+        const xauPrice = 4315.50; // Fallback offline mock price (per Ounce)
+        const xagPrice = 52.30;   // Fallback offline mock price (per Ounce)
 
         try {
             // Call the secure Supabase Edge Function

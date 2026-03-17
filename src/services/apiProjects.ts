@@ -13,6 +13,7 @@ export interface Project {
     priority?: 'normal' | 'rush';
     created_at: string;
     reference_number?: string;
+    share_token?: string;
     client?: { full_name: string; email?: string }; // joined
     sales_agent_id?: string;
     stage_details?: {
