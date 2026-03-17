@@ -183,8 +183,9 @@ export default function Dashboard() {
         return timeframe === 'total' || (date >= periodStart && date <= periodEnd);
     });
 
+    // Total encaissé = all payments in period (all invoices), not filtered by project
     const periodCollectedFromLogs = financialUtils.getCollectedFromLogs(activities || [], periodStart, periodEnd);
-    const periodCollectedFromInvoices = financialUtils.getCollectedFromInvoices(filteredInvoices, periodStart, periodEnd);
+    const periodCollectedFromInvoices = financialUtils.getCollectedFromInvoices(invoices || [], periodStart, periodEnd);
     const periodCollected = Math.max(periodCollectedFromLogs, periodCollectedFromInvoices);
     const periodInvoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
     const periodPotential = periodProjects.reduce((sum, p) => {
