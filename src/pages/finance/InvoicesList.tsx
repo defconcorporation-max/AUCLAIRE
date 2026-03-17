@@ -362,7 +362,7 @@ export default function InvoicesList() {
                                 </div>
                             </div>
 
-                            {(selectedInvoice.amount_paid != null && selectedInvoice.amount_paid > 0) && (role === 'admin' || role === 'secretary') && (
+                            {(Number(selectedInvoice.amount_paid) || 0) > 0 && (
                                 <div className="space-y-2 pt-2 border-t">
                                     <Label className="text-[10px] uppercase text-muted-foreground font-bold">Date du paiement</Label>
                                     <p className="text-xs text-muted-foreground">Modifier la date à laquelle le paiement a été reçu (pour le total encaissé par jour/semaine/mois).</p>
