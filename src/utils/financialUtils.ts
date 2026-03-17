@@ -28,25 +28,47 @@ export const financialUtils = {
     },
 
     /**
-     * Utility: checks whether a given ISO date string falls within [start, end].
-     * Date-only strings (YYYY-MM-DD) are parsed as local midnight so "today" works in all timezones.
+     * Utility: checks whether a given date (string or Date) falls within [start, end].
+     * For single-day periods, also accepts same calendar day (month+day) to handle year mismatch.
      */
-    isInRange(dateStr: string, start: Date, end: Date): boolean {
+    isInRange(dateStr: string | Date | null | undefined, start: Date, end: Date): boolean {
         const d = financialUtils.toLocalDate(dateStr);
-        return d >= start && d <= end;
+        if (!d.getTime()) return false;
+        if (d >= start && d <= end) return true;
+        if (financialUtils.isOneDayPeriod(start, end) && financialUtils.isSameCalendarDay(d, start)) return true;
+        return false;
     },
 
     /**
      * Parse date string for range checks. Date-only (YYYY-MM-DD) → local midnight; with time → normal parse.
+     * Accepts string or Date (e.g. from API).
      */
-    toLocalDate(dateStr: string): Date {
+    toLocalDate(dateStr: string | Date | null | undefined): Date {
+        if (dateStr == null) return new Date(0);
+        if (typeof dateStr !== "string") {
+            const d = dateStr as Date;
+            return d && d.getTime ? d : new Date(0);
+        }
         const s = dateStr.trim();
         if (!s) return new Date(0);
-        if (s.length === 10 && s[4] === "-" && s[7] === "-") {
-            const [y, m, d] = s.split("-").map(Number);
-            return new Date(y, m - 1, d, 0, 0, 0, 0);
+        if (s.length >= 10 && s[4] === "-" && s[7] === "-") {
+            const [y, m, d] = s.substring(0, 10).split("-").map(Number);
+            if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d))
+                return new Date(y, m - 1, d, 0, 0, 0, 0);
         }
         return new Date(s);
+    },
+
+    /** True if the period is a single calendar day (for "today" fallback). */
+    isOneDayPeriod(start: Date, end: Date): boolean {
+        const sameDay = start.getDate() === end.getDate() && start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+        const sameOrAdjacent = end.getTime() - start.getTime() < 48 * 60 * 60 * 1000;
+        return sameDay || sameOrAdjacent;
+    },
+
+    /** True if d has the same month and day as ref (ignores year). */
+    isSameCalendarDay(d: Date, ref: Date): boolean {
+        return d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate();
     },
 
     /**
