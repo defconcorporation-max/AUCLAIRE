@@ -1,6 +1,7 @@
 import { Project } from '@/services/apiProjects';
 import { ActivityLog } from '@/services/apiActivities';
 import { CompanySettings } from '@/services/apiSettings';
+import { financialUtils } from '@/utils/financialUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -102,15 +103,13 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
             });
         }
 
-        const price = Number(p.financials?.selling_price || p.budget || 0);
-        const dynamicCosts = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
-        const totalCosts = Number(p.financials?.supplier_cost || 0) + 
-                          Number(p.financials?.shipping_cost || 0) + 
-                          Number(p.financials?.customs_fee || 0) + 
-                          dynamicCosts;
+        const price = financialUtils.getSalePrice(p);
+        const totalCosts = financialUtils.computeProjectCosts(p.financials);
+        const commission = financialUtils.computeCommissionAmount(p);
 
         if (price > 0) {
-            const margin = (price - totalCosts) / price;
+            // Margin based on full economic costs (including commission)
+            const margin = (price - totalCosts - commission) / price;
             const marginWarn = (settings?.margin_warn_percent || 20) / 100;
             const marginDanger = (settings?.margin_danger_percent || 10) / 100;
 

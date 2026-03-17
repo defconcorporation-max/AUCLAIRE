@@ -12,6 +12,7 @@ import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { financialUtils } from '@/utils/financialUtils';
+import { formatCurrency } from '@/lib/utils';
 
 export default function AnalyticsDashboard() {
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
@@ -321,7 +322,9 @@ export default function AnalyticsDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">${trendData.current.avgOrder.toLocaleString()}</div>
+                            <div className="text-3xl font-serif text-black dark:text-white">
+                                {formatCurrency(trendData.current.avgOrder)}
+                            </div>
                             {timeframe !== 'total' && <TrendBadge value={trendData.growth.avgOrder} label={trendData.label} />}
                         </div>
                     </CardContent>
@@ -333,7 +336,9 @@ export default function AnalyticsDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">${trendData.current.collected.toLocaleString()}</div>
+                            <div className="text-3xl font-serif text-black dark:text-white">
+                                {formatCurrency(trendData.current.collected)}
+                            </div>
                             {timeframe !== 'total' && <TrendBadge value={trendData.growth.collected} label={trendData.label} />}
                         </div>
                     </CardContent>
@@ -358,7 +363,7 @@ export default function AnalyticsDashboard() {
                     <CardContent>
                         <div className="flex items-baseline justify-between">
                             <div className={`text-3xl font-serif ${trendData.current.profit >= 0 ? 'text-black dark:text-white' : 'text-red-500'}`}>
-                                ${trendData.current.profit.toLocaleString()}
+                                {formatCurrency(trendData.current.profit)}
                             </div>
                             {timeframe !== 'total' && <TrendBadge value={trendData.growth.profit} label={trendData.label} />}
                         </div>
@@ -372,7 +377,7 @@ export default function AnalyticsDashboard() {
                     <CardContent>
                         <div className="flex items-baseline justify-between">
                             <div className="text-3xl font-serif text-black dark:text-white">
-                                ${trendData.current.outstanding.toLocaleString()}
+                                {formatCurrency(trendData.current.outstanding)}
                             </div>
                             {timeframe !== 'total' && <TrendBadge value={trendData.growth.outstanding} label={trendData.label} />}
                         </div>
@@ -385,7 +390,9 @@ export default function AnalyticsDashboard() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif text-luxury-gold">${Math.round(next3MonthsData.reduce((s, m) => s + m.projected, 0)).toLocaleString()}</div>
+                        <div className="text-3xl font-serif text-luxury-gold">
+                            {formatCurrency(Math.round(next3MonthsData.reduce((s, m) => s + m.projected, 0)))}
+                        </div>
                         <p className="text-[10px] text-zinc-500 uppercase tracking-tighter mt-1">Valeur estimée du pipeline selon probabilité d'étape</p>
                     </CardContent>
                 </Card>
@@ -424,11 +431,11 @@ export default function AnalyticsDashboard() {
                                         fontSize={12}
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(value) => `$${value}`}
+                                        tickFormatter={(value) => formatCurrency(value as number)}
                                     />
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
                                     <Tooltip
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                                        formatter={(value: number) => [formatCurrency(value), ""]}
                                         contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
                                     />
                                     <Area type="monotone" name="Facturé ($)" dataKey="invoiced" stroke="#A68A56" fillOpacity={1} fill="url(#colorInvoiced)" />
@@ -456,9 +463,9 @@ export default function AnalyticsDashboard() {
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-serif text-black dark:text-white">{leaderboard[0].name}</h3>
-                                    <p className="text-luxury-gold mt-1 uppercase tracking-widest text-sm font-semibold">
-                                        ${leaderboard[0].volume.toLocaleString()} Générés
-                                    </p>
+                                        <p className="text-luxury-gold mt-1 uppercase tracking-widest text-sm font-semibold">
+                                            {formatCurrency(leaderboard[0].volume)} Générés
+                                        </p>
                                     <p className="text-gray-500 text-xs mt-2">{leaderboard[0].projectCount} Projets signés</p>
                                 </div>
                             </div>
@@ -658,15 +665,15 @@ export default function AnalyticsDashboard() {
                                             {seller.projectCount}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right font-serif text-lg font-bold">
-                                        ${seller.volume.toLocaleString()}
-                                    </TableCell>
-                                    <TableCell className="text-right font-serif text-lg font-bold text-green-600 dark:text-green-500">
-                                        ${seller.cashCollected.toLocaleString()}
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono text-sm text-purple-600 dark:text-purple-400 font-medium">
-                                        ${seller.commissions.toLocaleString()}
-                                    </TableCell>
+                            <TableCell className="text-right font-serif text-lg font-bold">
+                                        {formatCurrency(seller.volume)}
+                            </TableCell>
+                            <TableCell className="text-right font-serif text-lg font-bold text-green-600 dark:text-green-500">
+                                        {formatCurrency(seller.cashCollected)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono text-sm text-purple-600 dark:text-purple-400 font-medium">
+                                        {formatCurrency(seller.commissions)}
+                            </TableCell>
                                 </TableRow>
                             ))}
                             {leaderboard.length === 0 && (

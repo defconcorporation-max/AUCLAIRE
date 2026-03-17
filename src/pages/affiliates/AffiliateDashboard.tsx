@@ -1,4 +1,5 @@
 import { Project } from '@/services/apiProjects';
+import { formatCurrency } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiAffiliates, AffiliateStats } from '@/services/apiAffiliates';
@@ -86,7 +87,7 @@ export default function AffiliateDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-luxury-gold">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(commissionEarned)}
+                            {formatCurrency(commissionEarned)}
                         </div>
                         <p className="text-xs text-gray-500">Revenus estimés totaux</p>
                     </CardContent>
@@ -99,7 +100,7 @@ export default function AffiliateDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-amber-600 dark:text-amber-400">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(pendingTotal)}
+                            {formatCurrency(pendingTotal)}
                         </div>
                         <p className="text-xs text-amber-600/70 dark:text-amber-500/70">À recevoir bientôt</p>
                     </CardContent>
@@ -112,7 +113,7 @@ export default function AffiliateDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-green-600 dark:text-green-400">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(paidTotal)}
+                            {formatCurrency(paidTotal)}
                         </div>
                         <p className="text-xs text-green-600/70 dark:text-green-500/70">Reçu à ce jour</p>
                     </CardContent>
@@ -165,7 +166,7 @@ export default function AffiliateDashboard() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-mono font-bold text-luxury-gold">
-                                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(Number(c.amount))}
+                                            {formatCurrency(Number(c.amount))}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -202,16 +203,9 @@ export default function AffiliateDashboard() {
                                 ) : (
                                     projects.map((project: Project) => {
                                         const price = Number(project.financials?.selling_price || project.budget || 0);
-                                        let com = 0;
-                                        let rateDisplay = '';
-                                        if (project.affiliate_commission_type === 'fixed') {
-                                            com = project.affiliate_commission_rate || 0;
-                                            rateDisplay = 'Fixe';
-                                        } else {
-                                            const rate = project.affiliate_commission_rate || 0;
-                                            rateDisplay = `${rate}%`;
-                                            com = (price * rate) / 100;
-                                        }
+                                        const com = financialUtils.computeCommissionAmount(project as Project);
+                                        const rate = project.affiliate_commission_rate || 0;
+                                        const rateDisplay = project.affiliate_commission_type === 'fixed' ? 'Fixe' : `${rate}%`;
 
                                         const isExported = project.financials?.commission_exported_to_expenses;
 
@@ -226,10 +220,10 @@ export default function AffiliateDashboard() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono">
-                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(price)}
+                                                    {formatCurrency(price)}
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono font-bold text-luxury-gold">
-                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(com)}
+                                                    {formatCurrency(com)}
                                                     <span className="block text-[10px] text-gray-400 font-normal">{rateDisplay}</span>
                                                 </TableCell>
                                                 <TableCell className="text-right">

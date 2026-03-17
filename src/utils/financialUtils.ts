@@ -1,6 +1,7 @@
 import { ActivityLog } from "@/services/apiActivities";
+import type { Financials, Project } from "@/services/apiProjects";
 
-// Shared, robust parsing and date helpers for all financial analytics
+// Shared, robust parsing and financial helpers for all analytics
 
 // Matches our activity log patterns such as:
 // - "Paiement enregistré: +123$ (Initial, Inv: XXXX)"
@@ -74,7 +75,76 @@ export const financialUtils = {
             // Business decision: total reporting starts Jan 1, 2024
             return { start: new Date(2024, 0, 1), end: now };
         }
-
         return { start, end: now };
+    },
+
+    /**
+     * Computes the total direct costs of a project from its financials
+     * (supplier, shipping, customs, additional_expense and dynamic cost_items).
+     */
+    computeProjectCosts(financials?: Financials | null): number {
+        if (!financials) return 0;
+        const baseCosts =
+            Number(financials.supplier_cost || 0) +
+            Number(financials.shipping_cost || 0) +
+            Number(financials.customs_fee || 0) +
+            Number(financials.additional_expense || 0);
+
+        const dynamicCosts =
+            financials.cost_items?.reduce(
+                (sum, item) => sum + (Number(item.amount) || 0),
+                0
+            ) || 0;
+
+        return baseCosts + dynamicCosts;
+    },
+
+    /**
+     * Computes the affiliate commission amount for a project, or 0 if none.
+     */
+    computeCommissionAmount(project: Project): number {
+        if (!project.affiliate_id) return 0;
+        const rate = Number(project.affiliate_commission_rate || 0);
+        if (!Number.isFinite(rate) || rate <= 0) return 0;
+
+        const salePrice = Number(project.financials?.selling_price || project.budget || 0);
+        if (salePrice <= 0) return 0;
+
+        if (project.affiliate_commission_type === "fixed") {
+            return rate;
+        }
+        return (salePrice * rate) / 100;
+    },
+
+    /**
+     * Computes the gross sale price used for margin calculations.
+     */
+    getSalePrice(project: Project): number {
+        return Number(project.financials?.selling_price || project.budget || 0);
+    },
+
+    /**
+     * Computes absolute and percentage margin for a project, excluding tax.
+     */
+    computeProjectMargin(project: Project): { marginAmount: number; marginPercent: number } {
+        const salePrice = financialUtils.getSalePrice(project);
+        if (salePrice <= 0) {
+            return { marginAmount: 0, marginPercent: 0 };
+        }
+
+        const directCosts = financialUtils.computeProjectCosts(project.financials);
+        const commission = financialUtils.computeCommissionAmount(project);
+
+        const marginAmount = salePrice - directCosts - commission;
+        const marginPercent = (marginAmount / salePrice) * 100;
+
+        return { marginAmount, marginPercent };
+    },
+
+    /**
+     * Simple helper for global cash-based profit.
+     */
+    computeGlobalProfit(collected: number, expenses: number): number {
+        return Number(collected || 0) - Number(expenses || 0);
     },
 };

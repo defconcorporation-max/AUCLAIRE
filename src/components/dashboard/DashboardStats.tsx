@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Banknote, Clock, TrendingUp, HandCoins } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface DashboardStatsProps {
     totalCollected: number;
@@ -58,7 +59,7 @@ export function DashboardStats({
             title: "Marge Actualisée",
             value: totalProfit,
             sub: "Revenu Net",
-            detail: `/ $${projectedProfit.toLocaleString()} Proj.`,
+            detail: `/ ${formatCurrency(projectedProfit)} Proj.`,
             icon: TrendingUp,
             color: "text-luxury-gold",
             bg: "bg-luxury-gold/10",
@@ -85,7 +86,7 @@ export function DashboardStats({
                         </CardHeader>
                         <CardContent>
                             <div className={`text-3xl font-serif mb-1 ${stat.highlight ? 'text-luxury-gold' : 'text-foreground'}`}>
-                                ${stat.value.toLocaleString()}
+                                {formatCurrency(stat.value)}
                             </div>
                             <div className="flex items-center justify-between gap-2">
                                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">

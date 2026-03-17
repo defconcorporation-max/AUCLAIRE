@@ -902,11 +902,7 @@ export default function ProjectDetails() {
                                 <ProjectFinancialDashboard 
                                     budget={project.budget}
                                     financials={project.financials}
-                                    commission={(() => {
-                                        const salePrice = Number(project.financials?.selling_price || project.budget || 0);
-                                        if (project.affiliate_commission_type === 'fixed') return Number(project.affiliate_commission_rate || 0);
-                                        return (salePrice * (Number(project.affiliate_commission_rate) || 0) / 100);
-                                    })()}
+                                    commission={financialUtils.computeCommissionAmount(project)}
                                 />
                             </TabsContent>
                         )}
@@ -1091,11 +1087,7 @@ export default function ProjectDetails() {
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Calculated</span>
                                                 <span className="text-sm font-bold text-luxury-gold">
-                                                    ${(() => {
-                                                        const salePrice = Number(project.financials?.selling_price || project.budget || 0);
-                                                        if (project.affiliate_commission_type === 'fixed') return (project.affiliate_commission_rate || 0).toLocaleString();
-                                                        return ((salePrice * (project.affiliate_commission_rate || 0)) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                                    })()}
+                                                    ${financialUtils.computeCommissionAmount(project).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </span>
                                             </div>
                                             {(!project.financials?.commission_exported_to_expenses) ? (
@@ -1104,10 +1096,7 @@ export default function ProjectDetails() {
                                                     variant="outline"
                                                     className="text-[10px] h-7 gap-1 text-luxury-gold border-luxury-gold/30 hover:bg-luxury-gold hover:text-black transition-colors"
                                                     onClick={async () => {
-                                                        const salePrice = Number(project.financials?.selling_price || project.budget || 0);
-                                                        const amount = project.affiliate_commission_type === 'fixed'
-                                                            ? (project.affiliate_commission_rate || 0)
-                                                            : (salePrice * (project.affiliate_commission_rate || 0) / 100);
+                                                        const amount = financialUtils.computeCommissionAmount(project);
 
                                                         if (amount <= 0) {
                                                             alert("Commission amount must be greater than 0.");
@@ -1397,34 +1386,28 @@ export default function ProjectDetails() {
                                         <>
                                             <div>Commission ({project.affiliate_commission_type === 'fixed' ? 'Fixed' : `${project.affiliate_commission_rate}%`}):</div>
                                             <div className="font-mono text-right text-red-500">
-                                                -${(() => {
-                                                    const salePrice = Number(project.financials?.selling_price || project.budget || 0);
-                                                    if (project.affiliate_commission_type === 'fixed') return Number(project.affiliate_commission_rate || 0);
-                                                    return (salePrice * (Number(project.affiliate_commission_rate) || 0) / 100);
-                                                })().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                -${financialUtils
+                                                    .computeCommissionAmount(project)
+                                                    .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </div>
                                         </>
                                     )}
 
                                     <div className="border-t pt-1 font-bold">Net Profit:</div>
-                                    <div className={`border-t pt-1 font-mono text-right font-bold ${(() => {
-                                        const salePrice = Number(project.financials?.selling_price || project.budget || 0);
-                                        const comm = project.affiliate_id ? (project.affiliate_commission_type === 'fixed' ? Number(project.affiliate_commission_rate || 0) : (salePrice * (Number(project.affiliate_commission_rate) || 0) / 100)) : 0;
-                                        const dynamicCosts = project.financials?.cost_items?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
-                                        return salePrice - (project.financials?.supplier_cost || 0) - (project.financials?.shipping_cost || 0) - (project.financials?.customs_fee || 0) - (project.financials?.additional_expense || 0) - dynamicCosts - comm > 0 ? 'text-green-600' : 'text-red-600';
-                                    })()}`}>
-                                        ${(() => {
-                                            const salePrice = Number(project.financials?.selling_price || project.budget || 0);
-                                            const comm = project.affiliate_id ? (project.affiliate_commission_type === 'fixed' ? Number(project.affiliate_commission_rate || 0) : (salePrice * (Number(project.affiliate_commission_rate) || 0) / 100)) : 0;
-                                            const dynamicCosts = project.financials?.cost_items?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
-                                            return (salePrice -
-                                                (project.financials?.supplier_cost || 0) -
-                                                (project.financials?.shipping_cost || 0) -
-                                                (project.financials?.customs_fee || 0) -
-                                                (project.financials?.additional_expense || 0) -
-                                                dynamicCosts -
-                                                comm
-                                            ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                    <div
+                                        className={`border-t pt-1 font-mono text-right font-bold ${
+                                            (() => {
+                                                const { marginAmount } = financialUtils.computeProjectMargin(project);
+                                                return marginAmount > 0 ? 'text-green-600' : 'text-red-600';
+                                            })()
+                                        }`}
+                                    >
+                                        {(() => {
+                                            const { marginAmount } = financialUtils.computeProjectMargin(project);
+                                            return `$${marginAmount.toLocaleString(undefined, {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            })}`;
                                         })()}
                                     </div>
                                 </div>

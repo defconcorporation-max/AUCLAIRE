@@ -148,12 +148,8 @@ export default function Dashboard() {
     const adminDesignReady = filteredProjects.filter(p => p.status === 'design_ready' || p.status === 'waiting_for_approval').sort(sortByRush);
 
     // Financial Logic
-    const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
-    const getCommissionEstimate = (p: Project) => {
-        if (!p.affiliate_id && !p.sales_agent_id) return 0;
-        if (p.affiliate_commission_type === 'fixed') return Number(p.affiliate_commission_rate || 0);
-        return (getSalePrice(p) * Number(p.affiliate_commission_rate || 0)) / 100;
-    };
+    const getSalePrice = (p: Project) => financialUtils.getSalePrice(p);
+    const getCommissionEstimate = (p: Project) => financialUtils.computeCommissionAmount(p);
 
     const totalCollected = filteredInvoices.reduce((sum, i) => sum + ((i.amount_paid && i.amount_paid > 0) ? i.amount_paid : (i.status === 'paid' ? i.amount : 0)), 0);
     const totalInvoiced = filteredInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
