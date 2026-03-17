@@ -63,8 +63,10 @@ export default function AnalyticsDashboard() {
                 return date >= start && date <= end && exp.status !== 'cancelled';
             });
 
-            // Source of Truth for Cash: activity_logs via shared Utils
-            const collected = financialUtils.getCollectedFromLogs(activities || [], start, end);
+            // Cash: activity_logs first; fallback to invoices by paid_at so old invoices paid in period count
+            const fromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
+            const fromInvoices = financialUtils.getCollectedFromInvoices(invoices, start, end);
+            const collected = fromLogs > 0 ? fromLogs : fromInvoices;
 
             const invoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
             const expAmount = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
@@ -106,11 +108,13 @@ export default function AnalyticsDashboard() {
     const currentYear = new Date().getFullYear();
     const monthlyData = months.map(m => ({ month: m, collected: 0, invoiced: 0, expenses: 0 }));
 
-    // Aggregate collections by month from activity_logs using shared cash helper
+    // Collections by month: logs first, then invoices by paid_at (same date rule everywhere)
     months.forEach((_, monthIdx) => {
         const start = new Date(currentYear, monthIdx, 1, 0, 0, 0, 0);
         const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59, 999);
-        monthlyData[monthIdx].collected = financialUtils.getCollectedFromLogs(activities || [], start, end);
+        const fromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
+        const fromInvoices = financialUtils.getCollectedFromInvoices(invoices, start, end);
+        monthlyData[monthIdx].collected = fromLogs > 0 ? fromLogs : fromInvoices;
     });
 
     // Handle invoiced and expenses as before but ensure year check

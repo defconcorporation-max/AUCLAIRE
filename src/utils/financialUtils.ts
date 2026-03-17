@@ -53,6 +53,29 @@ export const financialUtils = {
     },
 
     /**
+     * Fallback: total collected from invoices whose payment date (paid_at or created_at if paid) falls in [start, end].
+     * Use when activity logs are missing so encaissé stays aligned with real payment dates.
+     */
+    getCollectedFromInvoices(
+        invoices: { paid_at?: string; created_at: string; amount_paid?: number; amount?: number; status: string }[],
+        start: Date,
+        end: Date
+    ): number {
+        if (!invoices?.length) return 0;
+        return invoices.reduce((sum, inv) => {
+            const paidAt = inv.paid_at || (inv.status === "paid" ? inv.created_at : null);
+            if (!paidAt || !financialUtils.isInRange(paidAt, start, end)) return sum;
+            const paidValue =
+                Number(inv.amount_paid) > 0
+                    ? Number(inv.amount_paid)
+                    : inv.status === "paid"
+                        ? Number(inv.amount || 0)
+                        : 0;
+            return sum + paidValue;
+        }, 0);
+    },
+
+    /**
      * Gets start/end of period dates for calendar logic.
      * Weeks start on Monday. All boundaries are local-time midnight for simplicity.
      */

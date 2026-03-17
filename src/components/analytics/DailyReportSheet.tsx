@@ -48,21 +48,10 @@ export default function DailyReportSheet() {
 
         const invoiced = filteredInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
 
-        // Primary source of truth: activity_logs
+        // Primary: activity_logs (date = when payment was recorded)
         const collectedFromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
-
-        // Fallback: if no payment logs found but invoices show payments in this range,
-        // approximate collections from invoice amounts to avoid showing 0 to the user.
-        const collectedFromInvoices = filteredInvoices.reduce((sum, inv) => {
-            const paidValue =
-                Number(inv.amount_paid) > 0
-                    ? Number(inv.amount_paid)
-                    : inv.status === 'paid'
-                        ? Number(inv.amount || 0)
-                        : 0;
-            return sum + paidValue;
-        }, 0);
-
+        // Fallback: invoices with paid_at (or created_at if paid) in period — old invoices paid this week count
+        const collectedFromInvoices = financialUtils.getCollectedFromInvoices(invoices, start, end);
         const collected = collectedFromLogs > 0 ? collectedFromLogs : collectedFromInvoices;
 
         const spent = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);

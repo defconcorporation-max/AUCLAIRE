@@ -183,7 +183,9 @@ export default function Dashboard() {
         return timeframe === 'total' || (date >= periodStart && date <= periodEnd);
     });
 
-    const periodCollected = financialUtils.getCollectedFromLogs(activities || [], periodStart, periodEnd);
+    const periodCollectedFromLogs = financialUtils.getCollectedFromLogs(activities || [], periodStart, periodEnd);
+    const periodCollectedFromInvoices = financialUtils.getCollectedFromInvoices(filteredInvoices, periodStart, periodEnd);
+    const periodCollected = periodCollectedFromLogs > 0 ? periodCollectedFromLogs : periodCollectedFromInvoices;
     const periodInvoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
     const periodPotential = periodProjects.reduce((sum, p) => {
         if (p.status === 'cancelled' || invoicedProjectIds.has(p.id)) return sum;
@@ -231,9 +233,9 @@ export default function Dashboard() {
             return date >= start && date <= end;
         });
 
-        // Use activity logs for accurate collection timing if available, 
-        // fallback to invoice timing for legacy (though activities are preferred and synced now)
-        const collected = financialUtils.getCollectedFromLogs(activities || [], start, end);
+        const fromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
+        const fromInvoices = financialUtils.getCollectedFromInvoices(filteredInvoices, start, end);
+        const collected = fromLogs > 0 ? fromLogs : fromInvoices;
 
         const volume = periodProjects.reduce((s, p) => s + getSalePrice(p), 0);
         
