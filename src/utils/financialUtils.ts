@@ -109,7 +109,10 @@ export const financialUtils = {
         start.setHours(0, 0, 0, 0);
 
         if (mode === "day" || mode === "today") {
-            // start is already correctly set to 00:00:00 local
+            // Full calendar day so payments anytime today count (end = 23:59:59.999)
+            const endOfToday = new Date(start);
+            endOfToday.setHours(23, 59, 59, 999);
+            return { start, end: endOfToday };
         } else if (mode === "week") {
             const day = now.getDay(); // 0 (Sun) - 6 (Mon)
             const diff = now.getDate() - day + (day === 0 ? -6 : 1); // shift to Monday

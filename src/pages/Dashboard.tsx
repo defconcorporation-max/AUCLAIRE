@@ -185,7 +185,7 @@ export default function Dashboard() {
 
     const periodCollectedFromLogs = financialUtils.getCollectedFromLogs(activities || [], periodStart, periodEnd);
     const periodCollectedFromInvoices = financialUtils.getCollectedFromInvoices(filteredInvoices, periodStart, periodEnd);
-    const periodCollected = periodCollectedFromLogs > 0 ? periodCollectedFromLogs : periodCollectedFromInvoices;
+    const periodCollected = Math.max(periodCollectedFromLogs, periodCollectedFromInvoices);
     const periodInvoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
     const periodPotential = periodProjects.reduce((sum, p) => {
         if (p.status === 'cancelled' || invoicedProjectIds.has(p.id)) return sum;
@@ -235,7 +235,7 @@ export default function Dashboard() {
 
         const fromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
         const fromInvoices = financialUtils.getCollectedFromInvoices(filteredInvoices, start, end);
-        const collected = fromLogs > 0 ? fromLogs : fromInvoices;
+        const collected = Math.max(fromLogs, fromInvoices);
 
         const volume = periodProjects.reduce((s, p) => s + getSalePrice(p), 0);
         

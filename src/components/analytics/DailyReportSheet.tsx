@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Sheet,
@@ -28,9 +28,16 @@ export default function DailyReportSheet() {
     const [open, setOpen] = useState(false);
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('day');
 
-    const { data: invoices = [] } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll, enabled: open });
+    const { data: invoices = [], refetch: refetchInvoices } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll, enabled: open });
     const { data: expenses = [] } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll, enabled: open });
-    const { data: activities = [] } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll, enabled: open });
+    const { data: activities = [], refetch: refetchActivities } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll, enabled: open });
+
+    useEffect(() => {
+        if (open) {
+            refetchInvoices();
+            refetchActivities();
+        }
+    }, [open, refetchInvoices, refetchActivities]);
 
     const stats = useMemo(() => {
         const { start, end } = financialUtils.getPeriodRange(
@@ -48,11 +55,10 @@ export default function DailyReportSheet() {
 
         const invoiced = filteredInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
 
-        // Primary: activity_logs (date = when payment was recorded)
         const collectedFromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
-        // Fallback: invoices with paid_at (or created_at if paid) in period — old invoices paid this week count
         const collectedFromInvoices = financialUtils.getCollectedFromInvoices(invoices, start, end);
-        const collected = collectedFromLogs > 0 ? collectedFromLogs : collectedFromInvoices;
+        // Use the best of both so we never show 0 when either source has data
+        const collected = Math.max(collectedFromLogs, collectedFromInvoices);
 
         const spent = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
         const profit = collected - spent;
