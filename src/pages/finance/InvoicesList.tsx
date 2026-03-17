@@ -42,6 +42,8 @@ export default function InvoicesList() {
     const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+    const [editingPaidAt, setEditingPaidAt] = useState<string>('');
+    const [savingPaidAt, setSavingPaidAt] = useState(false);
 
     // Edit Link Handlers
     const openEditModal = (invoice: Invoice) => {
@@ -89,7 +91,22 @@ export default function InvoicesList() {
 
     const openDetailsModal = (invoice: Invoice) => {
         setSelectedInvoice(invoice);
+        const paidAt = invoice.paid_at || (invoice.status === 'paid' ? invoice.created_at : null);
+        setEditingPaidAt(paidAt ? new Date(paidAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
         setIsDetailsModalOpen(true);
+    };
+
+    const handleSavePaidAt = async () => {
+        if (!selectedInvoice || !editingPaidAt) return;
+        setSavingPaidAt(true);
+        try {
+            const paidAtISO = new Date(editingPaidAt + 'T12:00:00').toISOString();
+            await apiInvoices.update(selectedInvoice.id, { paid_at: paidAtISO });
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            setSelectedInvoice(prev => prev ? { ...prev, paid_at: paidAtISO } : null);
+        } finally {
+            setSavingPaidAt(false);
+        }
     };
 
     return (
@@ -344,6 +361,29 @@ export default function InvoicesList() {
                                     <p className="text-xs">Due: {selectedInvoice.due_date ? new Date(selectedInvoice.due_date).toLocaleDateString() : 'N/A'}</p>
                                 </div>
                             </div>
+
+                            {(selectedInvoice.amount_paid != null && selectedInvoice.amount_paid > 0) && (role === 'admin' || role === 'secretary') && (
+                                <div className="space-y-2 pt-2 border-t">
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Date du paiement</Label>
+                                    <p className="text-xs text-muted-foreground">Modifier la date à laquelle le paiement a été reçu (pour le total encaissé par jour/semaine/mois).</p>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            type="date"
+                                            value={editingPaidAt}
+                                            onChange={(e) => setEditingPaidAt(e.target.value)}
+                                            className="max-w-[180px]"
+                                        />
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={handleSavePaidAt}
+                                            disabled={savingPaidAt}
+                                        >
+                                            {savingPaidAt ? 'Enregistrement…' : 'Enregistrer la date'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
 
                             {selectedInvoice.stripe_payment_link && (
                                 <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-md">
