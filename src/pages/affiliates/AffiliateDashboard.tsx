@@ -1,5 +1,6 @@
 import { Project } from '@/services/apiProjects';
 import { formatCurrency } from '@/lib/utils';
+import { financialUtils } from '@/utils/financialUtils';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiAffiliates, AffiliateStats } from '@/services/apiAffiliates';

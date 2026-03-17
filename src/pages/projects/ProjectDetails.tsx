@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateCanadianTax, provinceNames, CanadianProvince, formatCurrency } from '@/utils/taxUtils';
-
+import { financialUtils } from '@/utils/financialUtils';
 
 
 export default function ProjectDetails() {
