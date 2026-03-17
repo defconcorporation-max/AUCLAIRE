@@ -366,28 +366,17 @@ export default function InvoicesList() {
                             {/* ====== PAYMENT HISTORY ====== */}
                             <div className="space-y-3 pt-2 border-t">
                                 <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
-                                    <DollarSign className="w-3 h-3" /> Historique des paiements
+                                    <DollarSign className="w-3 h-3" /> Paiements
                                 </Label>
 
                                 {payments.length === 0 && (Number(selectedInvoice.amount_paid) || 0) === 0 && (
                                     <p className="text-xs text-muted-foreground italic">Aucun paiement enregistré.</p>
                                 )}
 
-                                {/* Legacy: show single amount_paid if no payment_history yet */}
-                                {payments.length === 0 && (Number(selectedInvoice.amount_paid) || 0) > 0 && (
-                                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                                        <p className="text-xs text-amber-700 dark:text-amber-300">
-                                            Paiement existant de <strong>{formatCurrency(selectedInvoice.amount_paid)}</strong> sans historique détaillé.
-                                            Ajoutez un nouveau paiement ci-dessous pour migrer vers le suivi détaillé.
-                                        </p>
-                                    </div>
-                                )}
-
                                 {/* Payment entries list */}
                                 {payments.map((p, idx) => (
                                     <div key={p.id} className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-3 space-y-2">
                                         {editingPaymentId === p.id ? (
-                                            /* Edit mode */
                                             <div className="space-y-2">
                                                 <div className="grid grid-cols-3 gap-2">
                                                     <div>
@@ -411,7 +400,6 @@ export default function InvoicesList() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            /* Read mode */
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-xs font-bold text-muted-foreground w-5">#{idx + 1}</span>
@@ -437,57 +425,51 @@ export default function InvoicesList() {
                                     </div>
                                 ))}
 
-                                {/* Add new payment form */}
-                                {selectedInvoice.status !== 'paid' && (
-                                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 space-y-2">
-                                        <Label className="text-[10px] uppercase text-green-700 dark:text-green-400 font-bold">
-                                            + Ajouter un paiement
-                                        </Label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <div>
-                                                <Label className="text-[9px] uppercase text-muted-foreground">Montant ($)</Label>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    value={newPayAmount}
-                                                    onChange={(e) => setNewPayAmount(e.target.value)}
-                                                    className="h-8 text-sm"
-                                                />
-                                                {remainingAmount > 0 && (
-                                                    <p className="text-[10px] text-muted-foreground mt-0.5">Restant: {formatCurrency(remainingAmount)}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <Label className="text-[9px] uppercase text-muted-foreground">Date</Label>
-                                                <Input
-                                                    type="date"
-                                                    value={newPayDate}
-                                                    onChange={(e) => setNewPayDate(e.target.value)}
-                                                    className="h-8 text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label className="text-[9px] uppercase text-muted-foreground">Note</Label>
-                                                <Input
-                                                    value={newPayNote}
-                                                    onChange={(e) => setNewPayNote(e.target.value)}
-                                                    placeholder="Dépôt, Solde..."
-                                                    className="h-8 text-sm"
-                                                />
-                                            </div>
+                                {/* Add new payment form — always visible unless fully paid */}
+                                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 space-y-2">
+                                    <Label className="text-[10px] uppercase text-green-700 dark:text-green-400 font-bold">
+                                        + Ajouter un paiement
+                                    </Label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <Label className="text-[9px] uppercase text-muted-foreground">Montant ($)</Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={newPayAmount}
+                                                onChange={(e) => setNewPayAmount(e.target.value)}
+                                                className="h-8 text-sm"
+                                            />
+                                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                                Total facture: {formatCurrency(selectedInvoice.amount)}
+                                                {remainingAmount > 0 && <> · Restant: {formatCurrency(remainingAmount)}</>}
+                                            </p>
                                         </div>
-                                        <div className="flex justify-end">
-                                            <Button size="sm" onClick={handleAddPayment} disabled={saving || !newPayAmount}>
-                                                {saving ? 'Enregistrement…' : 'Enregistrer le paiement'}
-                                            </Button>
+                                        <div>
+                                            <Label className="text-[9px] uppercase text-muted-foreground">Date</Label>
+                                            <Input
+                                                type="date"
+                                                value={newPayDate}
+                                                onChange={(e) => setNewPayDate(e.target.value)}
+                                                className="h-8 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-[9px] uppercase text-muted-foreground">Note</Label>
+                                            <Input
+                                                value={newPayNote}
+                                                onChange={(e) => setNewPayNote(e.target.value)}
+                                                placeholder="Dépôt, Solde..."
+                                                className="h-8 text-sm"
+                                            />
                                         </div>
                                     </div>
-                                )}
-
-                                {/* Paid invoice: allow editing payments but not adding new ones */}
-                                {selectedInvoice.status === 'paid' && payments.length > 0 && (
-                                    <p className="text-[10px] text-green-600 italic">Facture entièrement payée. Cliquez sur le crayon pour modifier une date ou un montant.</p>
-                                )}
+                                    <div className="flex justify-end">
+                                        <Button size="sm" onClick={handleAddPayment} disabled={saving || !newPayAmount}>
+                                            {saving ? 'Enregistrement…' : 'Enregistrer le paiement'}
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Payment Link */}

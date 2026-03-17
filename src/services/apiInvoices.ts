@@ -87,15 +87,6 @@ export const apiInvoices = {
 
         const history: PaymentEntry[] = Array.isArray(current.payment_history) ? [...current.payment_history] : [];
 
-        if (history.length === 0 && (Number(current.amount_paid) || 0) > 0) {
-            history.push({
-                id: crypto.randomUUID(),
-                amount: Number(current.amount_paid),
-                date: current.paid_at || new Date().toISOString(),
-                note: 'Paiement précédent',
-            });
-        }
-
         const newEntry: PaymentEntry = { ...entry, id: crypto.randomUUID() };
         history.push(newEntry);
 
