@@ -44,7 +44,6 @@ export default function ClientQuote() {
     });
 
     const projectInvoices = invoices.filter(inv => inv.project_id === projectId);
-    const totalInvoiced = projectInvoices.reduce((s, inv) => s + Number(inv.amount || 0), 0);
     const totalPaid = projectInvoices.reduce((s, inv) => s + Number(inv.amount_paid || 0), 0);
 
     const handlePrint = () => window.print();
@@ -99,7 +98,7 @@ export default function ClientQuote() {
     ].filter((url, i, arr) => arr.indexOf(url) === i);
 
     const quoteItems: QuoteItem[] = costItems.length > 0
-        ? costItems.map((ci, idx) => ({
+        ? costItems.map((ci) => ({
             id: ci.id,
             title: ci.detail,
             description: '',
