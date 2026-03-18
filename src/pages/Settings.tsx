@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building, Save } from "lucide-react";
+import { resetOnboarding } from "@/components/OnboardingTour";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Settings() {
     // Initialize with defaults to avoid "Promise" type mismatch errors during initial render
@@ -40,7 +42,7 @@ export default function Settings() {
         setTimeout(() => {
             apiSettings.save(settings);
             setIsSaving(false);
-            alert("Settings saved successfully!");
+            toast({ title: "Paramètres sauvegardés avec succès!" });
         }, 500);
     };
 
@@ -209,10 +211,20 @@ export default function Settings() {
                                         a.href = url;
                                         a.download = `auclaire_export_${new Date().toISOString().split('T')[0]}.csv`;
                                         a.click();
-                                        alert("Export downloaded successfully!");
+                                        toast({ title: "Export téléchargé avec succès!" });
                                     }}
                                 >
                                     Download CSV
+                                </Button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 border rounded-md bg-zinc-50 dark:bg-zinc-900">
+                                <div>
+                                    <h4 className="font-medium text-sm">Guide d'Introduction</h4>
+                                    <p className="text-xs text-muted-foreground">Relancez le tutoriel d'onboarding pour les nouveaux utilisateurs.</p>
+                                </div>
+                                <Button variant="outline" onClick={resetOnboarding}>
+                                    Relancer le Guide d'Introduction
                                 </Button>
                             </div>
 
@@ -346,11 +358,11 @@ export default function Settings() {
                                                 if (!error) importedInvoices++;
                                             }
 
-                                            alert(`Migration Complete!\n\n- Clients: ${importedClients}\n- Projects: ${importedProjects} (Skipped: ${skippedProjects})\n- Invoices: ${importedInvoices}\n\nIf projects were skipped, check console for details.\nPlease refresh the page.`);
+                                            toast({ title: "Migration terminée!", description: `Clients: ${importedClients} | Projets: ${importedProjects} (Ignorés: ${skippedProjects}) | Factures: ${importedInvoices}` });
 
                                         } catch (e) {
                                             console.error(e);
-                                            alert("Migration failed. See console for details.");
+                                            toast({ title: "Échec de la migration", description: "Voir la console pour les détails.", variant: "destructive" });
                                         } finally {
                                             setIsSaving(false);
                                         }

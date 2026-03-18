@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2, Search, Download } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from '@/components/ui/label';
 
@@ -132,11 +132,41 @@ export default function ExpensesList() {
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-serif text-luxury-gold">Expenses & Payouts</h1>
-                    <p className="text-muted-foreground">Track operational costs and affiliate commissions.</p>
+                    <h1 className="text-3xl font-serif text-luxury-gold">Dépenses & Versements</h1>
+                    <p className="text-muted-foreground">Suivi des coûts opérationnels et commissions.</p>
                 </div>
 
-                <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            if (!expenses?.length) return;
+                            const headers = ['Date', 'Catégorie', 'Description', 'Montant', 'Statut', 'Destinataire', 'Projet'];
+                            const rows = expenses.map(e => [
+                                e.date?.split('T')[0] || '',
+                                e.category,
+                                e.description,
+                                e.amount,
+                                e.status,
+                                e.recipient?.full_name || '',
+                                e.project?.title || ''
+                            ]);
+                            const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `depenses_auclaire_${new Date().toISOString().split('T')[0]}.csv`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }}
+                    >
+                        <Download className="w-4 h-4 mr-1" />
+                        Export CSV
+                    </Button>
+
+                    <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <SheetTrigger asChild>
                         <Button className="bg-luxury-gold text-black hover:bg-luxury-gold/90 gap-2">
                             <Plus className="w-4 h-4" /> Add Expense
@@ -228,6 +258,7 @@ export default function ExpensesList() {
                         </form>
                     </SheetContent>
                 </Sheet>
+                </div>
             </div>
 
             {/* Summary Card */}

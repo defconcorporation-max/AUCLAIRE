@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Save, Loader2, CheckCircle, Clock, Trash2, Briefcase } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, CheckCircle, Clock, Trash2, Briefcase, FileDown } from 'lucide-react';
 import { apiProjects } from '@/services/apiProjects';
+import { generateAmbassadorReportPDF } from '@/services/ambassadorReportPdf';
 
 export default function AffiliateDetails() {
     const { id } = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ export default function AffiliateDetails() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isPayingId, setIsPayingId] = useState<string | null>(null);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Editable Fields
@@ -146,6 +148,45 @@ export default function AffiliateDetails() {
         }
     };
 
+    const handleGeneratePdf = async () => {
+        if (!id) return;
+        setIsGeneratingPdf(true);
+        try {
+            const monthlySales = await apiAffiliates.getMonthlySales(id);
+            const projects = (stats?.projects || []) as any[];
+            const projectCount = projects.length || 1;
+
+            generateAmbassadorReportPDF({
+                name: affiliate?.full_name || 'Ambassadeur',
+                level: affiliate?.affiliate_level || 'Starter',
+                period: new Date().toLocaleDateString('fr-CA', { year: 'numeric', month: 'long' }),
+                totalSales: stats?.totalSales || 0,
+                salesCount: stats?.salesCount || 0,
+                commissionEarned: stats?.commissionEarned || 0,
+                commissionPending: stats?.commissionPending ?? pendingCommissions.filter((c: any) => c.status === 'pending').reduce((s: number, c: any) => s + Number(c.amount), 0),
+                conversionRate: Number(((stats?.salesCount || 0) / Math.max(projectCount, 1) * 100).toFixed(1)),
+                projects: projects.map(p => {
+                    const amount = Number(p.financials?.selling_price || p.budget || 0);
+                    const rate = p.affiliate_commission_rate || 0;
+                    const commission = affiliate?.commission_type === 'fixed' ? (affiliate?.commission_rate || 0) : amount * (rate / 100);
+                    return {
+                        title: p.title,
+                        client: p.client?.full_name || '-',
+                        amount,
+                        commission,
+                        status: p.status || '-'
+                    };
+                }),
+                monthlySales: monthlySales.map(m => ({ label: m.label, amount: m.amount }))
+            });
+        } catch (err) {
+            console.error('Failed to generate PDF', err);
+            alert('Erreur lors de la génération du rapport PDF.');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -170,7 +211,17 @@ export default function AffiliateDetails() {
                         </span>
                     </div>
                 </div>
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGeneratePdf}
+                        disabled={isGeneratingPdf}
+                        className="gap-2"
+                    >
+                        {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                        Rapport PDF
+                    </Button>
                     <Button onClick={handleSave} disabled={isSaving} className="bg-luxury-gold hover:bg-luxury-gold/90 text-black gap-2">
                         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         Save Changes

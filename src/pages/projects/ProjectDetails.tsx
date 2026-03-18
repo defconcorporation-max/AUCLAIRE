@@ -11,6 +11,7 @@ import { apiAffiliates } from '@/services/apiAffiliates';
 import { apiActivities } from '@/services/apiActivities';
 import { apiUsers } from '@/services/apiUsers';
 import { apiMetals } from '@/services/apiMetals';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -82,6 +83,10 @@ export default function ProjectDetails() {
     const [modNotes, setModNotes] = useState('');
     const [isModDialogOpen, setIsModDialogOpen] = useState(false);
     const [editingModVersion, setEditingModVersion] = useState<number | null>(null);
+    const [internalNotes, setInternalNotes] = useState('');
+    const [showAddQuality, setShowAddQuality] = useState(false);
+    const [qualityType, setQualityType] = useState<'rework' | 'repair' | 'return' | 'defect'>('rework');
+    const [qualityDesc, setQualityDesc] = useState('');
 
     const handleSendClientAccessLink = async () => {
         setIsSharing(true);
@@ -152,6 +157,12 @@ export default function ProjectDetails() {
     });
 
     const project = projects?.find(p => p.id === id) || projects?.[0]; // Fallback for demo
+
+    React.useEffect(() => {
+        if (project?.internal_notes !== undefined) {
+            setInternalNotes(project.internal_notes || '');
+        }
+    }, [project?.internal_notes]);
 
     // Auto-migrate legacy costs to cost_items (must be before any conditional return)
     React.useEffect(() => {
@@ -1781,6 +1792,48 @@ export default function ProjectDetails() {
                     </Card>
                 )}
 
+                {/* Internal Notes - Admin/Secretary Only */}
+                {(role === 'admin' || role === 'secretary') && (
+                    <Card className="md:col-span-3 glass-card">
+                        <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
+                            <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide flex items-center gap-2">
+                                <Shield className="w-5 h-5" />
+                                Notes Internes
+                            </CardTitle>
+                            <CardDescription className="text-xs text-muted-foreground">Visible uniquement par admin et secrétaire. Non visible par le client ou l'ambassadeur.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                            <Textarea
+                                value={internalNotes}
+                                onChange={(e) => setInternalNotes(e.target.value)}
+                                placeholder="Ajouter des notes internes sur ce projet..."
+                                className="min-h-[120px] bg-white/50 dark:bg-black/30 border-black/10 dark:border-white/10 resize-y"
+                            />
+                            <div className="flex justify-end mt-3">
+                                <Button
+                                    size="sm"
+                                    className="bg-luxury-gold text-black hover:bg-luxury-gold/90"
+                                    onClick={async () => {
+                                        const { error } = await supabase
+                                            .from('projects')
+                                            .update({ internal_notes: internalNotes })
+                                            .eq('id', project.id);
+                                        if (error) {
+                                            toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                                        } else {
+                                            toast({ title: 'Notes sauvegardées' });
+                                            queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                        }
+                                    }}
+                                >
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Sauvegarder
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* Stage Specific Data Form */}
                 <Card className="md:col-span-3 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl group">
                     <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02]">
@@ -2207,6 +2260,111 @@ export default function ProjectDetails() {
                                             }}
                                         />
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Quality Tracking */}
+                            {(role === 'admin' || role === 'secretary' || role === 'manufacturer') && (
+                                <div className="space-y-3 pt-4 border-t border-white/5">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-sm font-serif font-bold flex items-center gap-2">
+                                            <ShieldCheck className="w-4 h-4 text-luxury-gold" />
+                                            Suivi Qualité
+                                        </h4>
+                                        <Button size="sm" variant="outline" onClick={() => setShowAddQuality(!showAddQuality)}>
+                                            {showAddQuality ? 'Annuler' : '+ Signaler'}
+                                        </Button>
+                                    </div>
+
+                                    {showAddQuality && (
+                                        <div className="p-3 rounded-lg border border-white/10 bg-white/5 space-y-3">
+                                            <div className="flex gap-2">
+                                                {(['rework', 'repair', 'return', 'defect'] as const).map(t => (
+                                                    <button
+                                                        key={t}
+                                                        onClick={() => setQualityType(t)}
+                                                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${qualityType === t ? 'bg-luxury-gold text-black' : 'bg-white/5 text-muted-foreground hover:bg-white/10'}`}
+                                                    >
+                                                        {t === 'rework' ? 'Reprise' : t === 'repair' ? 'Réparation' : t === 'return' ? 'Retour' : 'Défaut'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <Textarea
+                                                value={qualityDesc}
+                                                onChange={(e) => setQualityDesc(e.target.value)}
+                                                placeholder="Décrire le problème..."
+                                                className="min-h-[60px]"
+                                            />
+                                            <Button
+                                                size="sm"
+                                                className="bg-luxury-gold text-black hover:bg-luxury-gold/90"
+                                                onClick={async () => {
+                                                    const issues = [...(project.stage_details?.quality_issues || [])];
+                                                    issues.push({
+                                                        id: crypto.randomUUID(),
+                                                        type: qualityType,
+                                                        description: qualityDesc,
+                                                        reported_at: new Date().toISOString()
+                                                    });
+                                                    const { error } = await supabase
+                                                        .from('projects')
+                                                        .update({ stage_details: { ...project.stage_details, quality_issues: issues } })
+                                                        .eq('id', project.id);
+                                                    if (error) toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                                                    else {
+                                                        toast({ title: 'Problème signalé' });
+                                                        setQualityDesc('');
+                                                        setShowAddQuality(false);
+                                                        queryClient.invalidateQueries({ queryKey: ['project', id] });
+                                                    }
+                                                }}
+                                            >
+                                                Signaler
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {(project.stage_details?.quality_issues || []).length > 0 ? (
+                                        <div className="space-y-2">
+                                            {(project.stage_details?.quality_issues || []).map((issue: any) => (
+                                                <div key={issue.id} className="flex items-start gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
+                                                    <Badge className={`shrink-0 text-[10px] ${
+                                                        issue.type === 'return' ? 'bg-red-500/20 text-red-400' :
+                                                        issue.type === 'defect' ? 'bg-amber-500/20 text-amber-400' :
+                                                        'bg-blue-500/20 text-blue-400'
+                                                    }`}>
+                                                        {issue.type === 'rework' ? 'Reprise' : issue.type === 'repair' ? 'Réparation' : issue.type === 'return' ? 'Retour' : 'Défaut'}
+                                                    </Badge>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm">{issue.description}</p>
+                                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                                            {new Date(issue.reported_at).toLocaleDateString('fr-CA')}
+                                                            {issue.resolved_at && ` — Résolu le ${new Date(issue.resolved_at).toLocaleDateString('fr-CA')}`}
+                                                        </p>
+                                                    </div>
+                                                    {!issue.resolved_at && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="text-green-500 text-xs"
+                                                            onClick={async () => {
+                                                                const issues = (project.stage_details?.quality_issues || []).map((i: any) =>
+                                                                    i.id === issue.id ? { ...i, resolved_at: new Date().toISOString() } : i
+                                                                );
+                                                                await supabase.from('projects').update({ stage_details: { ...project.stage_details, quality_issues: issues } }).eq('id', project.id);
+                                                                toast({ title: 'Marqué comme résolu' });
+                                                                queryClient.invalidateQueries({ queryKey: ['project', id] });
+                                                            }}
+                                                        >
+                                                            ✓ Résolu
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground text-center py-2">Aucun problème signalé</p>
+                                    )}
                                 </div>
                             )}
 

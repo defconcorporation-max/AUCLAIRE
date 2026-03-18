@@ -17,8 +17,10 @@ import {
     BarChart3,
     Eye,
     MessageSquarePlus,
+    MessageCircle,
     Calendar,
-    Truck
+    Truck,
+    TrendingUp
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -28,13 +30,18 @@ import { useTheme } from '@/components/ThemeProvider'
 import { Sun, Moon } from 'lucide-react'
 import DailyReportSheet from '../analytics/DailyReportSheet'
 import FeedbackWidget from '../FeedbackWidget'
+import { GlobalSearch } from '@/components/GlobalSearch'
+import { OnboardingTour } from '@/components/OnboardingTour'
+import { OfflineIndicator } from '@/components/OfflineIndicator'
 
 const navItems = [
     // Client-specific
     { label: 'My Portal', href: '/dashboard/my-portal', icon: Eye, roles: ['client'] },
     // Standard roles
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+    { label: 'Messages', href: '/dashboard/messages', icon: MessageCircle, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'secretary'] },
+    { label: 'Trésorerie', href: '/dashboard/cash-flow', icon: TrendingUp, roles: ['admin', 'secretary'] },
     { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
     { label: 'Production', href: '/dashboard/production', icon: Calendar, roles: ['admin', 'manufacturer', 'secretary'] },
     { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate', 'secretary'] },
@@ -104,7 +111,7 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, pr
 export default function CRMLayout({ children }: { children?: React.ReactNode }) {
     const { signOut, profile, role } = useAuth()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
-    const { theme, setTheme } = useTheme()
+    const { theme, setTheme, accent, setAccent } = useTheme()
 
     const toggleTheme = () => {
         setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -116,6 +123,8 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
             <div className="lg:hidden flex items-center justify-between p-4 border-b border-black/5 dark:border-white/5 bg-white/60 dark:bg-black/60 backdrop-blur-lg fixed w-full z-50 transition-colors">
                 <span className="font-serif text-xl tracking-widest text-luxury-gold drop-shadow-sm">AUCLAIRE</span>
                 <div className="flex items-center gap-2">
+                    <OfflineIndicator />
+                    <GlobalSearch />
                     <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5">
                         {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     </Button>
@@ -146,9 +155,26 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
 
                     <header className="hidden lg:flex items-center justify-end px-8 py-4 z-30 gap-3">
                         <DailyReportSheet />
+                        <GlobalSearch />
+                        <OfflineIndicator />
                         <Button variant="outline" size="icon" onClick={toggleTheme} className="bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white rounded-full">
                             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                         </Button>
+                        <div className="flex items-center gap-1 bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 rounded-full px-2 py-1">
+                            {([
+                                { key: 'gold', color: '#D2B57B', label: 'Or' },
+                                { key: 'silver', color: '#A8B5C0', label: 'Argent' },
+                                { key: 'rose-gold', color: '#C9958A', label: 'Rose' },
+                            ] as const).map(opt => (
+                                <button
+                                    key={opt.key}
+                                    title={opt.label}
+                                    onClick={() => setAccent(opt.key)}
+                                    className={`w-5 h-5 rounded-full border-2 transition-all ${accent === opt.key ? 'border-foreground scale-110' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                    style={{ backgroundColor: opt.color }}
+                                />
+                            ))}
+                        </div>
                         <div className="flex items-center gap-4 bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 rounded-full px-2 py-1 shadow-sm">
                             <NotificationBell />
                         </div>
@@ -161,6 +187,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
                     </main>
                 </div>
             </div>
+            <OnboardingTour />
         </div>
     )
 }

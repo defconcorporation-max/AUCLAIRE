@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
-import { Loader2, AlertCircle, MessageCircle, PenTool, ThumbsUp, Hammer, Truck, Sparkles, CreditCard, Gem, Ruler, Info } from 'lucide-react';
+import { Loader2, AlertCircle, MessageCircle, PenTool, ThumbsUp, Hammer, Truck, Sparkles, CreditCard, Gem, Ruler, Info, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 import type { StageDetails } from '@/services/apiProjects';
@@ -108,7 +108,7 @@ export default function SharedProjectView() {
                             const isCurrent = index === currentStepIndex;
                             const isPending = index > currentStepIndex;
                             return (
-                                <div key={step.id} className="relative flex flex-col items-center gap-2 z-10">
+                                <div key={step.id} className="relative flex flex-col items-center gap-2 z-10 animate-in fade-in duration-500" style={{ animationDelay: `${index * 80}ms` }}>
                                     <div
                                         className={`
                                             w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300
@@ -134,6 +134,20 @@ export default function SharedProjectView() {
                             );
                         })}
                     </div>
+                    <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400 mt-8">
+                        {(project.deadline || project.stage_details?.delivery_date) && (
+                            <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-luxury-gold" />
+                                <span>Livraison estimée: <strong className="text-white">{new Date(project.stage_details?.delivery_date || project.deadline!).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+                            </div>
+                        )}
+                        {project.updated_at && (
+                            <div className="flex items-center gap-2">
+                                <Info className="w-4 h-4 text-gray-500" />
+                                <span>Dernière mise à jour: {new Date(project.updated_at).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            </div>
+                        )}
+                    </div>
                 </section>
 
                 {/* Design showcase - masonry grid */}
@@ -155,6 +169,24 @@ export default function SharedProjectView() {
                                         onClick={() => setPreviewUrl(url)}
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Work In Progress */}
+                {project.stage_details?.vault_files && project.stage_details.vault_files.length > 0 && (
+                    <section className="page-fade-in space-y-4">
+                        <h2 className="text-xl font-serif text-center">Progression de Votre Pièce</h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {project.stage_details.vault_files.map((url: string, idx: number) => (
+                                <div
+                                    key={idx}
+                                    className="aspect-square rounded-xl overflow-hidden border border-white/10 cursor-pointer hover:scale-[1.02] transition-transform duration-300"
+                                    onClick={() => setPreviewUrl(url)}
+                                >
+                                    <img src={url} alt={`WIP ${idx + 1}`} className="w-full h-full object-cover" />
                                 </div>
                             ))}
                         </div>

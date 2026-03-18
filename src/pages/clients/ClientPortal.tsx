@@ -1,15 +1,19 @@
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
 import type { Project } from '@/services/apiProjects';
 import type { Invoice } from '@/services/apiInvoices';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Link } from 'react-router-dom';
-import { Package, CreditCard, Clock, CheckCircle2, Eye, Camera, ExternalLink, AlertCircle } from 'lucide-react';
+import { Package, CreditCard, Clock, CheckCircle2, Eye, Camera, ExternalLink, AlertCircle, ThumbsUp, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 import { apiStories } from '@/services/apiStories';
 
 // Timeline steps: Consultation → Design → Approbation → Production → Livraison
@@ -208,6 +212,9 @@ function ProjectPaymentSection({ project, invoices }: { project: Project; invoic
 
 export default function ClientPortal() {
     const { user, profile } = useAuth();
+    const queryClient = useQueryClient();
+    const [showFeedbackFor, setShowFeedbackFor] = useState<Record<string, boolean>>({});
+    const [feedbackText, setFeedbackText] = useState<Record<string, string>>({});
 
     const { data: allProjects = [] } = useQuery({
         queryKey: ['projects'],
@@ -227,7 +234,7 @@ export default function ClientPortal() {
 
     const activeProjects = myProjects.filter(p => p.status !== 'completed');
     const completedProjects = myProjects.filter(p => p.status === 'completed');
-    const pendingApproval = myProjects.filter(p => p.status === 'design_ready');
+    const pendingApproval = myProjects.filter(p => p.status === 'design_ready' || p.status === 'waiting_for_approval');
     const unpaidInvoices = myInvoices.filter(inv => inv.status !== 'paid');
 
     const { data: stories = [] } = useQuery({
@@ -392,6 +399,115 @@ export default function ClientPortal() {
                                 </CardHeader>
                                 <CardContent className="pt-6 space-y-8">
                                     <ProjectTimeline project={project} />
+                                    {(project.status === 'design_ready' || project.status === 'waiting_for_approval') && (
+                                        <div className="mt-4 p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <Eye className="w-5 h-5 text-amber-500" />
+                                                <h3 className="font-serif font-bold text-amber-500">Approbation du Design Requise</h3>
+                                            </div>
+
+                                            {(() => {
+                                                const designUrls = (project.stage_details?.design_files?.length ?? 0) > 0
+                                                    ? (project.stage_details.design_files || [])
+                                                    : (project.stage_details?.design_versions || []).flatMap((v: { files?: string[] }) => v.files || []);
+                                                return designUrls.length > 0 ? (
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                        {designUrls.map((url: string, idx: number) => (
+                                                            <img
+                                                                key={idx}
+                                                                src={url}
+                                                                alt={`Design ${idx + 1}`}
+                                                                className="rounded-lg border border-white/10 object-cover aspect-square cursor-pointer hover:opacity-80 transition-opacity"
+                                                                onClick={() => window.open(url, '_blank')}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                ) : null;
+                                            })()}
+
+                                            {!showFeedbackFor[project.id] ? (
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                                                        onClick={async () => {
+                                                            const { error } = await supabase
+                                                                .from('projects')
+                                                                .update({
+                                                                    status: 'approved_for_production',
+                                                                    stage_details: {
+                                                                        ...project.stage_details,
+                                                                        client_approval_status: 'approved',
+                                                                        client_notes: 'Design approuvé par le client'
+                                                                    }
+                                                                })
+                                                                .eq('id', project.id);
+                                                            if (error) {
+                                                                toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                                                            } else {
+                                                                toast({ title: 'Design approuvé!', description: 'Votre projet passe en production.' });
+                                                                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ThumbsUp className="w-4 h-4 mr-2" />
+                                                        Approuver le Design
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10 flex-1"
+                                                        onClick={() => setShowFeedbackFor(prev => ({ ...prev, [project.id]: true }))}
+                                                    >
+                                                        <MessageSquare className="w-4 h-4 mr-2" />
+                                                        Demander des Modifications
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <Textarea
+                                                        value={feedbackText[project.id] || ''}
+                                                        onChange={(e) => setFeedbackText(prev => ({ ...prev, [project.id]: e.target.value }))}
+                                                        placeholder="Décrivez les modifications souhaitées..."
+                                                        className="min-h-[80px]"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            className="bg-amber-500 hover:bg-amber-600 text-black flex-1"
+                                                            onClick={async () => {
+                                                                const notes = feedbackText[project.id] || '';
+                                                                const { error } = await supabase
+                                                                    .from('projects')
+                                                                    .update({
+                                                                        status: 'design_modification',
+                                                                        stage_details: {
+                                                                            ...project.stage_details,
+                                                                            client_approval_status: 'changes_requested',
+                                                                            client_notes: notes
+                                                                        }
+                                                                    })
+                                                                    .eq('id', project.id);
+                                                                if (error) {
+                                                                    toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                                                                } else {
+                                                                    toast({ title: 'Demande envoyée', description: 'L\'équipe sera notifiée de vos commentaires.' });
+                                                                    setShowFeedbackFor(prev => ({ ...prev, [project.id]: false }));
+                                                                    setFeedbackText(prev => ({ ...prev, [project.id]: '' }));
+                                                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                                                }
+                                                            }}
+                                                        >
+                                                            Envoyer la Demande
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            onClick={() => setShowFeedbackFor(prev => ({ ...prev, [project.id]: false }))}
+                                                        >
+                                                            Annuler
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     <DesignGallery project={project} />
                                     <ProjectPaymentSection project={project} invoices={myInvoices} />
                                 </CardContent>

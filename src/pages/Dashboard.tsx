@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers } from '@/services/apiUsers';
 import { apiActivities, ActivityLog } from '@/services/apiActivities';
-import { Filter, User, Factory, X, Briefcase } from 'lucide-react';
+import { Filter, User, Factory, X, Briefcase, Settings } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import { ProjectPipeline } from '@/components/dashboard/ProjectPipeline';
 import { AmbassadorLeaderboard } from '@/components/dashboard/AmbassadorLeaderboard';
 import { DesignReviewWidget } from '@/components/dashboard/DesignReviewWidget';
 import { CashRiskTracker } from '@/components/dashboard/CashRiskTracker';
+import { DeadlineTracker } from '@/components/dashboard/DeadlineTracker';
 import { TimeBasedStats } from '@/components/dashboard/TimeBasedStats';
 import { ManufacturerDashboard } from '@/components/dashboard/ManufacturerDashboard';
 import { WorkloadMonitor } from '@/components/dashboard/WorkloadMonitor';
@@ -42,6 +43,34 @@ export default function Dashboard() {
     
     type TimeFrame = 'today' | 'week' | 'month' | 'year' | 'total';
     const [timeframe, setTimeframe] = useState<TimeFrame>('total');
+
+    const WIDGET_DEFAULTS: Record<string, boolean> = {
+        stats: true,
+        pipeline: true,
+        leaderboard: true,
+        designReview: true,
+        cashRisk: true,
+        deadline: true,
+        timeBased: true,
+        revenueChart: true,
+        boutiqueMirror: true,
+        healthAuditor: true,
+        workload: true,
+    };
+
+    const [widgetConfig, setWidgetConfig] = useState<Record<string, boolean>>(() => {
+        try {
+            const saved = localStorage.getItem('auclaire_dashboard_widgets');
+            return saved ? { ...WIDGET_DEFAULTS, ...JSON.parse(saved) } : WIDGET_DEFAULTS;
+        } catch { return WIDGET_DEFAULTS; }
+    });
+    const [showWidgetConfig, setShowWidgetConfig] = useState(false);
+
+    const toggleWidget = (key: string) => {
+        const next = { ...widgetConfig, [key]: !widgetConfig[key] };
+        setWidgetConfig(next);
+        localStorage.setItem('auclaire_dashboard_widgets', JSON.stringify(next));
+    };
 
     // Redirect clients to their portal
     useEffect(() => {
@@ -415,7 +444,7 @@ export default function Dashboard() {
             {/* ADMIN / SECRETARY VIEW */}
             {(role === 'admin' || role === 'secretary') && (
                 <div className="space-y-8">
-                    <div className="flex justify-center mb-4">
+                    <div className="flex justify-center items-center gap-3 mb-4">
                         <div className="flex bg-white/5 p-1 rounded-full border border-white/10 gap-1">
                             {['today', 'week', 'month', 'year', 'total'].map((t) => (
                                 <button
@@ -431,8 +460,49 @@ export default function Dashboard() {
                                 </button>
                             ))}
                         </div>
+                        <button
+                            onClick={() => setShowWidgetConfig(!showWidgetConfig)}
+                            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                            title="Personnaliser le tableau de bord"
+                        >
+                            <Settings className="w-4 h-4 text-muted-foreground" />
+                        </button>
                     </div>
 
+                    {showWidgetConfig && (
+                        <div className="animate-in slide-in-from-top-2 duration-200 bg-white/80 dark:bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-xl">
+                            <h3 className="font-serif text-sm font-bold mb-3 text-luxury-gold">Personnaliser le Dashboard</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {[
+                                    { key: 'stats', label: 'Statistiques' },
+                                    { key: 'pipeline', label: 'Pipeline' },
+                                    { key: 'leaderboard', label: 'Classement' },
+                                    { key: 'designReview', label: 'Design Review' },
+                                    { key: 'cashRisk', label: 'Risques Trésorerie' },
+                                    { key: 'deadline', label: 'Délais & SLA' },
+                                    { key: 'timeBased', label: 'Stats Temporelles' },
+                                    { key: 'revenueChart', label: 'Graphique Revenus' },
+                                    { key: 'boutiqueMirror', label: 'Boutique Mirror' },
+                                    { key: 'healthAuditor', label: 'Health Auditor' },
+                                    { key: 'workload', label: 'Charge de Travail' },
+                                ].map(w => (
+                                    <button
+                                        key={w.key}
+                                        onClick={() => toggleWidget(w.key)}
+                                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                                            widgetConfig[w.key]
+                                                ? 'bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30'
+                                                : 'bg-white/5 text-muted-foreground border border-white/5 opacity-50'
+                                        }`}
+                                    >
+                                        {widgetConfig[w.key] ? '✓ ' : ''}{w.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {widgetConfig.stats && (
                     <DashboardStats 
                         totalCollected={periodCollected} 
                         totalInvoiced={periodInvoiced}
@@ -442,10 +512,12 @@ export default function Dashboard() {
                         expectedCashPipeline={expectedCashPipeline}
                         waitingCollection={totalInvoiced - totalCollected}
                     />
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 space-y-6">
-                            <HealthAuditorWidget projects={filteredProjects} activities={activities || []} />
+                            {widgetConfig.healthAuditor && <HealthAuditorWidget projects={filteredProjects} activities={activities || []} />}
+                            {widgetConfig.pipeline && (
                             <ProjectPipeline 
                                 design={manufacturerDesignRequests} 
                                 pending={manufacturerPendingProduction}
@@ -453,11 +525,12 @@ export default function Dashboard() {
                                 delivery={manufacturerInDelivery}
                                 role={role}
                             />
+                            )}
                         </div>
                         <div className="space-y-6">
-                            <WorkloadMonitor />
-                            <DesignReviewWidget projects={adminDesignReady} />
-                            <AmbassadorLeaderboard leaderboard={leaderboard} />
+                            {widgetConfig.workload && <WorkloadMonitor />}
+                            {widgetConfig.designReview && <DesignReviewWidget projects={adminDesignReady} />}
+                            {widgetConfig.leaderboard && <AmbassadorLeaderboard leaderboard={leaderboard} />}
                         </div>
                     </div>
 
@@ -467,12 +540,12 @@ export default function Dashboard() {
                           BOUTIQUE MIRROR (LIVE FEED)
                           VISIBLE TO ADMINS, MANUFACTURERS, AND SECRETARIES
                         */}
-                        {(role === 'admin' || role === 'secretary' || role === 'manufacturer') && (
+                        {widgetConfig.boutiqueMirror && (
                             <BoutiqueMirror />
                         )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <CashRiskTracker highRiskProjects={highRiskProjects} />
+                            {widgetConfig.cashRisk && <CashRiskTracker highRiskProjects={highRiskProjects} />}
                             
                             {/* AI Insights Engine Integration */}
                             <Card className="border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent backdrop-blur-md shadow-xl">
@@ -508,6 +581,8 @@ export default function Dashboard() {
                                 </CardContent>
                             </Card>
                         </div>
+
+                        {widgetConfig.deadline && <DeadlineTracker projects={filteredProjects} />}
 
                         {/* Manufacturer Performance Scorecards Integration */}
                         <Card className="glass-card overflow-hidden mt-8">
@@ -580,7 +655,7 @@ export default function Dashboard() {
                         </Card>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                            <TimeBasedStats stats={statsData} />
+                            {widgetConfig.timeBased && <TimeBasedStats stats={statsData} />}
                             {/* Potential for a mini forecast chart here */}
                         </div>
                     </div>
@@ -642,6 +717,7 @@ export default function Dashboard() {
             {/* Global Insights Section (Charts & Activity) */}
             {(role === 'admin' || role === 'secretary' || role === 'affiliate') && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {((role === 'admin' || role === 'secretary') && widgetConfig.revenueChart) || role === 'affiliate' ? (
                     <Card className="lg:col-span-2 glass-card">
                         <CardHeader>
                             <CardTitle className="font-serif text-lg">Aperçu des Revenus</CardTitle>
@@ -650,6 +726,7 @@ export default function Dashboard() {
                             <RevenueChart />
                         </CardContent>
                     </Card>
+                    ) : null}
                     <Card className="glass-card">
                         <CardHeader>
                             <CardTitle className="font-serif text-lg">Activité Récente</CardTitle>

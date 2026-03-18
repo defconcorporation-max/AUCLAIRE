@@ -191,13 +191,44 @@ export default function InvoicesList() {
                     <h2 className="text-2xl font-serif font-bold text-luxury-gold">Factures</h2>
                     <p className="text-muted-foreground">Gestion des paiements et facturation.</p>
                 </div>
-                <Button
-                    className="bg-luxury-gold text-black hover:bg-luxury-gold-dark"
-                    onClick={() => navigate('/dashboard/invoices/new')}
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Invoice
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            if (!invoices?.length) return;
+                            const headers = ['Titre', 'Client', 'Montant', 'Payé', 'Statut', 'Date création', 'Date paiement', 'Échéance'];
+                            const rows = invoices.map(inv => [
+                                inv.project?.title || '',
+                                inv.project?.client?.full_name || '',
+                                inv.amount,
+                                inv.amount_paid,
+                                inv.status,
+                                inv.created_at?.split('T')[0] || '',
+                                inv.paid_at?.split('T')[0] || '',
+                                inv.due_date || ''
+                            ]);
+                            const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `factures_auclaire_${new Date().toISOString().split('T')[0]}.csv`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }}
+                    >
+                        <FileText className="w-4 h-4 mr-1" />
+                        Export CSV
+                    </Button>
+                    <Button
+                        className="bg-luxury-gold text-black hover:bg-luxury-gold-dark"
+                        onClick={() => navigate('/dashboard/invoices/new')}
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Invoice
+                    </Button>
+                </div>
             </div>
 
             {/* --- Invoice List --- */}

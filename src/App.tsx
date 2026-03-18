@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { lazy } from 'react';
 
 // Force new deployment: v3.8.5 - Beta Feedback Robustness
 console.log("App Version: v3.8.5 - UI Fixes");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Suspense } from 'react';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
 import { Toaster } from './components/ui/toaster';
@@ -38,6 +39,8 @@ import SalesProcess from './pages/resources/SalesProcess';
 import ProductCatalog from './pages/resources/ProductCatalog';
 import FlashCalculator from './pages/resources/FlashCalculator';
 import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
+const CashFlowForecast = lazy(() => import('./pages/analytics/CashFlowForecast'));
+const MessageCenter = lazy(() => import('./pages/messages/MessageCenter'));
 import ProductionCalendar from './pages/production/ProductionCalendar';
 import ClientPortal from './pages/clients/ClientPortal';
 import BetaFeedback from './pages/BetaFeedback';
@@ -104,8 +107,10 @@ function App() {
               </ProtectedRoute>
             }>
               <Route index element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary', 'client']}><Dashboard /></ProtectedRoute>} />
+              <Route path="messages" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><Suspense fallback={<div className="flex h-[50vh] items-center justify-center">Loading...</div>}><MessageCenter /></Suspense></ProtectedRoute>} />
               <Route path="my-portal" element={<ProtectedRoute allowedRoles={['client']}><ClientPortal /></ProtectedRoute>} />
               <Route path="analytics" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AnalyticsDashboard /></ProtectedRoute>} />
+              <Route path="cash-flow" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><Suspense fallback={<div className="flex h-[50vh] items-center justify-center">Loading...</div>}><CashFlowForecast /></Suspense></ProtectedRoute>} />
               <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ProjectsList /></ProtectedRoute>} />
               <Route path="production" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'secretary']}><ProductionCalendar /></ProtectedRoute>} />
               <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><CreateProject /></ProtectedRoute>} />

@@ -8,7 +8,7 @@ import { apiActivities, ActivityLog } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown } from 'lucide-react';
+import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { financialUtils } from '@/utils/financialUtils';
@@ -733,6 +733,98 @@ export default function AnalyticsDashboard() {
                             </div>
                         ))}
                     </div>
+                </CardContent>
+            </Card>
+
+            {/* Profitability by Jewelry Type */}
+            <Card className="glass-card">
+                <CardHeader>
+                    <CardTitle className="font-serif text-lg flex items-center gap-2">
+                        <Gem className="w-5 h-5 text-luxury-gold" />
+                        Rentabilité par Type de Bijou
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {(() => {
+                        const categories: Record<string, { count: number; revenue: number; costs: number }> = {};
+                        const categorize = (title: string): string => {
+                            const t = title.toLowerCase();
+                            if (t.includes('ring') || t.includes('bague') || t.includes('engagement') || t.includes('chevalier')) return 'Bague';
+                            if (t.includes('bracelet')) return 'Bracelet';
+                            if (t.includes('pendant') || t.includes('pendentif')) return 'Pendentif';
+                            if (t.includes('earring') || t.includes('boucle')) return "Boucles d'oreilles";
+                            if (t.includes('necklace') || t.includes('collier') || t.includes('chain') || t.includes('chaine')) return 'Collier';
+                            return 'Autre';
+                        };
+
+                        (projects || []).forEach((p: any) => {
+                            const cat = categorize(p.title || '');
+                            if (!categories[cat]) categories[cat] = { count: 0, revenue: 0, costs: 0 };
+                            categories[cat].count++;
+                            const revenue = Number(p.financials?.selling_price || p.budget || 0);
+                            const costs = Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0) + Number(p.financials?.customs_fee || 0) + Number(p.financials?.additional_expense || 0) + (p.financials?.cost_items?.reduce((s: number, i: any) => s + (Number(i.amount) || 0), 0) || 0);
+                            categories[cat].revenue += revenue;
+                            categories[cat].costs += costs;
+                        });
+
+                        const rows = Object.entries(categories)
+                            .map(([name, data]) => ({
+                                name,
+                                ...data,
+                                margin: data.revenue - data.costs,
+                                marginPct: data.revenue > 0 ? ((data.revenue - data.costs) / data.revenue) * 100 : 0
+                            }))
+                            .sort((a, b) => b.revenue - a.revenue);
+
+                        const maxRevenue = Math.max(...rows.map(r => r.revenue), 1);
+
+                        return (
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    {rows.map(row => (
+                                        <div key={row.name} className="space-y-1">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-serif font-medium">{row.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground">({row.count} projets)</span>
+                                                </div>
+                                                <div className="flex items-center gap-4 text-xs">
+                                                    <span className="text-muted-foreground">${row.revenue.toLocaleString()}</span>
+                                                    <span className={`font-bold ${row.marginPct >= 30 ? 'text-green-500' : row.marginPct >= 15 ? 'text-amber-500' : 'text-red-500'}`}>
+                                                        {row.marginPct.toFixed(0)}% marge
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden flex">
+                                                <div
+                                                    className="h-full bg-luxury-gold/60 rounded-full transition-all duration-700"
+                                                    style={{ width: `${(row.costs / maxRevenue) * 100}%` }}
+                                                />
+                                                <div
+                                                    className="h-full bg-green-500/60 rounded-full transition-all duration-700"
+                                                    style={{ width: `${(Math.max(0, row.margin) / maxRevenue) * 100}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex gap-4 text-[10px] text-muted-foreground">
+                                                <span>Coûts: ${row.costs.toLocaleString()}</span>
+                                                <span>Marge: ${row.margin.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex items-center gap-6 text-[10px] text-muted-foreground pt-2 border-t border-white/5">
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-3 h-3 rounded bg-luxury-gold/60" />
+                                        <span>Coûts directs</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-3 h-3 rounded bg-green-500/60" />
+                                        <span>Marge brute</span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </CardContent>
             </Card>
 

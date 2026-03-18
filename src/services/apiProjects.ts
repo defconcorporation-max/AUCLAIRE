@@ -12,6 +12,15 @@ export interface DesignVersion {
     model_link?: string;
 }
 
+export interface QualityIssue {
+    id: string;
+    type: 'rework' | 'repair' | 'return' | 'defect';
+    description: string;
+    reported_at: string;
+    resolved_at?: string;
+    resolution?: string;
+}
+
 export interface StageDetails {
     design_notes?: string;
     sketch_files?: string[];
@@ -26,6 +35,7 @@ export interface StageDetails {
     delivery_date?: string;
     client_notes?: string;
     client_approval_status?: 'pending' | 'approved' | 'changes_requested';
+    quality_issues?: QualityIssue[];
 }
 
 export interface CostItem {
@@ -53,6 +63,7 @@ export interface Project {
     client_id: string;
     status: 'designing' | 'design_ready' | 'waiting_for_approval' | 'design_modification' | '3d_model' | 'approved_for_production' | 'production' | 'delivery' | 'completed' | 'cancelled';
     description?: string;
+    internal_notes?: string;
     budget?: number;
     deadline?: string;
     priority?: 'normal' | 'rush';
