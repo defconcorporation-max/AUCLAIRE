@@ -38,6 +38,8 @@ export default function InvoicesList() {
     const [paymentLink, setPaymentLink] = useState('');
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
 
     // New payment form state
     const [newPayAmount, setNewPayAmount] = useState('');
@@ -163,7 +165,6 @@ export default function InvoicesList() {
 
     const handleDeletePayment = async (paymentId: string) => {
         if (!selectedInvoice) return;
-        if (!confirm('Supprimer ce paiement ?')) return;
         setSaving(true);
         try {
             const result = await apiInvoices.deletePayment(selectedInvoice.id, paymentId);
@@ -187,8 +188,8 @@ export default function InvoicesList() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-serif font-bold text-luxury-gold">Invoices</h2>
-                    <p className="text-muted-foreground">Manage payments and billing.</p>
+                    <h2 className="text-2xl font-serif font-bold text-luxury-gold">Factures</h2>
+                    <p className="text-muted-foreground">Gestion des paiements et facturation.</p>
                 </div>
                 <Button
                     className="bg-luxury-gold text-black hover:bg-luxury-gold-dark"
@@ -222,11 +223,11 @@ export default function InvoicesList() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-8">
-                                <div className="text-right">
+                            <div className="flex items-center gap-6">
+                                <div className="text-right min-w-[160px]">
                                     {invoice.project?.financials?.tax_province ? (
                                         <div className="space-y-0.5">
-                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Total Gross</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Total TTC</p>
                                             <p className="font-bold text-lg text-luxury-gold">
                                                 {formatCurrency(invoice.amount + calculateCanadianTax(invoice.amount, invoice.project.financials.tax_province as CanadianProvince).total)}
                                             </p>
@@ -237,24 +238,40 @@ export default function InvoicesList() {
                                     ) : (
                                         <p className="font-bold text-lg">{formatCurrency(invoice.amount)}</p>
                                     )}
-                                    
-                                    {(invoice.amount_paid || 0) > 0 && invoice.status !== 'paid' && (
-                                        <p className="text-xs text-green-600 font-medium">Paid: {formatCurrency(invoice.amount_paid)}</p>
-                                    )}
+
+                                    {/* Progress bar */}
+                                    {(() => {
+                                        const paid = Number(invoice.amount_paid) || 0;
+                                        const total = Number(invoice.amount) || 1;
+                                        const pct = Math.min(Math.round((paid / total) * 100), 100);
+                                        return paid > 0 ? (
+                                            <div className="mt-1.5 space-y-0.5">
+                                                <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                                                    <div className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : 'bg-luxury-gold'}`} style={{ width: `${pct}%` }} />
+                                                </div>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    {formatCurrency(paid)} / {formatCurrency(total)} ({pct}%)
+                                                </p>
+                                            </div>
+                                        ) : null;
+                                    })()}
+
                                     {invoice.status === 'paid' && (
                                         <p className="text-[10px] text-green-600/70 font-medium uppercase tracking-widest mt-1">
-                                            Payé le: {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date(invoice.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                            Payé le {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date(invoice.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                                         </p>
                                     )}
-                                    <p className="text-xs text-muted-foreground mt-1">Due {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        {invoice.due_date ? `Échéance: ${new Date(invoice.due_date).toLocaleDateString('fr-FR')}` : ''}
+                                    </p>
                                 </div>
                                 <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'} className={
-                                    invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
-                                        invoice.status === 'partial' ? 'bg-amber-100 text-amber-800' :
-                                            invoice.status === 'sent' ? 'bg-blue-100 text-blue-800' :
-                                                'bg-gray-100 text-gray-800'
+                                    invoice.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                        invoice.status === 'partial' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                                            invoice.status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                                                'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                                 }>
-                                    {invoice.status.toUpperCase()}
+                                    {invoice.status === 'paid' ? 'PAYÉE' : invoice.status === 'partial' ? 'PARTIEL' : invoice.status === 'sent' ? 'ENVOYÉE' : invoice.status === 'draft' ? 'BROUILLON' : invoice.status.toUpperCase()}
                                 </Badge>
                                 <div className="flex gap-2">
                                     <Button variant="outline" size="sm" onClick={async (e) => {
@@ -273,10 +290,8 @@ export default function InvoicesList() {
                                             )}
                                             <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={async (e) => {
                                                 e.stopPropagation();
-                                                if (confirm("Delete this invoice?")) {
-                                                    await apiInvoices.delete(invoice.id);
-                                                    queryClient.invalidateQueries({ queryKey: ['invoices'] });
-                                                }
+                                                setInvoiceToDelete(invoice.id);
+                                                setIsDeleteConfirmOpen(true);
                                             }}>
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
@@ -551,6 +566,29 @@ export default function InvoicesList() {
                         >
                             Download PDF
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Supprimer la facture ?</DialogTitle>
+                        <DialogDescription>
+                            Cette action est irréversible. La facture et son historique de paiements seront supprimés.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>Annuler</Button>
+                        <Button variant="destructive" onClick={async () => {
+                            if (invoiceToDelete) {
+                                await apiInvoices.delete(invoiceToDelete);
+                                queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                            }
+                            setIsDeleteConfirmOpen(false);
+                            setInvoiceToDelete(null);
+                        }}>Supprimer</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
