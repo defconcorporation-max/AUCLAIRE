@@ -65,22 +65,24 @@ export const apiAffiliates = {
         if (projectsError) throw projectsError;
 
         // 2. Get Invoices to verify sales AND get total cash collected
-        const { data: invoices, error: invError } = await supabase
-            .from('invoices')
-            .select('project_id, amount, amount_paid, status, paid_at, created_at, updated_at')
-            .in('project_id', projects.map(p => p.id));
-
-        if (invError) throw invError;
-        const invoicedProjectIds = new Set(invoices?.map(i => i.project_id));
+        const projectIds = projects.map(p => p.id);
+        let invoices: any[] = [];
+        if (projectIds.length > 0) {
+            const { data: invData, error: invError } = await supabase
+                .from('invoices')
+                .select('project_id, amount, amount_paid, status, paid_at, created_at, updated_at')
+                .in('project_id', projectIds);
+            if (invError) throw invError;
+            invoices = invData || [];
+        }
+        const invoicedProjectIds = new Set(invoices.map(i => i.project_id));
 
         let totalSales = 0;
         let salesCount = 0;
         let cashCollected = 0;
         let activeProjects = 0;
 
-        // Calculate actual cash collected from PAID client invoices
-        invoices?.forEach(inv => {
-            // Include amount_paid if available, otherwise fallback to amount if fully paid
+        invoices.forEach(inv => {
             const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
             cashCollected += paidValue;
         });
@@ -229,6 +231,8 @@ export const apiAffiliates = {
                         ...profile,
                         stats: {
                             totalSales: 0,
+                            salesCount: 0,
+                            cashCollected: 0,
                             commissionEarned: 0,
                             commissionPaid: 0,
                             commissionPending: 0,

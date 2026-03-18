@@ -922,31 +922,51 @@ export default function ProjectDetails() {
                             const isHealthy = marginPercent >= 40;
                             const isWarning = marginPercent >= 20 && marginPercent < 40;
                             const isCritical = marginPercent < 20;
-                            const gaugeColor = isHealthy ? 'rgb(34,197,94)' : isWarning ? 'rgb(234,179,8)' : 'rgb(239,68,68)';
-                            const gaugeDeg = Math.min(100, Math.max(0, marginPercent)) / 100 * 180;
+                            const gaugeColor = isHealthy ? '#22c55e' : isWarning ? '#eab308' : '#ef4444';
+                            const clampedPercent = Math.min(100, Math.max(0, marginPercent));
+                            const angle = (clampedPercent / 100) * 180;
+                            const rad = (angle - 180) * (Math.PI / 180);
+                            const r = 40;
+                            const cx = 50;
+                            const cy = 45;
+                            const x = cx + r * Math.cos(rad);
+                            const y = cy + r * Math.sin(rad);
+                            const largeArc = angle > 180 ? 1 : 0;
+                            const arcPath = angle <= 0
+                                ? ''
+                                : `M ${cx - r} ${cy} A ${r} ${r} 0 ${largeArc} 1 ${x.toFixed(2)} ${y.toFixed(2)}`;
+
                             return (
                                 <div className="rounded-xl border border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent p-4">
                                     <div className="flex items-center gap-6">
                                         <div className="shrink-0">
-                                            <div
-                                                className="relative w-28 h-14"
-                                                aria-label={`Margin: ${marginPercent.toFixed(1)}%`}
+                                            <svg
+                                                viewBox="0 0 100 55"
+                                                className="w-28 h-14"
+                                                aria-label={`Marge: ${marginPercent.toFixed(1)}%`}
                                             >
-                                                <div
-                                                    className="absolute inset-0 rounded-full border-[6px] border-zinc-200/80 dark:border-zinc-700/80"
-                                                    style={{ clipPath: 'inset(0 0 50% 0 round 999px 999px 0 0)' }}
+                                                <path
+                                                    d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="6"
+                                                    className="text-zinc-200 dark:text-zinc-700"
+                                                    strokeLinecap="round"
                                                 />
-                                                <div
-                                                    className="absolute inset-0 rounded-full border-[6px] border-transparent"
-                                                    style={{
-                                                        clipPath: 'inset(0 0 50% 0 round 999px 999px 0 0)',
-                                                        background: `conic-gradient(from -90deg, ${gaugeColor} 0deg, ${gaugeColor} ${gaugeDeg}deg, transparent ${gaugeDeg}deg)`,
-                                                    }}
-                                                />
-                                            </div>
+                                                {arcPath && (
+                                                    <path
+                                                        d={arcPath}
+                                                        fill="none"
+                                                        stroke={gaugeColor}
+                                                        strokeWidth="6"
+                                                        strokeLinecap="round"
+                                                        className="transition-all duration-700"
+                                                    />
+                                                )}
+                                            </svg>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">Margin</p>
+                                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">Marge</p>
                                             <div className="flex items-baseline gap-2 flex-wrap">
                                                 <span className={`text-xl font-serif font-bold ${isHealthy ? 'text-green-600 dark:text-green-400' : isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
                                                     {marginPercent.toFixed(1)}%
@@ -956,12 +976,12 @@ export default function ProjectDetails() {
                                                 </span>
                                             </div>
                                             <p className="text-[10px] text-muted-foreground mt-1">
-                                                on {formatCurrency(revenue)} revenue
+                                                sur {formatCurrency(revenue)} de revenu
                                             </p>
                                             {isCritical && (
                                                 <p className="text-xs text-red-500 dark:text-red-400 font-medium mt-2 flex items-center gap-1.5">
                                                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                                    Margin below 20% — review costs or selling price
+                                                    Marge sous 20% — vérifier les coûts ou le prix de vente
                                                 </p>
                                             )}
                                         </div>

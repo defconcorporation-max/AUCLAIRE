@@ -130,33 +130,33 @@ export default function AffiliatesList() {
                                         <div className="text-right hidden md:block">
                                             <div className="text-xs text-muted-foreground uppercase tracking-wider">Total Sales</div>
                                             <div className="font-bold text-zinc-700 dark:text-zinc-300">
-                                                ${affiliate.stats.totalSales.toLocaleString()}
+                                                ${(affiliate.stats?.totalSales ?? 0).toLocaleString()}
                                             </div>
-                                            <div className="text-[10px] text-muted-foreground mt-0.5">{affiliate.stats.salesCount} ventes</div>
+                                            <div className="text-[10px] text-muted-foreground mt-0.5">{affiliate.stats?.salesCount ?? 0} ventes</div>
                                         </div>
 
                                         <div className="text-right hidden xl:block">
                                             <div className="text-xs text-green-600/70 uppercase tracking-wider">Cash Récolté</div>
                                             <div className="font-bold text-green-600 dark:text-green-500">
-                                                ${affiliate.stats.cashCollected.toLocaleString()}
+                                                ${(affiliate.stats?.cashCollected ?? 0).toLocaleString()}
                                             </div>
                                         </div>
 
                                         <div className="text-right">
                                             <div className="text-xs text-muted-foreground uppercase tracking-wider">Earned</div>
                                             <div className="font-bold text-emerald-600 dark:text-emerald-400">
-                                                ${affiliate.stats.commissionEarned.toLocaleString()}
+                                                ${(affiliate.stats?.commissionEarned ?? 0).toLocaleString()}
                                             </div>
                                         </div>
 
                                         <div className="text-right min-w-[150px]">
                                             <div className="text-xs text-muted-foreground uppercase tracking-wider">Pending Payout</div>
-                                            <div className={`font-bold text-xl ${affiliate.stats.commissionPending > 0 ? 'text-amber-500' : 'text-zinc-400'}`}>
-                                                ${affiliate.stats.commissionPending.toLocaleString()}
+                                            <div className={`font-bold text-xl ${(affiliate.stats?.commissionPending ?? 0) > 0 ? 'text-amber-500' : 'text-zinc-400'}`}>
+                                                ${(affiliate.stats?.commissionPending ?? 0).toLocaleString()}
                                             </div>
 
                                             {/* Pay Button */}
-                                            {affiliate.stats.commissionPending > 0 && (
+                                            {(affiliate.stats?.commissionPending ?? 0) > 0 && (
                                                 <Button
                                                     size="sm"
                                                     className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs"
