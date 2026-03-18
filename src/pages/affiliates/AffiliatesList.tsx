@@ -16,7 +16,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useNavigate } from 'react-router-dom';
-import { Users, AlertCircle, ChevronRight } from 'lucide-react';
+import { Users, AlertCircle, ChevronRight, Search } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 export default function AffiliatesList() {
     const navigate = useNavigate();
@@ -25,30 +26,42 @@ export default function AffiliatesList() {
     const [selectedAffiliate, setSelectedAffiliate] = useState<any>(null);
     const [amountToPay, setAmountToPay] = useState('');
     const [paymentNotes, setPaymentNotes] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
-    const { data: affiliates, isLoading, error } = useQuery({
+    const { data: affiliates, isLoading } = useQuery({
         queryKey: ['affiliates-stats'],
         queryFn: async () => {
-            // Wrapper to ensure we catch errors from the refactored service
-            try {
-                const res = await apiAffiliates.getAllAffiliatesWithStats();
-                return res;
-            } catch (e) {
-                console.error("Query failed", e);
-                throw e;
-            }
+            const res = await apiAffiliates.getAllAffiliatesWithStats();
+            return res;
         }
     });
 
-    if (error) console.error("Error loading affiliates:", error);
-    if (affiliates) console.log("Loaded Affiliates:", affiliates ? affiliates.length : 0);
+    if (isLoading) return (
+        <div className="space-y-8 max-w-7xl mx-auto p-6">
+            <div><h1 className="text-3xl font-serif text-luxury-gold">Ambassadeurs & Admins</h1></div>
+            <div className="grid gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <Card key={i} className="animate-pulse"><CardContent className="p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-muted" />
+                            <div className="space-y-2 flex-1"><div className="h-5 w-40 bg-muted rounded" /><div className="h-4 w-56 bg-muted rounded" /></div>
+                        </div>
+                    </CardContent></Card>
+                ))}
+            </div>
+        </div>
+    );
 
-    if (isLoading) return <div className="p-8 text-center">Loading ambassador data...</div>;
+    const fmt = (n: number) => n.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
 
     const totalPending = affiliates?.reduce((sum, a) => sum + (a.stats?.commissionPending || 0), 0) || 0;
 
+    const filteredAffiliates = affiliates?.filter(a =>
+        !searchTerm || a.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || a.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const handleOpenPayment = (affiliate: AffiliateProfile, e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent navigation
+        e.stopPropagation();
         setSelectedAffiliate(affiliate);
         setAmountToPay(affiliate.stats?.commissionPending?.toString() || '0');
     };
@@ -63,15 +76,13 @@ export default function AffiliatesList() {
                 paymentNotes
             );
 
-            // Success
-            alert("Commission paid successfully!");
+            toast({ title: "Succès", description: "Commission versée avec succès." });
             setSelectedAffiliate(null);
             setAmountToPay('');
             setPaymentNotes('');
             queryClient.invalidateQueries({ queryKey: ['affiliates-stats'] });
         } catch (err) {
-            console.error(err);
-            alert("Failed to process payment");
+            toast({ title: "Erreur", description: "Échec du versement.", variant: "destructive" });
         }
     };
 
@@ -85,13 +96,18 @@ export default function AffiliatesList() {
                 {totalPending > 0 && (
                     <div className="bg-amber-500/10 text-amber-500 px-4 py-2 rounded-lg border border-amber-500/20 flex items-center gap-2">
                         <AlertCircle size={16} />
-                        <span className="font-bold">Total Pending: ${totalPending.toLocaleString()}</span>
+                        <span className="font-bold">Commissions en attente : {fmt(totalPending)}</span>
                     </div>
                 )}
             </div>
 
+            <div className="relative max-w-sm">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Rechercher un ambassadeur..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
+
             <div className="grid gap-4">
-                {affiliates?.length === 0 ? (
+                {filteredAffiliates?.length === 0 ? (
                     <Card className="bg-zinc-50/50 dark:bg-zinc-900/50 border-dashed">
                         <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
                             <Users size={48} className="mb-4 opacity-20" />
@@ -99,7 +115,7 @@ export default function AffiliatesList() {
                         </CardContent>
                     </Card>
                 ) : (
-                    affiliates?.map((affiliate) => (
+                    filteredAffiliates?.map((affiliate) => (
                         <Card
                             key={affiliate.id}
                             className="bg-card hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group"
@@ -115,8 +131,8 @@ export default function AffiliatesList() {
                                             <h3 className="font-bold text-lg">{affiliate.full_name}</h3>
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <Badge variant="secondary" className={`text-xs ${
-                                                    affiliate.role === 'admin' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
-                                                    affiliate.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border-luxury-gold/20' : 
+                                                    affiliate.role === 'admin' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                                                    affiliate.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border-luxury-gold/20' :
                                                     'bg-zinc-100 dark:bg-zinc-800'
                                                 }`}>
                                                     {affiliate.role === 'admin' ? 'Admin' : affiliate.role === 'ambassador' ? 'Ambassadeur' : 'Vendeur'}
@@ -128,41 +144,40 @@ export default function AffiliatesList() {
 
                                     <div className="flex items-center gap-8">
                                         <div className="text-right hidden md:block">
-                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Total Sales</div>
+                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Ventes totales</div>
                                             <div className="font-bold text-zinc-700 dark:text-zinc-300">
-                                                ${(affiliate.stats?.totalSales ?? 0).toLocaleString()}
+                                                {fmt(affiliate.stats?.totalSales ?? 0)}
                                             </div>
                                             <div className="text-[10px] text-muted-foreground mt-0.5">{affiliate.stats?.salesCount ?? 0} ventes</div>
                                         </div>
 
                                         <div className="text-right hidden xl:block">
-                                            <div className="text-xs text-green-600/70 uppercase tracking-wider">Cash Récolté</div>
+                                            <div className="text-xs text-green-600/70 uppercase tracking-wider">Encaissé</div>
                                             <div className="font-bold text-green-600 dark:text-green-500">
-                                                ${(affiliate.stats?.cashCollected ?? 0).toLocaleString()}
+                                                {fmt(affiliate.stats?.cashCollected ?? 0)}
                                             </div>
                                         </div>
 
                                         <div className="text-right">
-                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Earned</div>
+                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Gagné</div>
                                             <div className="font-bold text-emerald-600 dark:text-emerald-400">
-                                                ${(affiliate.stats?.commissionEarned ?? 0).toLocaleString()}
+                                                {fmt(affiliate.stats?.commissionEarned ?? 0)}
                                             </div>
                                         </div>
 
                                         <div className="text-right min-w-[150px]">
-                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Pending Payout</div>
+                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">À verser</div>
                                             <div className={`font-bold text-xl ${(affiliate.stats?.commissionPending ?? 0) > 0 ? 'text-amber-500' : 'text-zinc-400'}`}>
-                                                ${(affiliate.stats?.commissionPending ?? 0).toLocaleString()}
+                                                {fmt(affiliate.stats?.commissionPending ?? 0)}
                                             </div>
 
-                                            {/* Pay Button */}
                                             {(affiliate.stats?.commissionPending ?? 0) > 0 && (
                                                 <Button
                                                     size="sm"
                                                     className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs"
                                                     onClick={(e) => handleOpenPayment(affiliate, e)}
                                                 >
-                                                    Pay Commission
+                                                    Verser
                                                 </Button>
                                             )}
                                         </div>
@@ -180,16 +195,15 @@ export default function AffiliatesList() {
             <Dialog open={!!selectedAffiliate} onOpenChange={(open) => !open && setSelectedAffiliate(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Pay Commission</DialogTitle>
+                        <DialogTitle>Verser la commission</DialogTitle>
                         <DialogDescription>
-                            Record a commission payment for {selectedAffiliate?.full_name}.
-                            This will create an expense record.
+                            Enregistrer un versement de commission pour {selectedAffiliate?.full_name}.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Amount ($)</Label>
+                            <Label>Montant ($)</Label>
                             <Input
                                 type="number"
                                 value={amountToPay}
@@ -197,9 +211,9 @@ export default function AffiliatesList() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Notes (Optional)</Label>
+                            <Label>Notes (Optionnel)</Label>
                             <Input
-                                placeholder="e.g. Bank Transfer Ref #123"
+                                placeholder="ex. Réf. virement bancaire #123"
                                 value={paymentNotes}
                                 onChange={(e) => setPaymentNotes(e.target.value)}
                             />
@@ -207,9 +221,9 @@ export default function AffiliatesList() {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setSelectedAffiliate(null)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setSelectedAffiliate(null)}>Annuler</Button>
                         <Button onClick={handlePayCommission} className="bg-emerald-600 hover:bg-emerald-700">
-                            Confirm Payment
+                            Confirmer le versement
                         </Button>
                     </DialogFooter>
                 </DialogContent>

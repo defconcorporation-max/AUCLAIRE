@@ -43,7 +43,8 @@ import {
     Save,
     X,
     Handshake,
-    Link as LinkIcon
+    Link as LinkIcon,
+    MessageSquare
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { uploadImage } from '@/utils/storage';
@@ -89,6 +90,7 @@ export default function ProjectDetails() {
     const [showAddQuality, setShowAddQuality] = useState(false);
     const [qualityType, setQualityType] = useState<'rework' | 'repair' | 'return' | 'defect'>('rework');
     const [qualityDesc, setQualityDesc] = useState('');
+    const [activeTab, setActiveTab] = useState<'overview' | 'finance' | 'timeline' | 'chat'>('overview');
 
     const handleSendClientAccessLink = async () => {
         setIsSharing(true);
@@ -869,19 +871,29 @@ export default function ProjectDetails() {
                 )
             }
 
+            {/* Tab Navigation */}
+            <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+                {([
+                    { id: 'overview', label: "Vue d'ensemble", icon: Eye },
+                    { id: 'finance', label: 'Finance', icon: DollarSign },
+                    { id: 'timeline', label: 'Suivi', icon: Clock },
+                    { id: 'chat', label: 'Chat', icon: MessageSquare },
+                ] as const).map(tab => (
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            activeTab === tab.id
+                                ? 'bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30'
+                                : 'text-muted-foreground hover:text-white hover:bg-white/5'
+                        }`}>
+                        <tab.icon className="w-4 h-4" />
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
             <div className="grid gap-6 md:grid-cols-3">
-                <div className="md:col-span-2">
-                    <Tabs defaultValue="timeline" className="w-full">
-                        <TabsList className={`grid w-full ${(role === 'admin' || role === 'secretary') ? 'grid-cols-5' : 'grid-cols-4'}`}>
-                            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                            <TabsTrigger value="time-tracking">Temps</TabsTrigger>
-                            <TabsTrigger value="activity">Activity</TabsTrigger>
-                            <TabsTrigger value="messages">Messages</TabsTrigger>
-                            {(role === 'admin' || role === 'secretary') && (
-                                <TabsTrigger value="finance" className="text-luxury-gold">Intelligence</TabsTrigger>
-                            )}
-                        </TabsList>
-                        <TabsContent value="timeline">
+                {activeTab === 'timeline' && (
+                    <div className="md:col-span-3 space-y-6">
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/5 dark:border-white/5 shadow-xl">
                                 <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
                                     <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Project Timeline</CardTitle>
@@ -910,14 +922,13 @@ export default function ProjectDetails() {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
-                        <TabsContent value="time-tracking">
-                            <TimeTracker project={project} />
-                        </TabsContent>
-                        <TabsContent value="activity">
-                            <ActivityLogList projectId={project.id} />
-                        </TabsContent>
-                        <TabsContent value="messages">
+                        <TimeTracker project={project} />
+                        <ActivityLogList projectId={project.id} />
+                    </div>
+                )}
+
+                {activeTab === 'chat' && (
+                    <div className="md:col-span-3">
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl overflow-hidden">
                                 <Tabs defaultValue={role === 'client' ? 'client' : 'internal'} className="w-full">
                                     <div className="px-4 pt-4 border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-white/[0.02]">
@@ -948,19 +959,22 @@ export default function ProjectDetails() {
                                     </TabsContent>
                                 </Tabs>
                             </Card>
-                        </TabsContent>
-                        {(role === 'admin' || role === 'secretary') && (
-                            <TabsContent value="finance">
-                                <ProjectFinancialDashboard 
-                                    budget={project.budget}
-                                    financials={project.financials}
-                                    commission={financialUtils.computeCommissionAmount(project)}
-                                />
-                            </TabsContent>
-                        )}
-                    </Tabs>
-                </div>
+                    </div>
+                )}
 
+                {activeTab === 'finance' && (
+                    <div className="md:col-span-2">
+                        {(role === 'admin' || role === 'secretary') && (
+                            <ProjectFinancialDashboard 
+                                budget={project.budget}
+                                financials={project.financials}
+                                commission={financialUtils.computeCommissionAmount(project)}
+                            />
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'finance' && (
                 <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl relative overflow-hidden group">
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                     <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02]">
@@ -1734,15 +1748,19 @@ export default function ProjectDetails() {
                         )}
                     </CardContent>
                 </Card>
+                )}
 
-                {/* Design Approval Panel */}
+                {activeTab === 'overview' && (
                 <div className="md:col-span-3">
+                    {/* Design Approval Panel */}
                     <DesignApprovalPanel
                         project={project}
                         mode={role === 'client' ? 'client' : 'admin'}
                     />
                 </div>
+                )}
 
+                {activeTab === 'overview' && (<>
                 {/* VERSION HISTORY - Prominent Section Requested by User */}
                 {project.stage_details?.design_versions && project.stage_details.design_versions.length > 0 && (
                     <Card className="md:col-span-3 glass-card gold-glow-hover border-none shadow-xl transition-all">
@@ -2421,6 +2439,7 @@ export default function ProjectDetails() {
                         </div>
                     </CardContent>
                 </Card>
+                </>)}
             </div>
 
             <ImagePreviewModal

@@ -8,7 +8,7 @@ import { apiSettings } from '@/services/apiSettings'
 import { generateInvoicePDF } from '@/services/pdfService'
 import { Card } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
-import { Plus, FileText, Trash2, Pencil, CalendarDays, DollarSign } from 'lucide-react'
+import { Plus, FileText, Trash2, Pencil, CalendarDays, DollarSign, Search } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
 import { calculateCanadianTax, CanadianProvince, formatCurrency } from '@/utils/taxUtils';
@@ -179,6 +179,15 @@ export default function InvoicesList() {
         } finally { setSaving(false); }
     };
 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+
+    const filteredInvoices = invoices?.filter(inv => {
+        const matchSearch = !searchTerm || inv.project?.title?.toLowerCase().includes(searchTerm.toLowerCase()) || inv.project?.client?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchStatus = !filterStatus || inv.status === filterStatus;
+        return matchSearch && matchStatus;
+    });
+
     const payments: PaymentEntry[] = selectedInvoice?.payment_history || [];
     const remainingAmount = selectedInvoice
         ? selectedInvoice.amount - payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
@@ -226,30 +235,62 @@ export default function InvoicesList() {
                         onClick={() => navigate('/dashboard/invoices/new')}
                     >
                         <Plus className="w-4 h-4 mr-2" />
-                        Create Invoice
+                        Nouvelle facture
                     </Button>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-3 flex-wrap">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Rechercher par projet, client..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+                <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
+                    {[
+                        { value: '', label: 'Toutes' },
+                        { value: 'draft', label: 'Brouillon' },
+                        { value: 'sent', label: 'Envoyée' },
+                        { value: 'partial', label: 'Partiel' },
+                        { value: 'paid', label: 'Payée' },
+                    ].map(tab => (
+                        <button key={tab.value} onClick={() => setFilterStatus(tab.value)}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filterStatus === tab.value ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
             {/* --- Invoice List --- */}
             <div className="space-y-4">
                 {isLoading ? (
-                    <div>Loading invoices...</div>
-                ) : invoices?.length === 0 ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                        <Card key={i} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-3 animate-pulse">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-muted rounded w-10 h-10" />
+                                <div className="space-y-2"><div className="h-4 w-40 bg-muted rounded" /><div className="h-3 w-32 bg-muted rounded" /></div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="h-6 w-24 bg-muted rounded" />
+                                <div className="h-8 w-20 bg-muted rounded" />
+                            </div>
+                        </Card>
+                    ))
+                ) : filteredInvoices?.length === 0 ? (
                     <div className="text-center p-8 border border-dashed rounded-lg text-muted-foreground">
-                        No invoices found.
+                        Aucune facture trouvée.
                     </div>
                 ) : (
-                    invoices?.map(invoice => (
+                    filteredInvoices?.map(invoice => (
                         <Card key={invoice.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-3 bg-card hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer" onClick={() => openDetailsModal(invoice)}>
                             <div className="flex items-center gap-4">
                                 <div className="p-2 bg-luxury-gold/20 rounded text-luxury-gold">
                                     <FileText className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h4 className="font-medium font-serif">{invoice.project?.title || 'Unknown Project'}</h4>
+                                    <h4 className="font-medium font-serif">{invoice.project?.title || 'Projet inconnu'}</h4>
                                     <p className="text-sm text-muted-foreground">
-                                        Client: {invoice.project?.client?.full_name || 'N/A'}
+                                        Client : {invoice.project?.client?.full_name || 'N/A'}
                                     </p>
                                 </div>
                             </div>
@@ -310,13 +351,13 @@ export default function InvoicesList() {
                                         const settings = await apiSettings.get();
                                         generateInvoicePDF(invoice, settings);
                                     }}>
-                                        Print PDF
+                                        Imprimer PDF
                                     </Button>
                                     {(role === 'admin' || role === 'secretary') && (
                                         <>
                                             {invoice.status !== 'paid' && (
                                                 <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); openEditModal(invoice); }}>
-                                                    Edit Link
+                                                    Modifier le lien
                                                 </Button>
                                             )}
                                             <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={async (e) => {
@@ -334,7 +375,7 @@ export default function InvoicesList() {
                                             className="bg-green-600 hover:bg-green-700 text-white"
                                             onClick={(e) => { e.stopPropagation(); window.open(invoice.stripe_payment_link, '_blank'); }}
                                         >
-                                            Pay Now
+                                            Payer
                                         </Button>
                                     )}
                                 </div>
@@ -348,18 +389,18 @@ export default function InvoicesList() {
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Update Payment Link</DialogTitle>
-                        <DialogDescription>Add or update the Stripe payment link for this invoice.</DialogDescription>
+                        <DialogTitle>Modifier le lien de paiement</DialogTitle>
+                        <DialogDescription>Ajoutez ou modifiez le lien de paiement Stripe.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Stripe Link</Label>
+                            <Label>Lien Stripe</Label>
                             <Input placeholder="https://buy.stripe.com/..." value={paymentLink} onChange={(e) => setPaymentLink(e.target.value)} />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveLink}>Save</Button>
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Annuler</Button>
+                        <Button onClick={handleSaveLink}>Enregistrer</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -368,7 +409,7 @@ export default function InvoicesList() {
             <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-serif">Invoice Details</DialogTitle>
+                        <DialogTitle className="text-2xl font-serif">Détails de la facture</DialogTitle>
                         <DialogDescription>
                             Invoice #{selectedInvoice?.id.slice(0, 8)}
                         </DialogDescription>
@@ -379,7 +420,7 @@ export default function InvoicesList() {
                             {/* Project / Client */}
                             <div className="grid grid-cols-2 gap-4 border-b pb-4">
                                 <div>
-                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Project</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Projet</Label>
                                     <p className="font-serif text-lg">{selectedInvoice.project?.title}</p>
                                 </div>
                                 <div>
@@ -390,10 +431,10 @@ export default function InvoicesList() {
 
                             {/* Financial Breakdown */}
                             <div className="space-y-3">
-                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">Financial Breakdown</Label>
+                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">Détails financiers</Label>
                                 <div className="space-y-1 bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 font-mono text-sm">
                                     <div className="flex justify-between">
-                                        <span>Amount (Net)</span>
+                                        <span>Montant (Net)</span>
                                         <span>{formatCurrency(selectedInvoice.amount)}</span>
                                     </div>
                                     {selectedInvoice.project?.financials?.tax_province && (
@@ -403,7 +444,7 @@ export default function InvoicesList() {
                                                 <span>+ {formatCurrency(calculateCanadianTax(selectedInvoice.amount, selectedInvoice.project.financials.tax_province as CanadianProvince).total)}</span>
                                             </div>
                                             <div className="flex justify-between font-bold border-t pt-2 mt-2 text-luxury-gold text-lg">
-                                                <span>Total Gross</span>
+                                                <span>Total TTC</span>
                                                 <span>{formatCurrency(selectedInvoice.amount + calculateCanadianTax(selectedInvoice.amount, selectedInvoice.project.financials.tax_province as CanadianProvince).total)}</span>
                                             </div>
                                         </>
@@ -414,7 +455,7 @@ export default function InvoicesList() {
                             {/* Status & Dates */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Status</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Statut</Label>
                                     <div className="flex items-center gap-2">
                                         <Badge variant={selectedInvoice.status === 'paid' ? 'default' : 'secondary'}>
                                             {selectedInvoice.status.toUpperCase()}
@@ -426,8 +467,8 @@ export default function InvoicesList() {
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-[10px] uppercase text-muted-foreground font-bold">Dates</Label>
-                                    <p className="text-xs">Created: {new Date(selectedInvoice.created_at).toLocaleDateString()}</p>
-                                    <p className="text-xs">Due: {selectedInvoice.due_date ? new Date(selectedInvoice.due_date).toLocaleDateString() : 'N/A'}</p>
+                                    <p className="text-xs">Créée le : {new Date(selectedInvoice.created_at).toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-xs">Échéance : {selectedInvoice.due_date ? new Date(selectedInvoice.due_date).toLocaleDateString('fr-FR') : 'N/A'}</p>
                                 </div>
                             </div>
 
@@ -548,7 +589,7 @@ export default function InvoicesList() {
                             {/* Payment Link */}
                             {selectedInvoice.stripe_payment_link && (
                                 <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-md">
-                                    <Label className="text-[10px] uppercase text-green-600 font-bold mb-1 block">Payment Link</Label>
+                                    <Label className="text-[10px] uppercase text-green-600 font-bold mb-1 block">Lien de paiement</Label>
                                     <a href={selectedInvoice.stripe_payment_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline break-all">
                                         {selectedInvoice.stripe_payment_link}
                                     </a>
@@ -560,7 +601,7 @@ export default function InvoicesList() {
                               (selectedInvoice.project?.stage_details?.sketch_files?.length || 0) > 0 ||
                               (selectedInvoice.project?.stage_details?.design_files?.length || 0) > 0) && (
                                 <div className="space-y-4 pt-4 border-t">
-                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Project Content & Designs</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Contenu & Designs du projet</Label>
                                     
                                     {selectedInvoice.project.stage_details.design_notes && (
                                         <div className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded border border-black/5 text-sm italic text-muted-foreground whitespace-pre-wrap">
@@ -586,7 +627,7 @@ export default function InvoicesList() {
                     )}
 
                     <DialogFooter className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
+                        <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>Fermer</Button>
                         <Button
                             variant="default"
                             className="bg-luxury-gold text-black hover:bg-gold-600"
@@ -595,7 +636,7 @@ export default function InvoicesList() {
                                 if (selectedInvoice) generateInvoicePDF(selectedInvoice, settings);
                             }}
                         >
-                            Download PDF
+                            Télécharger PDF
                         </Button>
                     </DialogFooter>
                 </DialogContent>

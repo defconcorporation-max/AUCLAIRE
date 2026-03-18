@@ -122,23 +122,9 @@ export default function Dashboard() {
     const affiliates = useMemo(() => users?.filter(u => u.role === 'affiliate' || u.role === 'admin') || [], [users]);
     const manufacturers = useMemo(() => users?.filter(u => u.role === 'manufacturer') || [], [users]);
 
-    if (projectsLoading || invoicesLoading || expensesLoading || usersLoading || activitiesLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-luxury-gold"></div>
-            </div>
-        );
-    }
-
-    const hasError = projectsError || invoicesError || expensesError || usersError || !projects || !invoices || !expenses;
-    if (hasError) {
-        return (
-            <div className="p-8 glass-card border-red-500/20 text-red-500 text-center">
-                <h2 className="text-xl font-serif mb-2">Erreur de Chargement</h2>
-                <p className="text-sm opacity-70">Impossible de récupérer les données du tableau de bord.</p>
-            </div>
-        );
-    }
+    // Memoize all expensive dashboard computations
+    const dashboardData = useMemo(() => {
+        if (!projects || !invoices || !expenses) return null;
 
     // Role-based filtering + UI Filters
     const filteredProjects = projects?.filter(p => {
@@ -370,8 +356,86 @@ export default function Dashboard() {
         }))
         .sort((a, b) => b.qualityRate - a.qualityRate);
 
-    // AI Insights Logic
     const insights = generateDashboardInsights(filteredProjects, filteredInvoices, expenses || [], leaderboard);
+
+    return {
+        filteredProjects,
+        filteredInvoices,
+        manufacturerDesignRequests,
+        manufacturerPendingProduction,
+        manufacturerOngoingProduction,
+        manufacturerInDelivery,
+        adminDesignReady,
+        totalCollected,
+        totalInvoiced,
+        projectedProfit,
+        periodCollected,
+        periodInvoiced,
+        periodPotential,
+        periodProfit,
+        highRiskProjects,
+        expectedCashPipeline,
+        statsData,
+        leaderboard,
+        manufacturerScorecard,
+        insights,
+    };
+    }, [projects, invoices, expenses, profile, role, selectedAffiliate, selectedManufacturer, timeframe, activities, manufacturers]);
+
+    if (projectsLoading || invoicesLoading || expensesLoading || usersLoading || activitiesLoading) {
+        return (
+            <div className="space-y-6 pb-12">
+                <div className="h-10 w-64 bg-white/5 rounded-lg animate-pulse" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-28 bg-white/5 rounded-xl animate-pulse border border-white/5" style={{ animationDelay: `${i * 150}ms` }} />
+                    ))}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2 h-64 bg-white/5 rounded-xl animate-pulse border border-white/5" />
+                    <div className="h-64 bg-white/5 rounded-xl animate-pulse border border-white/5" />
+                </div>
+                <div className="flex items-center justify-center pt-4">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-luxury-gold" />
+                </div>
+            </div>
+        );
+    }
+
+    if (projectsError || invoicesError || expensesError || usersError || !dashboardData) {
+        return (
+            <div className="p-8 glass-card border-red-500/20 text-red-500 text-center">
+                <h2 className="text-xl font-serif mb-2">Erreur de Chargement</h2>
+                <p className="text-sm opacity-70">Impossible de récupérer les données du tableau de bord.</p>
+                <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+                    Réessayer
+                </Button>
+            </div>
+        );
+    }
+
+    const {
+        filteredProjects,
+        filteredInvoices,
+        manufacturerDesignRequests,
+        manufacturerPendingProduction,
+        manufacturerOngoingProduction,
+        manufacturerInDelivery,
+        adminDesignReady,
+        totalCollected,
+        totalInvoiced,
+        projectedProfit,
+        periodCollected,
+        periodInvoiced,
+        periodPotential,
+        periodProfit,
+        highRiskProjects,
+        expectedCashPipeline,
+        statsData,
+        leaderboard,
+        manufacturerScorecard,
+        insights,
+    } = dashboardData;
 
     return (
         <div className="space-y-6 pb-12">
@@ -477,13 +541,13 @@ export default function Dashboard() {
                                     { key: 'stats', label: 'Statistiques' },
                                     { key: 'pipeline', label: 'Pipeline' },
                                     { key: 'leaderboard', label: 'Classement' },
-                                    { key: 'designReview', label: 'Design Review' },
+                                    { key: 'designReview', label: 'Revue Design' },
                                     { key: 'cashRisk', label: 'Risques Trésorerie' },
                                     { key: 'deadline', label: 'Délais & SLA' },
                                     { key: 'timeBased', label: 'Stats Temporelles' },
                                     { key: 'revenueChart', label: 'Graphique Revenus' },
-                                    { key: 'boutiqueMirror', label: 'Boutique Mirror' },
-                                    { key: 'healthAuditor', label: 'Health Auditor' },
+                                    { key: 'boutiqueMirror', label: 'Miroir Boutique' },
+                                    { key: 'healthAuditor', label: 'Audit Santé' },
                                     { key: 'workload', label: 'Charge de Travail' },
                                 ].map(w => (
                                     <button
@@ -549,7 +613,7 @@ export default function Dashboard() {
                                 <CardHeader className="py-4">
                                     <CardTitle className="font-serif text-lg tracking-wide flex items-center gap-2">
                                         <span className="text-luxury-gold animate-pulse">✨</span>
-                                        AI Business Insights
+                                        Insights IA
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="pb-6">
@@ -642,7 +706,7 @@ export default function Dashboard() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right font-serif text-sm font-bold text-luxury-gold">
-                                                    ${m.volume.toLocaleString()}
+                                                    {m.volume.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -769,7 +833,7 @@ function generateDashboardInsights(
     if (collectionRate >= 80) {
         insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Excellent! Discipline de paiement client solide.`, type: 'success' });
     } else if (collectionRate >= 40) {
-        insights.push({ icon: '💰', title: `Recouvrement: ${collectionRate}%`, description: `Normal (dépôt 50%). ${preDeliveryCount} projets attendent la livraison pour le solde.${overdueOnDelivered > 0 ? ` $${overdueOnDelivered.toLocaleString()} en retard.` : ''}`, type: overdueOnDelivered > 0 ? 'warning' : 'success' });
+        insights.push({ icon: '💰', title: `Recouvrement: ${collectionRate}%`, description: `Normal (dépôt 50%). ${preDeliveryCount} projets attendent la livraison pour le solde.${overdueOnDelivered > 0 ? ` ${overdueOnDelivered.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })} en retard.` : ''}`, type: overdueOnDelivered > 0 ? 'warning' : 'success' });
     }
 
     // 2. Pipeline Balance
@@ -777,7 +841,7 @@ function generateDashboardInsights(
     const inProduction = projects.filter(p => ['approved_for_production', 'production'].includes(p.status)).length;
 
     if (designing > inProduction * 2 && inProduction > 0) {
-        insights.push({ icon: '🎨', title: `Pipeline Design Saturation`, description: `${designing} designs en cours vs ${inProduction} en production. Risque de goulot d'étranglement.`, type: 'warning' });
+        insights.push({ icon: '🎨', title: `Saturation du Pipeline Design`, description: `${designing} designs en cours vs ${inProduction} en production. Risque de goulot d'étranglement.`, type: 'warning' });
     } else if (inProduction > 0) {
         insights.push({ icon: '🏭', title: `Flux Production Sain`, description: `Équilibre maintenu entre la création et la fabrication.`, type: 'success' });
     }

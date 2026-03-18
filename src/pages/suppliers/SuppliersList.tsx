@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiSuppliers, Supplier } from '@/services/apiSuppliers';
 import { apiActivities } from '@/services/apiActivities';
@@ -10,9 +10,18 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Search, Pencil, Star, Factory, Briefcase } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, Star, Factory, Briefcase, ArrowUpDown } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
+import { toast } from '@/components/ui/use-toast';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 const SUPPLIER_TYPES: { value: Supplier['type']; label: string }[] = [
     { value: 'diamantaire', label: 'Diamantaire' },
@@ -40,8 +49,14 @@ export default function SuppliersList() {
     const { profile } = useAuth();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+    const [filterType, setFilterType] = useState('');
+    const [sortField, setSortField] = useState<'name' | 'type' | 'rating'>('name');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
     const [formData, setFormData] = useState<Partial<Supplier>>({
         name: '',
@@ -101,7 +116,7 @@ export default function SuppliersList() {
         },
         onError: (error) => {
             console.error('Failed to create supplier:', error);
-            alert(`Error: ${(error as Error).message}`);
+            toast({ title: "Erreur", description: (error as Error).message, variant: "destructive" });
         },
     });
 
@@ -121,7 +136,7 @@ export default function SuppliersList() {
         },
         onError: (error) => {
             console.error('Failed to update supplier:', error);
-            alert(`Error: ${(error as Error).message}`);
+            toast({ title: "Erreur", description: (error as Error).message, variant: "destructive" });
         },
     });
 
@@ -169,11 +184,37 @@ export default function SuppliersList() {
         });
     };
 
-    const filteredSuppliers = suppliers?.filter((s) =>
-        s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.type?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const handleSort = (field: 'name' | 'type' | 'rating') => {
+        if (sortField === field) {
+            setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDir('asc');
+        }
+    };
+
+    const filteredSuppliers = suppliers
+        ?.filter((s) =>
+            (s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.type?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+            (filterType === '' || s.type === filterType)
+        )
+        ?.sort((a, b) => {
+            const dir = sortDir === 'asc' ? 1 : -1;
+            if (sortField === 'name') {
+                return dir * (a.name || '').localeCompare(b.name || '');
+            }
+            if (sortField === 'type') {
+                return dir * (a.type || '').localeCompare(b.type || '');
+            }
+            return dir * ((a.rating ?? 0) - (b.rating ?? 0));
+        });
+
+    const totalPages = Math.ceil((filteredSuppliers?.length || 0) / ITEMS_PER_PAGE);
+    const paginatedSuppliers = filteredSuppliers?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType]);
 
     const isFormOpen = isAddOpen || !!editingSupplier;
     const isPending = createMutation.isPending || updateMutation.isPending;
@@ -245,8 +286,20 @@ export default function SuppliersList() {
                 </div>
             )}
 
-            {/* Search Bar */}
+            {/* Search & Filter Bar */}
             <div className="flex gap-2 items-center glass-card p-2 rounded-lg border border-white/5 dark:border-white/5">
+                <select
+                    className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
+                    value={filterType}
+                    onChange={e => setFilterType(e.target.value)}
+                >
+                    <option value="">Tous</option>
+                    <option value="diamantaire">Diamantaire</option>
+                    <option value="fondeur">Fondeur</option>
+                    <option value="sertisseur">Sertisseur</option>
+                    <option value="graveur">Graveur</option>
+                    <option value="other">Autre</option>
+                </select>
                 <Search className="w-4 h-4 text-muted-foreground ml-2" />
                 <Input
                     placeholder="Rechercher par nom, contact ou type..."
@@ -262,11 +315,26 @@ export default function SuppliersList() {
                     <Table>
                         <TableHeader>
                             <TableRow className="border-white/5 hover:bg-transparent">
-                                <TableHead className="text-luxury-gold/80">Nom</TableHead>
-                                <TableHead className="text-luxury-gold/80">Type</TableHead>
+                                <TableHead className="text-luxury-gold/80 cursor-pointer select-none" onClick={() => handleSort('name')}>
+                                    <span className="inline-flex items-center gap-1">
+                                        Nom
+                                        <ArrowUpDown className={`w-3 h-3 ${sortField === 'name' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
+                                    </span>
+                                </TableHead>
+                                <TableHead className="text-luxury-gold/80 cursor-pointer select-none" onClick={() => handleSort('type')}>
+                                    <span className="inline-flex items-center gap-1">
+                                        Type
+                                        <ArrowUpDown className={`w-3 h-3 ${sortField === 'type' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
+                                    </span>
+                                </TableHead>
                                 <TableHead className="text-luxury-gold/80">Contact</TableHead>
                                 <TableHead className="text-luxury-gold/80">Email / Téléphone</TableHead>
-                                <TableHead className="text-luxury-gold/80">Note</TableHead>
+                                <TableHead className="text-luxury-gold/80 cursor-pointer select-none" onClick={() => handleSort('rating')}>
+                                    <span className="inline-flex items-center gap-1">
+                                        Note
+                                        <ArrowUpDown className={`w-3 h-3 ${sortField === 'rating' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
+                                    </span>
+                                </TableHead>
                                 <TableHead className="w-[100px] text-luxury-gold/80"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -284,7 +352,7 @@ export default function SuppliersList() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredSuppliers?.map((supplier) => (
+                                paginatedSuppliers?.map((supplier) => (
                                     <TableRow
                                         key={supplier.id}
                                         className="border-white/5 hover:bg-white/5 dark:hover:bg-white/5"
@@ -327,10 +395,7 @@ export default function SuppliersList() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-red-500/80 hover:text-red-500 hover:bg-red-500/10"
-                                                    onClick={() => {
-                                                        if (confirm('Supprimer ce fournisseur ?'))
-                                                            deleteMutation.mutate(supplier.id);
-                                                    }}
+                                                    onClick={() => setDeleteTarget({ id: supplier.id, name: supplier.name })}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
@@ -343,6 +408,31 @@ export default function SuppliersList() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4">
+                    <p className="text-sm text-muted-foreground">
+                        Page {currentPage} sur {totalPages} ({filteredSuppliers?.length} résultats)
+                    </p>
+                    <div className="flex items-center gap-1">
+                        <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+                            Précédent
+                        </Button>
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                            const page = currentPage <= 3 ? i + 1 : currentPage + i - 2;
+                            if (page < 1 || page > totalPages) return null;
+                            return (
+                                <Button key={page} variant={page === currentPage ? 'default' : 'outline'} size="sm" className={page === currentPage ? 'bg-luxury-gold text-black' : ''} onClick={() => setCurrentPage(page)}>
+                                    {page}
+                                </Button>
+                            );
+                        })}
+                        <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                            Suivant
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Add / Edit Modal */}
             <Sheet
@@ -471,6 +561,22 @@ export default function SuppliersList() {
                     </form>
                 </SheetContent>
             </Sheet>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Confirmer la suppression</DialogTitle>
+                        <DialogDescription>
+                            Êtes-vous sûr de vouloir supprimer {deleteTarget?.name} ? Cette action est irréversible.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+                        <Button variant="destructive" onClick={() => { deleteMutation.mutate(deleteTarget!.id); setDeleteTarget(null); }}>Supprimer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

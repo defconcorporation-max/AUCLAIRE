@@ -491,75 +491,38 @@ export default function AnalyticsDashboard() {
 
             </div>
 
-            {/* Velocity and AI Analysis Section */}
-            <div className="grid gap-6 md:grid-cols-2">
-                {/* Velocity Monitor */}
-                <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="font-serif text-xl flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-luxury-gold" />
-                            Prévisions de Trésorerie (3 Mois)
-                        </CardTitle>
-                        <CardDescription>Conversion estimée du pipeline actuel</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[250px] w-full mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={next3MonthsData}>
-                                    <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                                    <YAxis hide />
-                                    <Tooltip 
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, "CA Prévu"]}
-                                        contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
-                                    />
-                                    <Bar dataKey="projected" radius={[4, 4, 0, 0]} barSize={40}>
-                                        {next3MonthsData.map((_, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#A68A56' : '#d2b57b'} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground text-center italic mt-2">
-                            Calcul basé sur la vélocité historique et les probabilités de clôture.
-                        </p>
-                    </CardContent>
-                </Card>
-
-                {/* AI Insights Engine (Existing) */}
-                <Card className="border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent backdrop-blur-md shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="font-serif text-xl tracking-wide flex items-center gap-2">
-                            <span className="text-luxury-gold">✨</span>
-                            AI Business Insights
-                        </CardTitle>
-                        <CardDescription>Generated from your live business data</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-3 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin scrollbar-thumb-luxury-gold/20">
-                            {generateInsights(projects, invoices, expenses, monthlyData, leaderboard, clients).slice(0, 6).map((insight, i) => (
-                                <div
-                                    key={i}
-                                    className={`p-3 rounded-xl border ${
-                                        insight.type === 'success' ? 'border-green-500/20 bg-green-500/5' :
-                                        insight.type === 'warning' ? 'border-amber-500/20 bg-amber-500/5' :
-                                        insight.type === 'danger' ? 'border-red-500/20 bg-red-500/5' :
-                                        'border-blue-500/20 bg-blue-500/5'
-                                    }`}
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-lg">{insight.icon}</span>
-                                        <div>
-                                            <p className="font-medium text-[13px] leading-tight">{insight.title}</p>
-                                            <p className="text-[11px] text-muted-foreground mt-0.5">{insight.description}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            {/* Velocity Section */}
+            <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
+                <CardHeader>
+                    <CardTitle className="font-serif text-xl flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-luxury-gold" />
+                        Prévisions de Trésorerie (3 Mois)
+                    </CardTitle>
+                    <CardDescription>Conversion estimée du pipeline actuel</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="h-[250px] w-full mt-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={next3MonthsData}>
+                                <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                                <YAxis hide />
+                                <Tooltip 
+                                    formatter={(value: number) => [formatCurrency(value), "CA Prévu"]}
+                                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
+                                />
+                                <Bar dataKey="projected" radius={[4, 4, 0, 0]} barSize={40}>
+                                    {next3MonthsData.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={index === 0 ? '#A68A56' : '#d2b57b'} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground text-center italic mt-2">
+                        Calcul basé sur la vélocité historique et les probabilités de clôture.
+                    </p>
+                </CardContent>
+            </Card>
 
             {/* Manufacturer Performance Scorecards */}
             <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
@@ -622,7 +585,7 @@ export default function AnalyticsDashboard() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right font-serif text-lg font-bold">
-                                        ${m.volume.toLocaleString()}
+                                        {formatCurrency(m.volume)}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -789,7 +752,7 @@ export default function AnalyticsDashboard() {
                                                     <span className="text-[10px] text-muted-foreground">({row.count} projets)</span>
                                                 </div>
                                                 <div className="flex items-center gap-4 text-xs">
-                                                    <span className="text-muted-foreground">${row.revenue.toLocaleString()}</span>
+                                                    <span className="text-muted-foreground">{formatCurrency(row.revenue)}</span>
                                                     <span className={`font-bold ${row.marginPct >= 30 ? 'text-green-500' : row.marginPct >= 15 ? 'text-amber-500' : 'text-red-500'}`}>
                                                         {row.marginPct.toFixed(0)}% marge
                                                     </span>
@@ -806,8 +769,8 @@ export default function AnalyticsDashboard() {
                                                 />
                                             </div>
                                             <div className="flex gap-4 text-[10px] text-muted-foreground">
-                                                <span>Coûts: ${row.costs.toLocaleString()}</span>
-                                                <span>Marge: ${row.margin.toLocaleString()}</span>
+                                                <span>Coûts: {formatCurrency(row.costs)}</span>
+                                                <span>Marge: {formatCurrency(row.margin)}</span>
                                             </div>
                                         </div>
                                     ))}
@@ -891,11 +854,11 @@ function generateInsights(
     if (totalPrev > 0) {
         const growth = Math.round(((totalRecent - totalPrev) / totalPrev) * 100);
         if (growth > 20) {
-            insights.push({ icon: '📈', title: `Revenue up ${growth}% vs prior quarter`, description: `Strong momentum! Collections grew from $${totalPrev.toLocaleString()} to $${totalRecent.toLocaleString()}.`, type: 'success' });
+            insights.push({ icon: '📈', title: `Revenue up ${growth}% vs prior quarter`, description: `Strong momentum! Collections grew from ${formatCurrency(totalPrev)} to ${formatCurrency(totalRecent)}.`, type: 'success' });
         } else if (growth < -10) {
-            insights.push({ icon: '📉', title: `Revenue declined ${Math.abs(growth)}%`, description: `Collections dropped from $${totalPrev.toLocaleString()} to $${totalRecent.toLocaleString()}. Consider running promotions.`, type: 'danger' });
+            insights.push({ icon: '📉', title: `Revenue declined ${Math.abs(growth)}%`, description: `Collections dropped from ${formatCurrency(totalPrev)} to ${formatCurrency(totalRecent)}. Consider running promotions.`, type: 'danger' });
         } else {
-            insights.push({ icon: '📊', title: `Revenue stable (${growth > 0 ? '+' : ''}${growth}%)`, description: `Consistent cash flow of ~$${Math.round(totalRecent / 3).toLocaleString()}/month.`, type: 'info' });
+            insights.push({ icon: '📊', title: `Revenue stable (${growth > 0 ? '+' : ''}${growth}%)`, description: `Consistent cash flow of ~${formatCurrency(Math.round(totalRecent / 3))}/month.`, type: 'info' });
         }
     }
 
@@ -910,11 +873,11 @@ function generateInsights(
     const overdueAmount = overdueInvoices.reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid || 0)), 0);
 
     if (collectionRate >= 80) {
-        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Excellent. $${totalPaid.toLocaleString()} collecté sur $${totalInvoiced.toLocaleString()} facturé.`, type: 'success' });
+        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Excellent. ${formatCurrency(totalPaid)} collecté sur ${formatCurrency(totalInvoiced)} facturé.`, type: 'success' });
     } else if (collectionRate >= 40) {
-        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Normal avec le modèle dépôt 50%. ${preDeliveryProjects.length} projets attendent la livraison pour le solde.${overdueAmount > 0 ? ` $${overdueAmount.toLocaleString()} en retard sur projets livrés.` : ''}`, type: overdueAmount > 0 ? 'warning' : 'success' });
+        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Normal avec le modèle dépôt 50%. ${preDeliveryProjects.length} projets attendent la livraison pour le solde.${overdueAmount > 0 ? ` ${formatCurrency(overdueAmount)} en retard sur projets livrés.` : ''}`, type: overdueAmount > 0 ? 'warning' : 'success' });
     } else if (totalInvoiced > 0) {
-        insights.push({ icon: '⚠️', title: `Taux de recouvrement: ${collectionRate}%`, description: `$${(totalInvoiced - totalPaid).toLocaleString()} en attente. Le solde restant est attendu à la livraison (modèle dépôt 50%).`, type: 'info' });
+        insights.push({ icon: '⚠️', title: `Taux de recouvrement: ${collectionRate}%`, description: `${formatCurrency(totalInvoiced - totalPaid)} en attente. Le solde restant est attendu à la livraison (modèle dépôt 50%).`, type: 'info' });
     }
 
     // 3. Pipeline Health
@@ -936,7 +899,7 @@ function generateInsights(
 
     if (busyMonths.length >= 2) {
         const topMonth = busyMonths[0];
-        insights.push({ icon: '📅', title: `Peak month: ${topMonth.month}`, description: `$${topMonth.invoiced.toLocaleString()} in project volume. Ensure design/production capacity is scaled up ahead of peak periods.`, type: 'info' });
+        insights.push({ icon: '📅', title: `Peak month: ${topMonth.month}`, description: `${formatCurrency(topMonth.invoiced)} in project volume. Ensure design/production capacity is scaled up ahead of peak periods.`, type: 'info' });
     }
 
     // 5. Top Client Concentration
@@ -955,7 +918,7 @@ function generateInsights(
     if (totalRevenue > 0) {
         const expenseRatio = Math.round((totalExpenses / totalRevenue) * 100);
         if (expenseRatio < 40) {
-            insights.push({ icon: '✅', title: `${expenseRatio}% expense ratio — healthy margins`, description: `Expenses ($${totalExpenses.toLocaleString()}) vs revenue ($${totalRevenue.toLocaleString()}) show strong profitability.`, type: 'success' });
+            insights.push({ icon: '✅', title: `${expenseRatio}% expense ratio — healthy margins`, description: `Expenses (${formatCurrency(totalExpenses)}) vs revenue (${formatCurrency(totalRevenue)}) show strong profitability.`, type: 'success' });
         } else if (expenseRatio < 70) {
             insights.push({ icon: '📋', title: `${expenseRatio}% expense ratio — monitor closely`, description: `Expenses are growing relative to revenue. Review cost categories for optimization.`, type: 'warning' });
         } else {
@@ -968,7 +931,7 @@ function generateInsights(
         const avgMonthly = totalRecent / Math.min(3, currentMonth + 1);
         const monthsLeft = 12 - currentMonth - 1;
         const predicted = totalRecent + (avgMonthly * monthsLeft);
-        insights.push({ icon: '🔮', title: `Projected annual collections: $${Math.round(predicted).toLocaleString()}`, description: `Based on $${Math.round(avgMonthly).toLocaleString()}/month average over the last 3 months, with ${monthsLeft} months remaining.`, type: 'info' });
+        insights.push({ icon: '🔮', title: `Projected annual collections: ${formatCurrency(Math.round(predicted))}`, description: `Based on ${formatCurrency(Math.round(avgMonthly))}/month average over the last 3 months, with ${monthsLeft} months remaining.`, type: 'info' });
     }
 
     // 8. Client Growth

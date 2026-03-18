@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiExpenses, Expense } from '@/services/apiExpenses';
 import { apiActivities } from '@/services/apiActivities';
@@ -8,9 +8,19 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Search, Download } from 'lucide-react';
+import { Plus, Trash2, Search, Download, ArrowUpDown } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from '@/components/ui/label';
+import { toast } from '@/components/ui/use-toast';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { formatCurrency } from '@/utils/taxUtils';
 
 import { useAuth } from '@/context/AuthContext';
 
@@ -18,7 +28,13 @@ export default function ExpensesList() {
     const { profile } = useAuth();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const [filterCategory, setFilterCategory] = useState('');
+    const [sortField, setSortField] = useState<'date' | 'amount' | 'category'>('date');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
     // Form State
     const [newExpense, setNewExpense] = useState<Partial<Expense>>({
@@ -63,11 +79,11 @@ export default function ExpensesList() {
                 description: '',
                 recipient_id: undefined
             });
-            alert("Expense Saved!");
+            toast({ title: "Dépense enregistrée", description: "La dépense a été ajoutée avec succès." });
         },
         onError: (error) => {
             console.error("Failed to create expense:", error);
-            alert(`Error saving expense: ${error.message || (error as any).error_description || "Unknown error"}`);
+            toast({ title: "Erreur", description: error.message || (error as any).error_description || "Erreur inconnue", variant: "destructive" });
         }
     });
 
@@ -87,11 +103,9 @@ export default function ExpensesList() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Check for Demo Mode
         if (profile?.id?.toString().startsWith('demo-')) {
-            alert("Demo Mode: Expense created successfully! (Data is not saved to the database in this mode)");
+            toast({ title: "Mode Démo", description: "Dépense simulée avec succès." });
             setIsAddOpen(false);
-            // Optimistically update the UI for the demo session (optional)
             const demoExpense = {
                 ...newExpense,
                 id: `temp-${Date.now()}`,
@@ -114,17 +128,42 @@ export default function ExpensesList() {
 
         createMutation.mutate({
             ...newExpense,
-            // Only send created_by if it's a valid UUID (users might have legacy IDs in weird edge cases, but mainly for demo safety)
             created_by: profile?.id
         });
     };
 
+    const handleSort = (field: 'date' | 'amount' | 'category') => {
+        if (sortField === field) {
+            setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDir('asc');
+        }
+    };
+
     // Filter Logic
-    const filteredExpenses = expenses?.filter(e =>
-        e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.recipient?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredExpenses = expenses
+        ?.filter(e =>
+            (e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            e.recipient?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            e.category.toLowerCase().includes(searchTerm.toLowerCase())) &&
+            (filterCategory === '' || e.category === filterCategory)
+        )
+        ?.sort((a, b) => {
+            const dir = sortDir === 'asc' ? 1 : -1;
+            if (sortField === 'date') {
+                return dir * (new Date(a.date).getTime() - new Date(b.date).getTime());
+            }
+            if (sortField === 'amount') {
+                return dir * (Number(a.amount) - Number(b.amount));
+            }
+            return dir * a.category.localeCompare(b.category);
+        });
+
+    const totalPages = Math.ceil((filteredExpenses?.length || 0) / ITEMS_PER_PAGE);
+    const paginatedExpenses = filteredExpenses?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    useEffect(() => { setCurrentPage(1); }, [searchTerm, filterCategory]);
 
     const totalAmount = filteredExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
@@ -169,12 +208,12 @@ export default function ExpensesList() {
                     <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <SheetTrigger asChild>
                         <Button className="bg-luxury-gold text-black hover:bg-luxury-gold/90 gap-2">
-                            <Plus className="w-4 h-4" /> Add Expense
+                            <Plus className="w-4 h-4" /> Ajouter une dépense
                         </Button>
                     </SheetTrigger>
                     <SheetContent className="overflow-y-auto">
                         <SheetHeader>
-                            <SheetTitle>Record New Expense</SheetTitle>
+                            <SheetTitle>Nouvelle dépense</SheetTitle>
                         </SheetHeader>
                         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
                             <div className="space-y-2">
@@ -188,7 +227,7 @@ export default function ExpensesList() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Amount ($)</Label>
+                                <Label>Montant ($)</Label>
                                 <Input
                                     type="number"
                                     step="0.01"
@@ -199,30 +238,30 @@ export default function ExpensesList() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Category</Label>
+                                <Label>Catégorie</Label>
                                 <select
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.category}
                                     onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value as any })}
                                 >
-                                    <option value="commission">Commission Payout</option>
-                                    <option value="operational">Operational</option>
-                                    <option value="material">Material Cost</option>
+                                    <option value="commission">Commission</option>
+                                    <option value="operational">Opérationnel</option>
+                                    <option value="material">Matériaux</option>
                                     <option value="marketing">Marketing</option>
-                                    <option value="salary">Salary</option>
-                                    <option value="software">Software / Tools</option>
-                                    <option value="other">Other</option>
+                                    <option value="salary">Salaire</option>
+                                    <option value="software">Logiciel / Outils</option>
+                                    <option value="other">Autre</option>
                                 </select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Recipient (Optional)</Label>
+                                <Label>Destinataire (Optionnel)</Label>
                                 <select
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.recipient_id || "none"}
                                     onChange={(e) => setNewExpense({ ...newExpense, recipient_id: e.target.value === "none" ? undefined : e.target.value })}
                                 >
-                                    <option value="none">-- None / External --</option>
+                                    <option value="none">-- Aucun / Externe --</option>
                                     {profiles?.map(p => (
                                         <option key={p.id} value={p.id}>
                                             {p.full_name} ({p.role})
@@ -236,24 +275,24 @@ export default function ExpensesList() {
                                 <Input
                                     value={newExpense.description || ''}
                                     onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
-                                    placeholder="e.g. Ring Casting for Order #123"
+                                    placeholder="ex. Coulée bague pour commande #123"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Status</Label>
+                                <Label>Statut</Label>
                                 <select
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.status}
                                     onChange={(e) => setNewExpense({ ...newExpense, status: e.target.value as any })}
                                 >
-                                    <option value="paid">Paid</option>
-                                    <option value="pending">Pending</option>
+                                    <option value="paid">Payé</option>
+                                    <option value="pending">En attente</option>
                                 </select>
                             </div>
 
                             <Button type="submit" className="w-full bg-luxury-gold text-black" disabled={createMutation.isPending}>
-                                {createMutation.isPending ? 'Saving...' : 'Save Expense'}
+                                {createMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
                             </Button>
                         </form>
                     </SheetContent>
@@ -265,19 +304,33 @@ export default function ExpensesList() {
             <div className="grid md:grid-cols-3 gap-4">
                 <Card className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses (Filtered)</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total (Filtré)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${totalAmount.toLocaleString()}</div>
+                        <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Filter Bar */}
             <div className="flex gap-2 items-center bg-white dark:bg-zinc-900 p-2 rounded-lg border">
+                <select
+                    className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={filterCategory}
+                    onChange={e => setFilterCategory(e.target.value)}
+                >
+                    <option value="">Toutes</option>
+                    <option value="commission">Commission</option>
+                    <option value="operational">Opérationnel</option>
+                    <option value="material">Matériaux</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="salary">Salaire</option>
+                    <option value="software">Logiciel / Outils</option>
+                    <option value="other">Autre</option>
+                </select>
                 <Search className="w-4 h-4 text-muted-foreground ml-2" />
                 <Input
-                    placeholder="Search expenses, recipients..."
+                    placeholder="Rechercher dépenses, destinataires..."
                     className="border-0 bg-transparent focus-visible:ring-0"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
@@ -290,28 +343,43 @@ export default function ExpensesList() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Date</TableHead>
+                                <TableHead className="cursor-pointer select-none" onClick={() => handleSort('date')}>
+                                    <span className="inline-flex items-center gap-1">
+                                        Date
+                                        <ArrowUpDown className={`w-3 h-3 ${sortField === 'date' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
+                                    </span>
+                                </TableHead>
                                 <TableHead>Description</TableHead>
-                                <TableHead>Recipient</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
+                                <TableHead>Destinataire</TableHead>
+                                <TableHead className="cursor-pointer select-none" onClick={() => handleSort('category')}>
+                                    <span className="inline-flex items-center gap-1">
+                                        Catégorie
+                                        <ArrowUpDown className={`w-3 h-3 ${sortField === 'category' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
+                                    </span>
+                                </TableHead>
+                                <TableHead>Statut</TableHead>
+                                <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort('amount')}>
+                                    <span className="inline-flex items-center gap-1 justify-end">
+                                        Montant
+                                        <ArrowUpDown className={`w-3 h-3 ${sortField === 'amount' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
+                                    </span>
+                                </TableHead>
                                 <TableHead className="w-[50px]"></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8">Loading expenses...</TableCell>
+                                    <TableCell colSpan={7} className="text-center py-8">Chargement...</TableCell>
                                 </TableRow>
                             ) : filteredExpenses?.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No expenses found.</TableCell>
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune dépense trouvée.</TableCell>
                                 </TableRow>
                             ) : (
-                                filteredExpenses?.map((expense) => (
+                                paginatedExpenses?.map((expense) => (
                                     <TableRow key={expense.id}>
-                                        <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
+                                        <TableCell>{new Date(expense.date).toLocaleDateString('fr-CA')}</TableCell>
                                         <TableCell className="font-medium">{expense.description || '-'}</TableCell>
                                         <TableCell>
                                             {expense.recipient ? (
@@ -326,20 +394,18 @@ export default function ExpensesList() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={expense.status === 'paid' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}>
-                                                {expense.status}
+                                                {expense.status === 'paid' ? 'Payé' : 'En attente'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-mono">
-                                            ${Number(expense.amount).toLocaleString()}
+                                            {formatCurrency(Number(expense.amount))}
                                         </TableCell>
                                         <TableCell>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                onClick={() => {
-                                                    if (confirm('Delete this expense?')) deleteMutation.mutate(expense.id);
-                                                }}
+                                                onClick={() => setDeleteTarget(expense.id)}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
@@ -351,6 +417,47 @@ export default function ExpensesList() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4">
+                    <p className="text-sm text-muted-foreground">
+                        Page {currentPage} sur {totalPages} ({filteredExpenses?.length} résultats)
+                    </p>
+                    <div className="flex items-center gap-1">
+                        <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+                            Précédent
+                        </Button>
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                            const page = currentPage <= 3 ? i + 1 : currentPage + i - 2;
+                            if (page < 1 || page > totalPages) return null;
+                            return (
+                                <Button key={page} variant={page === currentPage ? 'default' : 'outline'} size="sm" className={page === currentPage ? 'bg-luxury-gold text-black' : ''} onClick={() => setCurrentPage(page)}>
+                                    {page}
+                                </Button>
+                            );
+                        })}
+                        <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                            Suivant
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Confirmer la suppression</DialogTitle>
+                        <DialogDescription>
+                            Êtes-vous sûr de vouloir supprimer cette dépense ? Cette action est irréversible.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+                        <Button variant="destructive" onClick={() => { deleteMutation.mutate(deleteTarget!); setDeleteTarget(null); }}>Supprimer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

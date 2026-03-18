@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Shield, Briefcase, UserCircle, Clock, Trash2, KeyRound, Zap, Factory } from 'lucide-react';
+import { User, Shield, Briefcase, UserCircle, Clock, Trash2, KeyRound, Zap, Factory, Search } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { toast } from '@/components/ui/use-toast';
 
 export default function UsersList() {
     const { profile: currentProfile } = useAuth();
@@ -25,6 +26,13 @@ export default function UsersList() {
     const [passwordModalUserName, setPasswordModalUserName] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterRole, setFilterRole] = useState('');
+
+    const [roleChangeTarget, setRoleChangeTarget] = useState<{ id: string; name: string; newRole: string } | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+    const [goalTarget, setGoalTarget] = useState<{ id: string; name: string; goal: number; inputRef: HTMLInputElement | null } | null>(null);
 
     const { data: users, isLoading } = useQuery({
         queryKey: ['users'],
@@ -37,8 +45,7 @@ export default function UsersList() {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },
         onError: (error) => {
-            alert(`Failed to update role: ${error.message}`);
-            console.error(error);
+            toast({ title: "Erreur", description: error.message, variant: "destructive" });
         }
     });
 
@@ -50,14 +57,13 @@ export default function UsersList() {
     });
 
     const updateCapacitiesMutation = useMutation({
-        mutationFn: ({ id, design, production }: { id: string; design: number; production: number }) => 
+        mutationFn: ({ id, design, production }: { id: string; design: number; production: number }) =>
             apiUsers.updateCapacities(id, design, production),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },
         onError: (error) => {
-            alert(`Failed to update capacities: ${error.message}`);
-            console.error(error);
+            toast({ title: "Erreur", description: error.message, variant: "destructive" });
         }
     });
 
@@ -67,12 +73,26 @@ export default function UsersList() {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },
         onError: (error) => {
-            alert(`Failed to update monthly goal: ${error.message}`);
-            console.error(error);
+            toast({ title: "Erreur", description: error.message, variant: "destructive" });
         }
     });
 
-    if (isLoading) return <div>Loading users...</div>;
+    if (isLoading) return (
+        <div className="space-y-6">
+            <div><h1 className="text-3xl font-serif text-luxury-gold">Gestion des utilisateurs</h1></div>
+            <Card><CardContent className="p-6 space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg border animate-pulse">
+                        <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-full bg-muted" />
+                            <div className="space-y-2"><div className="h-4 w-32 bg-muted rounded" /><div className="h-3 w-48 bg-muted rounded" /></div>
+                        </div>
+                        <div className="h-9 w-32 bg-muted rounded" />
+                    </div>
+                ))}
+            </CardContent></Card>
+        </div>
+    );
 
     const getRoleIcon = (role: string) => {
         switch (role) {
@@ -85,22 +105,44 @@ export default function UsersList() {
         }
     };
 
+    const filteredUsers = users?.filter(u => {
+        const matchSearch = !searchTerm || u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || u.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchRole = !filterRole || u.role === filterRole;
+        return matchSearch && matchRole;
+    });
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-serif text-luxury-gold">User Management</h1>
-                    <p className="text-muted-foreground mt-1">Manage user roles and permissions.</p>
+                    <h1 className="text-3xl font-serif text-luxury-gold">Gestion des utilisateurs</h1>
+                    <p className="text-muted-foreground mt-1">Gérez les rôles et permissions.</p>
                 </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+                <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Rechercher un utilisateur..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+                <select className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm" value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
+                    <option value="">Tous les rôles</option>
+                    <option value="admin">Admin</option>
+                    <option value="manufacturer">Manufacturier</option>
+                    <option value="secretary">Secrétaire</option>
+                    <option value="affiliate">Ambassadeur</option>
+                    <option value="client">Client</option>
+                    <option value="pending">En attente</option>
+                </select>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Registered Users</CardTitle>
+                    <CardTitle>Utilisateurs enregistrés</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {users?.map((user) => (
+                        {filteredUsers?.map((user) => (
                             <div key={user.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg border">
                                 <div className="flex items-center gap-4">
                                     <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
@@ -108,11 +150,11 @@ export default function UsersList() {
                                     </div>
                                     <div>
                                         <div className="font-medium flex items-center gap-2">
-                                            {user.full_name || 'Unnamed User'}
-                                            {user.role === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending</Badge>}
+                                            {user.full_name || 'Utilisateur sans nom'}
+                                            {user.role === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-100">En attente</Badge>}
                                             {user.id === currentProfile?.id && <Badge variant="outline" className="text-xs">You</Badge>}
                                         </div>
-                                        <div className="text-sm text-neutral-500">{user.email || 'No Email (Check Database)'}</div>
+                                        <div className="text-sm text-neutral-500">{user.email || 'Aucun courriel'}</div>
                                         <div className="text-xs text-muted-foreground font-mono">ID: {user.id.slice(0, 8)}...</div>
                                     </div>
                                 </div>
@@ -130,10 +172,10 @@ export default function UsersList() {
                                                     onBlur={(e) => {
                                                         const newVal = Number(e.target.value);
                                                         if (!isNaN(newVal) && newVal !== user.design_capacity) {
-                                                            updateCapacitiesMutation.mutate({ 
-                                                                id: user.id, 
-                                                                design: newVal, 
-                                                                production: user.production_capacity || 3 
+                                                            updateCapacitiesMutation.mutate({
+                                                                id: user.id,
+                                                                design: newVal,
+                                                                production: user.production_capacity || 3
                                                             });
                                                         }
                                                     }}
@@ -150,10 +192,10 @@ export default function UsersList() {
                                                     onBlur={(e) => {
                                                         const newVal = Number(e.target.value);
                                                         if (!isNaN(newVal) && newVal !== user.production_capacity) {
-                                                            updateCapacitiesMutation.mutate({ 
-                                                                id: user.id, 
-                                                                design: user.design_capacity || 1, 
-                                                                production: newVal 
+                                                            updateCapacitiesMutation.mutate({
+                                                                id: user.id,
+                                                                design: user.design_capacity || 1,
+                                                                production: newVal
                                                             });
                                                         }
                                                     }}
@@ -164,7 +206,7 @@ export default function UsersList() {
 
                                     {user.role === 'affiliate' && (
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-xs text-muted-foreground uppercase tracking-widest">Goal:</span>
+                                            <span className="text-xs text-muted-foreground uppercase tracking-widest">Objectif :</span>
                                             <div className="relative">
                                                 <span className="absolute left-2 top-1.5 text-xs text-muted-foreground">$</span>
                                                 <input
@@ -174,11 +216,7 @@ export default function UsersList() {
                                                     onBlur={(e) => {
                                                         const newVal = Number(e.target.value);
                                                         if (!isNaN(newVal) && newVal !== user.monthly_goal) {
-                                                            if (confirm(`Change monthly goal for ${user.full_name} to $${newVal.toLocaleString()}?`)) {
-                                                                updateMonthlyGoalMutation.mutate({ id: user.id, goal: newVal });
-                                                            } else {
-                                                                e.target.value = String(user.monthly_goal || 50000);
-                                                            }
+                                                            setGoalTarget({ id: user.id, name: user.full_name || 'Utilisateur sans nom', goal: newVal, inputRef: e.target });
                                                         }
                                                     }}
                                                 />
@@ -187,28 +225,26 @@ export default function UsersList() {
                                     )}
 
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-muted-foreground mr-2">Role:</span>
+                                        <span className="text-sm text-muted-foreground mr-2">Rôle :</span>
                                         <select
                                             className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                                             value={user.role || 'client'}
                                             onChange={(e) => {
                                                 if (user.id === currentProfile?.id) {
-                                                    alert("You cannot change your own role here.");
+                                                    toast({ title: "Action impossible", description: "Vous ne pouvez pas modifier votre propre rôle.", variant: "destructive" });
                                                     return;
                                                 }
-                                                if (confirm(`Change ${user.full_name}'s role to ${e.target.value}?`)) {
-                                                    updateRoleMutation.mutate({ id: user.id, role: e.target.value });
-                                                }
+                                                setRoleChangeTarget({ id: user.id, name: user.full_name || 'Utilisateur sans nom', newRole: e.target.value });
                                             }}
                                             disabled={user.id === currentProfile?.id}
                                         >
-                                            <option value="pending">Pending Approval</option>
+                                            <option value="pending">En attente</option>
                                             <option value="client">Client</option>
-                                            <option value="manufacturer">Manufacturer</option>
-                                            <option value="secretary">Secretaire</option>
+                                            <option value="manufacturer">Manufacturier</option>
+                                            <option value="secretary">Secrétaire</option>
                                             <option value="admin">Admin</option>
-                                            <option value="sales">Sales Agent</option>
-                                            <option value="affiliate">Ambassador (Affiliate)</option>
+                                            <option value="sales">Agent de vente</option>
+                                            <option value="affiliate">Ambassadeur</option>
                                         </select>
 
                                         <Button
@@ -217,9 +253,7 @@ export default function UsersList() {
                                             className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
                                             onClick={() => {
                                                 if (user.id === currentProfile?.id) return;
-                                                if (confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) {
-                                                    deleteUserMutation.mutate(user.id);
-                                                }
+                                                setDeleteTarget({ id: user.id, name: user.full_name || 'Utilisateur sans nom' });
                                             }}
                                             disabled={user.id === currentProfile?.id}
                                         >
@@ -232,17 +266,17 @@ export default function UsersList() {
                                         className="gap-2 h-7 text-xs w-full mt-1 border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-black"
                                         onClick={() => {
                                             setPasswordModalUserId(user.id);
-                                            setPasswordModalUserName(user.full_name || 'Unnamed User');
+                                            setPasswordModalUserName(user.full_name || 'Utilisateur sans nom');
                                         }}
                                     >
-                                        <KeyRound className="w-3 h-3" /> Reset Password
+                                        <KeyRound className="w-3 h-3" /> Réinitialiser
                                     </Button>
                                 </div>
                             </div>
                         ))}
 
-                        {users?.length === 0 && (
-                            <div className="text-center py-8 text-muted-foreground">No users found.</div>
+                        {filteredUsers?.length === 0 && (
+                            <div className="text-center py-8 text-muted-foreground">Aucun utilisateur trouvé.</div>
                         )}
                     </div>
                 </CardContent>
@@ -260,17 +294,17 @@ export default function UsersList() {
             >
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
                         <DialogDescription>
-                            Enter a new password for {passwordModalUserName}. They will be able to log in immediately with this new password.
+                            Entrez un nouveau mot de passe pour {passwordModalUserName}. L'utilisateur pourra se connecter immédiatement avec ce nouveau mot de passe.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                             <Input
                                 id="new_password"
-                                type="text"
-                                placeholder="Enter new password (min 6 chars)..."
+                                type="password"
+                                placeholder="Nouveau mot de passe (min. 6 car.)..."
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                             />
@@ -284,18 +318,95 @@ export default function UsersList() {
                                 setIsUpdatingPassword(true);
                                 try {
                                     await apiUsers.adminUpdatePassword(passwordModalUserId, newPassword);
-                                    alert("Password updated successfully!");
+                                    toast({ title: "Succès", description: "Mot de passe mis à jour." });
                                     setPasswordModalUserId(null);
                                     setNewPassword('');
-                                } catch (err) {
-                                    alert("Failed to update password. Did you run the Supabase RPC script? Error: " + err.message);
+                                } catch (err: any) {
+                                    toast({ title: "Erreur", description: err.message, variant: "destructive" });
                                 } finally {
                                     setIsUpdatingPassword(false);
                                 }
                             }}
                         >
-                            {isUpdatingPassword ? 'Saving...' : 'Save Password'}
+                            {isUpdatingPassword ? 'Enregistrement...' : 'Enregistrer'}
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Role Change Confirmation Dialog */}
+            <Dialog open={!!roleChangeTarget} onOpenChange={(open) => { if (!open) setRoleChangeTarget(null); }}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Confirmer le changement de rôle</DialogTitle>
+                        <DialogDescription>
+                            Voulez-vous changer le rôle de {roleChangeTarget?.name} à « {roleChangeTarget?.newRole} » ?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setRoleChangeTarget(null)}>Annuler</Button>
+                        <Button onClick={() => {
+                            if (roleChangeTarget) {
+                                updateRoleMutation.mutate({ id: roleChangeTarget.id, role: roleChangeTarget.newRole });
+                            }
+                            setRoleChangeTarget(null);
+                        }}>Confirmer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Confirmer la suppression</DialogTitle>
+                        <DialogDescription>
+                            Êtes-vous sûr de vouloir supprimer {deleteTarget?.name} ? Cette action est irréversible.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+                        <Button variant="destructive" onClick={() => {
+                            if (deleteTarget) {
+                                deleteUserMutation.mutate(deleteTarget.id);
+                            }
+                            setDeleteTarget(null);
+                        }}>Supprimer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Monthly Goal Confirmation Dialog */}
+            <Dialog open={!!goalTarget} onOpenChange={(open) => {
+                if (!open) {
+                    if (goalTarget?.inputRef) {
+                        const user = users?.find(u => u.id === goalTarget.id);
+                        goalTarget.inputRef.value = String(user?.monthly_goal || 50000);
+                    }
+                    setGoalTarget(null);
+                }
+            }}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Confirmer l'objectif mensuel</DialogTitle>
+                        <DialogDescription>
+                            Changer l'objectif mensuel de {goalTarget?.name} à {goalTarget?.goal.toLocaleString()} $ ?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => {
+                            if (goalTarget?.inputRef) {
+                                const user = users?.find(u => u.id === goalTarget.id);
+                                goalTarget.inputRef.value = String(user?.monthly_goal || 50000);
+                            }
+                            setGoalTarget(null);
+                        }}>Annuler</Button>
+                        <Button onClick={() => {
+                            if (goalTarget) {
+                                updateMonthlyGoalMutation.mutate({ id: goalTarget.id, goal: goalTarget.goal });
+                            }
+                            setGoalTarget(null);
+                        }}>Confirmer</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

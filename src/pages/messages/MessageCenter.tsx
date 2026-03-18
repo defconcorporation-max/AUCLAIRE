@@ -1,12 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
+import { apiChats } from '@/services/apiChats';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProjectChat } from '@/components/project/ProjectChat';
 import { Loader2, MessageCircle, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+
+const getLastRead = (projectId: string) => {
+    const stored = localStorage.getItem(`msg-read-${projectId}`);
+    return stored ? new Date(stored) : new Date(0);
+};
+
+const markAsRead = (projectId: string) => {
+    localStorage.setItem(`msg-read-${projectId}`, new Date().toISOString());
+};
 
 export default function MessageCenter() {
     const { profile, role } = useAuth();
@@ -17,6 +27,18 @@ export default function MessageCenter() {
         queryKey: ['projects'],
         queryFn: apiProjects.getAll
     });
+
+    const { data: latestMessages = {} } = useQuery({
+        queryKey: ['chats-latest'],
+        queryFn: apiChats.getLatestPerProject,
+        refetchInterval: 15000,
+    });
+
+    useEffect(() => {
+        if (selectedProjectId) {
+            markAsRead(selectedProjectId);
+        }
+    }, [selectedProjectId]);
 
     if (isLoading) {
         return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-luxury-gold" /></div>;
@@ -30,9 +52,20 @@ export default function MessageCenter() {
         return false;
     }).filter(p => p.status !== 'cancelled');
 
-    const filteredProjects = searchTerm
+    const filteredProjects = (searchTerm
         ? userProjects.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()) || p.client?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()))
-        : userProjects;
+        : userProjects
+    ).sort((a, b) => {
+        const aTime = latestMessages[a.id] ? new Date(latestMessages[a.id]).getTime() : 0;
+        const bTime = latestMessages[b.id] ? new Date(latestMessages[b.id]).getTime() : 0;
+        return bTime - aTime;
+    });
+
+    const hasUnread = (projectId: string) => {
+        const latest = latestMessages[projectId];
+        if (!latest) return false;
+        return new Date(latest) > getLastRead(projectId);
+    };
 
     const selectedProject = projects?.find(p => p.id === selectedProjectId);
 
@@ -64,13 +97,21 @@ export default function MessageCenter() {
                             filteredProjects.map(p => (
                                 <button
                                     key={p.id}
-                                    onClick={() => setSelectedProjectId(p.id)}
+                                    onClick={() => {
+                                        setSelectedProjectId(p.id);
+                                        markAsRead(p.id);
+                                    }}
                                     className={`w-full text-left p-4 border-b border-white/5 transition-colors ${
                                         selectedProjectId === p.id ? 'bg-luxury-gold/10 border-l-2 border-l-luxury-gold' : 'hover:bg-white/5'
                                     }`}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <p className="font-serif text-sm font-medium truncate">{p.title}</p>
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            {hasUnread(p.id) && (
+                                                <span className="w-2 h-2 rounded-full bg-luxury-gold animate-pulse shrink-0" />
+                                            )}
+                                            <p className="font-serif text-sm font-medium truncate">{p.title}</p>
+                                        </div>
                                         <Badge variant="outline" className="text-[10px] shrink-0 ml-2">{p.status?.replace(/_/g, ' ')}</Badge>
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-0.5 truncate">{p.client?.full_name}</p>

@@ -20,7 +20,9 @@ import {
     MessageCircle,
     Calendar,
     Truck,
-    TrendingUp
+    TrendingUp,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -90,20 +92,29 @@ const navSections: NavSection[] = [
     },
 ]
 
-const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, profile: any, signOut: () => void, setIsMobileOpen: (v: boolean) => void }) => (
+const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, onToggleCollapse }: {
+    role: string, profile: any, signOut: () => void, setIsMobileOpen: (v: boolean) => void,
+    collapsed?: boolean, onToggleCollapse?: () => void
+}) => (
     <div className="flex flex-col h-full bg-white/80 dark:bg-black/40 backdrop-blur-xl border-r border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300">
-        <div className="p-8">
-            <h1 className="text-2xl font-serif text-luxury-gold tracking-widest drop-shadow-sm">AUCLAIRE</h1>
-            <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] mt-2">Management</p>
+        <div className={collapsed ? 'p-4 flex justify-center' : 'p-8'}>
+            {collapsed ? (
+                <span className="text-xl font-serif text-luxury-gold tracking-widest">A</span>
+            ) : (
+                <>
+                    <h1 className="text-2xl font-serif text-luxury-gold tracking-widest drop-shadow-sm">AUCLAIRE</h1>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] mt-2">Management</p>
+                </>
+            )}
         </div>
 
-        <nav className="flex-1 px-4 py-4 overflow-y-auto space-y-4">
+        <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-4'} py-4 overflow-y-auto space-y-4`}>
             {navSections.map((section) => {
                 const visibleItems = section.items.filter(item => !item.roles || (role && item.roles.includes(role)));
                 if (visibleItems.length === 0) return null;
                 return (
                     <div key={section.section || '_client'}>
-                        {section.section && (
+                        {section.section && !collapsed && (
                             <p className="text-[9px] uppercase tracking-[0.25em] text-gray-400 dark:text-gray-600 font-bold px-4 mb-1.5">
                                 {section.section}
                             </p>
@@ -113,43 +124,70 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, pr
                                 <NavLink
                                     key={item.href}
                                     to={item.href}
+                                    title={collapsed ? item.label : undefined}
                                     className={({ isActive }) => `
-                                        group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium
+                                        group relative flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg transition-all duration-300 text-sm font-medium
                                         ${isActive
                                             ? 'bg-gradient-to-r from-luxury-gold/15 to-transparent text-luxury-gold shadow-[inset_2px_0_0_0_#D2B57B]'
                                             : 'hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'}
                                     `}
                                     onClick={() => setIsMobileOpen(false)}
                                 >
-                                    <item.icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
-                                    {item.label}
+                                    <item.icon className="w-4 h-4 shrink-0 transition-transform duration-300 group-hover:scale-110" />
+                                    {!collapsed && <span className="truncate">{item.label}</span>}
+                                    {item.href === '/dashboard/messages' && (
+                                        collapsed
+                                            ? <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                            : <span className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                                    )}
                                 </NavLink>
                             ))}
                         </div>
                     </div>
                 );
             })}
-            <FeedbackWidget />
+            {!collapsed && <FeedbackWidget />}
         </nav>
 
-        <div className="p-6 border-t border-black/5 dark:border-white/5">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-luxury-gold/30 to-luxury-gold/10 border border-luxury-gold/20 flex items-center justify-center text-luxury-gold font-serif text-lg shadow-sm">
-                    {profile?.full_name?.[0] || 'U'}
+        <div className={`border-t border-black/5 dark:border-white/5 ${collapsed ? 'p-3' : 'p-6'}`}>
+            {collapsed ? (
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-luxury-gold/30 to-luxury-gold/10 border border-luxury-gold/20 flex items-center justify-center text-luxury-gold font-serif text-lg shadow-sm">
+                        {profile?.full_name?.[0] || 'U'}
+                    </div>
+                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400 hover:bg-red-500/10" onClick={() => signOut()} title="Sign Out">
+                        <LogOut className="w-4 h-4" />
+                    </Button>
                 </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-black dark:text-white truncate">{profile?.full_name || 'User'}</p>
-                    <p className="text-xs text-luxury-gold/70 capitalize">{profile?.role}</p>
-                </div>
-            </div>
-            <Button
-                variant="ghost"
-                className="w-full justify-start text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                onClick={() => signOut()}
-            >
-                <LogOut className="w-4 h-4 mr-3" />
-                Sign Out
-            </Button>
+            ) : (
+                <>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-luxury-gold/30 to-luxury-gold/10 border border-luxury-gold/20 flex items-center justify-center text-luxury-gold font-serif text-lg shadow-sm">
+                            {profile?.full_name?.[0] || 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-black dark:text-white truncate">{profile?.full_name || 'User'}</p>
+                            <p className="text-xs text-luxury-gold/70 capitalize">{profile?.role}</p>
+                        </div>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        onClick={() => signOut()}
+                    >
+                        <LogOut className="w-4 h-4 mr-3" />
+                        Sign Out
+                    </Button>
+                </>
+            )}
+            {onToggleCollapse && (
+                <button
+                    onClick={onToggleCollapse}
+                    className={`w-full ${collapsed ? 'mt-2' : 'mt-3'} p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-muted-foreground flex items-center justify-center`}
+                >
+                    {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </button>
+            )}
         </div>
     </div>
 )
@@ -157,6 +195,7 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, pr
 export default function CRMLayout({ children }: { children?: React.ReactNode }) {
     const { signOut, profile, role } = useAuth()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const { theme, setTheme, accent, setAccent } = useTheme()
 
     const toggleTheme = () => {
@@ -190,8 +229,8 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
 
             <div className="flex h-screen overflow-hidden lg:pt-0 pt-[73px]">
                 {/* Desktop Sidebar */}
-                <aside className="hidden lg:block w-[280px] shrink-0 relative z-40">
-                    <Sidebar role={role} profile={profile} signOut={signOut} setIsMobileOpen={setIsMobileOpen} />
+                <aside className={`hidden lg:block ${sidebarCollapsed ? 'w-[68px]' : 'w-[280px]'} shrink-0 relative z-40 transition-all duration-300`}>
+                    <Sidebar role={role} profile={profile} signOut={signOut} setIsMobileOpen={setIsMobileOpen} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
                 </aside>
 
                 {/* Main Content Area */}

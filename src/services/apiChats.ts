@@ -28,6 +28,27 @@ export const apiChats = {
         return data as ChatMessage[];
     },
 
+    async getLatestPerProject(): Promise<Record<string, string>> {
+        const { data, error } = await supabase
+            .from('project_chats')
+            .select('project_id, created_at')
+            .eq('channel', 'internal')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching latest messages:', error);
+            return {};
+        }
+
+        const latest: Record<string, string> = {};
+        for (const msg of data) {
+            if (!latest[msg.project_id]) {
+                latest[msg.project_id] = msg.created_at;
+            }
+        }
+        return latest;
+    },
+
     async send(message: Omit<ChatMessage, 'id' | 'created_at'>) {
         const { data, error } = await supabase
             .from('project_chats')

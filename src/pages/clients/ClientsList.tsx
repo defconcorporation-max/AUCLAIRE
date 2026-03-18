@@ -1,12 +1,12 @@
 
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { apiClients } from '@/services/apiClients'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
-import { Plus, Search, Mail, Phone, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, Mail, Phone, MoreHorizontal, Users } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
     DropdownMenu,
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from '@/components/ui/use-toast'
 
 export default function ClientsList() {
     const { data: clients, isLoading } = useQuery({
@@ -36,9 +37,12 @@ export default function ClientsList() {
 
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('')
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
     const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-    const [editingClient, setEditingClient] = useState<any>(null); // Client | null
+    const [editingClient, setEditingClient] = useState<typeof clients extends (infer T)[] | undefined ? T : never | null>(null);
     const [formData, setFormData] = useState({ full_name: '', email: '', phone: '', notes: '' });
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     const openCreateModal = () => {
         setEditingClient(null);
@@ -46,13 +50,13 @@ export default function ClientsList() {
         setIsClientModalOpen(true);
     };
 
-    const openEditModal = (client: any) => {
+    const openEditModal = (client: NonNullable<typeof clients>[number]) => {
         setEditingClient(client);
         setFormData({
             full_name: client.full_name,
             email: client.email || '',
-            phone: (client as any).phone || '',
-            notes: (client as any).notes || ''
+            phone: client.phone || '',
+            notes: client.notes || ''
         });
         setIsClientModalOpen(true);
     };
@@ -72,24 +76,42 @@ export default function ClientsList() {
         }
     };
 
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        try {
+            await apiClients.delete(deleteTarget.id);
+            queryClient.invalidateQueries({ queryKey: ['clients'] });
+        } catch (e: any) {
+            console.error(e);
+            toast({ title: "Erreur", description: "Impossible de supprimer le client. " + e.message, variant: "destructive" });
+        } finally {
+            setDeleteTarget(null);
+        }
+    };
+
     const filteredClients = clients?.filter(client =>
         client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.email?.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    const totalPages = Math.ceil((filteredClients?.length || 0) / ITEMS_PER_PAGE);
+    const paginatedClients = filteredClients?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    useEffect(() => { setCurrentPage(1); }, [searchTerm]);
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-serif font-bold text-luxury-gold">Clients</h2>
-                    <p className="text-muted-foreground">Manage your relationships.</p>
+                    <p className="text-muted-foreground">Gérez vos relations clients.</p>
                 </div>
                 <Button
                     className="bg-luxury-gold text-black hover:bg-luxury-gold-dark"
                     onClick={openCreateModal}
                 >
                     <Plus className="w-4 h-4 mr-2" />
-                    New Client
+                    Nouveau Client
                 </Button>
             </div>
 
@@ -97,7 +119,7 @@ export default function ClientsList() {
                 <div className="relative w-full">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search clients..."
+                        placeholder="Rechercher un client..."
                         className="pl-8"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -107,8 +129,26 @@ export default function ClientsList() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {isLoading ? (
-                    <div>Loading clients...</div>
-                ) : filteredClients?.map(client => (
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <Card key={i} className="shadow-sm animate-pulse">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <div className="h-5 w-32 bg-muted rounded" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2 mt-2">
+                                    <div className="h-4 w-48 bg-muted rounded" />
+                                    <div className="h-4 w-36 bg-muted rounded" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))
+                ) : filteredClients?.length === 0 ? (
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground">
+                        <Users className="w-12 h-12 mb-3 opacity-20" />
+                        <p className="font-serif text-lg">Aucun client trouvé</p>
+                        <p className="text-sm mt-1">Essayez un autre terme de recherche ou ajoutez un client.</p>
+                    </div>
+                ) : paginatedClients?.map(client => (
                     <Card key={client.id} className="shadow-sm hover:border-luxury-gold transition-colors">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-base font-medium">
@@ -122,20 +162,15 @@ export default function ClientsList() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem onClick={() => navigate(`/dashboard/clients/${client.id}`)}>View Details</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => openEditModal(client)}>Edit Client</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => navigate(`/dashboard/clients/${client.id}`)}>Voir le profil</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openEditModal(client)}>Modifier</DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-red-500" onClick={async () => {
-                                        if (confirm(`Are you sure you want to delete ${client.full_name}?`)) {
-                                            try {
-                                                await apiClients.delete(client.id);
-                                                queryClient.invalidateQueries({ queryKey: ['clients'] });
-                                            } catch (e) {
-                                                console.error(e);
-                                                alert("Failed to delete client. " + e.message);
-                                            }
-                                        }
-                                    }}>Delete</DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="text-red-500"
+                                        onClick={() => setDeleteTarget({ id: client.id, name: client.full_name })}
+                                    >
+                                        Supprimer
+                                    </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </CardHeader>
@@ -143,11 +178,11 @@ export default function ClientsList() {
                             <div className="space-y-2 text-sm text-gray-400 mt-2">
                                 <div className="flex items-center gap-2">
                                     <Mail className="h-3 w-3" />
-                                    <span>{client.email || 'No email'}</span>
+                                    <span>{client.email || 'Aucun email'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Phone className="h-3 w-3" />
-                                    <span>{(client as any).phone || 'No phone'}</span>
+                                    <span>{client.phone || 'Aucun téléphone'}</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -155,18 +190,43 @@ export default function ClientsList() {
                 ))}
             </div>
 
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4">
+                    <p className="text-sm text-muted-foreground">
+                        Page {currentPage} sur {totalPages} ({filteredClients?.length} résultats)
+                    </p>
+                    <div className="flex items-center gap-1">
+                        <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+                            Précédent
+                        </Button>
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                            const page = currentPage <= 3 ? i + 1 : currentPage + i - 2;
+                            if (page < 1 || page > totalPages) return null;
+                            return (
+                                <Button key={page} variant={page === currentPage ? 'default' : 'outline'} size="sm" className={page === currentPage ? 'bg-luxury-gold text-black' : ''} onClick={() => setCurrentPage(page)}>
+                                    {page}
+                                </Button>
+                            );
+                        })}
+                        <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                            Suivant
+                        </Button>
+                    </div>
+                </div>
+            )}
 
+            {/* Edit / Create Dialog */}
             <Dialog open={isClientModalOpen} onOpenChange={setIsClientModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{editingClient ? 'Edit Client' : 'New Client'}</DialogTitle>
+                        <DialogTitle>{editingClient ? 'Modifier le client' : 'Nouveau client'}</DialogTitle>
                         <DialogDescription>
-                            {editingClient ? 'Update client details below.' : 'Add a new client to your list.'}
+                            {editingClient ? 'Modifiez les informations du client.' : 'Ajoutez un nouveau client.'}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
+                            <Label htmlFor="name">Nom complet</Label>
                             <Input
                                 id="name"
                                 value={formData.full_name}
@@ -175,7 +235,7 @@ export default function ClientsList() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">Courriel</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -184,7 +244,7 @@ export default function ClientsList() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="phone">Phone</Label>
+                            <Label htmlFor="phone">Téléphone</Label>
                             <Input
                                 id="phone"
                                 value={formData.phone}
@@ -192,10 +252,26 @@ export default function ClientsList() {
                             />
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsClientModalOpen(false)}>Cancel</Button>
-                            <Button type="submit" className="bg-luxury-gold text-black hover:bg-luxury-gold/90">Save Changes</Button>
+                            <Button type="button" variant="outline" onClick={() => setIsClientModalOpen(false)}>Annuler</Button>
+                            <Button type="submit" className="bg-luxury-gold text-black hover:bg-luxury-gold/90">Enregistrer</Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirmer la suppression</DialogTitle>
+                        <DialogDescription>
+                            Êtes-vous sûr de vouloir supprimer <span className="font-semibold">{deleteTarget?.name}</span> ? Cette action est irréversible.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+                        <Button variant="destructive" onClick={handleDelete}>Supprimer</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div >

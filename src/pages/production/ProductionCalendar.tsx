@@ -4,7 +4,8 @@ import { useAuth } from '@/context/AuthContext';
 import { apiProjects, Project } from '@/services/apiProjects';
 import { apiUsers } from '@/services/apiUsers';
 import { UserProfile } from '@/services/apiUsers';
-import { Loader2, Calendar, Filter, Factory, Zap } from 'lucide-react';
+import { Loader2, Calendar, Filter, Factory, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useState, useMemo } from 'react';
 
 const PRODUCTION_STAGES = ['approved_for_production', 'production', 'delivery'] as const;
@@ -62,6 +63,7 @@ export default function ProductionCalendar() {
     const { role, profile } = useAuth();
     const [filterManufacturer, setFilterManufacturer] = useState('');
     const [filterStage, setFilterStage] = useState<'' | ProductionStage>('');
+    const [weekOffset, setWeekOffset] = useState(0);
 
     const { data: allProjects, isLoading } = useQuery({
         queryKey: ['projects'],
@@ -79,6 +81,7 @@ export default function ProductionCalendar() {
     const { weekStart, weekEnd, projects } = useMemo(() => {
         const today = new Date();
         const start = getMonday(today);
+        start.setDate(start.getDate() + weekOffset * 7);
         const end = new Date(start);
         end.setDate(end.getDate() + WEEKS_COUNT * 7);
 
@@ -103,7 +106,7 @@ export default function ProductionCalendar() {
         });
 
         return { weekStart: start, weekEnd: end, projects: filtered };
-    }, [allProjects, role, profile?.id, filterManufacturer, filterStage]);
+    }, [allProjects, role, profile?.id, filterManufacturer, filterStage, weekOffset]);
 
     const totalMs = weekEnd.getTime() - weekStart.getTime();
 
@@ -141,6 +144,18 @@ export default function ProductionCalendar() {
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-1 p-1 glass-card rounded-xl border-white/10">
+                        <Button variant="ghost" size="sm" onClick={() => setWeekOffset(o => o - 4)} className="text-white/70 hover:text-white hover:bg-white/10">
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)} className="text-xs text-white/70 hover:text-white hover:bg-white/10">
+                            Aujourd'hui
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setWeekOffset(o => o + 4)} className="text-white/70 hover:text-white hover:bg-white/10">
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </div>
+
                     <div className="flex items-center gap-2 p-3 glass-card rounded-xl border-white/10">
                         <Zap className="w-4 h-4 text-luxury-gold shrink-0" />
                         <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">
@@ -209,7 +224,26 @@ export default function ProductionCalendar() {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <div className="min-w-[800px]">
+                    <div className="min-w-[800px] relative">
+                        {/* Today marker */}
+                        {(() => {
+                            const todayPct = ((Date.now() - weekStart.getTime()) / totalMs) * 100;
+                            if (todayPct >= 0 && todayPct <= 100) {
+                                return (
+                                    <div
+                                        className="absolute top-0 bottom-0 z-20 pointer-events-none"
+                                        style={{ left: `calc(192px + (100% - 192px) * ${todayPct / 100})` }}
+                                    >
+                                        <div className="w-0.5 h-full bg-red-500/70" />
+                                        <div className="absolute top-0 -translate-x-1/2 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-b font-medium whitespace-nowrap">
+                                            Aujourd'hui
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })()}
+
                         {/* Timeline header */}
                         <div className="flex border-b border-white/10 bg-black/20">
                             <div className="w-48 shrink-0 p-3 border-r border-white/10 text-xs font-semibold uppercase tracking-wider text-luxury-gold/70">

@@ -20,6 +20,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { apiUsers } from '@/services/apiUsers';
+import { toast } from '@/components/ui/use-toast';
+import { apiProjects } from '@/services/apiProjects';
+import type { Project } from '@/services/apiProjects';
 
 export default function ClientDetails() {
     const { id } = useParams<{ id: string }>();
@@ -36,13 +39,26 @@ export default function ClientDetails() {
         queryFn: apiClients.getAll
     });
 
-    const client = clients?.find(c => c.id === id) || clients?.[0];
+    const { data: projects } = useQuery({
+        queryKey: ['projects'],
+        queryFn: apiProjects.getAll,
+    });
 
-    if (!client) return <div>Client not found</div>;
+    const client = clients?.find(c => c.id === id);
+    const clientProjects = projects?.filter((p: Project) => p.client_id === id) || [];
+
+    if (!client) return (
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+            <p className="font-serif text-lg">Client introuvable</p>
+            <Button variant="link" className="mt-2 text-luxury-gold" onClick={() => navigate('/dashboard/clients')}>
+                Retour à la liste
+            </Button>
+        </div>
+    );
 
     const handleSendAccessLink = async () => {
         if (!client.email) {
-            alert("Client does not have an email address on file.");
+            toast({ title: "Erreur", description: "Ce client n'a pas d'adresse courriel.", variant: "destructive" });
             return;
         }
         setIsSendingLink(true);
@@ -54,9 +70,9 @@ export default function ClientDetails() {
                 }
             });
             if (error) throw error;
-            alert(`Access link successfully sent to ${client.email}! The client can click it to log in without a password.`);
+            toast({ title: "Lien envoyé", description: "Un lien d'accès a été envoyé à " + client.email });
         } catch(err: any) {
-            alert("Failed to send access link: " + err.message);
+            toast({ title: "Erreur", description: err.message, variant: "destructive" });
         } finally {
             setIsSendingLink(false);
         }
@@ -65,17 +81,16 @@ export default function ClientDetails() {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <ArrowLeft className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/clients')} className="text-muted-foreground hover:text-luxury-gold gap-1">
+                    <ArrowLeft className="w-4 h-4" /> Clients
                 </Button>
                 <div>
                     <h1 className="text-3xl font-serif font-bold text-black dark:text-white tracking-wide">{client.full_name}</h1>
                     <div className="flex items-center gap-2 text-sm text-luxury-gold mt-1">
-                        <span className="uppercase text-[10px] tracking-[0.2em] font-medium">Client Profile</span>
+                        <span className="uppercase text-[10px] tracking-[0.2em] font-medium">Profil Client</span>
                     </div>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
-                    {/* Access Link Button */}
                     <Button 
                         variant="secondary" 
                         size="sm" 
@@ -83,29 +98,29 @@ export default function ClientDetails() {
                         onClick={handleSendAccessLink}
                         disabled={isSendingLink || !client.email}
                     >
-                        <LinkIcon className="w-4 h-4" /> {isSendingLink ? 'Sending...' : 'Send Portal Link'}
+                        <LinkIcon className="w-4 h-4" /> {isSendingLink ? 'Envoi...' : 'Envoyer le lien portail'}
                     </Button>
 
                     {role === 'admin' && (
                         <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="outline" size="sm" className="gap-2 border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black">
-                                    <KeyRound className="w-4 h-4" /> Reset Password
+                                    <KeyRound className="w-4 h-4" /> Réinitialiser le mot de passe
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
                                 <DialogHeader>
-                                    <DialogTitle>Reset Client Password</DialogTitle>
+                                    <DialogTitle>Réinitialiser le mot de passe du client</DialogTitle>
                                     <DialogDescription>
-                                        Enter a new password for {client.full_name}. They will be able to log in immediately with this new password.
+                                        Entrez un nouveau mot de passe pour {client.full_name}. Le client pourra se connecter immédiatement avec ce nouveau mot de passe.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                     <div className="space-y-2">
                                         <Input
                                             id="new_password"
-                                            type="text"
-                                            placeholder="Enter new password (min 6 chars)..."
+                                            type="password"
+                                            placeholder="Nouveau mot de passe (min. 6 caractères)..."
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
                                         />
@@ -119,17 +134,17 @@ export default function ClientDetails() {
                                             setIsUpdatingPassword(true);
                                             try {
                                                 await apiUsers.adminUpdatePassword(id, newPassword);
-                                                alert("Password updated successfully!");
+                                                toast({ title: "Succès", description: "Mot de passe mis à jour." });
                                                 setIsPasswordModalOpen(false);
                                                 setNewPassword('');
-                                            } catch (err) {
-                                                alert("Failed to update password. Did you run the Supabase RPC script? Error: " + err.message);
+                                            } catch (err: any) {
+                                                toast({ title: "Erreur", description: err.message, variant: "destructive" });
                                             } finally {
                                                 setIsUpdatingPassword(false);
                                             }
                                         }}
                                     >
-                                        {isUpdatingPassword ? 'Saving...' : 'Save Password'}
+                                        {isUpdatingPassword ? 'Enregistrement...' : 'Enregistrer'}
                                     </Button>
                                 </DialogFooter>
                             </DialogContent>
@@ -144,7 +159,7 @@ export default function ClientDetails() {
             <div className="grid gap-6 md:grid-cols-3">
                 <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 shadow-xl group">
                     <CardHeader className="pb-4 border-b border-black/5 dark:border-white/5">
-                        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">Contact Info</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">Informations de contact</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5 pt-6">
                         <div className="flex items-center gap-4 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
@@ -163,13 +178,13 @@ export default function ClientDetails() {
                             <div className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-luxury-gold/70 group-hover:bg-luxury-gold/10 group-hover:text-luxury-gold transition-colors">
                                 <MapPin className="w-4 h-4" />
                             </div>
-                            <span className="font-medium text-gray-600 dark:text-gray-300">No address on file</span>
+                            <span className="font-medium text-gray-600 dark:text-gray-300">Aucune adresse enregistrée</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
                             <div className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-luxury-gold/70 group-hover:bg-luxury-gold/10 group-hover:text-luxury-gold transition-colors">
                                 <Calendar className="w-4 h-4" />
                             </div>
-                            <span className="font-medium text-gray-600 dark:text-gray-300">Created {new Date(client.created_at).toLocaleDateString()}</span>
+                            <span className="font-medium text-gray-600 dark:text-gray-300">Créé le {new Date(client.created_at).toLocaleDateString()}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -180,10 +195,35 @@ export default function ClientDetails() {
                         <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">Notes</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6 relative z-10">
-                        <p className="text-sm text-gray-600 dark:text-gray-300 font-serif leading-relaxed italic">{client.notes || 'No private notes added.'}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 font-serif leading-relaxed italic">{client.notes || 'Aucune note privée.'}</p>
                     </CardContent>
                 </Card>
             </div>
+
+            <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 shadow-xl">
+                <CardHeader className="pb-4 border-b border-black/5 dark:border-white/5">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">
+                        Projets ({clientProjects.length})
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                    {clientProjects.length === 0 ? (
+                        <p className="text-sm text-muted-foreground italic">Aucun projet pour ce client.</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {clientProjects.map((p: Project) => (
+                                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer transition-colors" onClick={() => navigate(`/dashboard/projects/${p.id}`)}>
+                                    <div>
+                                        <p className="font-medium font-serif">{p.title}</p>
+                                        <p className="text-xs text-muted-foreground">{p.reference_number}</p>
+                                    </div>
+                                    <Badge variant="outline" className="capitalize text-xs">{p.status?.replace(/_/g, ' ')}</Badge>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
