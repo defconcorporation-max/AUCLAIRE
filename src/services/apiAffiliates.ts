@@ -70,7 +70,7 @@ export const apiAffiliates = {
         if (projectIds.length > 0) {
             const { data: invData, error: invError } = await supabase
                 .from('invoices')
-                .select('project_id, amount, amount_paid, status, paid_at, created_at, updated_at')
+                .select('project_id, amount, amount_paid, status, paid_at, created_at')
                 .in('project_id', projectIds);
             if (invError) throw invError;
             invoices = invData || [];
@@ -149,7 +149,7 @@ export const apiAffiliates = {
 
         const { data: invoices, error: invError } = await supabase
             .from('invoices')
-            .select('project_id, amount, amount_paid, status, paid_at, created_at, updated_at')
+            .select('project_id, amount, amount_paid, status, paid_at, created_at')
             .in('project_id', projects.map(p => p.id));
 
         if (invError) return this._emptyMonthlyData();
@@ -182,7 +182,7 @@ export const apiAffiliates = {
             if (!projectIds.has(inv.project_id)) return;
             const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
             if (paidValue <= 0) return;
-            const paidAt = inv.paid_at || (inv.status === 'paid' ? inv.created_at : null) || (Number(inv.amount_paid) > 0 ? inv.updated_at ?? inv.created_at : null);
+            const paidAt = inv.paid_at || (inv.status === 'paid' ? inv.created_at : null) || (Number(inv.amount_paid) > 0 ? inv.created_at : null);
             if (!paidAt) return;
             const date = new Date(paidAt);
             const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;

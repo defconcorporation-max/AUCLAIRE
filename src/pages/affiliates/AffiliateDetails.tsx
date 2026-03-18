@@ -82,12 +82,12 @@ export default function AffiliateDetails() {
     if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
     if (error) return (
         <div className="p-8 text-center space-y-4">
-            <h2 className="text-xl font-bold text-red-500">Failed to load Affiliate Data</h2>
+            <h2 className="text-xl font-bold text-red-500">Erreur de chargement des données</h2>
             <p className="text-muted-foreground">{error}</p>
-            <p className="text-sm bg-zinc-100 p-2 rounded max-w-lg mx-auto font-mono">
-                Hint: Check if 'budget' or 'affiliate_id' columns exist in your database.
+            <p className="text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 p-3 rounded-lg max-w-lg mx-auto font-mono border border-zinc-200 dark:border-zinc-700">
+                Vérifiez que les tables <code className="text-xs">invoices</code>, <code className="text-xs">projects</code> et <code className="text-xs">expenses</code> existent et ont les colonnes attendues.
             </p>
-            <Button onClick={loadData}>Retry</Button>
+            <Button onClick={loadData}>Réessayer</Button>
         </div>
     );
     if (!affiliate) return <div className="p-8 text-center text-red-500">Affiliate not found.</div>;
