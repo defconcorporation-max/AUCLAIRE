@@ -67,7 +67,7 @@ export const apiAffiliates = {
         // 2. Get Invoices to verify sales AND get total cash collected
         const { data: invoices, error: invError } = await supabase
             .from('invoices')
-            .select('project_id, amount, amount_paid, status')
+            .select('project_id, amount, amount_paid, status, paid_at, created_at, updated_at')
             .in('project_id', projects.map(p => p.id));
 
         if (invError) throw invError;
@@ -133,6 +133,71 @@ export const apiAffiliates = {
             activeProjects,
             projects: projects || []
         };
+    },
+
+    /** Monthly sales volume for last 6 months (for chart). Uses invoice paid_at when available. */
+    async getMonthlySales(affiliateId: string): Promise<{ month: string; label: string; amount: number }[]> {
+        const { data: projects, error: projectsError } = await supabase
+            .from('projects')
+            .select('id, financials, budget, status')
+            .or(`affiliate_id.eq.${affiliateId},sales_agent_id.eq.${affiliateId}`)
+            .neq('status', 'cancelled');
+
+        if (projectsError || !projects?.length) return this._emptyMonthlyData();
+
+        const { data: invoices, error: invError } = await supabase
+            .from('invoices')
+            .select('project_id, amount, amount_paid, status, paid_at, created_at, updated_at')
+            .in('project_id', projects.map(p => p.id));
+
+        if (invError) return this._emptyMonthlyData();
+
+        const projectIds = new Set(projects.map(p => p.id));
+        const PRODUCTION_READY = ['approved_for_production', 'production', 'delivery', 'completed'];
+        const projectSaleAmount = new Map<string, number>();
+        projects.forEach(p => {
+            const isSale = PRODUCTION_READY.includes(p.status);
+            if (isSale) {
+                const price = Number(p.financials?.selling_price || p.budget || 0);
+                projectSaleAmount.set(p.id, price);
+            }
+        });
+
+        const months: { month: string; label: string; amount: number }[] = [];
+        const now = new Date();
+        const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+            months.push({ month: key, label, amount: 0 });
+        }
+
+        const monthMap = new Map(months.map(m => [m.month, m]));
+
+        invoices?.forEach(inv => {
+            if (!projectIds.has(inv.project_id)) return;
+            const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
+            if (paidValue <= 0) return;
+            const paidAt = inv.paid_at || (inv.status === 'paid' ? inv.created_at : null) || (Number(inv.amount_paid) > 0 ? inv.updated_at ?? inv.created_at : null);
+            if (!paidAt) return;
+            const date = new Date(paidAt);
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const entry = monthMap.get(key);
+            if (entry) entry.amount += paidValue;
+        });
+
+        return months;
+    },
+
+    _emptyMonthlyData(): { month: string; label: string; amount: number }[] {
+        const now = new Date();
+        const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+        return Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+            return { month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`, amount: 0 };
+        });
     },
 
     async getAllAffiliatesWithStats() {

@@ -1,16 +1,33 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, AlertCircle, FileText, PenTool, Box, ThumbsUp, Hammer, Truck, Sparkles, Clock } from 'lucide-react';
+import { apiInvoices } from '@/services/apiInvoices';
+import { Loader2, AlertCircle, MessageCircle, PenTool, ThumbsUp, Hammer, Truck, Sparkles, CreditCard, Gem, Ruler, Info } from 'lucide-react';
 import { useState } from 'react';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
+import type { StageDetails } from '@/services/apiProjects';
 
-// Reuse file compression helper or import it if shared
+// Timeline steps: Consultation → Design → Approbation → Production → Livraison
+const TIMELINE_STEPS = [
+    { id: 'consultation', label: 'Consultation', statuses: ['designing'] },
+    { id: 'design', label: 'Design', statuses: ['3d_model', 'design_ready', 'design_modification', 'waiting_for_approval'] },
+    { id: 'approbation', label: 'Approbation', statuses: ['approved_for_production'] },
+    { id: 'production', label: 'Production', statuses: ['production'] },
+    { id: 'livraison', label: 'Livraison', statuses: ['delivery', 'completed'] },
+] as const;
+
+function getStepIndex(status: string | undefined): number {
+    if (!status) return 0;
+    for (let i = 0; i < TIMELINE_STEPS.length; i++) {
+        if (TIMELINE_STEPS[i].statuses.includes(status as any)) return i;
+    }
+    if (status === 'completed') return 4;
+    return 0;
+}
+
 export default function SharedProjectView() {
     const { token } = useParams<{ token: string }>();
-const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const { data: project, isLoading, error } = useQuery({
         queryKey: ['shared-project', token],
@@ -18,193 +35,229 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
         enabled: !!token
     });
 
-    if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-luxury-gold" /></div>;
-    if (error || !project) return <div className="flex h-screen items-center justify-center flex-col gap-4">
-        <AlertCircle className="w-12 h-12 text-red-500" />
-        <h1 className="text-2xl font-bold">Invalid or Expired Link</h1>
-        <p className="text-zinc-500">Please contact the administrator for a new link.</p>
-    </div>;
+    const { data: invoices = [] } = useQuery({
+        queryKey: ['shared-invoices', token],
+        queryFn: () => apiInvoices.getByProjectToken(token!),
+        enabled: !!token && !!project
+    });
 
-    const details = (project.stage_details || {}) as any;
-const images = details.design_files || [];
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-[#D2B57B]" />
+            </div>
+        );
+    }
 
+    if (error || !project) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-6 px-6">
+                <AlertCircle className="w-16 h-16 text-red-400/80" />
+                <h1 className="text-2xl font-serif text-white">Invalid or Expired Link</h1>
+                <p className="text-zinc-500 text-center max-w-md">Please contact your representative for a new link.</p>
+            </div>
+        );
+    }
 
+    const details = (project.stage_details || {}) as StageDetails & Record<string, unknown>;
+    const designFiles = details.design_files || [];
+    const sketchFiles = details.sketch_files || [];
+    const versionFiles = (details.design_versions || []).flatMap((v: { files?: string[] }) => v.files || []);
+    const allDesignImages = [...designFiles, ...sketchFiles, ...versionFiles];
+    const currentStepIndex = getStepIndex(project.status);
 
-
-
-
-
-
-
-
+    const unpaidInvoices = invoices.filter(inv => inv.status !== 'paid' && inv.stripe_payment_link);
+    const totalDue = unpaidInvoices.reduce((sum, inv) => sum + (Number(inv.amount) - Number(inv.amount_paid || 0)), 0);
 
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-black p-4 md:p-8 font-sans">
-            <div className="max-w-4xl mx-auto space-y-8">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-serif text-luxury-gold">{project.title}</h1>
-                            <StatusBadge status={project.status} />
+        <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 font-sans">
+            {/* Header */}
+            <header className="relative overflow-hidden border-b border-white/5">
+                <div className="absolute inset-0 bg-gradient-to-b from-[#D2B57B]/10 via-transparent to-transparent" />
+                <div className="relative max-w-5xl mx-auto px-6 py-8">
+                    <h1 className="text-3xl md:text-4xl font-serif font-semibold text-[#D2B57B] tracking-[0.2em]">
+                        AUCLAIRE
+                    </h1>
+                    <p className="text-xs text-zinc-500 uppercase tracking-[0.3em] mt-1">Luxury Jewelry</p>
+                </div>
+            </header>
+
+            <main className="max-w-5xl mx-auto px-6 py-10 space-y-12">
+                {/* Project title & status */}
+                <section className="page-fade-in">
+                    {project.status === 'cancelled' && (
+                        <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-red-400/90 text-sm">
+                            Ce projet a été annulé.
                         </div>
-                        <p className="text-zinc-500 mt-2 max-w-xl">{project.description || "No description provided."}</p>
+                    )}
+                    <h2 className="text-2xl md:text-3xl font-serif text-white mb-2">{project.title}</h2>
+                    {project.description && (
+                        <p className="text-zinc-400 max-w-2xl">{project.description}</p>
+                    )}
+                </section>
+
+                {/* Project status timeline - horizontal */}
+                <section className="page-fade-in">
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D2B57B]/80 mb-6">
+                        Progression du projet
+                    </h3>
+                    <div className="flex flex-wrap gap-2 md:gap-0 md:flex-nowrap md:justify-between relative">
+                        <div className="absolute top-5 left-0 right-0 h-px bg-zinc-800 hidden md:block" style={{ top: '1.25rem' }} />
+                        {TIMELINE_STEPS.map((step, index) => {
+                            const isCompleted = index < currentStepIndex;
+                            const isCurrent = index === currentStepIndex;
+                            const isPending = index > currentStepIndex;
+                            return (
+                                <div key={step.id} className="relative flex flex-col items-center gap-2 z-10">
+                                    <div
+                                        className={`
+                                            w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300
+                                            ${isCompleted ? 'bg-emerald-600/80 border-emerald-500 text-white' : ''}
+                                            ${isCurrent ? 'bg-[#D2B57B] border-[#D2B57B] text-black shadow-[0_0_20px_rgba(210,181,123,0.4)]' : ''}
+                                            ${isPending ? 'bg-zinc-900/80 border-zinc-700 text-zinc-500' : ''}
+                                        `}
+                                    >
+                                        {index === 0 && <MessageCircle className="w-4 h-4" />}
+                                        {index === 1 && <PenTool className="w-4 h-4" />}
+                                        {index === 2 && <ThumbsUp className="w-4 h-4" />}
+                                        {index === 3 && <Hammer className="w-4 h-4" />}
+                                        {index === 4 && <Truck className="w-4 h-4" />}
+                                    </div>
+                                    <span
+                                        className={`text-[10px] font-medium uppercase tracking-wider text-center max-w-[80px] ${
+                                            isCurrent ? 'text-[#D2B57B]' : isCompleted ? 'text-emerald-400/80' : 'text-zinc-500'
+                                        }`}
+                                    >
+                                        {step.label}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
-                    <div className="text-right">
-                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors text-foreground text-xs font-mono">
-                            ID: {project.id.slice(0, 8)}
+                </section>
+
+                {/* Design showcase - masonry grid */}
+                {allDesignImages.length > 0 && (
+                    <section className="page-fade-in">
+                        <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D2B57B]/80 mb-6 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4" /> Créations & Renders
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {allDesignImages.map((url: string, idx: number) => (
+                                <div
+                                    key={idx}
+                                    className="group relative aspect-square rounded-xl overflow-hidden border border-white/5 bg-zinc-900/50 backdrop-blur-sm hover:border-[#D2B57B]/30 transition-all duration-500 hover:shadow-[0_0_30px_rgba(210,181,123,0.15)]"
+                                >
+                                    <img
+                                        src={url}
+                                        alt={`Design ${idx + 1}`}
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
+                                        onClick={() => setPreviewUrl(url)}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Project specs */}
+                <section className="page-fade-in">
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D2B57B]/80 mb-6 flex items-center gap-2">
+                        <Info className="w-4 h-4" /> Détails du projet
+                    </h3>
+                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-sm p-6 space-y-4">
+                        {details.design_notes && (
+                            <div>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-2">Notes de design</span>
+                                <p className="text-sm text-zinc-300 whitespace-pre-wrap">{details.design_notes}</p>
+                            </div>
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {(details as Record<string, unknown>).ring_size && (
+                                <div className="flex items-center gap-3">
+                                    <Ruler className="w-4 h-4 text-[#D2B57B]" />
+                                    <div>
+                                        <span className="text-[10px] text-zinc-500 uppercase">Taille</span>
+                                        <p className="text-sm font-medium">{(details as Record<string, unknown>).ring_size as string}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {((details as Record<string, unknown>).metal_type || (details as Record<string, unknown>).metal) && (
+                                <div className="flex items-center gap-3">
+                                    <Gem className="w-4 h-4 text-[#D2B57B]" />
+                                    <div>
+                                        <span className="text-[10px] text-zinc-500 uppercase">Métal</span>
+                                        <p className="text-sm font-medium">
+                                            {((details as Record<string, unknown>).metal_type || (details as Record<string, unknown>).metal) as string}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                            {((details as Record<string, unknown>).gemstone || (details as Record<string, unknown>).gemstones || (details as Record<string, unknown>).stone_type) && (
+                                <div className="flex items-center gap-3">
+                                    <Sparkles className="w-4 h-4 text-[#D2B57B]" />
+                                    <div>
+                                        <span className="text-[10px] text-zinc-500 uppercase">Pierre</span>
+                                        <p className="text-sm font-medium">
+                                            {((details as Record<string, unknown>).gemstone || (details as Record<string, unknown>).gemstones || (details as Record<string, unknown>).stone_type) as string}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         {project.deadline && (
-                            <div className="text-sm text-red-500 mt-1 font-medium">
-                                Deadline: {new Date(project.deadline).toLocaleDateString()}
+                            <div className="pt-4 border-t border-white/5">
+                                <span className="text-[10px] text-zinc-500 uppercase">Échéance prévue</span>
+                                <p className="text-sm text-[#D2B57B]">{new Date(project.deadline).toLocaleDateString('fr-FR', { dateStyle: 'long' })}</p>
                             </div>
                         )}
                     </div>
+                </section>
+
+                {/* Payment CTA */}
+                {unpaidInvoices.length > 0 && (
+                    <section className="page-fade-in">
+                        <div className="rounded-2xl border border-[#D2B57B]/20 bg-gradient-to-br from-[#D2B57B]/10 to-transparent p-8 text-center">
+                            <CreditCard className="w-10 h-10 text-[#D2B57B] mx-auto mb-4" />
+                            <h3 className="text-lg font-serif text-white mb-2">Solde restant</h3>
+                            <p className="text-3xl font-serif font-semibold text-[#D2B57B] mb-6">
+                                {totalDue.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+                            </p>
+                            <a
+                                href={unpaidInvoices[0].stripe_payment_link!}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-8 py-4 bg-[#D2B57B] text-black font-semibold uppercase tracking-wider rounded-lg hover:bg-[#E5C98A] transition-all duration-300 shadow-[0_0_25px_rgba(210,181,123,0.3)] hover:shadow-[0_0_35px_rgba(210,181,123,0.4)]"
+                            >
+                                Payer maintenant
+                            </a>
+                        </div>
+                    </section>
+                )}
+
+                {/* Client info note */}
+                <section className="rounded-xl border border-white/5 bg-white/[0.02] p-6">
+                    <p className="text-sm text-zinc-500 text-center">
+                        Vous consultez une version en lecture seule de votre projet. Pour toute modification, contactez votre représentant.
+                    </p>
+                </section>
+            </main>
+
+            {/* Footer */}
+            <footer className="mt-16 border-t border-white/5 py-10">
+                <div className="max-w-5xl mx-auto px-6 text-center">
+                    <h2 className="text-xl font-serif text-[#D2B57B] tracking-[0.15em]">AUCLAIRE</h2>
+                    <p className="text-[10px] text-zinc-600 uppercase tracking-[0.2em] mt-2">Luxury Jewelry — Créations sur mesure</p>
                 </div>
-
-                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-4" />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Left Column: Specifications */}
-                    <div className="space-y-6">
-                        {/* Project Timeline Tracker */}
-                        <Card className="bg-gradient-to-br from-black to-zinc-950 border-luxury-gold/20 shadow-lg shadow-luxury-gold/5 overflow-hidden">
-                            <CardHeader className="border-b border-luxury-gold/10 bg-white/5 pb-4">
-                                <CardTitle className="flex items-center gap-2 text-luxury-gold">
-                                    <Sparkles className="w-4 h-4" /> Project Timeline
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-6 pb-8">
-                                <div className="relative">
-                                    {/* Vertical line connecting steps */}
-                                    <div className="absolute left-6 top-4 bottom-4 w-px bg-zinc-800" />
-                                    
-                                    <div className="space-y-6">
-                                        {[
-                                            { id: 'designing', label: 'Initial Design', desc: 'Crafting the concept', icon: PenTool },
-                                            { id: '3d_model', label: '3D Modeling', desc: 'Building the digital model', icon: Box },
-                                            { id: 'design_ready', label: 'Renders Ready', desc: '3D designs ready for review', icon: Sparkles },
-                                            { id: 'waiting_for_approval', label: 'Waiting Approval', desc: 'Awaiting client confirmation', icon: Clock },
-                                            { id: 'design_modification', label: 'Modifying', desc: 'Refining design based on feedback', icon: PenTool },
-                                            { id: 'approved_for_production', label: 'Approved', desc: 'Confirmed for manufacturing', icon: ThumbsUp },
-                                            { id: 'production', label: 'In Production', desc: 'Casting and polishing your piece', icon: Hammer },
-                                            { id: 'delivery', label: 'Ready for Delivery', desc: 'Quality checked and shipping', icon: Truck },
-                                            { id: 'completed', label: 'Completed', desc: 'Delivered successfully', icon: Sparkles }
-                                        ].map((step, index, array) => {
-                                            const statuses = array.map(s => s.id);
-                                            const currentIndex = statuses.indexOf(project.status || 'designing');
-                                            const isCompleted = index < currentIndex;
-                                            const isCurrent = index === currentIndex;
-                                            const isPending = index > currentIndex;
-
-                                            return (
-                                                <div key={step.id} className={`relative flex items-center gap-4 ${isPending ? 'opacity-40' : 'opacity-100'}`}>
-                                                    <div className={`
-                                                        relative z-10 w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300
-                                                        ${isCompleted ? 'bg-luxury-gold border-luxury-gold text-black' : ''}
-                                                        ${isCurrent ? 'bg-black border-luxury-gold text-luxury-gold shadow-[0_0_15px_rgba(210,181,123,0.3)]' : ''}
-                                                        ${isPending ? 'bg-zinc-900 border-zinc-800 text-zinc-500' : ''}
-                                                    `}>
-                                                        <step.icon className={`w-5 h-5 ${isCurrent ? 'animate-pulse' : ''}`} />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h4 className={`font-medium ${isCurrent ? 'text-luxury-gold' : isCompleted ? 'text-zinc-200' : 'text-zinc-500'}`}>
-                                                            {step.label}
-                                                        </h4>
-                                                        <p className="text-xs text-zinc-500 mt-0.5">{step.desc}</p>
-                                                    </div>
-                                                    {isCurrent && (
-                                                        <div className="inline-flex items-center rounded-full font-semibold transition-colors px-2.5 py-0.5 bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/30 uppercase text-[10px] tracking-wider">
-                                                            Current Phase
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Initial Design Brief */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><FileText className="w-4 h-4" /> Initial Design Brief</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div>
-                                    <span className="text-zinc-500 block text-xs font-bold uppercase tracking-wider mb-2">Instructions / Notes</span>
-                                    <div className="text-sm refresh-pre-wrap whitespace-pre-wrap bg-zinc-50 dark:bg-zinc-900 p-3 rounded-md border border-zinc-100 dark:border-zinc-800">
-                                        {details.design_notes || "No design notes provided."}
-                                    </div>
-                                </div>
-
-                                {details.sketch_files && details.sketch_files.length > 0 && (
-                                    <div>
-                                        <span className="text-zinc-500 block text-xs font-bold uppercase tracking-wider mb-2">Reference Images</span>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                            {details.sketch_files.map((url: string, i: number) => (
-                                                <div key={i} className="relative aspect-square rounded-md overflow-hidden border bg-zinc-100">
-                                                    <img src={url} alt={`Sketch ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer" onClick={() => setPreviewUrl(url)} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Actions */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Client Portal Information</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-<p className="text-sm text-zinc-500 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-4 rounded-md">You are viewing a read-only snapshot of your project. For any changes, please contact your representative.</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Right Column: Files & Renders */}
-                    <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2"><FileText className="w-4 h-4" /> Design Renders</div>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    {images.map((img: string, idx: number) => (
-                                        <div key={idx} className="relative aspect-square rounded-md overflow-hidden border bg-zinc-100">
-                                            <img src={img} alt={`Render ${idx}`} className="w-full h-full object-cover cursor-pointer hover:opacity-90" onClick={() => setPreviewUrl(img)} />
-                                        </div>
-                                    ))}
-                                    {images.length === 0 && (
-                                        <div className="col-span-2 py-8 text-center text-zinc-400 text-sm border-2 border-dashed rounded-md">
-                                            No files uploaded yet.
-                                        </div>
-                                    )}
-                                </div>
-
-
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </div>
+            </footer>
 
             <ImagePreviewModal
                 isOpen={!!previewUrl}
                 imageUrl={previewUrl}
                 onClose={() => setPreviewUrl(null)}
-                title="Project Design Preview"
+                title="Aperçu du design"
             />
         </div>
     );
 }
-
-
-
-
-

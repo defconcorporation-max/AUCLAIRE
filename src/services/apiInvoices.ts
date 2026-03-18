@@ -313,6 +313,19 @@ export const apiInvoices = {
         }
     },
 
+    async getByProjectToken(token: string) {
+        const { data, error } = await supabase.rpc('get_invoices_by_project_token', { token_uuid: token });
+        if (error) throw error;
+        return (data || []) as Array<{
+            id: string;
+            amount: number;
+            amount_paid: number;
+            status: Invoice['status'];
+            stripe_payment_link?: string;
+            due_date?: string;
+        }>;
+    },
+
     async syncProjectPaidAmount(projectId: string) {
         if (!projectId) return;
 
