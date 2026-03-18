@@ -194,4 +194,18 @@
   button:hover:not(:disabled) {
     box-shadow: 0 0 15px rgba(210, 181, 123, 0.15);
   }
+
+  /* Dark mode: auto-fix common white backgrounds that lack dark: variants */
+  .dark .bg-white {
+    background-color: hsl(240 5% 8%) !important;
+  }
+  .dark .bg-zinc-50 {
+    background-color: hsl(240 5% 10%) !important;
+  }
+  .dark .bg-gray-50 {
+    background-color: hsl(240 5% 10%) !important;
+  }
+  .dark .bg-slate-50 {
+    background-color: hsl(240 5% 10%) !important;
+  }
 }

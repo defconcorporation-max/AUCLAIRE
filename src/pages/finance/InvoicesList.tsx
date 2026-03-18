@@ -210,7 +210,7 @@ export default function InvoicesList() {
                     </div>
                 ) : (
                     invoices?.map(invoice => (
-                        <Card key={invoice.id} className="flex items-center justify-between p-4 bg-card hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer" onClick={() => openDetailsModal(invoice)}>
+                        <Card key={invoice.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-3 bg-card hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer" onClick={() => openDetailsModal(invoice)}>
                             <div className="flex items-center gap-4">
                                 <div className="p-2 bg-luxury-gold/20 rounded text-luxury-gold">
                                     <FileText className="w-6 h-6" />
@@ -223,7 +223,7 @@ export default function InvoicesList() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6">
+                            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                                 <div className="text-right min-w-[160px]">
                                     {invoice.project?.financials?.tax_province ? (
                                         <div className="space-y-0.5">
