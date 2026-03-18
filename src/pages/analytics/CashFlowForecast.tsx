@@ -4,7 +4,7 @@ import { apiExpenses } from '@/services/apiExpenses';
 import { apiProjects } from '@/services/apiProjects';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Loader2, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 export default function CashFlowForecast() {
@@ -55,7 +55,6 @@ export default function CashFlowForecast() {
 
     const totalCollected = invoices?.reduce((s, i) => s + (Number(i.amount_paid) > 0 ? Number(i.amount_paid) : (i.status === 'paid' ? Number(i.amount) : 0)), 0) || 0;
     const totalOutstanding = invoices?.filter(i => i.status !== 'paid' && i.status !== 'void').reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid || 0)), 0) || 0;
-    const totalExpenses = expenses?.filter(e => e.status !== 'cancelled').reduce((s, e) => s + Number(e.amount), 0) || 0;
 
     const totalPending = months.filter(m => m.start >= now).reduce((s, m) => s + m.pending, 0);
     const totalFutureExpense = months.filter(m => m.start >= now).reduce((s, m) => s + m.expense, 0);

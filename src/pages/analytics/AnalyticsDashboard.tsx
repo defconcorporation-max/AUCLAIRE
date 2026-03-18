@@ -905,7 +905,6 @@ function generateInsights(
     const collectionRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
 
     const preDeliveryProjects = projects.filter(p => !['delivery', 'completed'].includes(p.status) && p.status !== 'cancelled');
-    const expectedDepositsOnly = preDeliveryProjects.reduce((s, p) => s + (Number(p.financials?.selling_price || p.budget || 0) * 0.5), 0);
     const deliveryProjects = projects.filter(p => ['delivery', 'completed'].includes(p.status));
     const overdueInvoices = invoices.filter(i => i.status !== 'paid' && i.status !== 'void' && deliveryProjects.some(p => p.id === i.project_id));
     const overdueAmount = overdueInvoices.reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid || 0)), 0);

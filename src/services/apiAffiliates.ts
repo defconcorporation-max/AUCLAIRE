@@ -219,7 +219,6 @@ export const apiAffiliates = {
 
             const allProjectIds = new Set<string>();
             const profileProjectMap = new Map<string, any[]>();
-            const profileInvoiceMap = new Map<string, any[]>();
 
             const { data: allProjects } = await supabase
                 .from('projects')

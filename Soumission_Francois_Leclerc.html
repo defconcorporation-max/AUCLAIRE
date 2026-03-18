@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOUMISSION AUCLAIRE - François Leclerc</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Inter:wght@300;400;700&display=swap');
+
+        :root {
+            --gold: #D4AF37;
+            --zinc-900: #18181b;
+            --zinc-600: #52525b;
+            --zinc-400: #a1a1aa;
+            --zinc-100: #f4f4f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0;
+            color: var(--zinc-900);
+            line-height: 1.6;
+        }
+
+        .paper {
+            width: 8.5in;
+            min-height: 11in;
+            margin: 2rem auto;
+            background: white;
+            padding: 3rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        @media print {
+            @page {
+                size: letter;
+                margin: 0.5in;
+            }
+            body { 
+                background: white; 
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .paper { 
+                margin: 0; 
+                padding: 0; 
+                box-shadow: none; 
+                width: 100%; 
+                min-height: auto; 
+            }
+            .no-print { display: none; }
+            
+            /* Prevent page breaks inside important sections */
+            .items-table, .summary, .conditions, header, .details-grid {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            /* Force page break before visuals if needed, or avoid breaking inside */
+            .visuels {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                margin-top: 2rem;
+            }
+        }
+
+        .gold-line {
+            height: 4px;
+            background: var(--gold);
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4rem;
+            margin-top: 1rem;
+        }
+
+        .brand h1 {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 3.5rem;
+            letter-spacing: -2px;
+            margin-bottom: 0.2rem;
+        }
+
+        .brand p {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4rem;
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        .quote-info {
+            text-align: right;
+        }
+
+        .quote-info h2 {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quote-info p {
+            font-size: 0.8rem;
+            color: var(--zinc-600);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 4rem;
+            border-top: 1px solid var(--zinc-100);
+            border-bottom: 1px solid var(--zinc-100);
+            padding: 2rem 0;
+        }
+
+        .column h3 {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            color: var(--gold);
+            margin-bottom: 1rem;
+        }
+
+        .info-block p {
+            margin-bottom: 0.2rem;
+        }
+
+        .client-name {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .intro {
+            font-family: 'Bodoni Moda', serif;
+            font-style: italic;
+            font-size: 1.2rem;
+            color: var(--zinc-600);
+            margin-bottom: 4rem;
+            border-left: 2px solid var(--gold);
+            padding-left: 1.5rem;
+        }
+
+        .items-table {
+            width: 100%;
+            margin-bottom: 4rem;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2rem 0;
+            border-bottom: 1px solid var(--zinc-100);
+        }
+
+        .item-row:last-child {
+            border-bottom: 1px solid var(--zinc-900);
+        }
+
+        .item-desc h4 {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .item-desc ul {
+            list-style: none;
+            font-size: 0.85rem;
+            color: var(--zinc-600);
+        }
+
+        .item-desc li {
+            position: relative;
+            padding-left: 1.2rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .item-desc li::before {
+            content: "•";
+            color: var(--gold);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .item-price {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.8rem;
+            color: var(--gold);
+        }
+
+        .visuels {
+            margin-bottom: 4rem;
+        }
+
+        .visuels h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--zinc-900);
+            padding-bottom: 0.5rem;
+        }
+
+        .visual-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .visual-box {
+            aspect-ratio: 1;
+            background: var(--zinc-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 2px;
+        }
+
+        .visual-box p {
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--zinc-400);
+        }
+
+        .summary {
+            background: var(--zinc-900);
+            color: white;
+            padding: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4rem;
+        }
+
+        .summary-left p {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .discount { color: var(--gold); }
+
+        .summary-right {
+            text-align: right;
+        }
+
+        .summary-right .total-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3rem;
+            color: var(--zinc-400);
+        }
+
+        .total-price {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 4rem;
+            color: var(--gold);
+            line-height: 1;
+        }
+
+        .conditions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            color: var(--zinc-600);
+        }
+
+        .cond-column h4 {
+            color: var(--zinc-900);
+            margin-bottom: 0.8rem;
+            border-bottom: 1px solid var(--zinc-100);
+            padding-bottom: 0.3rem;
+        }
+
+        footer {
+            margin-top: 6rem;
+            text-align: center;
+            border-top: 1px solid var(--zinc-100);
+            padding-top: 2rem;
+        }
+
+        footer p.logo {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.5rem;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+        }
+
+        footer p.tagline {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5rem;
+            color: var(--zinc-400);
+            font-weight: bold;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--gold);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .print-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <button class="print-btn no-print" onclick="window.print()">Imprimer en PDF</button>
+
+    <div class="paper">
+        <div class="gold-line"></div>
+        
+        <header>
+            <div class="brand">
+                <h1>AUCLAIRE</h1>
+                <p>Bijouterie sur mesure</p>
+            </div>
+            <div class="quote-info">
+                <h2>Soumission</h2>
+                <p>Date : 18 mars 2026</p>
+                <p>Ref : #SL-2026-0318</p>
+            </div>
+        </header>
+
+        <div class="details-grid">
+            <div class="column">
+                <h3>Préparé pour</h3>
+                <div class="info-block">
+                    <p class="client-name">François Leclerc</p>
+                    <p>148 du Vitrier</p>
+                    <p>St-Augustin-de-Desmaures, QC, G3A 0A9</p>
+                    <p>418-571-9371</p>
+                    <p>f.leclerc011@gmail.com</p>
+                </div>
+            </div>
+            <div class="column quote-info">
+                <h3>De la part de</h3>
+                <div class="info-block">
+                    <p class="client-name">AUCLAIRE</p>
+                    <p><i>Soin, précision et élégance</i></p>
+                    <p>Quebec, Canada</p>
+                    <p>www.auclaire.com</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="intro">
+            "Merci de votre intérêt envers AUCLAIRE. Nous avons le plaisir de vous présenter la soumission suivante pour votre kit de 3 bagues, conçu en or jaune 14k, avec une attention particulière portée à l’élégance, à la qualité des matériaux et à la finition."
+        </div>
+
+        <div class="items-table">
+            <div class="item-row">
+                <div class="item-desc">
+                    <h4>1. Bague d’engagement</h4>
+                    <ul>
+                        <li>Pierre centrale : <b>Diamant Oval Cut 2 ct</b></li>
+                        <li>Qualité : <b>VS1</b> | Couleur : <b>D</b></li>
+                        <li>Certification : <b>IGI</b></li>
+                        <li>Accompagnée d'un jonc éternité</li>
+                        <li>Métal : <b>Or jaune 14k</b></li>
+                    </ul>
+                </div>
+                <div class="item-price">1 500 $</div>
+            </div>
+
+            <div class="item-row">
+                <div class="item-desc">
+                    <h4>2. Jonc éternité</h4>
+                    <ul>
+                        <li>Métal : <b>Or jaune 14k</b></li>
+                        <li>Pièce additionnelle assortie</li>
+                    </ul>
+                </div>
+                <div class="item-price">650 $</div>
+            </div>
+
+            <div class="item-row">
+                <div class="item-desc">
+                    <h4>3. Jonc pour homme</h4>
+                    <ul>
+                        <li>Métal : <b>Or jaune 14k</b></li>
+                        <li>Gravure : <b style="color: #22c55e;">Offerte gratuitement</b></li>
+                    </ul>
+                </div>
+                <div class="item-price">1 750 $</div>
+            </div>
+        </div>
+
+        <div class="visuels">
+            <h3>Design & Visuels</h3>
+            <div class="visual-grid">
+                <div class="visual-box" style="padding: 0; background: transparent;">
+                    <img src="./AJ-057-1.png" alt="Visuel AJ-057-1" style="width: 100%; height: auto; border-radius: 4px; border: 1px solid #e4e4e7;" onerror="this.outerHTML='<div style=\'padding: 2rem; background: #f4f4f5; text-align: center; border: 1px dashed #a1a1aa; border-radius: 4px;\'><p>Veuillez sauvegarder la première image sous le nom <b>AJ-057-1.png</b> dans le même dossier que ce fichier HTML.</p></div>'">
+                </div>
+                <div class="visual-box" style="padding: 0; background: transparent;">
+                    <img src="./AJ-057-2.png" alt="Visuel AJ-057-2" style="width: 100%; height: auto; border-radius: 4px; border: 1px solid #e4e4e7;" onerror="this.outerHTML='<div style=\'padding: 2rem; background: #f4f4f5; text-align: center; border: 1px dashed #a1a1aa; border-radius: 4px;\'><p>Veuillez sauvegarder la deuxième image sous le nom <b>AJ-057-2.png</b> dans le même dossier que ce fichier HTML.</p></div>'">
+                </div>
+            </div>
+        </div>
+
+        <div class="summary">
+            <div class="summary-left">
+                <p>Total avant rabais : 3 900 $</p>
+                <p class="discount">Rabais AUCLAIRE : 300 $</p>
+            </div>
+            <div class="summary-right">
+                <p class="total-label">Total à payer</p>
+                <div class="total-price">3 600 $</div>
+                <p class="total-label">Taxes incluses</p>
+            </div>
+        </div>
+
+        <div class="conditions">
+            <div class="cond-column">
+                <h4>Modalités de paiement</h4>
+                <p>Dépôt de 50 % : <b>18 mars 2026</b></p>
+                <p style="margin-top: 0.5rem;">Deuxième paiement : <b>48h avant livraison</b></p>
+            </div>
+            <div class="cond-column">
+                <h4>Conditions de l'offre</h4>
+                <p>Valable pour une période de <b>24 heures</b> suivant son envoi.</p>
+                <p style="margin-top: 0.5rem;">Sujet à changement selon le cours des métaux.</p>
+            </div>
+        </div>
+
+        <footer>
+            <p class="logo">AUCLAIRE</p>
+            <p class="tagline">Bijoux sur mesure conçus avec soin, précision et élégance.</p>
+        </footer>
+    </div>
+
+</body>
+</html>
