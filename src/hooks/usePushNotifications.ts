@@ -31,9 +31,15 @@ export function usePushNotifications() {
         setPermission(Notification.permission as PushPermissionState);
 
         navigator.serviceWorker.ready.then(async (registration) => {
-            const subscription = await registration.pushManager.getSubscription();
-            setIsSubscribed(!!subscription);
-        });
+            try {
+                if (registration.pushManager) {
+                    const subscription = await registration.pushManager.getSubscription();
+                    setIsSubscribed(!!subscription);
+                }
+            } catch {
+                // pushManager not available in this context
+            }
+        }).catch(() => {});
     }, []);
 
     const subscribe = useCallback(async () => {

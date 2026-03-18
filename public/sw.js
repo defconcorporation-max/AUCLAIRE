@@ -1,5 +1,5 @@
-// Auclaire Service Worker — Cache + Push Notifications
-const CACHE_NAME = 'auclaire-cache-v2';
+// Auclaire Service Worker v3 — Cache + Push Notifications
+const CACHE_NAME = 'auclaire-cache-v3';
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
