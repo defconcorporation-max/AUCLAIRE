@@ -662,6 +662,30 @@ export default function ProjectDetails() {
                     </select>
                 </div>
                 <div className="flex items-center gap-3">
+                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Type:</span>
+                    <select
+                        className="h-8 px-2 rounded-md border border-input bg-background font-medium text-sm"
+                        value={project.jewelry_type || ''}
+                        onChange={(e) => {
+                            const val = e.target.value || undefined;
+                            apiProjects.update(project.id, { jewelry_type: val } as any)
+                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
+                                .catch(err => alert(err.message));
+                        }}
+                        disabled={role === 'client' || role === 'manufacturer'}
+                    >
+                        <option value="">Auto-détection</option>
+                        <option value="Bague">Bague</option>
+                        <option value="Bracelet">Bracelet</option>
+                        <option value="Collier">Collier</option>
+                        <option value="Pendentif">Pendentif</option>
+                        <option value="Boucles d'oreilles">Boucles d'oreilles</option>
+                        <option value="Chevalière">Chevalière</option>
+                        <option value="Alliance">Alliance</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+                <div className="flex items-center gap-3">
                     <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Status:</span>
                     <select
                         className="h-8 px-2 rounded-md border border-input bg-background font-medium text-sm capitalize"

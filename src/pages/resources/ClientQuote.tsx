@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Printer, Send, CheckCircle2, Loader2, Plus, Trash2, Percent } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
@@ -10,11 +11,10 @@ import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { apiNotifications } from '@/services/apiNotifications';
 
-interface QuoteItem {
+interface QuoteLineItem {
     id: string;
     title: string;
     description: string;
-    details: string[];
     price: number;
 }
 
@@ -22,6 +22,9 @@ export default function ClientQuote() {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();
     const [isSending, setIsSending] = useState(false);
+    const [discount, setDiscount] = useState(0);
+    const [customItems, setCustomItems] = useState<QuoteLineItem[]>([]);
+    const [editMode, setEditMode] = useState(false);
 
     const { data: project, isLoading: loadingProject } = useQuery({
         queryKey: ['project', projectId],
@@ -67,6 +70,17 @@ export default function ClientQuote() {
         }
     };
 
+    const addItem = () => {
+        setCustomItems(prev => [...prev, { id: crypto.randomUUID(), title: '', description: '', price: 0 }]);
+        setEditMode(true);
+    };
+
+    const removeItem = (id: string) => setCustomItems(prev => prev.filter(i => i.id !== id));
+
+    const updateItem = (id: string, field: keyof QuoteLineItem, value: string | number) => {
+        setCustomItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
+    };
+
     if (loadingProject) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
@@ -85,9 +99,6 @@ export default function ClientQuote() {
     }
 
     const sellingPrice = project.financials?.selling_price || project.budget || 0;
-    const costItems = project.financials?.cost_items || [];
-    const discount = 0;
-    const finalTotal = sellingPrice - discount;
     const today = new Date().toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
     const refNumber = project.reference_number || `SL-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`;
 
@@ -97,21 +108,16 @@ export default function ClientQuote() {
         ...(project.stage_details?.design_versions || []).flatMap(v => v.files || []),
     ].filter((url, i, arr) => arr.indexOf(url) === i);
 
-    const quoteItems: QuoteItem[] = costItems.length > 0
-        ? costItems.map((ci) => ({
-            id: ci.id,
-            title: ci.detail,
-            description: '',
-            details: [],
-            price: ci.amount,
-        }))
-        : [{
-            id: 'main',
-            title: project.title,
-            description: project.description || '',
-            details: [],
-            price: sellingPrice,
-        }];
+    const defaultItems: QuoteLineItem[] = [{
+        id: 'main',
+        title: project.title,
+        description: project.description || '',
+        price: sellingPrice,
+    }];
+
+    const displayItems = customItems.length > 0 ? customItems : defaultItems;
+    const subtotal = displayItems.reduce((s, i) => s + (Number(i.price) || 0), 0);
+    const finalTotal = subtotal - discount;
 
     return (
         <div className="min-h-screen bg-zinc-950 p-4 md:p-8 pb-20 print:bg-white print:p-0">
@@ -120,12 +126,12 @@ export default function ClientQuote() {
                     <ArrowLeft className="w-4 h-4 mr-2" /> Retour
                 </Button>
                 <div className="flex gap-2">
-                    <Button
-                        onClick={handleSendToClient}
-                        disabled={isSending || !client}
-                        variant="outline"
-                        className="border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setEditMode(!editMode)}
+                        className="border-white/20 text-muted-foreground hover:text-white">
+                        {editMode ? 'Terminer' : 'Modifier les items'}
+                    </Button>
+                    <Button onClick={handleSendToClient} disabled={isSending || !client} variant="outline"
+                        className="border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10">
                         {isSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                         Envoyer au client
                     </Button>
@@ -134,6 +140,33 @@ export default function ClientQuote() {
                     </Button>
                 </div>
             </div>
+
+            {/* Edit panel */}
+            {editMode && (
+                <div className="max-w-4xl mx-auto mb-6 p-4 rounded-xl border border-luxury-gold/20 bg-luxury-gold/5 space-y-3 print:hidden">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-luxury-gold">Items de la soumission</p>
+                        <Button size="sm" onClick={addItem} className="bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30">
+                            <Plus className="w-4 h-4 mr-1" /> Ajouter un item
+                        </Button>
+                    </div>
+                    {customItems.map(item => (
+                        <div key={item.id} className="flex gap-2 items-start">
+                            <Input placeholder="Titre" value={item.title} onChange={e => updateItem(item.id, 'title', e.target.value)} className="flex-1 h-9" />
+                            <Input placeholder="Description" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} className="flex-1 h-9" />
+                            <Input type="number" placeholder="Prix" value={item.price || ''} onChange={e => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)} className="w-28 h-9" />
+                            <Button variant="ghost" size="sm" onClick={() => removeItem(item.id)} className="text-red-400 h-9 w-9 p-0">
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    ))}
+                    <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                        <Percent className="w-4 h-4 text-luxury-gold" />
+                        <span className="text-sm text-muted-foreground">Rabais :</span>
+                        <Input type="number" value={discount || ''} onChange={e => setDiscount(parseFloat(e.target.value) || 0)} className="w-28 h-9" placeholder="0" />
+                    </div>
+                </div>
+            )}
 
             <div className="max-w-4xl mx-auto bg-white text-zinc-900 shadow-2xl rounded-sm overflow-hidden print:shadow-none print:rounded-none min-h-[11in]">
                 <div className="h-2 bg-luxury-gold w-full" />
@@ -182,17 +215,12 @@ export default function ClientQuote() {
                     <div className="space-y-12 mb-16">
                         <h3 className="text-sm uppercase tracking-widest text-zinc-900 font-bold border-b border-zinc-900 pb-2">Détails du projet</h3>
 
-                        {quoteItems.map((item, idx) => (
+                        {displayItems.map((item, idx) => (
                             <div key={item.id} className={`grid grid-cols-1 md:grid-cols-3 gap-8 ${idx > 0 ? 'pt-8 border-t border-zinc-50' : ''}`}>
                                 <div className="col-span-2">
-                                    <h4 className="font-serif text-2xl text-zinc-900 mb-4">{idx + 1}. {item.title}</h4>
+                                    <h4 className="font-serif text-2xl text-zinc-900 mb-4">{idx + 1}. {item.title || 'Article'}</h4>
                                     {item.description && (
                                         <p className="text-zinc-700 text-sm italic mb-2">{item.description}</p>
-                                    )}
-                                    {item.details.length > 0 && (
-                                        <ul className="space-y-2 text-zinc-700 text-sm list-disc list-inside marker:text-luxury-gold">
-                                            {item.details.map((d, i) => <li key={i}>{d}</li>)}
-                                        </ul>
                                     )}
                                 </div>
                                 <div className="text-right flex flex-col justify-end">
@@ -218,14 +246,14 @@ export default function ClientQuote() {
 
                     <div className="bg-zinc-950 text-white p-12 rounded-sm mb-16 flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="space-y-1">
-                            {costItems.length > 1 && (
+                            {displayItems.length > 1 && (
                                 <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">
-                                    Sous-total : {formatCurrency(costItems.reduce((s, c) => s + c.amount, 0))}
+                                    Sous-total : {formatCurrency(subtotal)}
                                 </p>
                             )}
                             {discount > 0 && (
                                 <p className="text-sm uppercase tracking-[0.3em] text-luxury-gold">
-                                    Rabais AUCLAIRE : {formatCurrency(discount)}
+                                    Rabais AUCLAIRE : -{formatCurrency(discount)}
                                 </p>
                             )}
                             {totalPaid > 0 && (

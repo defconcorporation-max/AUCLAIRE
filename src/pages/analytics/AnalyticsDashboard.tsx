@@ -747,7 +747,7 @@ export default function AnalyticsDashboard() {
                 <CardContent>
                     {(() => {
                         const categories: Record<string, { count: number; revenue: number; costs: number }> = {};
-                        const categorize = (title: string): string => {
+                        const autoDetect = (title: string): string => {
                             const t = title.toLowerCase();
                             if (t.includes('ring') || t.includes('bague') || t.includes('engagement') || t.includes('chevalier')) return 'Bague';
                             if (t.includes('bracelet')) return 'Bracelet';
@@ -758,7 +758,7 @@ export default function AnalyticsDashboard() {
                         };
 
                         (projects || []).forEach((p: any) => {
-                            const cat = categorize(p.title || '');
+                            const cat = p.jewelry_type || autoDetect(p.title || '');
                             if (!categories[cat]) categories[cat] = { count: 0, revenue: 0, costs: 0 };
                             categories[cat].count++;
                             const revenue = Number(p.financials?.selling_price || p.budget || 0);
@@ -899,17 +899,23 @@ function generateInsights(
         }
     }
 
-    // 2. Collection Rate
+    // 2. Collection Rate (adjusted for deposit model: 50% deposit upfront, rest at delivery)
     const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
     const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
     const collectionRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
 
+    const preDeliveryProjects = projects.filter(p => !['delivery', 'completed'].includes(p.status) && p.status !== 'cancelled');
+    const expectedDepositsOnly = preDeliveryProjects.reduce((s, p) => s + (Number(p.financials?.selling_price || p.budget || 0) * 0.5), 0);
+    const deliveryProjects = projects.filter(p => ['delivery', 'completed'].includes(p.status));
+    const overdueInvoices = invoices.filter(i => i.status !== 'paid' && i.status !== 'void' && deliveryProjects.some(p => p.id === i.project_id));
+    const overdueAmount = overdueInvoices.reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid || 0)), 0);
+
     if (collectionRate >= 80) {
-        insights.push({ icon: '💰', title: `${collectionRate}% collection rate — excellent`, description: `You're collecting $${totalPaid.toLocaleString()} of $${totalInvoiced.toLocaleString()} invoiced. Strong client payment discipline.`, type: 'success' });
-    } else if (collectionRate >= 50) {
-        insights.push({ icon: '⚠️', title: `${collectionRate}% collection rate — needs attention`, description: `$${(totalInvoiced - totalPaid).toLocaleString()} outstanding. Consider sending payment reminders.`, type: 'warning' });
+        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Excellent. $${totalPaid.toLocaleString()} collecté sur $${totalInvoiced.toLocaleString()} facturé.`, type: 'success' });
+    } else if (collectionRate >= 40) {
+        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Normal avec le modèle dépôt 50%. ${preDeliveryProjects.length} projets attendent la livraison pour le solde.${overdueAmount > 0 ? ` $${overdueAmount.toLocaleString()} en retard sur projets livrés.` : ''}`, type: overdueAmount > 0 ? 'warning' : 'success' });
     } else if (totalInvoiced > 0) {
-        insights.push({ icon: '🚨', title: `Only ${collectionRate}% collected — critical`, description: `$${(totalInvoiced - totalPaid).toLocaleString()} unpaid. Urgent follow-up needed on outstanding invoices.`, type: 'danger' });
+        insights.push({ icon: '⚠️', title: `Taux de recouvrement: ${collectionRate}%`, description: `$${(totalInvoiced - totalPaid).toLocaleString()} en attente. Le solde restant est attendu à la livraison (modèle dépôt 50%).`, type: 'info' });
     }
 
     // 3. Pipeline Health

@@ -6,37 +6,34 @@
 
 @layer base {
   :root {
-    /* DEFAULT LIGHT MODE - Softened & Improved Contrast */
-    --background: 240 5% 96%; /* Slightly deeper off-white */
-    --foreground: 240 10% 4%; /* Near black for punchy text */
+    --background: 240 5% 95%;
+    --foreground: 240 10% 6%;
 
-    /* Cards */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 4%;
+    --card-foreground: 240 10% 6%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 4%;
+    --popover-foreground: 240 10% 6%;
 
-    /* Luxury Gold (Soft Champagne Gold) - Same in both modes for consistency */
-    --primary: 43 60% 65%;
-    --primary-foreground: 240 10% 2%;
+    --primary: 43 55% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 92%;
-    --secondary-foreground: 240 10% 4%;
+    --secondary: 240 5% 90%;
+    --secondary-foreground: 240 10% 6%;
 
-    --muted: 240 5% 92%;
-    --muted-foreground: 240 5% 25%; /* Darker for better accessibility */
+    --muted: 240 5% 90%;
+    --muted-foreground: 240 5% 35%;
 
-    --accent: 43 60% 65%;
-    --accent-foreground: 240 10% 2%;
+    --accent: 43 55% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 82%; /* Darker borders for better separation */
-    --input: 240 5% 82%;
+    --border: 240 6% 78%;
+    --input: 240 6% 78%;
 
-    --ring: 43 60% 65%;
+    --ring: 43 55% 50%;
 
     --radius: 0.5rem;
   }
@@ -207,5 +204,23 @@
   }
   .dark .bg-slate-50 {
     background-color: hsl(240 5% 10%) !important;
+  }
+
+  /* Light mode contrast improvements */
+  :root .glass-card {
+    @apply bg-white/70 border-black/10 shadow-lg;
+  }
+  :root .text-muted-foreground {
+    color: hsl(240 5% 35%);
+  }
+  :root .text-luxury-gold {
+    color: hsl(43 55% 42%);
+  }
+  :root table th {
+    color: hsl(240 5% 30%);
+  }
+  :root select,
+  :root input {
+    border-color: hsl(240 6% 78%);
   }
 }

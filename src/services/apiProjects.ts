@@ -81,6 +81,19 @@ export interface Financials {
     commission_exported_to_expenses?: boolean;
 }
 
+export const JEWELRY_TYPES = [
+    'Bague',
+    'Bracelet',
+    'Collier',
+    'Pendentif',
+    "Boucles d'oreilles",
+    'Chevalière',
+    'Alliance',
+    'Autre',
+] as const;
+
+export type JewelryType = (typeof JEWELRY_TYPES)[number];
+
 export interface Project {
     id: string;
     title: string;
@@ -91,11 +104,12 @@ export interface Project {
     budget?: number;
     deadline?: string;
     priority?: 'normal' | 'rush';
+    jewelry_type?: JewelryType;
     created_at: string;
     updated_at?: string;
     reference_number?: string;
     share_token?: string;
-    client?: { full_name: string; email?: string }; // joined
+    client?: { full_name: string; email?: string };
     sales_agent_id?: string;
     stage_details?: StageDetails;
     financials?: Financials;

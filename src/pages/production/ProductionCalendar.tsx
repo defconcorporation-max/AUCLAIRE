@@ -7,43 +7,42 @@ import { UserProfile } from '@/services/apiUsers';
 import { Loader2, Calendar, Filter, Factory, Zap } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
-const PRODUCTION_STAGES = ['design', 'approved_for_production', 'production', 'delivery'] as const;
+const PRODUCTION_STAGES = ['approved_for_production', 'production', 'delivery'] as const;
 type ProductionStage = (typeof PRODUCTION_STAGES)[number];
 
-const DESIGN_STATUSES: Project['status'][] = [
-    'designing',
-    'design_ready',
-    'waiting_for_approval',
-    'design_modification',
-    '3d_model',
-];
-
 const STAGE_COLORS: Record<ProductionStage, string> = {
-    design: 'bg-blue-500/80 border-blue-400/50',
     approved_for_production: 'bg-yellow-500/80 border-yellow-400/50',
     production: 'bg-purple-500/80 border-purple-400/50',
     delivery: 'bg-amber-500/80 border-amber-400/50',
 };
 
-function getProjectStage(project: Project): ProductionStage {
-    if (DESIGN_STATUSES.includes(project.status)) return 'design';
+function getProjectStage(project: Project): ProductionStage | null {
     if (project.status === 'approved_for_production') return 'approved_for_production';
     if (project.status === 'production') return 'production';
     if (project.status === 'delivery') return 'delivery';
-    return 'design'; // fallback
+    return null;
+}
+
+function addBusinessDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    let added = 0;
+    while (added < days) {
+        result.setDate(result.getDate() + 1);
+        const dow = result.getDay();
+        if (dow !== 0 && dow !== 6) added++;
+    }
+    return result;
 }
 
 function getStartDate(project: Project): Date {
-    return new Date(project.created_at);
+    return new Date(project.updated_at || project.created_at);
 }
 
 function getEndDate(project: Project): Date {
     const delivery = project.stage_details?.delivery_date;
     if (delivery) return new Date(delivery);
     if (project.deadline) return new Date(project.deadline);
-    const start = getStartDate(project);
-    start.setDate(start.getDate() + 56); // +8 weeks default
-    return start;
+    return addBusinessDays(getStartDate(project), 21);
 }
 
 function getMonday(d: Date): Date {
@@ -84,7 +83,7 @@ export default function ProductionCalendar() {
 
         let filtered = (allProjects || []).filter((p) => {
             const stage = getProjectStage(p);
-            if (!PRODUCTION_STAGES.includes(stage)) return false;
+            if (!stage) return false;
             if (role === 'admin' || role === 'secretary') {
                 if (filterManufacturer && p.manufacturer_id !== filterManufacturer) return false;
                 return true;
@@ -173,17 +172,17 @@ export default function ProductionCalendar() {
                         — {weekEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </div>
                     <div className="flex gap-1 mt-2">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                            Design
-                        </span>
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                            Approved
+                            Approuvé
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30">
                             Production
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            Delivery
+                            Livraison
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-white/10 text-white/60 border border-white/20">
+                            Délai: 21 jours ouvrables
                         </span>
                     </div>
                 </div>
@@ -222,7 +221,7 @@ export default function ProductionCalendar() {
                             </div>
                         ) : (
                             projects.map((project) => {
-                                const stage = getProjectStage(project);
+                                const stage = getProjectStage(project) || 'approved_for_production';
                                 const start = getStartDate(project);
                                 const end = getEndDate(project);
                                 const startMs = start.getTime() - weekStart.getTime();

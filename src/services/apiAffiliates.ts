@@ -204,7 +204,6 @@ export const apiAffiliates = {
 
     async getAllAffiliatesWithStats() {
         try {
-            // Attempt 1: Fetch Profiles first
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*');
@@ -212,39 +211,85 @@ export const apiAffiliates = {
             if (error) throw error;
             const allProfiles = (data || []) as AffiliateProfile[];
 
-            // Filter for affiliates/ambassadors AND admins
             const affiliateProfiles = allProfiles.filter(p =>
                 ['affiliate', 'ambassador', 'admin'].includes(p.role?.toLowerCase())
             );
 
-            // Fetch generic stats for them (Batched or individual - keeping it simple/safe for now)
-            // To avoid N+1 slow loading or complex joins failing, we'll do a safe Promise.all
-            // This is less efficient but WAY more robust against schema mismatches
-            const results = await Promise.all(affiliateProfiles.map(async (profile) => {
-                try {
-                    const stats = await this.getStats(profile.id);
-                    return { ...profile, stats };
-                } catch (e) {
-                    console.warn(`Failed to load stats for ${profile.id}`, e);
-                    // Return zero stats on error
-                    return {
-                        ...profile,
-                        stats: {
-                            totalSales: 0,
-                            salesCount: 0,
-                            cashCollected: 0,
-                            commissionEarned: 0,
-                            commissionPaid: 0,
-                            commissionPending: 0,
-                            activeProjects: 0,
-                            projects: []
-                        }
-                    };
+            if (affiliateProfiles.length === 0) return [];
+
+            const allProjectIds = new Set<string>();
+            const profileProjectMap = new Map<string, any[]>();
+            const profileInvoiceMap = new Map<string, any[]>();
+
+            const { data: allProjects } = await supabase
+                .from('projects')
+                .select('id, title, client_id, budget, financials, status, affiliate_id, sales_agent_id, affiliate_commission_rate, affiliate_commission_type')
+                .neq('status', 'cancelled');
+
+            (allProjects || []).forEach(p => {
+                const ownerId = p.affiliate_id || p.sales_agent_id;
+                if (ownerId) {
+                    if (!profileProjectMap.has(ownerId)) profileProjectMap.set(ownerId, []);
+                    profileProjectMap.get(ownerId)!.push(p);
+                    allProjectIds.add(p.id);
                 }
-            }));
+            });
 
-            return results;
+            let allInvoices: any[] = [];
+            if (allProjectIds.size > 0) {
+                const { data: invData } = await supabase
+                    .from('invoices')
+                    .select('project_id, amount, amount_paid, status, paid_at, created_at')
+                    .in('project_id', Array.from(allProjectIds));
+                allInvoices = invData || [];
+            }
 
+            const invoiceByProject = new Map<string, any[]>();
+            allInvoices.forEach(inv => {
+                if (!invoiceByProject.has(inv.project_id)) invoiceByProject.set(inv.project_id, []);
+                invoiceByProject.get(inv.project_id)!.push(inv);
+            });
+
+            let allExpenses: any[] = [];
+            try {
+                const { data: expData } = await supabase
+                    .from('expenses')
+                    .select('amount, status, description, recipient_id')
+                    .eq('category', 'commission');
+                allExpenses = expData || [];
+            } catch { /* expenses table may not have recipient_id */ }
+
+            const PRODUCTION_READY = ['approved_for_production', 'production', 'delivery', 'completed'];
+
+            return affiliateProfiles.map(profile => {
+                const projects = profileProjectMap.get(profile.id) || [];
+                const invoicedIds = new Set<string>();
+                let totalSales = 0, salesCount = 0, cashCollected = 0, activeProjects = 0;
+
+                projects.forEach(p => {
+                    const pInvoices = invoiceByProject.get(p.id) || [];
+                    pInvoices.forEach(inv => {
+                        invoicedIds.add(inv.project_id);
+                        cashCollected += Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
+                    });
+                    if (!['completed', 'delivery'].includes(p.status)) activeProjects++;
+                    const isSale = PRODUCTION_READY.includes(p.status) || invoicedIds.has(p.id);
+                    if (isSale) {
+                        totalSales += Number(p.financials?.selling_price || p.budget || 0);
+                        salesCount++;
+                    }
+                });
+
+                const myExpenses = allExpenses.filter(e => e.recipient_id === profile.id && !e.description?.includes('Commission Payout'));
+                const commissionEarned = myExpenses.filter(e => e.status !== 'cancelled').reduce((s, e) => s + Number(e.amount), 0);
+                const commissionPaid = myExpenses.filter(e => e.status === 'paid').reduce((s, e) => s + Number(e.amount), 0);
+                const commissionPending = myExpenses.filter(e => e.status === 'pending').reduce((s, e) => s + Number(e.amount), 0);
+
+                return {
+                    ...profile,
+                    stats: { totalSales, salesCount, cashCollected, commissionEarned, commissionPaid, commissionPending, activeProjects, projects }
+                };
+            });
         } catch (err) {
             console.error("Critical: Could not fetch affiliates.", err);
             return [];

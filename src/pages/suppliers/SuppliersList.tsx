@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiSuppliers, Supplier } from '@/services/apiSuppliers';
 import { apiActivities } from '@/services/apiActivities';
+import { apiUsers, UserProfile } from '@/services/apiUsers';
+import { apiProjects } from '@/services/apiProjects';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Search, Pencil, Star } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, Star, Factory, Briefcase } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 
@@ -68,6 +70,21 @@ export default function SuppliersList() {
         queryKey: ['suppliers'],
         queryFn: apiSuppliers.getAll,
     });
+
+    const { data: users = [] } = useQuery({
+        queryKey: ['users'],
+        queryFn: apiUsers.getAll,
+    });
+
+    const { data: projects = [] } = useQuery({
+        queryKey: ['projects'],
+        queryFn: apiProjects.getAll,
+    });
+
+    const manufacturers = users.filter((u: UserProfile) => u.role === 'manufacturer');
+    const getManufacturerProjects = (mId: string) => projects.filter(p => p.manufacturer_id === mId);
+    const getActiveCount = (mId: string) => getManufacturerProjects(mId).filter(p => !['completed', 'cancelled'].includes(p.status)).length;
+    const getCompletedCount = (mId: string) => getManufacturerProjects(mId).filter(p => p.status === 'completed').length;
 
     const createMutation = useMutation({
         mutationFn: apiSuppliers.create,
@@ -179,6 +196,54 @@ export default function SuppliersList() {
                     <Plus className="w-4 h-4" /> Ajouter un fournisseur
                 </Button>
             </div>
+
+            {/* Manufacturers (Ateliers) Section */}
+            {manufacturers.length > 0 && (
+                <div className="space-y-3">
+                    <h2 className="text-lg font-serif text-luxury-gold flex items-center gap-2">
+                        <Factory className="w-5 h-5" /> Ateliers / Manufacturiers
+                    </h2>
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        {manufacturers.map((m: UserProfile) => {
+                            const active = getActiveCount(m.id);
+                            const completed = getCompletedCount(m.id);
+                            return (
+                                <Card key={m.id} className="glass-card border-white/10 hover:border-luxury-gold/30 transition-colors">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="w-10 h-10 rounded-full bg-luxury-gold/10 border border-luxury-gold/20 flex items-center justify-center text-luxury-gold font-serif text-lg font-bold">
+                                                {m.full_name?.[0] || 'M'}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-medium truncate">{m.full_name}</p>
+                                                {m.email && <p className="text-xs text-muted-foreground truncate">{m.email}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs">
+                                            <div className="flex items-center gap-1.5">
+                                                <Briefcase className="w-3 h-3 text-amber-400" />
+                                                <span className="text-muted-foreground">Actifs:</span>
+                                                <span className="font-bold">{active}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-muted-foreground">Complétés:</span>
+                                                <span className="font-bold text-green-400">{completed}</span>
+                                            </div>
+                                        </div>
+                                        {m.specialty && m.specialty.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                {m.specialty.map((s, i) => (
+                                                    <Badge key={i} variant="outline" className="text-[10px] border-luxury-gold/20 text-luxury-gold/80">{s}</Badge>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Search Bar */}
             <div className="flex gap-2 items-center glass-card p-2 rounded-lg border border-white/5 dark:border-white/5">

@@ -34,27 +34,60 @@ import { GlobalSearch } from '@/components/GlobalSearch'
 import { OnboardingTour } from '@/components/OnboardingTour'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
 
-const navItems = [
-    // Client-specific
-    { label: 'My Portal', href: '/dashboard/my-portal', icon: Eye, roles: ['client'] },
-    // Standard roles
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-    { label: 'Messages', href: '/dashboard/messages', icon: MessageCircle, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-    { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'secretary'] },
-    { label: 'Trésorerie', href: '/dashboard/cash-flow', icon: TrendingUp, roles: ['admin', 'secretary'] },
-    { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-    { label: 'Production', href: '/dashboard/production', icon: Calendar, roles: ['admin', 'manufacturer', 'secretary'] },
-    { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate', 'secretary'] },
-    { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate', 'secretary'] },
-    { label: 'Expenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin', 'secretary'] },
-    { label: 'Fournisseurs', href: '/dashboard/suppliers', icon: Truck, roles: ['admin', 'secretary'] },
-    { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin', 'secretary'] },
-    { label: 'Users', href: '/dashboard/users', icon: Users, roles: ['admin', 'secretary'] },
-    { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-    { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-    { label: 'QCM Academy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
-    { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'secretary'] },
-    { label: 'Beta Feedback', href: '/dashboard/feedback', icon: MessageSquarePlus, roles: ['admin'] },
+interface NavSection {
+    section: string;
+    items: { label: string; href: string; icon: any; roles: string[] }[];
+}
+
+const navSections: NavSection[] = [
+    {
+        section: '',
+        items: [
+            { label: 'My Portal', href: '/dashboard/my-portal', icon: Eye, roles: ['client'] },
+        ],
+    },
+    {
+        section: 'Principal',
+        items: [
+            { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { label: 'Messages', href: '/dashboard/messages', icon: MessageCircle, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { label: 'Production', href: '/dashboard/production', icon: Calendar, roles: ['admin', 'manufacturer', 'secretary'] },
+        ],
+    },
+    {
+        section: 'CRM',
+        items: [
+            { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate', 'secretary'] },
+            { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin', 'secretary'] },
+            { label: 'Fournisseurs', href: '/dashboard/suppliers', icon: Truck, roles: ['admin', 'secretary'] },
+        ],
+    },
+    {
+        section: 'Finance',
+        items: [
+            { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'secretary'] },
+            { label: 'Trésorerie', href: '/dashboard/cash-flow', icon: TrendingUp, roles: ['admin', 'secretary'] },
+            { label: 'Factures', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate', 'secretary'] },
+            { label: 'Dépenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin', 'secretary'] },
+        ],
+    },
+    {
+        section: 'Outils',
+        items: [
+            { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { label: 'QCM Academy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
+        ],
+    },
+    {
+        section: 'Admin',
+        items: [
+            { label: 'Utilisateurs', href: '/dashboard/users', icon: Users, roles: ['admin', 'secretary'] },
+            { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'secretary'] },
+            { label: 'Beta Feedback', href: '/dashboard/feedback', icon: MessageSquarePlus, roles: ['admin'] },
+        ],
+    },
 ]
 
 const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, profile: any, signOut: () => void, setIsMobileOpen: (v: boolean) => void }) => (
@@ -64,25 +97,38 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen }: { role: string, pr
             <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] mt-2">Management</p>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1.5 py-4">
-            {navItems
-                .filter(item => !item.roles || (role && item.roles.includes(role)))
-                .map((item) => (
-                    <NavLink
-                        key={item.href}
-                        to={item.href}
-                        className={({ isActive }) => `
-                            group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 text-sm font-medium
-                            ${isActive
-                                ? 'bg-gradient-to-r from-luxury-gold/15 to-transparent text-luxury-gold shadow-[inset_2px_0_0_0_#D2B57B]'
-                                : 'hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'}
-                        `}
-                        onClick={() => setIsMobileOpen(false)}
-                    >
-                        <item.icon className={`w-4 h-4 transition-transform duration-300 group-hover:scale-110`} />
-                        {item.label}
-                    </NavLink>
-                ))}
+        <nav className="flex-1 px-4 py-4 overflow-y-auto space-y-4">
+            {navSections.map((section) => {
+                const visibleItems = section.items.filter(item => !item.roles || (role && item.roles.includes(role)));
+                if (visibleItems.length === 0) return null;
+                return (
+                    <div key={section.section || '_client'}>
+                        {section.section && (
+                            <p className="text-[9px] uppercase tracking-[0.25em] text-gray-400 dark:text-gray-600 font-bold px-4 mb-1.5">
+                                {section.section}
+                            </p>
+                        )}
+                        <div className="space-y-0.5">
+                            {visibleItems.map((item) => (
+                                <NavLink
+                                    key={item.href}
+                                    to={item.href}
+                                    className={({ isActive }) => `
+                                        group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium
+                                        ${isActive
+                                            ? 'bg-gradient-to-r from-luxury-gold/15 to-transparent text-luxury-gold shadow-[inset_2px_0_0_0_#D2B57B]'
+                                            : 'hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'}
+                                    `}
+                                    onClick={() => setIsMobileOpen(false)}
+                                >
+                                    <item.icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                                    {item.label}
+                                </NavLink>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
             <FeedbackWidget />
         </nav>
 

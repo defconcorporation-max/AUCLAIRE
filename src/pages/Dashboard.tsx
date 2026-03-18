@@ -374,13 +374,13 @@ export default function Dashboard() {
     const insights = generateDashboardInsights(filteredProjects, filteredInvoices, expenses || [], leaderboard);
 
     return (
-        <div className="space-y-8 pb-12">
+        <div className="space-y-6 pb-12">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="animate-in fade-in slide-in-from-left-4">
                     <h1 className="text-4xl font-serif text-luxury-gradient tracking-tight mb-2">Tableau de Bord</h1>
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
-                        v3.6.1 • Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                 </div>
 
@@ -443,7 +443,7 @@ export default function Dashboard() {
 
             {/* ADMIN / SECRETARY VIEW */}
             {(role === 'admin' || role === 'secretary') && (
-                <div className="space-y-8">
+                <div className="space-y-5">
                     <div className="flex justify-center items-center gap-3 mb-4">
                         <div className="flex bg-white/5 p-1 rounded-full border border-white/10 gap-1">
                             {['today', 'week', 'month', 'year', 'total'].map((t) => (
@@ -514,8 +514,8 @@ export default function Dashboard() {
                     />
                     )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2 space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div className="lg:col-span-2 space-y-4">
                             {widgetConfig.healthAuditor && <HealthAuditorWidget projects={filteredProjects} activities={activities || []} />}
                             {widgetConfig.pipeline && (
                             <ProjectPipeline 
@@ -527,15 +527,14 @@ export default function Dashboard() {
                             />
                             )}
                         </div>
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {widgetConfig.workload && <WorkloadMonitor />}
                             {widgetConfig.designReview && <DesignReviewWidget projects={adminDesignReady} />}
                             {widgetConfig.leaderboard && <AmbassadorLeaderboard leaderboard={leaderboard} />}
                         </div>
                     </div>
 
-                    {/* Dashboard Insights Grid */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         {/* 
                           BOUTIQUE MIRROR (LIVE FEED)
                           VISIBLE TO ADMINS, MANUFACTURERS, AND SECRETARIES
@@ -544,10 +543,8 @@ export default function Dashboard() {
                             <BoutiqueMirror />
                         )}
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             {widgetConfig.cashRisk && <CashRiskTracker highRiskProjects={highRiskProjects} />}
-                            
-                            {/* AI Insights Engine Integration */}
                             <Card className="border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent backdrop-blur-md shadow-xl">
                                 <CardHeader className="py-4">
                                     <CardTitle className="font-serif text-lg tracking-wide flex items-center gap-2">
@@ -585,7 +582,7 @@ export default function Dashboard() {
                         {widgetConfig.deadline && <DeadlineTracker projects={filteredProjects} />}
 
                         {/* Manufacturer Performance Scorecards Integration */}
-                        <Card className="glass-card overflow-hidden mt-8">
+                        <Card className="glass-card overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 py-4">
                                 <div>
                                     <CardTitle className="font-serif text-xl tracking-wide flex items-center gap-2">
@@ -654,7 +651,7 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             {widgetConfig.timeBased && <TimeBasedStats stats={statsData} />}
                             {/* Potential for a mini forecast chart here */}
                         </div>
@@ -716,7 +713,7 @@ export default function Dashboard() {
 
             {/* Global Insights Section (Charts & Activity) */}
             {(role === 'admin' || role === 'secretary' || role === 'affiliate') && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     {((role === 'admin' || role === 'secretary') && widgetConfig.revenueChart) || role === 'affiliate' ? (
                     <Card className="lg:col-span-2 glass-card">
                         <CardHeader>
@@ -759,15 +756,20 @@ function generateDashboardInsights(
     const now = new Date();
     const currentMonth = now.getMonth();
 
-    // 1. Collection Rate Analysis
+    // 1. Collection Rate Analysis (adjusted for 50% deposit model)
     const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
     const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount_paid || i.amount), 0);
     const collectionRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
 
+    const preDeliveryCount = projects.filter(p => !['delivery', 'completed', 'cancelled'].includes(p.status)).length;
+    const deliveredProjects = projects.filter(p => ['delivery', 'completed'].includes(p.status));
+    const overdueOnDelivered = invoices.filter(i => i.status !== 'paid' && i.status !== 'void' && deliveredProjects.some(dp => dp.id === i.project_id))
+        .reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid || 0)), 0);
+
     if (collectionRate >= 80) {
         insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Excellent! Discipline de paiement client solide.`, type: 'success' });
-    } else if (collectionRate >= 50) {
-        insights.push({ icon: '⚠️', title: `Taux de recouvrement: ${collectionRate}%`, description: `Attention, $${(totalInvoiced - totalPaid).toLocaleString()} en attente.`, type: 'warning' });
+    } else if (collectionRate >= 40) {
+        insights.push({ icon: '💰', title: `Recouvrement: ${collectionRate}%`, description: `Normal (dépôt 50%). ${preDeliveryCount} projets attendent la livraison pour le solde.${overdueOnDelivered > 0 ? ` $${overdueOnDelivered.toLocaleString()} en retard.` : ''}`, type: overdueOnDelivered > 0 ? 'warning' : 'success' });
     }
 
     // 2. Pipeline Balance

@@ -1,99 +1,105 @@
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Clock, Plus, Trash2, Timer, BarChart3 } from 'lucide-react';
-import type { Project, TimeEntry } from '@/services/apiProjects';
-import { apiProjects } from '@/services/apiProjects';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from '@/components/ui/use-toast';
-import { useAuth } from '@/context/AuthContext';
+import { Timer, BarChart3 } from 'lucide-react';
+import type { Project } from '@/services/apiProjects';
+import { useQuery } from '@tanstack/react-query';
+import { apiActivities, ActivityLog } from '@/services/apiActivities';
 
 const STAGE_LABELS: Record<string, string> = {
-    design: 'Design',
-    modeling: 'Modélisation 3D',
+    designing: 'Design',
+    '3d_model': 'Modélisation 3D',
+    design_ready: 'Design prêt',
+    waiting_for_approval: 'En attente approbation',
+    design_modification: 'Modification design',
+    approved_for_production: 'Approuvé production',
     production: 'Production',
-    setting: 'Sertissage',
-    polishing: 'Polissage',
-    quality_check: 'Contrôle qualité',
-    other: 'Autre',
+    delivery: 'Livraison',
+    completed: 'Complété',
 };
 
 const STAGE_COLORS: Record<string, string> = {
-    design: 'bg-blue-500',
-    modeling: 'bg-violet-500',
+    designing: 'bg-blue-500',
+    '3d_model': 'bg-violet-500',
+    design_ready: 'bg-sky-500',
+    waiting_for_approval: 'bg-amber-500',
+    design_modification: 'bg-orange-500',
+    approved_for_production: 'bg-yellow-500',
     production: 'bg-purple-500',
-    setting: 'bg-amber-500',
-    polishing: 'bg-emerald-500',
-    quality_check: 'bg-cyan-500',
-    other: 'bg-zinc-500',
+    delivery: 'bg-emerald-500',
+    completed: 'bg-green-500',
 };
+
+interface StageDuration {
+    stage: string;
+    days: number;
+    hours: number;
+}
+
+function computeStageDurations(logs: ActivityLog[], projectCreatedAt: string): StageDuration[] {
+    const statusChanges = logs
+        .filter(l => l.action === 'status_change')
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    if (statusChanges.length === 0) {
+        const totalMs = Date.now() - new Date(projectCreatedAt).getTime();
+        const days = totalMs / (1000 * 60 * 60 * 24);
+        return [{ stage: 'designing', days, hours: days * 24 }];
+    }
+
+    const durations: Record<string, number> = {};
+
+    const extractStatus = (detail: string): string | null => {
+        const match = detail.toLowerCase().match(/(?:to |: )([a-z_]+)/);
+        return match ? match[1] : null;
+    };
+
+    let prevTime = new Date(projectCreatedAt).getTime();
+    let prevStage = 'designing';
+
+    for (const log of statusChanges) {
+        const logTime = new Date(log.created_at).getTime();
+        const ms = logTime - prevTime;
+        if (ms > 0) {
+            durations[prevStage] = (durations[prevStage] || 0) + ms;
+        }
+
+        const newStage = extractStatus(log.details);
+        if (newStage) prevStage = newStage;
+        prevTime = logTime;
+    }
+
+    const nowMs = Date.now() - prevTime;
+    if (nowMs > 0) {
+        durations[prevStage] = (durations[prevStage] || 0) + nowMs;
+    }
+
+    return Object.entries(durations)
+        .map(([stage, ms]) => ({
+            stage,
+            days: ms / (1000 * 60 * 60 * 24),
+            hours: ms / (1000 * 60 * 60),
+        }))
+        .sort((a, b) => b.days - a.days);
+}
 
 interface TimeTrackerProps {
     project: Project;
 }
 
 export function TimeTracker({ project }: TimeTrackerProps) {
-    const queryClient = useQueryClient();
-    const { user, profile } = useAuth();
-    const [showForm, setShowForm] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [newEntry, setNewEntry] = useState({
-        stage: 'production',
-        description: '',
-        hours: '',
-        date: new Date().toISOString().split('T')[0],
+    const { data: activities = [] } = useQuery({
+        queryKey: ['activities'],
+        queryFn: apiActivities.getAll,
     });
 
-    const timeEntries: TimeEntry[] = project.stage_details?.time_entries || [];
-    const totalHours = timeEntries.reduce((sum, e) => sum + e.hours, 0);
+    const projectLogs = activities.filter(a => a.project_id === project.id);
+    const durations = computeStageDurations(projectLogs, project.created_at);
 
-    const hoursByStage = timeEntries.reduce<Record<string, number>>((acc, e) => {
-        acc[e.stage] = (acc[e.stage] || 0) + e.hours;
-        return acc;
-    }, {});
+    const totalDays = durations.reduce((s, d) => s + d.days, 0);
+    const totalHours = durations.reduce((s, d) => s + d.hours, 0);
 
-    const handleAdd = async () => {
-        const hours = parseFloat(newEntry.hours);
-        if (!hours || hours <= 0) {
-            toast({ title: 'Heures invalides', variant: 'destructive' });
-            return;
-        }
-        setSaving(true);
-        try {
-            const entry: TimeEntry = {
-                id: crypto.randomUUID(),
-                stage: newEntry.stage,
-                description: newEntry.description,
-                hours,
-                date: newEntry.date,
-                user_id: user?.id,
-                user_name: profile?.full_name || 'Inconnu',
-            };
-            const existing = project.stage_details?.time_entries || [];
-            await apiProjects.updateDetails(project.id, {
-                time_entries: [...existing, entry],
-            });
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-            setNewEntry({ stage: 'production', description: '', hours: '', date: new Date().toISOString().split('T')[0] });
-            setShowForm(false);
-            toast({ title: 'Temps enregistré', description: `${hours}h ajoutées en ${STAGE_LABELS[newEntry.stage]}` });
-        } catch {
-            toast({ title: 'Erreur', description: "Impossible d'enregistrer le temps.", variant: 'destructive' });
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleDelete = async (entryId: string) => {
-        try {
-            const filtered = timeEntries.filter(e => e.id !== entryId);
-            await apiProjects.updateDetails(project.id, { time_entries: filtered });
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-            toast({ title: 'Entrée supprimée' });
-        } catch {
-            toast({ title: 'Erreur', variant: 'destructive' });
-        }
+    const formatDuration = (days: number) => {
+        if (days < 1) return `${Math.round(days * 24)}h`;
+        return `${Math.round(days * 10) / 10}j`;
     };
 
     return (
@@ -103,133 +109,44 @@ export function TimeTracker({ project }: TimeTrackerProps) {
                     <span className="flex items-center gap-2 text-luxury-gold">
                         <Timer className="w-5 h-5" /> Temps de production
                     </span>
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm font-mono text-muted-foreground">
-                            Total : <span className="text-white font-bold">{totalHours.toFixed(1)}h</span>
-                        </span>
-                        <Button
-                            size="sm"
-                            onClick={() => setShowForm(!showForm)}
-                            className="bg-luxury-gold/20 hover:bg-luxury-gold/30 text-luxury-gold border border-luxury-gold/30"
-                        >
-                            <Plus className="w-4 h-4 mr-1" /> Ajouter
-                        </Button>
-                    </div>
+                    <span className="text-sm font-mono text-muted-foreground">
+                        Total : <span className="text-white font-bold">{formatDuration(totalDays)}</span>
+                        <span className="text-muted-foreground ml-1">({Math.round(totalHours)}h)</span>
+                    </span>
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {/* Stage breakdown bar */}
-                {totalHours > 0 && (
-                    <div className="space-y-2">
+                {totalDays > 0 ? (
+                    <>
                         <div className="flex rounded-full overflow-hidden h-3">
-                            {Object.entries(hoursByStage).map(([stage, hours]) => (
+                            {durations.map(d => (
                                 <div
-                                    key={stage}
-                                    className={`${STAGE_COLORS[stage] || 'bg-zinc-500'} transition-all`}
-                                    style={{ width: `${(hours / totalHours) * 100}%` }}
-                                    title={`${STAGE_LABELS[stage] || stage}: ${hours.toFixed(1)}h`}
+                                    key={d.stage}
+                                    className={`${STAGE_COLORS[d.stage] || 'bg-zinc-500'} transition-all`}
+                                    style={{ width: `${(d.days / totalDays) * 100}%` }}
+                                    title={`${STAGE_LABELS[d.stage] || d.stage}: ${formatDuration(d.days)}`}
                                 />
                             ))}
                         </div>
-                        <div className="flex flex-wrap gap-3 text-[10px]">
-                            {Object.entries(hoursByStage)
-                                .sort((a, b) => b[1] - a[1])
-                                .map(([stage, hours]) => (
-                                    <span key={stage} className="flex items-center gap-1.5">
-                                        <span className={`w-2 h-2 rounded-full ${STAGE_COLORS[stage] || 'bg-zinc-500'}`} />
-                                        <span className="text-muted-foreground">{STAGE_LABELS[stage] || stage}</span>
-                                        <span className="font-bold text-white">{hours.toFixed(1)}h</span>
-                                    </span>
-                                ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Add form */}
-                {showForm && (
-                    <div className="p-4 rounded-xl border border-luxury-gold/20 bg-luxury-gold/5 space-y-3">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <select
-                                value={newEntry.stage}
-                                onChange={e => setNewEntry(prev => ({ ...prev, stage: e.target.value }))}
-                                className="h-9 rounded-lg border border-white/10 bg-black/40 text-sm text-white px-3 focus:border-luxury-gold/50"
-                            >
-                                {Object.entries(STAGE_LABELS).map(([key, label]) => (
-                                    <option key={key} value={key}>{label}</option>
-                                ))}
-                            </select>
-                            <Input
-                                type="number"
-                                step="0.25"
-                                min="0.25"
-                                placeholder="Heures"
-                                value={newEntry.hours}
-                                onChange={e => setNewEntry(prev => ({ ...prev, hours: e.target.value }))}
-                                className="h-9"
-                            />
-                            <Input
-                                type="date"
-                                value={newEntry.date}
-                                onChange={e => setNewEntry(prev => ({ ...prev, date: e.target.value }))}
-                                className="h-9"
-                            />
-                            <Input
-                                placeholder="Description (optionnel)"
-                                value={newEntry.description}
-                                onChange={e => setNewEntry(prev => ({ ...prev, description: e.target.value }))}
-                                className="h-9"
-                            />
-                        </div>
-                        <div className="flex gap-2 justify-end">
-                            <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>Annuler</Button>
-                            <Button size="sm" onClick={handleAdd} disabled={saving} className="bg-luxury-gold hover:bg-yellow-600 text-black">
-                                {saving ? <Clock className="w-4 h-4 animate-spin" /> : 'Enregistrer'}
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Entries list */}
-                {timeEntries.length > 0 ? (
-                    <div className="space-y-1 max-h-[300px] overflow-y-auto">
-                        {[...timeEntries].reverse().map(entry => (
-                            <div
-                                key={entry.id}
-                                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-white/5 transition-colors group"
-                            >
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <span className={`w-2 h-2 rounded-full shrink-0 ${STAGE_COLORS[entry.stage] || 'bg-zinc-500'}`} />
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-medium truncate">
-                                            {STAGE_LABELS[entry.stage] || entry.stage}
-                                            {entry.description && (
-                                                <span className="text-muted-foreground font-normal ml-2">— {entry.description}</span>
-                                            )}
-                                        </p>
-                                        <p className="text-[10px] text-muted-foreground">
-                                            {new Date(entry.date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}
-                                            {entry.user_name && ` · ${entry.user_name}`}
-                                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {durations.map(d => (
+                                <div key={d.stage} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5">
+                                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STAGE_COLORS[d.stage] || 'bg-zinc-500'}`} />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs truncate">{STAGE_LABELS[d.stage] || d.stage}</p>
                                     </div>
+                                    <span className="font-mono text-xs font-bold text-luxury-gold shrink-0">{formatDuration(d.days)}</span>
                                 </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <span className="font-mono text-sm font-bold text-luxury-gold">{entry.hours}h</span>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleDelete(entry.id)}
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0 text-red-400 hover:text-red-300"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground text-center italic">
+                            Calculé automatiquement à partir de l'historique du pipeline
+                        </p>
+                    </>
                 ) : (
                     <div className="text-center py-6 text-muted-foreground">
                         <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">Aucun temps enregistré pour ce projet.</p>
+                        <p className="text-sm">Aucune donnée de temps disponible.</p>
                     </div>
                 )}
             </CardContent>

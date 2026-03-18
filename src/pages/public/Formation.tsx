@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle, ShieldCheck, Scale, Award, Gem, Heart } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle, ShieldCheck, Scale, Award, Gem, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,53 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { qcmProcessus, qcmExpertise } from '../../data/qcmData';
 
 export default function Formation() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState(false);
-
-    const handleLogin = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (password === 'auclaireformation') {
-            setIsAuthenticated(true);
-            setError(false);
-        } else {
-            setError(true);
-        }
-    };
-
-    if (!isAuthenticated) {
-        return (
-            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 selection:bg-[#D2B57B] selection:text-black">
-                <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#D2B57B]/5 blur-[120px] rounded-full pointer-events-none"></div>
-                <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm relative z-10">
-                    <div className="flex justify-center mb-6">
-                        <div className="p-4 bg-[#D2B57B]/10 rounded-full border border-[#D2B57B]/30">
-                            <Lock className="w-8 h-8 text-[#D2B57B]" />
-                        </div>
-                    </div>
-                    <h1 className="text-2xl font-serif text-white text-center mb-2">Accès Sécurisé</h1>
-                    <p className="text-gray-400 text-center text-sm mb-8">Veuillez entrer le mot de passe pour accéder à la Formation Closer Expert Auclaire.</p>
-
-                    <form onSubmit={handleLogin} className="space-y-6">
-                        <div>
-                            <Input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Mot de passe"
-                                className="bg-black/50 border-white/10 text-white placeholder:text-gray-600 focus:border-[#D2B57B] h-12"
-                            />
-                            {error && <p className="text-red-500 text-xs mt-2 text-center">Mot de passe incorrect.</p>}
-                        </div>
-                        <Button type="submit" className="w-full bg-[#D2B57B] text-black hover:bg-[#D2B57B]/90 h-12 font-medium">
-                            Déverrouiller l'accès
-                        </Button>
-                    </form>
-                </div>
-            </div>
-        );
-    }
-
     return <FormationContent />;
 }
 
