@@ -19,7 +19,7 @@ const TIMELINE_STEPS = [
 function getStepIndex(status: string | undefined): number {
     if (!status) return 0;
     for (let i = 0; i < TIMELINE_STEPS.length; i++) {
-        if (TIMELINE_STEPS[i].statuses.includes(status as any)) return i;
+        if ((TIMELINE_STEPS[i].statuses as readonly string[]).includes(status)) return i;
     }
     if (status === 'completed') return 4;
     return 0;

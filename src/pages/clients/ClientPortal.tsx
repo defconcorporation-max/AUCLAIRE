@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Link } from 'react-router-dom';
-import { Package, FileText, CreditCard, Clock, CheckCircle2, Eye, Camera, ExternalLink, AlertCircle } from 'lucide-react';
+import { Package, CreditCard, Clock, CheckCircle2, Eye, Camera, ExternalLink, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiStories } from '@/services/apiStories';
 
