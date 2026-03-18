@@ -8,11 +8,13 @@ import { apiActivities, ActivityLog } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { financialUtils } from '@/utils/financialUtils';
 import { formatCurrency } from '@/lib/utils';
+import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
+import { apiSettings } from '@/services/apiSettings';
 
 export default function AnalyticsDashboard() {
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
@@ -292,22 +294,36 @@ export default function AnalyticsDashboard() {
                     <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Global performance & seller leaderboard.</p>
                 </div>
                 
-                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl backdrop-blur-md border border-black/10 dark:border-white/10">
-                    {(['day', 'week', 'month', 'total'] as const).map((t) => (
-                        <Button
-                            key={t}
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setTimeframe(t)}
-                            className={`rounded-lg px-4 transition-all duration-300 ${
-                                timeframe === t 
-                                ? 'bg-luxury-gold text-white shadow-lg' 
-                                : 'hover:bg-luxury-gold/10 text-muted-foreground'
-                            }`}
-                        >
-                            {t === 'day' ? 'Jour' : t === 'week' ? 'Semaine' : t === 'month' ? 'Mois' : 'Total'}
-                        </Button>
-                    ))}
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                            const settings = await apiSettings.get();
+                            generateMonthlyReportPDF({ invoices, expenses, projects, month: new Date(), settings });
+                        }}
+                        className="rounded-lg border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10 hover:border-luxury-gold/50 transition-all"
+                    >
+                        <FileDown className="w-4 h-4 mr-2" />
+                        Exporter Rapport PDF
+                    </Button>
+                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl backdrop-blur-md border border-black/10 dark:border-white/10">
+                        {(['day', 'week', 'month', 'total'] as const).map((t) => (
+                            <Button
+                                key={t}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTimeframe(t)}
+                                className={`rounded-lg px-4 transition-all duration-300 ${
+                                    timeframe === t 
+                                    ? 'bg-luxury-gold text-white shadow-lg' 
+                                    : 'hover:bg-luxury-gold/10 text-muted-foreground'
+                                }`}
+                            >
+                                {t === 'day' ? 'Jour' : t === 'week' ? 'Semaine' : t === 'month' ? 'Mois' : 'Total'}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
             </div>
 

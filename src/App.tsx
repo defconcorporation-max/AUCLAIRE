@@ -19,6 +19,7 @@ import CreateClient from './pages/clients/CreateClient';
 import InvoicesList from './pages/finance/InvoicesList';
 import CreateInvoice from './pages/finance/CreateInvoice';
 import ExpensesList from './pages/finance/ExpensesList';
+import SuppliersList from './pages/suppliers/SuppliersList';
 import UsersList from './pages/admin/UsersList';
 import PendingApproval from './pages/PendingApproval';
 import SharedProjectView from './pages/public/SharedProjectView';
@@ -37,6 +38,7 @@ import SalesProcess from './pages/resources/SalesProcess';
 import ProductCatalog from './pages/resources/ProductCatalog';
 import FlashCalculator from './pages/resources/FlashCalculator';
 import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
+import ProductionCalendar from './pages/production/ProductionCalendar';
 import ClientPortal from './pages/clients/ClientPortal';
 import BetaFeedback from './pages/BetaFeedback';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
@@ -105,6 +107,7 @@ function App() {
               <Route path="my-portal" element={<ProtectedRoute allowedRoles={['client']}><ClientPortal /></ProtectedRoute>} />
               <Route path="analytics" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AnalyticsDashboard /></ProtectedRoute>} />
               <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ProjectsList /></ProtectedRoute>} />
+              <Route path="production" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'secretary']}><ProductionCalendar /></ProtectedRoute>} />
               <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><CreateProject /></ProtectedRoute>} />
               <Route path="projects/:id" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary', 'client']}><ProjectDetails /></ProtectedRoute>} />
               <Route path="leads" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><LeadsDashboard /></ProtectedRoute>} />
@@ -115,6 +118,7 @@ function App() {
               <Route path="invoices" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'accounting', 'secretary']}><InvoicesList /></ProtectedRoute>} />
               <Route path="invoices/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><CreateInvoice /></ProtectedRoute>} />
               <Route path="finance/expenses" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><ExpensesList /></ProtectedRoute>} />
+              <Route path="suppliers" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><SuppliersList /></ProtectedRoute>} />
               <Route path="affiliates" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliatesList /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><Settings /></ProtectedRoute>} />
               <Route path="users" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><UsersList /></ProtectedRoute>} />

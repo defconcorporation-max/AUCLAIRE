@@ -915,6 +915,61 @@ export default function ProjectDetails() {
                         <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Financial Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5 pt-6">
+                        {/* Margin Health Gauge */}
+                        {(() => {
+                            const { marginAmount, marginPercent } = financialUtils.computeProjectMargin(project);
+                            const revenue = financialUtils.getSalePrice(project);
+                            const isHealthy = marginPercent >= 40;
+                            const isWarning = marginPercent >= 20 && marginPercent < 40;
+                            const isCritical = marginPercent < 20;
+                            const gaugeColor = isHealthy ? 'rgb(34,197,94)' : isWarning ? 'rgb(234,179,8)' : 'rgb(239,68,68)';
+                            const gaugeDeg = Math.min(100, Math.max(0, marginPercent)) / 100 * 180;
+                            return (
+                                <div className="rounded-xl border border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent p-4">
+                                    <div className="flex items-center gap-6">
+                                        <div className="shrink-0">
+                                            <div
+                                                className="relative w-28 h-14"
+                                                aria-label={`Margin: ${marginPercent.toFixed(1)}%`}
+                                            >
+                                                <div
+                                                    className="absolute inset-0 rounded-full border-[6px] border-zinc-200/80 dark:border-zinc-700/80"
+                                                    style={{ clipPath: 'inset(0 0 50% 0 round 999px 999px 0 0)' }}
+                                                />
+                                                <div
+                                                    className="absolute inset-0 rounded-full border-[6px] border-transparent"
+                                                    style={{
+                                                        clipPath: 'inset(0 0 50% 0 round 999px 999px 0 0)',
+                                                        background: `conic-gradient(from -90deg, ${gaugeColor} 0deg, ${gaugeColor} ${gaugeDeg}deg, transparent ${gaugeDeg}deg)`,
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">Margin</p>
+                                            <div className="flex items-baseline gap-2 flex-wrap">
+                                                <span className={`text-xl font-serif font-bold ${isHealthy ? 'text-green-600 dark:text-green-400' : isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                    {marginPercent.toFixed(1)}%
+                                                </span>
+                                                <span className="text-sm text-muted-foreground font-mono">
+                                                    {formatCurrency(marginAmount)}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground mt-1">
+                                                on {formatCurrency(revenue)} revenue
+                                            </p>
+                                            {isCritical && (
+                                                <p className="text-xs text-red-500 dark:text-red-400 font-medium mt-2 flex items-center gap-1.5">
+                                                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                                    Margin below 20% — review costs or selling price
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
                         {/* Affiliate Section */}
                         {(role === 'admin' || role === 'affiliate' || role === 'secretary' || project.affiliate_id) && (
                             <>
