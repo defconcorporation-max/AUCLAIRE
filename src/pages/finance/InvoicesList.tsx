@@ -65,9 +65,31 @@ export default function InvoicesList() {
     };
 
     const openDetailsModal = (invoice: Invoice) => {
-        setSelectedInvoice(invoice);
+        // Auto-migrate: if amount_paid > 0 but no payment_history, create a virtual entry
+        let migrated = invoice;
+        const existingHistory = invoice.payment_history || [];
+        const existingPaid = Number(invoice.amount_paid) || 0;
+        if (existingHistory.length === 0 && existingPaid > 0) {
+            const virtualEntry: PaymentEntry = {
+                id: 'legacy-' + invoice.id.slice(0, 8),
+                amount: existingPaid,
+                date: invoice.paid_at || invoice.created_at,
+                note: '',
+            };
+            migrated = { ...invoice, payment_history: [virtualEntry] };
+        }
+        setSelectedInvoice(migrated);
         resetNewPaymentForm();
-        setEditingPaymentId(null);
+        // Auto-open legacy entry in edit mode so user can set the date
+        if (migrated.payment_history?.length === 1 && migrated.payment_history[0].id.startsWith('legacy-')) {
+            const p = migrated.payment_history[0];
+            setEditingPaymentId(p.id);
+            setEditPayAmount(String(p.amount));
+            setEditPayDate(new Date(p.date).toISOString().slice(0, 10));
+            setEditPayNote('');
+        } else {
+            setEditingPaymentId(null);
+        }
         setIsDetailsModalOpen(true);
     };
 
@@ -375,7 +397,12 @@ export default function InvoicesList() {
 
                                 {/* Payment entries list */}
                                 {payments.map((p, idx) => (
-                                    <div key={p.id} className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-3 space-y-2">
+                                    <div key={p.id} className={`rounded-lg p-3 space-y-2 ${p.id.startsWith('legacy-') ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800' : 'bg-zinc-50 dark:bg-zinc-900'}`}>
+                                        {p.id.startsWith('legacy-') && editingPaymentId === p.id && (
+                                            <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                                                Paiement existant — modifiez la date et cliquez Sauvegarder.
+                                            </p>
+                                        )}
                                         {editingPaymentId === p.id ? (
                                             <div className="space-y-2">
                                                 <div className="grid grid-cols-3 gap-2">

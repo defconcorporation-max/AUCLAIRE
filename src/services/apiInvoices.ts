@@ -113,7 +113,10 @@ export const apiInvoices = {
 
         const dbHistory = Array.isArray(current.payment_history) ? current.payment_history : [];
         const localHistory = getLocalPayments(invoiceId);
-        const history: PaymentEntry[] = [...(dbHistory.length > 0 ? dbHistory : localHistory)];
+        let history: PaymentEntry[] = [...(dbHistory.length > 0 ? dbHistory : localHistory)];
+
+        // Filter out legacy virtual entries (they aren't real persisted entries)
+        history = history.filter(p => !p.id.startsWith('legacy-'));
 
         const newEntry: PaymentEntry = { ...entry, id: crypto.randomUUID() };
         history.push(newEntry);
@@ -158,14 +161,31 @@ export const apiInvoices = {
         const { data: current } = await supabase.from('invoices').select('*').eq('id', invoiceId).single();
         if (!current) throw new Error('Invoice not found');
 
+        const isLegacy = paymentId.startsWith('legacy-');
+
         const dbHistory = Array.isArray(current.payment_history) ? current.payment_history : [];
         const localHistory = getLocalPayments(invoiceId);
-        const history: PaymentEntry[] = [...(dbHistory.length > 0 ? dbHistory : localHistory)];
+        let history: PaymentEntry[];
 
-        const idx = history.findIndex(p => p.id === paymentId);
-        if (idx === -1) throw new Error('Payment entry not found');
+        if (isLegacy) {
+            // Legacy entry: create a real entry from existing amount_paid + user's updates
+            const legacyAmount = Number(current.amount_paid) || 0;
+            const realEntry: PaymentEntry = {
+                id: crypto.randomUUID(),
+                amount: updates.amount ?? legacyAmount,
+                date: updates.date ?? current.paid_at ?? new Date().toISOString(),
+                note: updates.note,
+            };
+            // Replace any existing legacy/local entries, start fresh with this real entry
+            history = [realEntry];
+        } else {
+            history = [...(dbHistory.length > 0 ? dbHistory : localHistory)];
+            history = history.filter(p => !p.id.startsWith('legacy-'));
+            const idx = history.findIndex(p => p.id === paymentId);
+            if (idx === -1) throw new Error('Payment entry not found');
+            history[idx] = { ...history[idx], ...updates };
+        }
 
-        history[idx] = { ...history[idx], ...updates };
         const derived = deriveStatusAndPaidAt(current.amount, history);
 
         setLocalPayments(invoiceId, history);
@@ -195,9 +215,18 @@ export const apiInvoices = {
         const { data: current } = await supabase.from('invoices').select('*').eq('id', invoiceId).single();
         if (!current) throw new Error('Invoice not found');
 
+        const isLegacy = paymentId.startsWith('legacy-');
         const dbHistory = Array.isArray(current.payment_history) ? current.payment_history : [];
         const localHistory = getLocalPayments(invoiceId);
-        const history: PaymentEntry[] = (dbHistory.length > 0 ? dbHistory : localHistory).filter((p: PaymentEntry) => p.id !== paymentId);
+
+        let history: PaymentEntry[];
+        if (isLegacy) {
+            // Deleting a legacy entry means resetting all payments
+            history = [];
+        } else {
+            history = (dbHistory.length > 0 ? dbHistory : localHistory)
+                .filter((p: PaymentEntry) => p.id !== paymentId && !p.id.startsWith('legacy-'));
+        }
 
         const derived = deriveStatusAndPaidAt(current.amount, history);
 
