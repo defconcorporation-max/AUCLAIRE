@@ -63,9 +63,7 @@ export default function AnalyticsDashboard() {
                 return date >= start && date <= end && exp.status !== 'cancelled';
             });
 
-            const fromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
-            const fromInvoices = financialUtils.getCollectedFromInvoices(invoices, start, end);
-            const collected = Math.max(fromLogs, fromInvoices);
+            const collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
 
             const invoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
             const expAmount = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
@@ -110,9 +108,7 @@ export default function AnalyticsDashboard() {
     months.forEach((_, monthIdx) => {
         const start = new Date(currentYear, monthIdx, 1, 0, 0, 0, 0);
         const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59, 999);
-        const fromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
-        const fromInvoices = financialUtils.getCollectedFromInvoices(invoices, start, end);
-        monthlyData[monthIdx].collected = Math.max(fromLogs, fromInvoices);
+        monthlyData[monthIdx].collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
     });
 
     // Handle invoiced and expenses as before but ensure year check

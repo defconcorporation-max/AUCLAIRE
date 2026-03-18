@@ -55,10 +55,7 @@ export default function DailyReportSheet() {
 
         const invoiced = filteredInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
 
-        const collectedFromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
-        const collectedFromInvoices = financialUtils.getCollectedFromInvoices(invoices, start, end);
-        // Use the best of both so we never show 0 when either source has data
-        const collected = Math.max(collectedFromLogs, collectedFromInvoices);
+        const collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
 
         const spent = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
         const profit = collected - spent;

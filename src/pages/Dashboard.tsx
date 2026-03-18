@@ -183,10 +183,8 @@ export default function Dashboard() {
         return timeframe === 'total' || (date >= periodStart && date <= periodEnd);
     });
 
-    // Total encaissé = all payments in period (all invoices), not filtered by project
-    const periodCollectedFromLogs = financialUtils.getCollectedFromLogs(activities || [], periodStart, periodEnd);
-    const periodCollectedFromInvoices = financialUtils.getCollectedFromInvoices(invoices || [], periodStart, periodEnd);
-    const periodCollected = Math.max(periodCollectedFromLogs, periodCollectedFromInvoices);
+    // Total encaissé = invoices only (single source of truth)
+    const periodCollected = financialUtils.getCollectedFromInvoices(invoices || [], periodStart, periodEnd);
     const periodInvoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
     const periodPotential = periodProjects.reduce((sum, p) => {
         if (p.status === 'cancelled' || invoicedProjectIds.has(p.id)) return sum;
@@ -234,9 +232,7 @@ export default function Dashboard() {
             return date >= start && date <= end;
         });
 
-        const fromLogs = financialUtils.getCollectedFromLogs(activities || [], start, end);
-        const fromInvoices = financialUtils.getCollectedFromInvoices(filteredInvoices, start, end);
-        const collected = Math.max(fromLogs, fromInvoices);
+        const collected = financialUtils.getCollectedFromInvoices(filteredInvoices, start, end);
 
         const volume = periodProjects.reduce((s, p) => s + getSalePrice(p), 0);
         
