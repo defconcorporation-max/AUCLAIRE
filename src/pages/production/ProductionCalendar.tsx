@@ -61,6 +61,7 @@ export default function ProductionCalendar() {
     const navigate = useNavigate();
     const { role, profile } = useAuth();
     const [filterManufacturer, setFilterManufacturer] = useState('');
+    const [filterStage, setFilterStage] = useState<'' | ProductionStage>('');
 
     const { data: allProjects, isLoading } = useQuery({
         queryKey: ['projects'],
@@ -84,6 +85,7 @@ export default function ProductionCalendar() {
         let filtered = (allProjects || []).filter((p) => {
             const stage = getProjectStage(p);
             if (!stage) return false;
+            if (filterStage && stage !== filterStage) return false;
             if (role === 'admin' || role === 'secretary') {
                 if (filterManufacturer && p.manufacturer_id !== filterManufacturer) return false;
                 return true;
@@ -101,7 +103,7 @@ export default function ProductionCalendar() {
         });
 
         return { weekStart: start, weekEnd: end, projects: filtered };
-    }, [allProjects, role, profile?.id, filterManufacturer]);
+    }, [allProjects, role, profile?.id, filterManufacturer, filterStage]);
 
     const totalMs = weekEnd.getTime() - weekStart.getTime();
 
@@ -138,26 +140,45 @@ export default function ProductionCalendar() {
                     </p>
                 </div>
 
-                {(role === 'admin' || role === 'secretary') && (
+                <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex items-center gap-2 p-3 glass-card rounded-xl border-white/10">
-                        <Filter className="w-4 h-4 text-luxury-gold shrink-0" />
+                        <Zap className="w-4 h-4 text-luxury-gold shrink-0" />
                         <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">
-                            Manufacturer
+                            Stage
                         </label>
                         <select
-                            className="h-8 rounded-lg border border-white/10 bg-black/40 text-sm text-white px-3 min-w-[180px] focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/30"
-                            value={filterManufacturer}
-                            onChange={(e) => setFilterManufacturer(e.target.value)}
+                            className="h-8 rounded-lg border border-white/10 bg-black/40 dark:bg-black/40 text-sm text-white dark:text-white px-3 min-w-[160px] focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/30"
+                            value={filterStage}
+                            onChange={(e) => setFilterStage(e.target.value as '' | ProductionStage)}
                         >
-                            <option value="">All</option>
-                            {manufacturers.map((m: UserProfile) => (
-                                <option key={m.id} value={m.id}>
-                                    {m.full_name}
-                                </option>
-                            ))}
+                            <option value="">Tous les stages</option>
+                            <option value="approved_for_production">Approuvé</option>
+                            <option value="production">Production</option>
+                            <option value="delivery">Livraison</option>
                         </select>
                     </div>
-                )}
+
+                    {(role === 'admin' || role === 'secretary') && (
+                        <div className="flex items-center gap-2 p-3 glass-card rounded-xl border-white/10">
+                            <Filter className="w-4 h-4 text-luxury-gold shrink-0" />
+                            <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">
+                                Manufacturier
+                            </label>
+                            <select
+                                className="h-8 rounded-lg border border-white/10 bg-black/40 dark:bg-black/40 text-sm text-white dark:text-white px-3 min-w-[180px] focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/30"
+                                value={filterManufacturer}
+                                onChange={(e) => setFilterManufacturer(e.target.value)}
+                            >
+                                <option value="">Tous</option>
+                                {manufacturers.map((m: UserProfile) => (
+                                    <option key={m.id} value={m.id}>
+                                        {m.full_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="glass-card border-white/10 overflow-hidden">
