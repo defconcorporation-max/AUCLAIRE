@@ -6,10 +6,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiProjects, ProjectStatus, Project } from '@/services/apiProjects'
 import { apiUsers } from '@/services/apiUsers'
 import { apiActivities } from '@/services/apiActivities'
-import { ProjectCard } from '@/components/ui/ProjectCard'
+import { ProjectCard, getProjectThumbnail } from '@/components/ui/ProjectCard'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { Plus, LayoutGrid, List as ListIcon, Loader2, Filter, X, Search, Calendar, ChevronRight } from 'lucide-react'
+import { Plus, LayoutGrid, List as ListIcon, Loader2, Filter, X, Search, Calendar, ChevronRight, ImageIcon } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { Input } from '@/components/ui/input'
 
@@ -361,6 +361,7 @@ export default function ProjectsList() {
                         {projects.map(project => {
                             const isRush = project.priority === 'rush';
                             const price = project.financials?.selling_price || project.budget;
+                            const thumb = getProjectThumbnail(project);
 
                             return (
                                 <div
@@ -383,6 +384,19 @@ export default function ProjectsList() {
                                         {isRush && (
                                             <span className="shrink-0 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
                                         )}
+
+                                        {/* Thumbnail */}
+                                        <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center">
+                                            {thumb ? (
+                                                <img
+                                                    src={thumb}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <ImageIcon className="w-5 h-5 text-white/20" />
+                                            )}
+                                        </div>
 
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">

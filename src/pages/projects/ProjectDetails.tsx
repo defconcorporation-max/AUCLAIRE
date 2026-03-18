@@ -671,8 +671,22 @@ export default function ProjectDetails() {
                         onChange={(e) => {
                             const val = e.target.value || undefined;
                             apiProjects.update(project.id, { jewelry_type: val } as any)
-                                .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }))
-                                .catch(err => alert(err.message));
+                                .then(() => {
+                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
+                                    toast({ title: 'Type enregistré', description: 'Le type de bijou a été mis à jour.' });
+                                })
+                                .catch((err: Error) => {
+                                    const msg = err?.message || '';
+                                    if (msg.includes('jewelry_type') || msg.includes('schema cache')) {
+                                        toast({
+                                            title: 'Colonne manquante',
+                                            description: 'Ajoutez la colonne jewelry_type à la table projects dans Supabase (SQL Editor). Voir supabase/migrations/20260318_add_jewelry_type_to_projects.sql',
+                                            variant: 'destructive',
+                                        });
+                                    } else {
+                                        toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+                                    }
+                                });
                         }}
                         disabled={role === 'client' || role === 'manufacturer'}
                     >

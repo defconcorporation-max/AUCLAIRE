@@ -2,8 +2,16 @@ import { Project } from '@/services/apiProjects';
 
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "./StatusBadge"
-import { Calendar, Factory, Handshake, AlertTriangle } from "lucide-react"
+import { Calendar, Factory, Handshake, AlertTriangle, ImageIcon } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
+
+export function getProjectThumbnail(project: Project): string | null {
+    const sd = project.stage_details;
+    if (!sd) return null;
+    const first = sd.design_files?.[0] ?? sd.sketch_files?.[0] ?? sd.vault_files?.[0]
+        ?? sd.design_versions?.[0]?.files?.[0];
+    return first || null;
+}
 
 interface ProjectCardProps {
     project: Project
@@ -14,6 +22,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
     const { role } = useAuth()
     const isRush = project.priority === 'rush'
     const hasNoMfgCost = (role === 'admin' || role === 'secretary') && Number(project.financials?.supplier_cost || 0) === 0 && (!project.financials?.cost_items || project.financials.cost_items.length === 0);
+    const thumbnail = getProjectThumbnail(project);
 
     return (
         <Card
@@ -38,8 +47,23 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                 <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-luxury-gold/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             )}
 
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-0">
+                {/* Thumbnail */}
+                <div className="relative w-full h-28 overflow-hidden rounded-t-xl bg-white/5 border-b border-white/5">
+                    {thumbnail ? (
+                        <img
+                            src={thumbnail}
+                            alt=""
+                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/20">
+                            <ImageIcon className="w-10 h-10" />
+                        </div>
+                    )}
+                </div>
 
+                <div className="p-4 space-y-3">
                 {/* Top row: ref + title + badges */}
                 <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -113,6 +137,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                     </div>
                 </div>
 
+                </div>
             </CardContent>
         </Card>
     )
