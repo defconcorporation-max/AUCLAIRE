@@ -1,50 +1,60 @@
-import React, { lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 
-// Force new deployment: v3.8.5 - Beta Feedback Robustness
-console.log("App Version: v3.8.5 - UI Fixes");
+// Force new deployment: v3.9.0 - Lazy Loading + Design Approval + Dynamic Quotes + Time Tracking + Push Notifications
+console.log("App Version: v3.9.0 - 5 Features Drop");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Suspense } from 'react';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
 import { Toaster } from './components/ui/toaster';
 import CRMLayout from './components/layout/CRMLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Settings from './pages/Settings';
-import ProjectsList from './pages/projects/ProjectsList';
-import ProjectDetails from './pages/projects/ProjectDetails';
-import CreateProject from './pages/projects/CreateProject';
-import ClientsList from './pages/clients/ClientsList';
-import ClientDetails from './pages/clients/ClientDetails';
-import CreateClient from './pages/clients/CreateClient';
-import InvoicesList from './pages/finance/InvoicesList';
-import CreateInvoice from './pages/finance/CreateInvoice';
-import ExpensesList from './pages/finance/ExpensesList';
-import SuppliersList from './pages/suppliers/SuppliersList';
-import UsersList from './pages/admin/UsersList';
 import PendingApproval from './pages/PendingApproval';
-import SharedProjectView from './pages/public/SharedProjectView';
-import DebugPage from './pages/DebugPage';
-import Studio from './pages/Studio';
 import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import { RingProvider } from "./context/RingContext";
-import AffiliatesList from './pages/affiliates/AffiliatesList';
-import AffiliateDetails from './pages/affiliates/AffiliateDetails';
-import Formation from './pages/public/Formation';
-import AdminQcmResults from './pages/admin/AdminQcmResults';
-import LeadsDashboard from './pages/crm/LeadsDashboard';
-import LeadDetails from './pages/crm/LeadDetails';
-import ResourcesHub from './pages/resources/ResourcesHub';
-import SalesProcess from './pages/resources/SalesProcess';
-import ProductCatalog from './pages/resources/ProductCatalog';
-import FlashCalculator from './pages/resources/FlashCalculator';
-import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
+import { useRealtimeSync } from './hooks/useRealtimeSync';
+
+const LazyFallback = () => (
+    <div className="flex h-[50vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-luxury-gold/30 border-t-luxury-gold rounded-full animate-spin" />
+            <span className="text-xs text-muted-foreground uppercase tracking-widest">Chargement...</span>
+        </div>
+    </div>
+);
+
+const Settings = lazy(() => import('./pages/Settings'));
+const ProjectsList = lazy(() => import('./pages/projects/ProjectsList'));
+const ProjectDetails = lazy(() => import('./pages/projects/ProjectDetails'));
+const CreateProject = lazy(() => import('./pages/projects/CreateProject'));
+const ClientsList = lazy(() => import('./pages/clients/ClientsList'));
+const ClientDetails = lazy(() => import('./pages/clients/ClientDetails'));
+const CreateClient = lazy(() => import('./pages/clients/CreateClient'));
+const InvoicesList = lazy(() => import('./pages/finance/InvoicesList'));
+const CreateInvoice = lazy(() => import('./pages/finance/CreateInvoice'));
+const ExpensesList = lazy(() => import('./pages/finance/ExpensesList'));
+const SuppliersList = lazy(() => import('./pages/suppliers/SuppliersList'));
+const UsersList = lazy(() => import('./pages/admin/UsersList'));
+const SharedProjectView = lazy(() => import('./pages/public/SharedProjectView'));
+const DebugPage = lazy(() => import('./pages/DebugPage'));
+const Studio = lazy(() => import('./pages/Studio'));
+const AffiliatesList = lazy(() => import('./pages/affiliates/AffiliatesList'));
+const AffiliateDetails = lazy(() => import('./pages/affiliates/AffiliateDetails'));
+const Formation = lazy(() => import('./pages/public/Formation'));
+const AdminQcmResults = lazy(() => import('./pages/admin/AdminQcmResults'));
+const LeadsDashboard = lazy(() => import('./pages/crm/LeadsDashboard'));
+const LeadDetails = lazy(() => import('./pages/crm/LeadDetails'));
+const ResourcesHub = lazy(() => import('./pages/resources/ResourcesHub'));
+const SalesProcess = lazy(() => import('./pages/resources/SalesProcess'));
+const ProductCatalog = lazy(() => import('./pages/resources/ProductCatalog'));
+const FlashCalculator = lazy(() => import('./pages/resources/FlashCalculator'));
+const AnalyticsDashboard = lazy(() => import('./pages/analytics/AnalyticsDashboard'));
 const CashFlowForecast = lazy(() => import('./pages/analytics/CashFlowForecast'));
 const MessageCenter = lazy(() => import('./pages/messages/MessageCenter'));
-import ProductionCalendar from './pages/production/ProductionCalendar';
-import ClientPortal from './pages/clients/ClientPortal';
-import BetaFeedback from './pages/BetaFeedback';
-import { useRealtimeSync } from './hooks/useRealtimeSync';
+const ProductionCalendar = lazy(() => import('./pages/production/ProductionCalendar'));
+const ClientPortal = lazy(() => import('./pages/clients/ClientPortal'));
+const BetaFeedback = lazy(() => import('./pages/BetaFeedback'));
+const ClientQuote = lazy(() => import('./pages/resources/ClientQuote'));
 
 // Realtime sync component — must be inside Router + QueryClientProvider
 function RealtimeSync() {
@@ -83,34 +93,26 @@ function App() {
       <Router>
         <RealtimeSync />
         <RingProvider>
+          <Suspense fallback={<LazyFallback />}>
           <Routes>
             <Route path="/login" element={<Login />} />
-
-            {/* Pending Page - separate from Dashboard Layout */}
-            <Route path="/pending" element={
-              <PendingApproval />
-            } />
-
-            {/* Public Shared Project View */}
+            <Route path="/pending" element={<PendingApproval />} />
             <Route path="/shared/:token" element={<SharedProjectView />} />
-
-            {/* Public Formation Guide View */}
             <Route path="/formation" element={<Formation />} />
 
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <CRMLayout>
-                  {/* RoleSwitcher only for real admins */}
                   <RoleSwitcher />
-                  <Outlet /> {/* This is where nested routes will render */}
+                  <Outlet />
                 </CRMLayout>
               </ProtectedRoute>
             }>
               <Route index element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary', 'client']}><Dashboard /></ProtectedRoute>} />
-              <Route path="messages" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><Suspense fallback={<div className="flex h-[50vh] items-center justify-center">Loading...</div>}><MessageCenter /></Suspense></ProtectedRoute>} />
+              <Route path="messages" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><MessageCenter /></ProtectedRoute>} />
               <Route path="my-portal" element={<ProtectedRoute allowedRoles={['client']}><ClientPortal /></ProtectedRoute>} />
               <Route path="analytics" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AnalyticsDashboard /></ProtectedRoute>} />
-              <Route path="cash-flow" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><Suspense fallback={<div className="flex h-[50vh] items-center justify-center">Loading...</div>}><CashFlowForecast /></Suspense></ProtectedRoute>} />
+              <Route path="cash-flow" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><CashFlowForecast /></ProtectedRoute>} />
               <Route path="projects" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><ProjectsList /></ProtectedRoute>} />
               <Route path="production" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'secretary']}><ProductionCalendar /></ProtectedRoute>} />
               <Route path="projects/new" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><CreateProject /></ProtectedRoute>} />
@@ -133,25 +135,17 @@ function App() {
               <Route path="resources/sales-process" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><SalesProcess /></ProtectedRoute>} />
               <Route path="resources/catalog" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary', 'client']}><ProductCatalog /></ProtectedRoute>} />
               <Route path="resources/calculator" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><FlashCalculator /></ProtectedRoute>} />
-
+              <Route path="resources/quote/:projectId" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><ClientQuote /></ProtectedRoute>} />
               <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliateDetails /></ProtectedRoute>} />
-
-              {/* Debugging - Admin only */}
               <Route path="debug" element={<ProtectedRoute allowedRoles={['admin']}><DebugPage /></ProtectedRoute>} />
               <Route path="feedback" element={<ProtectedRoute allowedRoles={['admin']}><BetaFeedback /></ProtectedRoute>} />
             </Route>
 
-
-
-            {/* Debugging - Admin only */}
             <Route path="/debug-tool" element={<ProtectedRoute><DebugPage /></ProtectedRoute>} />
-
-            {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Catch-all for SPA navigation safety */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+          </Suspense>
         </RingProvider>
       </Router>
     </ThemeProvider>

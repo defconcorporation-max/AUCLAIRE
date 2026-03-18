@@ -18,6 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityLogList } from '@/components/ActivityLogList';
 import { ProjectChat } from '@/components/project/ProjectChat';
 import { ProjectFinancialDashboard } from '@/components/project/ProjectFinancialDashboard';
+import { TimeTracker } from '@/components/project/TimeTracker';
+import { DesignApprovalPanel } from '@/components/project/DesignApprovalPanel';
 import {
     Clock,
     Upload,
@@ -532,6 +534,17 @@ export default function ProjectDetails() {
                                 Edit Client
                             </Button>
                         )}
+                        {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => navigate(`/dashboard/resources/quote/${project.id}`)}
+                                className="gap-2 bg-luxury-gold/10 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-colors border border-luxury-gold/50"
+                            >
+                                <FileText className="w-4 h-4" />
+                                Soumission
+                            </Button>
+                        )}
                         <h1 className="text-3xl font-serif font-bold text-black dark:text-white tracking-wide ml-2">
                             {project.reference_number && <span className="text-luxury-gold/80 font-mono mr-3 text-2xl">[{project.reference_number}]</span>}
                             {project.title}
@@ -835,9 +848,10 @@ export default function ProjectDetails() {
             <div className="grid gap-6 md:grid-cols-3">
                 <div className="md:col-span-2">
                     <Tabs defaultValue="timeline" className="w-full">
-                        <TabsList className={`grid w-full ${(role === 'admin' || role === 'secretary') ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                        <TabsList className={`grid w-full ${(role === 'admin' || role === 'secretary') ? 'grid-cols-5' : 'grid-cols-4'}`}>
                             <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                            <TabsTrigger value="activity">Activity Log</TabsTrigger>
+                            <TabsTrigger value="time-tracking">Temps</TabsTrigger>
+                            <TabsTrigger value="activity">Activity</TabsTrigger>
                             <TabsTrigger value="messages">Messages</TabsTrigger>
                             {(role === 'admin' || role === 'secretary') && (
                                 <TabsTrigger value="finance" className="text-luxury-gold">Intelligence</TabsTrigger>
@@ -872,6 +886,9 @@ export default function ProjectDetails() {
                                     </div>
                                 </CardContent>
                             </Card>
+                        </TabsContent>
+                        <TabsContent value="time-tracking">
+                            <TimeTracker project={project} />
                         </TabsContent>
                         <TabsContent value="activity">
                             <ActivityLogList projectId={project.id} />
@@ -1693,6 +1710,14 @@ export default function ProjectDetails() {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Design Approval Panel */}
+                <div className="md:col-span-3">
+                    <DesignApprovalPanel
+                        project={project}
+                        mode={role === 'client' ? 'client' : 'admin'}
+                    />
+                </div>
 
                 {/* VERSION HISTORY - Prominent Section Requested by User */}
                 {project.stage_details?.design_versions && project.stage_details.design_versions.length > 0 && (

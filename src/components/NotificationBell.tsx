@@ -1,4 +1,4 @@
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, BellRing, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -14,26 +14,26 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useEffect, useRef } from 'react';
 import { toast } from '@/components/ui/use-toast';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function NotificationBell() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { user, role } = useAuth();
     const prevCountRef = useRef<number>(0);
+    const { permission, isSubscribed, subscribe, unsubscribe, sendLocalNotification, isSupported } = usePushNotifications();
 
     const { data: notifications = [] } = useQuery({
         queryKey: ['notifications', user?.id, role],
         queryFn: () => apiNotifications.getAll(user?.id, role),
-        refetchInterval: 5000, // Poll every 5s for new alerts
+        refetchInterval: 5000,
         enabled: !!user || !!role
     });
 
     const unreadCount = notifications.filter(n => !n.is_read).length;
 
-    // Toast on new notification arrival
     useEffect(() => {
         if (unreadCount > prevCountRef.current && prevCountRef.current !== 0) {
-            // A new notification arrived
             const newest = notifications.find(n => !n.is_read);
             if (newest) {
                 toast({
@@ -41,10 +41,13 @@ export default function NotificationBell() {
                     description: newest.message,
                     variant: 'default',
                 });
+                if (isSubscribed) {
+                    sendLocalNotification(newest.title, newest.message, newest.link);
+                }
             }
         }
         prevCountRef.current = unreadCount;
-    }, [unreadCount, notifications]);
+    }, [unreadCount, notifications, isSubscribed, sendLocalNotification]);
 
     const handleMarkAllRead = async () => {
         await apiNotifications.markAllRead(user?.id, role);
@@ -126,6 +129,36 @@ export default function NotificationBell() {
                         ))
                     )}
                 </div>
+                {isSupported && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <div className="p-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`w-full justify-start gap-2 text-xs ${isSubscribed ? 'text-green-400' : 'text-muted-foreground'}`}
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (isSubscribed) {
+                                        await unsubscribe();
+                                        toast({ title: 'Notifications push désactivées' });
+                                    } else {
+                                        const ok = await subscribe();
+                                        if (ok) {
+                                            toast({ title: 'Notifications push activées', description: 'Vous recevrez des alertes même quand l\'app est fermée.' });
+                                        } else if (permission === 'denied') {
+                                            toast({ title: 'Permission refusée', description: 'Activez les notifications dans les paramètres de votre navigateur.', variant: 'destructive' });
+                                        }
+                                    }
+                                }}
+                            >
+                                {isSubscribed ? <BellRing className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
+                                {isSubscribed ? 'Push activées' : 'Activer les notifications push'}
+                            </Button>
+                        </div>
+                    </>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     );

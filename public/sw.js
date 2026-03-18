@@ -1,5 +1,5 @@
-// Auclaire Service Worker — Cache-first for static assets, network-first for API
-const CACHE_NAME = 'auclaire-cache-v1';
+// Auclaire Service Worker — Cache + Push Notifications
+const CACHE_NAME = 'auclaire-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
@@ -32,8 +32,6 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // 1. Navigation requests (e.g. page refresh on a nested route)
-  // Serve index.html so the SPA router can take over
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -43,16 +41,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Skip non-GET and Supabase API calls — always go to network
   if (event.request.method !== 'GET' || url.hostname.includes('supabase')) {
     return;
   }
 
-  // 3. Asset caching (cache-first)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request).then((response) => {
-        // Cache successful responses for static assets
         if (response.ok && (
           url.pathname.endsWith('.js') || 
           url.pathname.endsWith('.css') || 
@@ -68,6 +63,58 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => cached);
 
       return cached || fetchPromise;
+    })
+  );
+});
+
+// Push Notification handler
+self.addEventListener('push', (event) => {
+  let data = { title: 'Auclaire', body: 'Nouvelle notification', icon: '/icon-192.png', url: '/dashboard' };
+
+  if (event.data) {
+    try {
+      data = { ...data, ...event.data.json() };
+    } catch {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/icon-192.png',
+    badge: '/icon-192.png',
+    vibrate: [100, 50, 100],
+    data: { url: data.url || '/dashboard' },
+    actions: [
+      { action: 'open', title: 'Ouvrir' },
+      { action: 'dismiss', title: 'Fermer' },
+    ],
+    tag: data.tag || 'auclaire-notification',
+    renotify: true,
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Notification click handler
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'dismiss') return;
+
+  const targetUrl = event.notification.data?.url || '/dashboard';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(targetUrl);
     })
   );
 });

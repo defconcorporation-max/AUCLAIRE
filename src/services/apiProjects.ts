@@ -21,6 +21,28 @@ export interface QualityIssue {
     resolution?: string;
 }
 
+export interface TimeEntry {
+    id: string;
+    stage: string;
+    description: string;
+    hours: number;
+    date: string;
+    user_id?: string;
+    user_name?: string;
+}
+
+export interface DesignApproval {
+    id: string;
+    status: 'pending' | 'approved' | 'rejected';
+    submitted_at: string;
+    responded_at?: string;
+    design_version?: number;
+    files: string[];
+    client_signature?: string;
+    client_comment?: string;
+    admin_notes?: string;
+}
+
 export interface StageDetails {
     design_notes?: string;
     sketch_files?: string[];
@@ -36,6 +58,8 @@ export interface StageDetails {
     client_notes?: string;
     client_approval_status?: 'pending' | 'approved' | 'changes_requested';
     quality_issues?: QualityIssue[];
+    time_entries?: TimeEntry[];
+    design_approvals?: DesignApproval[];
 }
 
 export interface CostItem {
