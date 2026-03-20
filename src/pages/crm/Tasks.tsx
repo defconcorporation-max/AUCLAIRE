@@ -170,13 +170,22 @@ export default function Tasks() {
                     const [label, ...valParts] = line.split(':');
                     const value = valParts.join(':').trim();
                     
-                    if (!value || value.toLowerCase() === 'non précisé') return null;
+                    if (valParts.length > 0) {
+                        if (!value || value.toLowerCase() === 'non précisé') return null;
 
+                        return (
+                            <div key={idx} className="flex flex-col gap-1 p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-lg border border-black/5 dark:border-white/5 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-luxury-gold/70">{label.trim()}</span>
+                                <span className="text-sm font-medium text-foreground/90 leading-snug">{value}</span>
+                            </div>
+                        );
+                    }
+
+                    // Fallback for lines without a colon (like headers or intro text)
                     return (
-                        <div key={idx} className="flex flex-col gap-1 p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-lg border border-black/5 dark:border-white/5 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-luxury-gold/70">{label.trim()}</span>
-                            <span className="text-sm font-medium text-foreground/90 leading-snug">{value}</span>
-                        </div>
+                        <p key={idx} className="text-sm text-muted-foreground/80 italic px-1 py-1">
+                            {line}
+                        </p>
                     );
                 })}
             </div>
