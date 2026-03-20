@@ -56,5 +56,14 @@ export const apiTasks = {
             .eq('id', id);
 
         if (error) throw error;
+    },
+
+    async getConversationSummary(contactId: string) {
+        const { data, error } = await supabase.functions.invoke('ghl-conversation-summary', {
+            body: { contactId }
+        });
+
+        if (error) throw error;
+        return data as { summary: string; images: string[] };
     }
 };
