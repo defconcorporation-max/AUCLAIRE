@@ -47,6 +47,7 @@ export default function Tasks() {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending');
+    const [typeFilter, setTypeFilter] = useState<'all' | 'design' | 'ops'>('all');
     const [viewOnlyMine, setViewOnlyMine] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [summaryLoading, setSummaryLoading] = useState(false);
@@ -95,8 +96,11 @@ export default function Tasks() {
         const matchesSearch = ((task.title || "").toLowerCase().includes((searchTerm || "").toLowerCase())) || 
                              ((task.description || "").toLowerCase().includes((searchTerm || "").toLowerCase()));
         const matchesFilter = filter === 'all' || task.status === filter;
+        const matchesType = typeFilter === 'all' || 
+                           (typeFilter === 'design' && !!task.ghl_id) || 
+                           (typeFilter === 'ops' && !task.ghl_id);
         const matchesOwnership = !viewOnlyMine || task.assigned_to === user?.id;
-        return matchesSearch && matchesFilter && matchesOwnership;
+        return matchesSearch && matchesFilter && matchesType && matchesOwnership;
     });
 
     const handleToggleStatus = (e: React.MouseEvent, task: Task) => {
@@ -225,21 +229,57 @@ export default function Tasks() {
                 </div>
             </div>
 
-            {/* Filters */}
-            <div className="flex gap-2 p-1 bg-black/5 dark:bg-white/5 rounded-lg w-fit">
-                {(['pending', 'completed', 'all'] as const).map(f => (
+            <div className="flex flex-col sm:flex-row gap-4">
+                {/* Status Filters */}
+                <div className="flex gap-2 p-1 bg-black/5 dark:bg-white/5 rounded-lg w-fit">
+                    {(['pending', 'completed', 'all'] as const).map(f => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f)}
+                            className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                                filter === f 
+                                ? 'bg-white dark:bg-zinc-800 text-luxury-gold shadow-sm' 
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            {f === 'pending' ? 'En cours' : f === 'completed' ? 'Terminées' : 'Toutes'}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Type Filters */}
+                <div className="flex gap-2 p-1 bg-black/5 dark:bg-white/5 rounded-lg w-fit">
                     <button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        className={`px-4 py-1.5 rounded-md text-xs font-semibold uppercase tracking-widest transition-all ${
-                            filter === f 
+                        onClick={() => setTypeFilter('all')}
+                        className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                            typeFilter === 'all' 
                             ? 'bg-white dark:bg-zinc-800 text-luxury-gold shadow-sm' 
                             : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
-                        {f === 'pending' ? 'En cours' : f === 'completed' ? 'Terminées' : 'Toutes'}
+                        Tous types
                     </button>
-                ))}
+                    <button
+                        onClick={() => setTypeFilter('design')}
+                        className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 ${
+                            typeFilter === 'design' 
+                            ? 'bg-blue-500/10 text-blue-500 shadow-sm ring-1 ring-blue-500/20' 
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        <Layout className="w-3 h-3" /> Design
+                    </button>
+                    <button
+                        onClick={() => setTypeFilter('ops')}
+                        className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 ${
+                            typeFilter === 'ops' 
+                            ? 'bg-orange-500/10 text-orange-500 shadow-sm ring-1 ring-orange-500/20' 
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        <Settings className="w-3 h-3" /> Opérations
+                    </button>
+                </div>
             </div>
 
             {/* Task List */}
@@ -281,12 +321,12 @@ export default function Tasks() {
                                                     {task.title}
                                                 </h3>
                                                 {task.ghl_id ? (
-                                                    <Badge variant="outline" className="text-[10px] bg-blue-500/5 text-blue-500 border-blue-500/20 flex gap-1 items-center px-1.5 py-0">
-                                                        <Layout className="w-2.5 h-2.5" /> Design
+                                                    <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border-blue-500/20 flex gap-1 items-center px-2 py-0.5">
+                                                        <Layout className="w-3 h-3" /> Design
                                                     </Badge>
                                                 ) : (
-                                                    <Badge variant="outline" className="text-[10px] bg-orange-500/5 text-orange-500 border-orange-500/20 flex gap-1 items-center px-1.5 py-0">
-                                                        <Settings className="w-2.5 h-2.5" /> Opérations
+                                                    <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-500 border-orange-500/20 flex gap-1 items-center px-2 py-0.5">
+                                                        <Settings className="w-3 h-3" /> Opérations
                                                     </Badge>
                                                 )}
                                             </div>
@@ -341,14 +381,27 @@ export default function Tasks() {
                 <DialogContent className="max-w-2xl bg-white dark:bg-zinc-950 border-luxury-gold/20 max-h-[90vh] overflow-y-auto overflow-x-hidden custom-scrollbar">
                     <DialogHeader>
                         <div className="flex justify-between items-center pr-8">
-                            <Badge variant="outline" className={getPriorityColor(selectedTask?.priority || 'normal')}>
-                                Priorité {selectedTask?.priority || 'Normal'}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground uppercase tracking-tighter italic">ID: {String(selectedTask?.ghl_id || "").substring(0, 15)}...</span>
+                            <div className="flex gap-2">
+                                <Badge variant="outline" className={getPriorityColor(selectedTask?.priority || 'normal')}>
+                                    Priorité {selectedTask?.priority || 'Normal'}
+                                </Badge>
+                                {selectedTask?.ghl_id ? (
+                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 flex gap-1 items-center">
+                                        <Layout className="w-3 h-3" /> Design
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20 flex gap-1 items-center">
+                                        <Settings className="w-3 h-3" /> Opérations
+                                    </Badge>
+                                )}
+                            </div>
+                            <span className="text-xs text-muted-foreground uppercase tracking-tighter italic">ID: {String(selectedTask?.ghl_id || "INTERNE").substring(0, 15)}</span>
                         </div>
                         <DialogTitle className="text-2xl font-serif text-luxury-gold mt-4">{selectedTask?.title}</DialogTitle>
                         <DialogDescription className="text-muted-foreground mt-2">
-                           Détails de la tâche synchronisée via GoHighLevel.
+                           {selectedTask?.ghl_id 
+                            ? "Détails de la tâche synchronisée via GoHighLevel." 
+                            : "Tâche opérationnelle créée manuellement dans l'application Auclaire."}
                         </DialogDescription>
                     </DialogHeader>
 
