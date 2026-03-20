@@ -285,7 +285,7 @@ export default function Tasks() {
 
             {/* Task Detail Modal */}
             <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-                <DialogContent className="max-w-2xl bg-white dark:bg-zinc-950 border-luxury-gold/20">
+                <DialogContent className="max-w-2xl bg-white dark:bg-zinc-950 border-luxury-gold/20 max-h-[90vh] overflow-y-auto overflow-x-hidden custom-scrollbar">
                     <DialogHeader>
                         <div className="flex justify-between items-center pr-8">
                             <Badge variant="outline" className={getPriorityColor(selectedTask?.priority || 'normal')}>
@@ -357,15 +357,21 @@ export default function Tasks() {
                                             {renderTechnicalSummary(summary.summary)}
                                         </div>
                                         {((summary as any)?.images && Array.isArray((summary as any).images) && (summary as any).images.length > 0) && (
-                                            <div className="grid grid-cols-2 gap-2 mt-4">
-                                                {(summary as any).images.map((img: string, i: number) => (
-                                                    <a key={i} href={img} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg border border-white/10 overflow-hidden group/img relative">
-                                                        <img src={img} alt="Shared" className="w-full h-full object-cover transition-transform group-hover/img:scale-110"/>
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                                                            <ImageIcon className="w-4 h-4 text-white"/>
-                                                        </div>
-                                                    </a>
-                                                ))}
+                                            <div className="mt-8 border-t border-luxury-gold/10 pt-4">
+                                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-luxury-gold mb-3 flex items-center gap-2">
+                                                    <ImageIcon className="w-3 h-3" />
+                                                    Photos Partagées
+                                                </h4>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {(summary as any).images.map((img: string, i: number) => (
+                                                        <a key={i} href={img} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg border border-white/10 overflow-hidden group/img relative">
+                                                            <img src={img} alt="Shared" className="w-full h-full object-cover transition-transform group-hover/img:scale-110"/>
+                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <ImageIcon className="w-4 h-4 text-white"/>
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
