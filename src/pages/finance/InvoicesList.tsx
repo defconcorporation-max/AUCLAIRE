@@ -350,7 +350,7 @@ export default function InvoicesList() {
                                         e.stopPropagation();
                                         try {
                                             const settings = await apiSettings.get();
-                                            generateInvoicePDF(invoice, settings);
+                                            await generateInvoicePDF(invoice, settings);
                                         } catch (err) {
                                             console.error('PDF generation failed:', err);
                                         }
@@ -638,7 +638,7 @@ export default function InvoicesList() {
                             onClick={async () => {
                                 try {
                                     const settings = await apiSettings.get();
-                                    if (selectedInvoice) generateInvoicePDF(selectedInvoice, settings);
+                                    if (selectedInvoice) await generateInvoicePDF(selectedInvoice, settings);
                                 } catch (err) {
                                     console.error('PDF generation failed:', err);
                                 }

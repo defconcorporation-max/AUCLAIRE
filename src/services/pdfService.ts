@@ -5,20 +5,42 @@ import { Invoice } from './apiInvoices';
 import { calculateCanadianTax, type CanadianProvince } from '@/utils/taxUtils';
 
 /**
- * Generates a professional PDF invoice for Auclaire Jewelry.
- * Highly robust against null/undefined values and API variations.
+ * Helper to convert an image URL to a base64 string for jsPDF.
  */
-export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) => {
+const getBase64ImageFromURL = (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.setAttribute('crossOrigin', 'anonymous');
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0);
+            const dataURL = canvas.toDataURL('image/png');
+            resolve(dataURL);
+        };
+        img.onerror = (error) => reject(error);
+        img.src = url;
+    });
+};
+
+/**
+ * Generates a Luxury PDF Invoice matching the 'Soumission' (Quote) style.
+ * Includes project design visuals.
+ */
+export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySettings) => {
     try {
-        console.log('Starting PDF Generation for invoice:', invoice.id);
-        
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth() || 210;
+        const pageHeight = doc.internal.pageSize.getHeight() || 297;
 
-        // ── Brand Colors ──
-        const gold: [number, number, number] = [212, 175, 55];
-        const dark: [number, number, number] = [40, 40, 40];
-        const muted: [number, number, number] = [120, 120, 120];
+        // ── Brand Tokens ──
+        const GOLD: [number, number, number] = [212, 175, 55];
+        const ZINC_900: [number, number, number] = [24, 24, 27];
+        const ZINC_600: [number, number, number] = [82, 82, 91];
+        const ZINC_400: [number, number, number] = [161, 161, 170];
+        const ZINC_100: [number, number, number] = [244, 244, 245];
 
         // ── Helpers ──
         const fmt = (n: any) => {
@@ -27,275 +49,243 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
         };
 
         const safeText = (text: any, x: number, y: number, options?: any) => {
-            if (isNaN(x) || isNaN(y)) return;
             const str = String(text ?? '');
             if (!str) return;
-            try {
-                // Ensure options is a valid object or undefined
-                const opts = (options && typeof options === 'object') ? options : undefined;
-                doc.text(str, x, y, opts);
-            } catch (e) {
-                console.warn('jsPDF.text failed for:', str, e);
-            }
+            try { doc.text(str, x, y, options); } catch (e) { console.warn(e); }
         };
 
-        // ── Header: Company Info ──
+        // 1. TOP GOLD LINE
+        doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
+        doc.rect(0, 0, pageWidth, 4, 'F');
+
+        // 2. HEADER
+        doc.setFont('times', 'bold');
+        doc.setFontSize(38);
+        doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
+        safeText('AUCLAIRE', 14, 28);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+        safeText('BIJOUTERIE SUR MESURE', 15, 34, { charSpace: 2 });
+
+        doc.setFont('times', 'normal');
         doc.setFontSize(22);
-        doc.setTextColor(...dark);
-        safeText(settings.company_name || 'Auclaire Jewelry', 14, 22);
+        doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
+        safeText('FACTURE', pageWidth - 14, 26, { align: 'right' });
 
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.setTextColor(...muted);
-        safeText(settings.address_line1 || '', 14, 28);
-        
-        const hasAddr2 = !!settings.address_line2;
-        if (hasAddr2) {
-            safeText(settings.address_line2, 14, 32);
-        }
-        
-        const cityCountryY = hasAddr2 ? 36 : 32;
-        safeText(`${settings.city || ''}, ${settings.country || ''}`, 14, cityCountryY);
-        
-        const emailY = hasAddr2 ? 40 : 36;
-        if (settings.contact_email) {
-            safeText(settings.contact_email, 14, emailY);
-        }
-        
-        const phoneY = hasAddr2 ? 44 : 40;
-        if (settings.phone) {
-            safeText(settings.phone, 14, phoneY);
-        }
+        doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
+        const invoiceNum = (invoice.id || '000000').substring(0, 8).toUpperCase();
+        safeText(`Date : ${new Date(invoice.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}`, pageWidth - 14, 32, { align: 'right' });
+        safeText(`Réf : #INV-${invoiceNum}`, pageWidth - 14, 37, { align: 'right' });
 
-        // ── Header: Invoice Info (right side) ──
-        doc.setFontSize(16);
-        doc.setTextColor(...gold);
-        safeText('FACTURE', pageWidth - 14, 22, { align: 'right' });
-
-        doc.setFontSize(9);
-        doc.setTextColor(...muted);
-        const invoiceNum = (invoice.id || '00000000').substring(0, 8).toUpperCase();
-        safeText(`No: #${invoiceNum}`, pageWidth - 14, 28, { align: 'right' });
-        
-        const dateStr = invoice.created_at ? new Date(invoice.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A';
-        safeText(`Date: ${dateStr}`, pageWidth - 14, 32, { align: 'right' });
-        
-        if (invoice.due_date) {
-            const dueStr = new Date(invoice.due_date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
-            safeText(`Échéance: ${dueStr}`, pageWidth - 14, 36, { align: 'right' });
-        }
-
-        // ── Gold separator line ──
-        doc.setDrawColor(...gold);
+        // 3. DETAILS GRID
+        doc.setDrawColor(ZINC_100[0], ZINC_100[1], ZINC_100[2]);
         doc.setLineWidth(0.5);
         doc.line(14, 48, pageWidth - 14, 48);
 
-        // ── Bill To ──
-        doc.setFontSize(10);
-        doc.setTextColor(...gold);
-        safeText('Facturer à:', 14, 56);
-
-        doc.setFontSize(11);
-        doc.setTextColor(...dark);
-        safeText(invoice.project?.client?.full_name || 'Client', 14, 62);
-
+        // Column Left: Client
+        doc.setFontSize(7);
+        doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+        safeText('PRÉPARÉ POUR', 14, 56, { charSpace: 1 });
+        doc.setFont('times', 'normal');
+        doc.setFontSize(14);
+        doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
+        safeText(invoice.project?.client?.full_name || 'Client', 14, 63);
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.setTextColor(...muted);
-        safeText(`Projet: ${invoice.project?.title || 'Projet'}`, 14, 67);
+        doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
+        safeText(`Projet : ${invoice.project?.title || 'Projet'}`, 14, 69);
 
-        // ── Table: Line Items ──
-        const taxProvince = invoice.project?.financials?.tax_province as CanadianProvince | undefined;
+        // Column Right: Company
+        doc.setFontSize(7);
+        doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+        safeText('DE LA PART DE', pageWidth / 2 + 7, 56, { charSpace: 1 });
+        doc.setFont('times', 'normal');
+        doc.setFontSize(14);
+        doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
+        safeText(settings.company_name, pageWidth / 2 + 7, 63);
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9);
+        doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
+        safeText('Soin, précision et élégance', pageWidth / 2 + 7, 69);
+        doc.setFont('helvetica', 'normal');
+        safeText(`${settings.city}, ${settings.country}`, pageWidth / 2 + 7, 74);
+
+        doc.line(14, 82, pageWidth - 14, 82);
+
+        // 4. INTRO
+        doc.setFont('times', 'italic');
+        doc.setFontSize(11);
+        doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
+        const intro = '"Soin, précision et élégance. Nous avons le plaisir de vous présenter la facture suivante pour votre projet de bijouterie sur mesure, conçu avec une attention particulière portée à la qualité des matériaux et à la finition."';
+        const splitIntro = doc.splitTextToSize(intro, pageWidth - 40);
+        doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]);
+        doc.setLineWidth(1);
+        doc.line(14, 90, 14, 90 + (splitIntro.length * 6));
+        doc.text(splitIntro, 20, 95);
+
+        // 5. ITEMS TABLE
         const netAmount = Number(invoice.amount) || 0;
-
-        const tableRows = [
-            [
-                'Design et production de bijoux sur mesure',
-                '1',
-                fmt(netAmount),
-                fmt(netAmount),
-            ],
-        ];
-
-        // Build tax rows
+        const taxProvince = invoice.project?.financials?.tax_province as CanadianProvince | undefined;
         let taxTotal = 0;
-        const taxRows: string[][] = [];
+        const taxLabels: string[] = [];
+        const taxValues: string[] = [];
         if (taxProvince) {
-            try {
-                const taxes = calculateCanadianTax(netAmount, taxProvince);
-                taxTotal = taxes.total || 0;
-                if (taxes.gst > 0) taxRows.push(['TPS (5%)', fmt(taxes.gst)]);
-                if (taxes.pst > 0) {
-                    const pstLabel = taxProvince === 'QC' ? 'TVQ (9,975%)' : `TVP (${taxProvince})`;
-                    taxRows.push([pstLabel, fmt(taxes.pst)]);
-                }
-                if (taxes.hst > 0) taxRows.push([`TVH (${taxProvince})`, fmt(taxes.hst)]);
-            } catch (te) {
-                console.error('Tax calc error:', te);
+            const taxes = calculateCanadianTax(netAmount, taxProvince);
+            taxTotal = taxes.total;
+            if (taxes.gst > 0) { taxLabels.push('TPS (5%)'); taxValues.push(fmt(taxes.gst)); }
+            if (taxes.pst > 0) { 
+                taxLabels.push(taxProvince === 'QC' ? 'TVQ (9,975%)' : `TVP (${taxProvince})`); 
+                taxValues.push(fmt(taxes.pst)); 
             }
-        } else {
-            const rate = Number(settings.tax_rate) || 0;
-            if (rate > 0) {
-                taxTotal = netAmount * (rate / 100);
-                taxRows.push([`Taxe (${rate}%)`, fmt(taxTotal)]);
-            }
+            if (taxes.hst > 0) { taxLabels.push(`TVH (${taxProvince})`); taxValues.push(fmt(taxes.hst)); }
+        } else if (settings.tax_rate > 0) {
+            taxTotal = netAmount * (settings.tax_rate / 100);
+            taxLabels.push(`Taxe (${settings.tax_rate}%)`);
+            taxValues.push(fmt(taxTotal));
         }
 
         const grandTotal = netAmount + taxTotal;
 
         autoTable(doc, {
-            head: [['Description', 'Qté', 'Prix unitaire', 'Montant']],
-            body: tableRows,
-            startY: 74,
-            theme: 'grid',
-            headStyles: {
-                fillColor: gold,
-                textColor: [255, 255, 255],
-                fontStyle: 'bold',
-                fontSize: 9,
-            },
-            bodyStyles: {
-                fontSize: 9,
-                textColor: dark,
-            },
-            columnStyles: {
-                0: { cellWidth: 90 },
-                1: { halign: 'center', cellWidth: 20 },
-                2: { halign: 'right', cellWidth: 35 },
-                3: { halign: 'right', cellWidth: 35 },
-            },
-            margin: { left: 14, right: 14 },
+            head: [['Description des services', 'Montant']],
+            body: [[{ content: 'Design et production de bijoux sur mesure Auclaire', styles: { font: 'times', fontSize: 13 } }, { content: fmt(netAmount), styles: { font: 'times', fontSize: 16, textColor: GOLD as any, halign: 'right' } }]],
+            startY: 115,
+            theme: 'plain',
+            headStyles: { fontSize: 8, textColor: GOLD as any },
+            styles: { cellPadding: 8 },
+            columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 50 } }
         });
 
-        // ── Get final Y position after table ──
-        const lastTable = (doc as any).lastAutoTable;
-        let yPos = (lastTable && typeof lastTable.finalY === 'number' ? lastTable.finalY : 90) + 10;
+        // 6. VISUALS (3D Design Photos)
+        let visualY = (doc as any).lastAutoTable.finalY + 10;
+        
+        // Find images in project stage_details
+        const designFiles = invoice.project?.stage_details?.design_files || [];
+        const approvedVersion = invoice.project?.stage_details?.design_versions?.find(v => v.status === 'approved');
+        const latestVersion = invoice.project?.stage_details?.design_versions?.slice().reverse()[0];
+        const versionFiles = (approvedVersion || latestVersion)?.files || [];
+        const allImages = [...new Set([...designFiles, ...versionFiles])].slice(0, 2); // Take up to 2
 
-        // ── Totals Section ──
-        const totalsX = pageWidth - 14;
+        if (allImages.length > 0) {
+            doc.setFontSize(8);
+            doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+            safeText('DESIGN & VISUELS', 14, visualY, { charSpace: 1 });
+            doc.setDrawColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
+            doc.setLineWidth(0.2);
+            doc.line(14, visualY + 2, pageWidth - 14, visualY + 2);
+            
+            visualY += 8;
+            const imgWidth = (pageWidth - 32) / 2;
+            const imgHeight = imgWidth; // Square aspect ratio like the Soumission
 
-        doc.setFontSize(9);
-        doc.setTextColor(...muted);
-        safeText(`Sous-total:`, totalsX - 50, yPos);
-        doc.setTextColor(...dark);
-        safeText(fmt(netAmount), totalsX, yPos, { align: 'right' });
+            for (let i = 0; i < allImages.length; i++) {
+                try {
+                    const imgData = await getBase64ImageFromURL(allImages[i]);
+                    const x = 14 + (i * (imgWidth + 4));
+                    doc.addImage(imgData, 'PNG', x, visualY, imgWidth, imgHeight);
+                } catch (e) {
+                    console.warn('Failed to add image to PDF:', allImages[i], e);
+                    // Placeholder for missing image
+                    const x = 14 + (i * (imgWidth + 4));
+                    doc.setFillColor(ZINC_100[0], ZINC_100[1], ZINC_100[2]);
+                    doc.rect(x, visualY, imgWidth, imgHeight, 'F');
+                    doc.setFontSize(6);
+                    doc.setTextColor(ZINC_400[0], ZINC_400[1], ZINC_400[2]);
+                    safeText('Image non disponible', x + (imgWidth / 2), visualY + (imgHeight / 2), { align: 'center' });
+                }
+            }
+            visualY += imgHeight + 10;
+        }
 
-        taxRows.forEach(([label, value]) => {
-            yPos += 6;
-            doc.setTextColor(...muted);
-            safeText(label + ':', totalsX - 50, yPos);
-            doc.setTextColor(...dark);
-            safeText(value, totalsX, yPos, { align: 'right' });
+        // 7. SUMMARY BOX
+        const summaryY = Math.max(visualY, (doc as any).lastAutoTable.finalY + 15);
+        
+        doc.setFillColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
+        doc.rect(14, summaryY, pageWidth - 28, 45, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(200, 200, 200);
+        safeText(`SOUS-TOTAL : ${fmt(netAmount)}`, 24, summaryY + 15);
+        
+        taxLabels.forEach((label, i) => {
+            doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+            safeText(`${label} : ${taxValues[i]}`, 24, summaryY + 22 + (i * 6));
         });
 
-        // Total line
-        yPos += 3;
-        doc.setDrawColor(...gold);
-        doc.setLineWidth(0.3);
-        doc.line(totalsX - 70, yPos, totalsX, yPos);
-
-        yPos += 7;
-        doc.setFontSize(13);
+        doc.setTextColor(ZINC_400[0], ZINC_400[1], ZINC_400[2]);
+        doc.setFontSize(7);
+        safeText('TOTAL À PAYER', pageWidth - 24, summaryY + 15, { align: 'right', charSpace: 1 });
+        
+        doc.setFont('times', 'normal');
+        doc.setFontSize(42);
+        doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+        safeText(fmt(grandTotal).replace('$', '').trim(), pageWidth - 30, summaryY + 32, { align: 'right' });
+        
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...gold);
-        safeText('TOTAL:', totalsX - 50, yPos);
-        safeText(fmt(grandTotal), totalsX, yPos, { align: 'right' });
+        doc.setFontSize(14);
+        safeText('$', pageWidth - 24, summaryY + 32, { align: 'right' });
 
-        // ── Payment History ──
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(ZINC_400[0], ZINC_400[1], ZINC_400[2]);
+        safeText('TAXES INCLUSES', pageWidth - 24, summaryY + 40, { align: 'right', charSpace: 1 });
+
+        // 8. PAYMENT HISTORY
         const payments = invoice.payment_history || [];
         if (payments.length > 0) {
-            yPos += 14;
-            doc.setFontSize(10);
-            doc.setTextColor(...gold);
+            const historyY = summaryY + 60;
             doc.setFont('helvetica', 'bold');
-            safeText('Historique des paiements', 14, yPos);
-            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+            safeText('HISTORIQUE DES PAIEMENTS', 14, historyY, { charSpace: 1 });
+            doc.setDrawColor(ZINC_100[0], ZINC_100[1], ZINC_100[2]);
+            doc.line(14, historyY + 2, pageWidth - 14, historyY + 2);
 
-            const paymentRows = payments.map((p, idx) => [
-                String(idx + 1),
-                p.date ? new Date(p.date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A',
-                fmt(p.amount),
-                p.note || '-',
-            ]);
-
-            autoTable(doc, {
-                head: [['#', 'Date', 'Montant', 'Note']],
-                body: paymentRows,
-                startY: yPos + 4,
-                theme: 'striped',
-                headStyles: {
-                    fillColor: [80, 80, 80],
-                    textColor: [255, 255, 255],
-                    fontSize: 8,
-                },
-                bodyStyles: { fontSize: 8, textColor: dark },
-                columnStyles: {
-                    0: { cellWidth: 12, halign: 'center' },
-                    1: { cellWidth: 50 },
-                    2: { cellWidth: 35, halign: 'right' },
-                    3: { cellWidth: 60 },
-                },
-                margin: { left: 14, right: 14 },
+            payments.forEach((p, i) => {
+                const rowY = historyY + 10 + (i * 8);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
+                safeText(`${new Date(p.date).toLocaleDateString('fr-CA')}`, 14, rowY);
+                safeText(p.note || 'Paiement', 50, rowY);
+                doc.setFont('helvetica', 'bold');
+                safeText(fmt(p.amount), pageWidth - 14, rowY, { align: 'right' });
             });
-
-            const lastPayTable = (doc as any).lastAutoTable;
-            yPos = (lastPayTable && typeof lastPayTable.finalY === 'number' ? lastPayTable.finalY : yPos) + 8;
-
-            // Balance
+            
             const totalPaid = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
             const balance = grandTotal - totalPaid;
-
+            const balanceY = historyY + 10 + (payments.length * 8) + 5;
             doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...muted);
-            safeText(`Total payé: ${fmt(totalPaid)}`, 14, yPos);
-
+            doc.setTextColor(balance > 0.01 ? 200 : 50, balance > 0.01 ? 50 : 150, balance > 0.01 ? 50 : 50);
             if (balance > 0.01) {
-                doc.setTextColor(200, 50, 50);
-                safeText(`Solde dû: ${fmt(balance)}`, totalsX, yPos, { align: 'right' });
+                safeText(`SOLDE DÛ : ${fmt(balance)}`, pageWidth - 14, balanceY, { align: 'right' });
             } else {
-                doc.setTextColor(50, 150, 50);
-                safeText('PAYÉE EN TOTALITÉ', totalsX, yPos, { align: 'right' });
+                safeText('✓ FACTURE PAYÉE EN TOTALITÉ', pageWidth - 14, balanceY, { align: 'right' });
             }
         }
 
-        // ── Status badge ──
-        yPos += 15;
-        if (invoice.status === 'paid') {
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(50, 150, 50);
-            safeText('✓ PAYÉE', pageWidth / 2, yPos, { align: 'center' });
-        } else if (invoice.status === 'partial') {
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(200, 150, 0);
-            safeText('PAIEMENT PARTIEL', pageWidth / 2, yPos, { align: 'center' });
-        }
+        // 9. FOOTER
+        const footerY = pageHeight - 20;
+        doc.setFont('times', 'normal');
+        doc.setFontSize(16);
+        doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+        safeText('AUCLAIRE', pageWidth / 2, footerY, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6);
+        doc.setTextColor(ZINC_400[0], ZINC_400[1], ZINC_400[2]);
+        safeText('BIJOUX SUR MESURE CONÇUS AVEC SOIN, PRÉCISION ET ÉLÉGANCE.', pageWidth / 2, footerY + 5, { align: 'center', charSpace: 2 });
 
-        // ── Footer ──
-        const footerY = doc.internal.pageSize.getHeight() - 20;
-        doc.setDrawColor(...gold);
-        doc.setLineWidth(0.3);
-        doc.line(14, footerY - 5, pageWidth - 14, footerY - 5);
+        // SAVE
+        const clientName = (invoice.project?.client?.full_name || 'Client').replace(/\s+/g, '_');
+        doc.save(`Facture_AUCLAIRE_${invoiceNum}_${clientName}.pdf`);
 
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...muted);
-        safeText('Merci pour votre confiance!', pageWidth / 2, footerY, { align: 'center' });
-        safeText(
-            `${settings.company_name || 'Auclaire Jewelry'} • ${settings.contact_email || ''} • ${settings.phone || ''}`,
-            pageWidth / 2,
-            footerY + 4,
-            { align: 'center' }
-        );
-
-        // ── Save ──
-        const clientNameRaw = (invoice.project?.client?.full_name || 'Client');
-        const clientName = String(clientNameRaw).replace(/\s+/g, '_');
-        const fileName = `Facture_${invoiceNum}_${clientName}.pdf`;
-        doc.save(fileName);
-        console.log('PDF Generation Complete:', fileName);
     } catch (error) {
         console.error('PDF Generation Error:', error);
-        alert('Erreur lors de la génération du PDF. Échec critique.');
+        alert('Erreur lors de la génération du PDF style luxe.');
     }
 };
