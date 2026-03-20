@@ -44,7 +44,8 @@ import {
     X,
     Handshake,
     Link as LinkIcon,
-    MessageSquare
+    MessageSquare,
+    RotateCcw
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { uploadImage } from '@/utils/storage';
@@ -403,6 +404,43 @@ export default function ProjectDetails() {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         } catch {
             toast({ title: "Failed to save modification", variant: "destructive" });
+        }
+    };
+
+    const handleUnlockFinancials = async () => {
+        if (!project || (role !== 'admin' && role !== 'secretary')) return;
+
+        const dynamicCosts = project.financials?.cost_items?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
+        const totalCost = (project.financials?.supplier_cost || 0) +
+            (project.financials?.shipping_cost || 0) +
+            (project.financials?.customs_fee || 0) +
+            dynamicCosts;
+
+        if (confirm(`Voulez-vous déverrouiller les coûts de ce projet ?\n\nCela supprimera la dépense de production de $${totalCost.toLocaleString()} associée dans le grand livre pour éviter les doublons.`)) {
+            try {
+                // 1. Delete associated expense
+                await apiExpenses.deleteByProjectAndCategory(project.id, 'material');
+
+                // 2. Unlock project
+                await apiProjects.updateFinancials(project.id, {
+                    exported_to_expenses: false
+                });
+
+                // 3. Log activity
+                apiActivities.log({
+                    project_id: project.id,
+                    user_id: user?.id || 'admin',
+                    user_name: user?.user_metadata?.full_name || 'Admin',
+                    action: 'update',
+                    details: `Unlocked production costs. Removed $${totalCost.toLocaleString()} from expenses.`
+                });
+
+                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                queryClient.invalidateQueries({ queryKey: ['expenses'] });
+                toast({ title: "Coûts déverrouillés", description: "L'ancienne dépense a été retirée et les coûts sont modifiables." });
+            } catch (err: any) {
+                toast({ title: "Erreur", description: err.message, variant: "destructive" });
+            }
         }
     };
 
@@ -1614,7 +1652,7 @@ export default function ProjectDetails() {
                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                         queryClient.invalidateQueries({ queryKey: ['expenses'] });
                                                         alert("Exported successfully!");
-                                                    } catch (err) {
+                                                    } catch (err: any) {
                                                         alert("Export failed: " + err.message);
                                                     }
                                                 }
@@ -1623,8 +1661,20 @@ export default function ProjectDetails() {
                                             🚀 Send to Expenses
                                         </Button>
                                     ) : (
-                                        <div className="text-xs text-zinc-400 flex items-center gap-1">
-                                            <CheckCircle2 className="w-3 h-3" /> Exported
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-xs text-zinc-400 flex items-center gap-1">
+                                                <CheckCircle2 className="w-3 h-3" /> Exported
+                                            </div>
+                                            {(role === 'admin' || role === 'secretary') && (
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="ghost" 
+                                                    className="h-7 text-[10px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1 px-1.5 border border-amber-200/50"
+                                                    onClick={handleUnlockFinancials}
+                                                >
+                                                    <RotateCcw className="w-3 h-3" /> Réinitialiser
+                                                </Button>
+                                            )}
                                         </div>
                                     )}
 
