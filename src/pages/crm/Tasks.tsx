@@ -57,9 +57,9 @@ export default function Tasks() {
         }
     });
 
-    const filteredTasks = tasks.filter(task => {
-        const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             task.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredTasks = (tasks || []).filter(task => {
+        const matchesSearch = (task.title || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             (task.description || "").toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter = filter === 'all' || task.status === filter;
         const matchesOwnership = !viewOnlyMine || task.assigned_to === user?.id;
         return matchesSearch && matchesFilter && matchesOwnership;
@@ -85,7 +85,16 @@ export default function Tasks() {
         setSummaryLoading(true);
         try {
             const res = await apiTasks.getConversationSummary(contactId);
-            setSummary(res);
+            if (res && 'error' in res) {
+                toast({
+                    title: "Erreur GHL",
+                    description: (res as any).error,
+                    variant: "destructive"
+                });
+                setSummary(null);
+            } else {
+                setSummary(res);
+            }
         } catch (error) {
             toast({
                 title: "Erreur",
@@ -321,7 +330,7 @@ export default function Tasks() {
                                         <p className="text-[13px] text-muted-foreground leading-relaxed">
                                             {summary.summary}
                                         </p>
-                                        {summary.images.length > 0 && (
+                                        {(summary.images && summary.images.length > 0) && (
                                             <div className="grid grid-cols-2 gap-2 mt-4">
                                                 {summary.images.map((img, i) => (
                                                     <a key={i} href={img} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg border border-white/10 overflow-hidden group/img relative">

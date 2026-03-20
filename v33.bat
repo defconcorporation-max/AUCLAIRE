@@ -1,16 +1,20 @@
 @echo off
-title AUCLAIRE GIT FIX & PUSH
+title AUCLAIRE GIT FIX & PUSH (v33)
 echo ===========================================
-echo [1/2] SYNCING WITH GITHUB (REBASE)
+echo [1/3] COMMITTING LOCAL FIXES
 echo ===========================================
-:: Forcer le pull du repo principal
+git add .
+git commit -m "Fix: Tasks page crash & defensive checks"
+echo.
+echo ===========================================
+echo [2/3] SYNCING WITH GITHUB (REBASE)
+echo ===========================================
 git pull origin main --rebase
 echo.
 echo ===========================================
-echo [2/2] PUSHING TO PRODUCTION (HEAD -> main)
+echo [3/3] PUSHING TO PRODUCTION (HEAD -> main)
 echo ===========================================
-:: Pousse le code actuel directement vers main
-git push origin HEAD:main
+git push origin HEAD:main --force
 echo.
 echo ===========================================
 echo FIX COMPLETED - VERIFIEZ VERCEL
