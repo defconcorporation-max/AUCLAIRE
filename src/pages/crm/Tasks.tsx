@@ -109,6 +109,29 @@ export default function Tasks() {
         }
     };
 
+    const renderTechnicalSummary = (text: string) => {
+        if (!text) return null;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        return (
+            <div className="grid grid-cols-1 gap-3">
+                {lines.map((line, idx) => {
+                    const [label, ...valParts] = line.split(':');
+                    const value = valParts.join(':').trim();
+                    
+                    if (!value || value.toLowerCase() === 'non précisé') return null;
+
+                    return (
+                        <div key={idx} className="flex flex-col gap-1 p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-lg border border-black/5 dark:border-white/5 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-luxury-gold/70">{label.trim()}</span>
+                            <span className="text-sm font-medium text-foreground/90 leading-snug">{value}</span>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     const getPriorityColor = (priority: string) => {
         switch (priority) {
             case 'urgent': return 'bg-red-500/10 text-red-500 border-red-500/20';
@@ -330,9 +353,9 @@ export default function Tasks() {
                                     </div>
                                 ) : summary ? (
                                     <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                                        <p className="text-[13px] text-muted-foreground leading-relaxed">
-                                            {summary.summary}
-                                        </p>
+                                        <div className="text-[13px] text-muted-foreground leading-relaxed">
+                                            {renderTechnicalSummary(summary.summary)}
+                                        </div>
                                         {((summary as any)?.images && Array.isArray((summary as any).images) && (summary as any).images.length > 0) && (
                                             <div className="grid grid-cols-2 gap-2 mt-4">
                                                 {(summary as any).images.map((img: string, i: number) => (

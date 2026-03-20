@@ -1,5 +1,5 @@
 @echo off
-title AUCLAIRE FINAL STABILIZE PUSH (v35.7)
+title AUCLAIRE FINAL STABILIZE PUSH (v35.8)
 echo ===========================================
 echo [1/3] STAGING ALL CHANGES
 echo ===========================================
@@ -8,7 +8,7 @@ echo.
 echo ===========================================
 echo [2/3] COMMITTING FINAL BUILD FIX
 echo ===========================================
-git commit -m "Fix: Final build stability v35.7 - refined summary prompt" --no-verify
+git commit -m "Fix: Final build stability v35.8 - structured technical summary" --no-verify
 echo.
 echo ===========================================
 echo [3/3] FORCE PUSHING TO PRODUCTION
