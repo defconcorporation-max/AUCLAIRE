@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { apiTasks, Task } from '@/services/apiTasks';
 import { useAuth } from '@/context/AuthContext';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
@@ -225,7 +225,7 @@ export default function Tasks() {
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-y-2 gap-x-6 mt-4">
-                                        {task.due_date && (
+                                        {task.due_date && isValid(new Date(task.due_date)) && (
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <Calendar className="w-3.5 h-3.5" />
                                                 <span>Échéance: {format(new Date(task.due_date), 'PPP', { locale: fr })}</span>
@@ -280,7 +280,7 @@ export default function Tasks() {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                         <Calendar className="w-4 h-4 text-luxury-gold" />
-                                        <span>Échéance: {selectedTask?.due_date ? format(new Date(selectedTask.due_date), 'PPP', { locale: fr }) : 'Non définie'}</span>
+                                        <span>Échéance: {(selectedTask?.due_date && isValid(new Date(selectedTask.due_date))) ? format(new Date(selectedTask.due_date), 'PPP', { locale: fr }) : 'Non définie'}</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                         <User className="w-4 h-4 text-luxury-gold" />
