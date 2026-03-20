@@ -178,7 +178,7 @@ export default function Tasks() {
             {/* Task List */}
             <div className="grid grid-cols-1 gap-4">
                 {(Array.isArray(filteredTasks) && filteredTasks.length > 0) ? (
-                    filteredTasks.map((task, idx) => (
+                    filteredTasks.map(task => (
                         <Card 
                             key={task.id} 
                             onClick={() => {
