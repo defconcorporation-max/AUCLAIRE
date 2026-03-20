@@ -74,6 +74,8 @@ export default function Tasks() {
 
     const fetchSummary = async (task: Task) => {
         const contactId = task.metadata?.contact_id || task.metadata?.contact?.id;
+        const locationId = task.metadata?.location?.id;
+        
         if (!contactId) {
             toast({
                 title: "Information manquante",
@@ -85,7 +87,7 @@ export default function Tasks() {
 
         setSummaryLoading(true);
         try {
-            const res = await apiTasks.getConversationSummary(contactId);
+            const res = await apiTasks.getConversationSummary(contactId, locationId);
             if (res && 'error' in res) {
                 toast({
                     title: "Erreur GHL",

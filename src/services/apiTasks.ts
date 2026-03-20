@@ -58,9 +58,9 @@ export const apiTasks = {
         if (error) throw error;
     },
 
-    async getConversationSummary(contactId: string) {
+    async getConversationSummary(contactId: string, locationId?: string) {
         const { data, error } = await supabase.functions.invoke('ghl-conversation-summary', {
-            body: { contactId }
+            body: { contactId, locationId }
         });
 
         if (error) throw error;
