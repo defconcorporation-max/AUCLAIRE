@@ -1,5 +1,5 @@
 @echo off
-title AUCLAIRE FINAL STABILIZE PUSH (v36.3)
+title AUCLAIRE FINAL STABILIZE PUSH (v36.4)
 echo ===========================================
 echo [1/3] STAGING ALL CHANGES
 echo ===========================================
@@ -8,7 +8,7 @@ echo.
 echo ===========================================
 echo [2/3] COMMITTING FINAL BUILD FIX
 echo ===========================================
-git commit -m "Fix: Final build stability v36.3 - Manual Task Type Selection (Design/Ops)" --no-verify
+git commit -m "Fix: Final build stability v36.4 - Improved GHL Image Extraction & Message Scan" --no-verify
 echo.
 echo ===========================================
 echo [3/3] FORCE PUSHING TO PRODUCTION

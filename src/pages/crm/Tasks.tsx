@@ -486,7 +486,7 @@ export default function Tasks() {
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {(summary as any).images.map((img: string, i: number) => (
                                                             <a key={i} href={img} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg border border-white/10 overflow-hidden group/img relative">
-                                                                <img src={img} alt="Shared" className="w-full h-full object-cover transition-transform group-hover/img:scale-110"/>
+                                                                <img src={img} alt="Shared" referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform group-hover/img:scale-110"/>
                                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
                                                                     <ImageIcon className="w-4 h-4 text-white"/>
                                                                 </div>

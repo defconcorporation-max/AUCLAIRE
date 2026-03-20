@@ -22,7 +22,7 @@ serve(async (req) => {
     console.log(`Analyzing conversation for Contact: ${contactId}, Location: ${locationId}`);
 
     // 1. Search for conversation
-    let searchUrl = `https://services.ghl.com/conversations/search?contactId=${contactId}`;
+    let searchUrl = `https://services.leadconnectorhq.com/conversations/search?contactId=${contactId}`;
     if (locationId) searchUrl += `&locationId=${locationId}`;
 
     const searchRes = await fetch(searchUrl, {
@@ -36,7 +36,16 @@ serve(async (req) => {
     if (!searchRes.ok) {
       const err = await searchRes.text();
       console.error("GHL Search Error:", err);
-      throw new Error(`GHL API Search Error: ${searchRes.statusText}`);
+      // Fallback
+      const fallbackUrl = `https://services.ghl.com/conversations/search?contactId=${contactId}`;
+      const fallbackRes = await fetch(fallbackUrl, {
+        headers: {
+          'Authorization': `Bearer ${ghlKey}`,
+          'Version': '2021-04-15',
+          'Accept': 'application/json'
+        }
+      });
+      if (!fallbackRes.ok) throw new Error(`GHL API Search Error: ${searchRes.statusText}`);
     }
 
     const searchData = await searchRes.json();
@@ -55,8 +64,8 @@ serve(async (req) => {
     const conversationId = conversations[0].id;
     console.log(`Found Conversation ID: ${conversationId}`);
 
-    // 2. Fetch Messages
-    const msgRes = await fetch(`https://services.ghl.com/conversations/${conversationId}/messages?limit=20`, {
+    // 2. Fetch Messages (Increased limit to 100)
+    const msgRes = await fetch(`https://services.leadconnectorhq.com/conversations/${conversationId}/messages?limit=100`, {
       headers: {
         'Authorization': `Bearer ${ghlKey}`,
         'Version': '2021-04-15',
@@ -68,38 +77,49 @@ serve(async (req) => {
     const msgData = await msgRes.json();
     const messages = msgData.messages || [];
 
-    if (messages.length === 0) {
-      return new Response(JSON.stringify({ 
-        summary: "Conversation vide ou aucun message récent trouvé.", 
-        images: [] 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-    }
-
     // 3. Extract Text & Images
     let fullText = "";
     const images: string[] = [];
     
-    // Process messages in chronological order (they are usually returned reverse chronologically)
+    // Process messages in chronological order
     const sortedMessages = [...messages].reverse();
 
     for (const msg of sortedMessages) {
       const sender = msg.direction === 'inbound' ? 'Client' : 'Agent';
       const body = msg.body || "";
-      if (body) fullText += `${sender}: ${body}\n`;
+      if (body) {
+        fullText += `${sender}: ${body}\n`;
+      }
 
-      if (msg.attachments && Array.isArray(msg.attachments)) {
-        for (const attachment of msg.attachments) {
-           if (attachment.url && (attachment.contentType?.includes('image') || attachment.url.match(/\.(jpg|jpeg|png|webp|gif)/i))) {
-             images.push(attachment.url);
+      // Check all possible attachment locations
+      const attachments = msg.attachments || msg.messageAttributes?.attachments || [];
+      if (Array.isArray(attachments)) {
+        for (const attachment of attachments) {
+           const url = attachment.url || attachment.link;
+           if (url) {
+             const lowerUrl = url.toLowerCase();
+             const isImage = (attachment.contentType?.includes('image')) || 
+                             (lowerUrl.match(/\.(jpg|jpeg|png|webp|gif|heic)/i)) ||
+                             (attachment.type === 'image');
+             
+             if (isImage) {
+               console.log(`Image detected: ${url}`);
+               images.push(url);
+             }
            }
         }
       }
+
+      // Body fallback for links
+      const urlMatches = body.match(/https?:\/\/[^\s]+?\.(jpg|jpeg|png|gif|webp|heic)(\?[^\s]*)?/gi);
+      if (urlMatches) {
+        images.push(...urlMatches);
+      }
     }
 
-    // 4. Summarize with OpenAI
+    const uniqueImages = [...new Set(images)].slice(-12);
+
+    // 4. Summarize with OpenAI (Key-Value technical format)
     const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -109,10 +129,21 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'Tu es un assistant expert en joaillerie de luxe. Résume la conversation suivante en 3-4 phrases courtes et élégantes. Concentre-toi sur les demandes du client et les prochaines étapes.' },
-          { role: 'user', content: `Conversation :\n${fullText}` }
+          { 
+            role: 'system', 
+            content: `Tu es un assistant expert en joaillerie de luxe pour la Maison Auclaire. 
+            Analyse la conversation et génère une FICHE TECHNIQUE structurée.
+            
+            💍 TYPE: [Bague/Collier/etc]
+            ✨ METAL: [Or 18k/Platine/etc]
+            💎 PIERRES: [Diamants/etc]
+            📏 TAILLE/DIMENSIONS: [Si mentionné]
+            📝 NOTES: [Résumé crucial]
+            🚀 PROCHAINE ÉTAPE: [Action concrète]`
+          },
+          { role: 'user', content: `Conversation :\n${fullText.slice(-8000)}` }
         ],
-        temperature: 0.7,
+        temperature: 0.2,
       }),
     });
 
@@ -121,7 +152,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       summary, 
-      images: images.slice(-4) // Last 4 images
+      images: uniqueImages
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
