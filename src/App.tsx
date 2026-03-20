@@ -55,6 +55,7 @@ const ProductionCalendar = lazy(() => import('./pages/production/ProductionCalen
 const ClientPortal = lazy(() => import('./pages/clients/ClientPortal'));
 const BetaFeedback = lazy(() => import('./pages/BetaFeedback'));
 const ClientQuote = lazy(() => import('./pages/resources/ClientQuote'));
+const Tasks = lazy(() => import('./pages/crm/Tasks'));
 
 // Realtime sync component — must be inside Router + QueryClientProvider
 function RealtimeSync() {
@@ -138,6 +139,7 @@ function App() {
               <Route path="resources/quote/:projectId" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><ClientQuote /></ProtectedRoute>} />
               <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliateDetails /></ProtectedRoute>} />
               <Route path="debug" element={<ProtectedRoute allowedRoles={['admin']}><DebugPage /></ProtectedRoute>} />
+              <Route path="tasks" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><Tasks /></ProtectedRoute>} />
               <Route path="feedback" element={<ProtectedRoute allowedRoles={['admin']}><BetaFeedback /></ProtectedRoute>} />
             </Route>
 

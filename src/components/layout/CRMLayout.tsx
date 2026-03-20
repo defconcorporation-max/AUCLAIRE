@@ -24,7 +24,8 @@ import {
     Truck,
     TrendingUp,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    CheckSquare
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -56,6 +57,7 @@ const navSections: NavSection[] = [
             { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
             { label: 'Messages', href: '/dashboard/messages', icon: MessageCircle, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
             { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { label: 'Tâches', href: '/dashboard/tasks', icon: CheckSquare, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
             { label: 'Production', href: '/dashboard/production', icon: Calendar, roles: ['admin', 'manufacturer', 'secretary'] },
         ],
     },
