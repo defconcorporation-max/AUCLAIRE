@@ -477,7 +477,7 @@ export default function Tasks() {
                                             <div className="text-[13px] text-muted-foreground leading-relaxed">
                                                 {renderTechnicalSummary(summary.summary)}
                                             </div>
-                                            {((summary as any)?.images && Array.isArray((summary as any).images) && (summary as any).images.length > 0) && (
+                                            {(summary.images && Array.isArray(summary.images) && summary.images.length > 0) && (
                                                 <div className="mt-8 border-t border-luxury-gold/10 pt-4">
                                                     <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-luxury-gold mb-3 flex items-center gap-2">
                                                         <ImageIcon className="w-3 h-3" />
