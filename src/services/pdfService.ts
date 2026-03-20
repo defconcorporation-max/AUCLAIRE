@@ -6,63 +6,82 @@ import { calculateCanadianTax, type CanadianProvince } from '@/utils/taxUtils';
 
 /**
  * Generates a professional PDF invoice for Auclaire Jewelry.
- * Supports Canadian tax breakdowns, payment history, and bilingual formatting.
+ * Highly robust against null/undefined values and API variations.
  */
 export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) => {
     try {
+        console.log('Starting PDF Generation for invoice:', invoice.id);
+        
         const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageWidth = doc.internal.pageSize.getWidth() || 210;
 
         // ── Brand Colors ──
         const gold: [number, number, number] = [212, 175, 55];
         const dark: [number, number, number] = [40, 40, 40];
         const muted: [number, number, number] = [120, 120, 120];
 
-        // ── Helper: format currency ──
-        const fmt = (n: number) =>
-            n.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
+        // ── Helpers ──
+        const fmt = (n: any) => {
+            const num = Number(n) || 0;
+            return num.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
+        };
+
+        const safeText = (text: any, x: number, y: number, options?: any) => {
+            if (isNaN(x) || isNaN(y)) return;
+            const str = String(text ?? '');
+            if (!str) return;
+            try {
+                // Ensure options is a valid object or undefined
+                const opts = (options && typeof options === 'object') ? options : undefined;
+                doc.text(str, x, y, opts);
+            } catch (e) {
+                console.warn('jsPDF.text failed for:', str, e);
+            }
+        };
 
         // ── Header: Company Info ──
         doc.setFontSize(22);
         doc.setTextColor(...dark);
-        doc.text(settings.company_name, 14, 22);
+        safeText(settings.company_name || 'Auclaire Jewelry', 14, 22);
 
         doc.setFontSize(9);
         doc.setTextColor(...muted);
-        doc.text(settings.address_line1, 14, 28);
-        if (settings.address_line2) {
-            doc.text(settings.address_line2, 14, 32);
+        safeText(settings.address_line1 || '', 14, 28);
+        
+        const hasAddr2 = !!settings.address_line2;
+        if (hasAddr2) {
+            safeText(settings.address_line2, 14, 32);
         }
-        doc.text(`${settings.city}, ${settings.country}`, 14, settings.address_line2 ? 36 : 32);
+        
+        const cityCountryY = hasAddr2 ? 36 : 32;
+        safeText(`${settings.city || ''}, ${settings.country || ''}`, 14, cityCountryY);
+        
+        const emailY = hasAddr2 ? 40 : 36;
         if (settings.contact_email) {
-            doc.text(settings.contact_email, 14, settings.address_line2 ? 40 : 36);
+            safeText(settings.contact_email, 14, emailY);
         }
+        
+        const phoneY = hasAddr2 ? 44 : 40;
         if (settings.phone) {
-            doc.text(settings.phone, 14, settings.address_line2 ? 44 : 40);
+            safeText(settings.phone, 14, phoneY);
         }
 
         // ── Header: Invoice Info (right side) ──
         doc.setFontSize(16);
         doc.setTextColor(...gold);
-        doc.text('FACTURE', pageWidth - 14, 22, { align: 'right' });
+        safeText('FACTURE', pageWidth - 14, 22, { align: 'right' });
 
         doc.setFontSize(9);
         doc.setTextColor(...muted);
-        const invoiceNum = `#${invoice.id.substring(0, 8).toUpperCase()}`;
-        doc.text(`No: ${invoiceNum}`, pageWidth - 14, 28, { align: 'right' });
-        doc.text(
-            `Date: ${new Date(invoice.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}`,
-            pageWidth - 14,
-            32,
-            { align: 'right' }
-        );
+        const invoiceNum = (invoice.id || '00000000').substring(0, 8).toUpperCase();
+        safeText(`No: #${invoiceNum}`, pageWidth - 14, 28, { align: 'right' });
+        
+        const dateStr = invoice.created_at ? new Date(invoice.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A';
+        safeText(`Date: ${dateStr}`, pageWidth - 14, 32, { align: 'right' });
+        
         if (invoice.due_date) {
-            doc.text(
-                `Échéance: ${new Date(invoice.due_date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}`,
-                pageWidth - 14,
-                36,
-                { align: 'right' }
-            );
+            const dueStr = new Date(invoice.due_date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+            safeText(`Échéance: ${dueStr}`, pageWidth - 14, 36, { align: 'right' });
         }
 
         // ── Gold separator line ──
@@ -73,21 +92,21 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
         // ── Bill To ──
         doc.setFontSize(10);
         doc.setTextColor(...gold);
-        doc.text('Facturer à:', 14, 56);
+        safeText('Facturer à:', 14, 56);
 
         doc.setFontSize(11);
         doc.setTextColor(...dark);
-        doc.text(invoice.project?.client?.full_name || 'Client', 14, 62);
+        safeText(invoice.project?.client?.full_name || 'Client', 14, 62);
 
         doc.setFontSize(9);
         doc.setTextColor(...muted);
-        doc.text(`Projet: ${invoice.project?.title || 'Projet'}`, 14, 67);
+        safeText(`Projet: ${invoice.project?.title || 'Projet'}`, 14, 67);
 
         // ── Table: Line Items ──
         const taxProvince = invoice.project?.financials?.tax_province as CanadianProvince | undefined;
-        const netAmount = invoice.amount;
+        const netAmount = Number(invoice.amount) || 0;
 
-        const tableRows: string[][] = [
+        const tableRows = [
             [
                 'Design et production de bijoux sur mesure',
                 '1',
@@ -100,22 +119,24 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
         let taxTotal = 0;
         const taxRows: string[][] = [];
         if (taxProvince) {
-            const taxes = calculateCanadianTax(netAmount, taxProvince);
-            taxTotal = taxes.total;
-            if (taxes.gst > 0) {
-                taxRows.push(['TPS (5%)', fmt(taxes.gst)]);
+            try {
+                const taxes = calculateCanadianTax(netAmount, taxProvince);
+                taxTotal = taxes.total || 0;
+                if (taxes.gst > 0) taxRows.push(['TPS (5%)', fmt(taxes.gst)]);
+                if (taxes.pst > 0) {
+                    const pstLabel = taxProvince === 'QC' ? 'TVQ (9,975%)' : `TVP (${taxProvince})`;
+                    taxRows.push([pstLabel, fmt(taxes.pst)]);
+                }
+                if (taxes.hst > 0) taxRows.push([`TVH (${taxProvince})`, fmt(taxes.hst)]);
+            } catch (te) {
+                console.error('Tax calc error:', te);
             }
-            if (taxes.pst > 0) {
-                // Quebec uses TVQ label; other provinces use TVP
-                const pstLabel = taxProvince === 'QC' ? 'TVQ (9,975%)' : `TVP (${taxProvince})`;
-                taxRows.push([pstLabel, fmt(taxes.pst)]);
+        } else {
+            const rate = Number(settings.tax_rate) || 0;
+            if (rate > 0) {
+                taxTotal = netAmount * (rate / 100);
+                taxRows.push([`Taxe (${rate}%)`, fmt(taxTotal)]);
             }
-            if (taxes.hst > 0) {
-                taxRows.push([`TVH (${taxProvince})`, fmt(taxes.hst)]);
-            }
-        } else if (settings.tax_rate > 0) {
-            taxTotal = netAmount * (settings.tax_rate / 100);
-            taxRows.push([`Taxe (${settings.tax_rate}%)`, fmt(taxTotal)]);
         }
 
         const grandTotal = netAmount + taxTotal;
@@ -145,25 +166,24 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
         });
 
         // ── Get final Y position after table ──
-        // jspdf-autotable v5 stores info on the doc instance via (doc as any).lastAutoTable
-        const lastTable = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable;
-        let yPos = (lastTable?.finalY ?? 90) + 10;
+        const lastTable = (doc as any).lastAutoTable;
+        let yPos = (lastTable && typeof lastTable.finalY === 'number' ? lastTable.finalY : 90) + 10;
 
         // ── Totals Section ──
         const totalsX = pageWidth - 14;
 
         doc.setFontSize(9);
         doc.setTextColor(...muted);
-        doc.text(`Sous-total:`, totalsX - 50, yPos);
+        safeText(`Sous-total:`, totalsX - 50, yPos);
         doc.setTextColor(...dark);
-        doc.text(fmt(netAmount), totalsX, yPos, { align: 'right' });
+        safeText(fmt(netAmount), totalsX, yPos, { align: 'right' });
 
         taxRows.forEach(([label, value]) => {
             yPos += 6;
             doc.setTextColor(...muted);
-            doc.text(label + ':', totalsX - 50, yPos);
+            safeText(label + ':', totalsX - 50, yPos);
             doc.setTextColor(...dark);
-            doc.text(value, totalsX, yPos, { align: 'right' });
+            safeText(value, totalsX, yPos, { align: 'right' });
         });
 
         // Total line
@@ -176,8 +196,8 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
         doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...gold);
-        doc.text('TOTAL:', totalsX - 50, yPos);
-        doc.text(fmt(grandTotal), totalsX, yPos, { align: 'right' });
+        safeText('TOTAL:', totalsX - 50, yPos);
+        safeText(fmt(grandTotal), totalsX, yPos, { align: 'right' });
 
         // ── Payment History ──
         const payments = invoice.payment_history || [];
@@ -186,12 +206,12 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
             doc.setFontSize(10);
             doc.setTextColor(...gold);
             doc.setFont('helvetica', 'bold');
-            doc.text('Historique des paiements', 14, yPos);
+            safeText('Historique des paiements', 14, yPos);
             doc.setFont('helvetica', 'normal');
 
             const paymentRows = payments.map((p, idx) => [
                 String(idx + 1),
-                new Date(p.date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }),
+                p.date ? new Date(p.date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A',
                 fmt(p.amount),
                 p.note || '-',
             ]);
@@ -216,8 +236,8 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
                 margin: { left: 14, right: 14 },
             });
 
-            const lastPayTable = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable;
-            yPos = (lastPayTable?.finalY ?? yPos) + 8;
+            const lastPayTable = (doc as any).lastAutoTable;
+            yPos = (lastPayTable && typeof lastPayTable.finalY === 'number' ? lastPayTable.finalY : yPos) + 8;
 
             // Balance
             const totalPaid = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
@@ -226,14 +246,14 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(...muted);
-            doc.text(`Total payé: ${fmt(totalPaid)}`, 14, yPos);
+            safeText(`Total payé: ${fmt(totalPaid)}`, 14, yPos);
 
-            if (balance > 0) {
+            if (balance > 0.01) {
                 doc.setTextColor(200, 50, 50);
-                doc.text(`Solde dû: ${fmt(balance)}`, totalsX, yPos, { align: 'right' });
+                safeText(`Solde dû: ${fmt(balance)}`, totalsX, yPos, { align: 'right' });
             } else {
                 doc.setTextColor(50, 150, 50);
-                doc.text('PAYÉE EN TOTALITÉ', totalsX, yPos, { align: 'right' });
+                safeText('PAYÉE EN TOTALITÉ', totalsX, yPos, { align: 'right' });
             }
         }
 
@@ -243,12 +263,12 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(50, 150, 50);
-            doc.text('✓ PAYÉE', pageWidth / 2, yPos, { align: 'center' });
+            safeText('✓ PAYÉE', pageWidth / 2, yPos, { align: 'center' });
         } else if (invoice.status === 'partial') {
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(200, 150, 0);
-            doc.text('PAIEMENT PARTIEL', pageWidth / 2, yPos, { align: 'center' });
+            safeText('PAIEMENT PARTIEL', pageWidth / 2, yPos, { align: 'center' });
         }
 
         // ── Footer ──
@@ -260,20 +280,22 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...muted);
-        doc.text('Merci pour votre confiance!', pageWidth / 2, footerY, { align: 'center' });
-        doc.text(
-            `${settings.company_name} • ${settings.contact_email} • ${settings.phone}`,
+        safeText('Merci pour votre confiance!', pageWidth / 2, footerY, { align: 'center' });
+        safeText(
+            `${settings.company_name || 'Auclaire Jewelry'} • ${settings.contact_email || ''} • ${settings.phone || ''}`,
             pageWidth / 2,
             footerY + 4,
             { align: 'center' }
         );
 
         // ── Save ──
-        const clientName = (invoice.project?.client?.full_name || 'Client').replace(/\s+/g, '_');
-        const fileName = `Facture_${invoiceNum.replace('#', '')}_${clientName}.pdf`;
+        const clientNameRaw = (invoice.project?.client?.full_name || 'Client');
+        const clientName = String(clientNameRaw).replace(/\s+/g, '_');
+        const fileName = `Facture_${invoiceNum}_${clientName}.pdf`;
         doc.save(fileName);
+        console.log('PDF Generation Complete:', fileName);
     } catch (error) {
         console.error('PDF Generation Error:', error);
-        alert('Erreur lors de la génération du PDF. Veuillez vérifier la console pour plus de détails.');
+        alert('Erreur lors de la génération du PDF. Échec critique.');
     }
 };
