@@ -71,15 +71,11 @@ export default function Tasks() {
         const newStatus = task.status === 'completed' ? 'pending' : 'completed';
         updateStatusMutation.mutate({ id: task.id, status: newStatus });
     };
-
     const fetchSummary = async (task: Task) => {
-        // Log keys for debugging
         const metadata = task.metadata || {};
         const contactId = metadata.contact_id || metadata.contact?.id || metadata.contactId || metadata.cid;
         const locationId = metadata.location_id || metadata.location?.id || metadata.locationId;
-        
-        console.log('Fetching summary for:', { contactId, locationId, metadataKeys: Object.keys(metadata) });
-        
+
         if (!contactId) {
             toast({
                 title: "Information manquante",
