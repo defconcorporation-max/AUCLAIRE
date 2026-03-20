@@ -95,8 +95,8 @@ export default function Tasks() {
                     variant: "destructive"
                 });
                 setSummary(null);
-            } else {
-                setSummary(res);
+            } else if (res && 'summary' in res) {
+                setSummary(res as { summary: string; images: string[] });
             }
         } catch (error: any) {
             toast({
