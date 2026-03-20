@@ -1,8 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Map, GraduationCap, Tag, Calculator } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function ResourcesHub() {
     const navigate = useNavigate();
+    const { role } = useAuth();
+    const canAccessFlashQuote = role !== 'manufacturer';
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
@@ -67,7 +70,8 @@ export default function ResourcesHub() {
                     </div>
                 </button>
 
-                {/* Flash Calculator Card */}
+                {/* Flash Calculator — réservé vente / admin (pas manufacturier) */}
+                {canAccessFlashQuote && (
                 <button
                     onClick={() => navigate('/dashboard/resources/calculator')}
                     className="group relative bg-white/5 dark:bg-black/40 border border-black/5 dark:border-white/10 p-8 rounded-2xl hover:border-luxury-gold/50 transition-all duration-300 text-left overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(210,181,123,0.15)]"
@@ -90,6 +94,7 @@ export default function ResourcesHub() {
                         Lancer le calculateur <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
                     </div>
                 </button>
+                )}
 
                 {/* Catalogue & Pricing Card */}
                 <button

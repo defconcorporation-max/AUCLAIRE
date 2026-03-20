@@ -23,21 +23,40 @@ import { apiExpenses } from '@/services/apiExpenses';
 import { apiActivities } from '@/services/apiActivities';
 import { cn, formatCurrency } from "@/lib/utils";
 import { financialUtils } from "@/utils/financialUtils";
+import { useAuth } from '@/context/AuthContext';
 
+/** Données sensibles (CA, encaissements, marges) — jamais exposées aux manufacturiers */
 export default function DailyReportSheet() {
+    const { role } = useAuth();
+    const hideFinancialFlash = role === 'manufacturer';
+
     const [open, setOpen] = useState(false);
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('day');
 
-    const { data: invoices = [], refetch: refetchInvoices } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll, enabled: open });
-    const { data: expenses = [] } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll, enabled: open });
-    const { data: activities = [], refetch: refetchActivities } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll, enabled: open });
+    const queriesEnabled = open && !hideFinancialFlash;
+
+    const { data: invoices = [], refetch: refetchInvoices } = useQuery({
+        queryKey: ['invoices'],
+        queryFn: apiInvoices.getAll,
+        enabled: queriesEnabled,
+    });
+    const { data: expenses = [] } = useQuery({
+        queryKey: ['expenses'],
+        queryFn: apiExpenses.getAll,
+        enabled: queriesEnabled,
+    });
+    const { data: activities = [], refetch: refetchActivities } = useQuery({
+        queryKey: ['activities'],
+        queryFn: apiActivities.getAll,
+        enabled: queriesEnabled,
+    });
 
     useEffect(() => {
-        if (open) {
+        if (queriesEnabled) {
             refetchInvoices();
             refetchActivities();
         }
-    }, [open, refetchInvoices, refetchActivities]);
+    }, [queriesEnabled, refetchInvoices, refetchActivities]);
 
     const stats = useMemo(() => {
         const { start, end } = financialUtils.getPeriodRange(
@@ -80,6 +99,10 @@ export default function DailyReportSheet() {
                    timeframe === 'month' ? "30 derniers jours" : "tout l'historique"
         };
     }, [invoices, expenses, activities, timeframe]);
+
+    if (hideFinancialFlash) {
+        return null;
+    }
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>

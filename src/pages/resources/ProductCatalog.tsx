@@ -227,6 +227,8 @@ export default function ProductCatalog() {
     const { role, isAdmin } = useAuth();
     const queryClient = useQueryClient();
     const canManage = isAdmin || role === 'secretary' || role === 'admin';
+    /** Aligné sur la route /resources/calculator — manufacturiers exclus */
+    const canAccessFlashQuote = isAdmin || role === 'admin' || role === 'affiliate' || role === 'secretary';
 
     // Navigation and Search state
     const [currentPath, setCurrentPath] = useState<CatalogNode[]>([]);
@@ -400,6 +402,7 @@ export default function ProductCatalog() {
                 </div>
 
                 <div className="flex gap-2">
+                    {canAccessFlashQuote && (
                     <Button 
                         variant="outline"
                         onClick={() => navigate('/dashboard/resources/calculator')}
@@ -407,6 +410,7 @@ export default function ProductCatalog() {
                     >
                         <Calculator className="w-4 h-4 mr-2" /> Flash Quote
                     </Button>
+                    )}
 
                     {canManage && (
                         <Button 
