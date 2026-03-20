@@ -63,7 +63,14 @@ export const apiTasks = {
             body: { contactId, locationId }
         });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Edge Function Error:', error);
+            // If the error has a response, we can try to extract the body
+            if (error instanceof Error && 'context' in (error as any)) {
+                 // Supabase often puts it in context
+            }
+            return { error: error.message || "Erreur de communication avec Supabase" };
+        }
         return data as { summary: string; images: string[] };
     }
 };
