@@ -179,13 +179,13 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
             doc.line(14, visualY + 2, pageWidth - 14, visualY + 2);
             
             visualY += 8;
-            const imgWidth = (pageWidth - 32) / 2;
-            const imgHeight = imgWidth; // Square aspect ratio like the Soumission
+            const imgWidth = (pageWidth - 36) / 2;
+            const imgHeight = imgWidth * 0.85; // Slightly less than square for better layout fit
 
             for (let i = 0; i < allImages.length; i++) {
                 try {
                     const imgData = await getBase64ImageFromURL(allImages[i]);
-                    const x = 14 + (i * (imgWidth + 4));
+                    const x = 14 + (i * (imgWidth + 8));
                     doc.addImage(imgData, 'PNG', x, visualY, imgWidth, imgHeight);
                 } catch (e) {
                     console.warn('Failed to add image to PDF:', allImages[i], e);
@@ -202,8 +202,18 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
         }
 
         // 7. SUMMARY BOX
-        const summaryY = Math.max(visualY, (doc as any).lastAutoTable.finalY + 15);
+        const footerThreshold = pageHeight - 65; // Leave space for footer
+        let summaryY = Math.max(visualY, (doc as any).lastAutoTable.finalY + 10);
         
+        // PAGE BREAK DETECTION
+        if (summaryY + 45 > footerThreshold) {
+            doc.addPage();
+            summaryY = 20; // Start at top of new page
+            // Redraw top gold line on new page
+            doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
+            doc.rect(0, 0, pageWidth, 4, 'F');
+        }
+
         doc.setFillColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
         doc.rect(14, summaryY, pageWidth - 28, 45, 'F');
 
@@ -238,7 +248,16 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
         // 8. PAYMENT HISTORY
         const payments = invoice.payment_history || [];
         if (payments.length > 0) {
-            const historyY = summaryY + 60;
+            let historyY = summaryY + 60;
+            
+            // Check if history fits on this page
+            if (historyY + (payments.length * 8) + 20 > pageHeight - 20) {
+                doc.addPage();
+                historyY = 20;
+                doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
+                doc.rect(0, 0, pageWidth, 4, 'F');
+            }
+
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
             doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
