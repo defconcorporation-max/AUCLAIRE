@@ -11,9 +11,9 @@ echo ===========================================
 git commit -m "[v%VERSION%] %MESSAGE%" --no-verify
 echo.
 echo ===========================================
-echo [3/3] PUSHING TO PRODUCTION
+echo [3/3] FORCE PUSHING TO PRODUCTION
 echo ===========================================
-git push origin main
+git push origin HEAD:main --force
 echo.
 echo All stabilized and pushed.
 echo ===========================================
