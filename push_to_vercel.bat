@@ -1,26 +1,22 @@
 @echo off
-title AUCLAIRE DEPLOYER
+title AUCLAIRE DEFINITIVE FIX PUSH (v34)
 echo ===========================================
-echo AUCLAIRE - VERCEL DEPLOYMENT TRIGGER
+echo [1/3] COMMITTING STABILITY FIXES
 echo ===========================================
-
-echo [1/4] SYNCING WITH GITHUB...
-git pull origin main --rebase
-
-echo [2/4] UPDATING HEARTBEAT...
-echo %date% %time% > force_deploy.txt
-
-echo [3/4] COMMITTING CHANGES...
 git add .
-:: Try to commit. Git will exit naturally if there's nothing new.
-git commit -m "Feature: Finance Intelligence & Luxury UI Refresh - %date% %time%"
-
-echo [4/4] PUSHING TO PRODUCTION...
-git push origin main
-
+git commit -m "Fix: Final defensive checks for Tasks page"
 echo.
 echo ===========================================
-echo DEPLOYMENT TRIGGER COMPLETED
-echo PLEASE CHECK VERCEL DASHBOARD FOR STATUS
+echo [2/3] SYNCING WITH GITHUB
+echo ===========================================
+git pull origin main --rebase
+echo.
+echo ===========================================
+echo [3/3] FORCE PUSHING TO PRODUCTION
+echo ===========================================
+git push origin HEAD:main --force
+echo.
+echo ===========================================
+echo ALL DONE! REFRESH YOUR BROWSER IN 1 MINUTE
 echo ===========================================
 pause
