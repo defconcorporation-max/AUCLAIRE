@@ -53,12 +53,16 @@ export default function Tasks() {
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summary, setSummary] = useState<{ summary: string; images: string[] } | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [newTask, setNewTask] = useState<Partial<Task>>({
+    const [newTask, setNewTask] = useState<Partial<Task> & { category?: string; contact_id?: string }>({
         title: '',
         description: '',
         priority: 'normal',
-        status: 'pending'
+        status: 'pending',
+        category: 'operations',
+        contact_id: ''
     });
+
+    const isDesignTask = (task: any) => !!task?.ghl_id || task?.metadata?.category === 'design';
 
     const { data: tasks = [], isLoading } = useQuery({
         queryKey: ['tasks'],
@@ -71,11 +75,21 @@ export default function Tasks() {
     });
 
     const createTaskMutation = useMutation({
-        mutationFn: apiTasks.create,
+        mutationFn: (taskData: any) => {
+            const { category, contact_id, ...rest } = taskData;
+            return apiTasks.create({
+                ...rest,
+                metadata: { 
+                    ...rest.metadata, 
+                    category: category || 'operations',
+                    contact_id: contact_id || undefined
+                }
+            });
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
             setIsCreateModalOpen(false);
-            setNewTask({ title: '', description: '', priority: 'normal', status: 'pending' });
+            setNewTask({ title: '', description: '', priority: 'normal', status: 'pending', category: 'operations', contact_id: '' });
             toast({ title: "Tâche créée", description: "La tâche a été ajoutée avec succès." });
         }
     });
@@ -97,8 +111,8 @@ export default function Tasks() {
                              ((task.description || "").toLowerCase().includes((searchTerm || "").toLowerCase()));
         const matchesFilter = filter === 'all' || task.status === filter;
         const matchesType = typeFilter === 'all' || 
-                           (typeFilter === 'design' && !!task.ghl_id) || 
-                           (typeFilter === 'ops' && !task.ghl_id);
+                           (typeFilter === 'design' && isDesignTask(task)) || 
+                           (typeFilter === 'ops' && !isDesignTask(task));
         const matchesOwnership = !viewOnlyMine || task.assigned_to === user?.id;
         return matchesSearch && matchesFilter && matchesType && matchesOwnership;
     });
@@ -320,7 +334,7 @@ export default function Tasks() {
                                                 }`}>
                                                     {task.title}
                                                 </h3>
-                                                {task.ghl_id ? (
+                                                {isDesignTask(task) ? (
                                                     <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border-blue-500/20 flex gap-1 items-center px-2 py-0.5">
                                                         <Layout className="w-3 h-3" /> Design
                                                     </Badge>
@@ -385,7 +399,7 @@ export default function Tasks() {
                                 <Badge variant="outline" className={getPriorityColor(selectedTask?.priority || 'normal')}>
                                     Priorité {selectedTask?.priority || 'Normal'}
                                 </Badge>
-                                {selectedTask?.ghl_id ? (
+                                {isDesignTask(selectedTask) ? (
                                     <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 flex gap-1 items-center">
                                         <Layout className="w-3 h-3" /> Design
                                     </Badge>
@@ -395,12 +409,12 @@ export default function Tasks() {
                                     </Badge>
                                 )}
                             </div>
-                            <span className="text-xs text-muted-foreground uppercase tracking-tighter italic">ID: {String(selectedTask?.ghl_id || "INTERNE").substring(0, 15)}</span>
+                            <span className="text-xs text-muted-foreground uppercase tracking-tighter italic">ID: {String(selectedTask?.ghl_id || selectedTask?.metadata?.category?.toUpperCase() || "INTERNE").substring(0, 15)}</span>
                         </div>
                         <DialogTitle className="text-2xl font-serif text-luxury-gold mt-4">{selectedTask?.title}</DialogTitle>
                         <DialogDescription className="text-muted-foreground mt-2">
-                           {selectedTask?.ghl_id 
-                            ? "Détails de la tâche synchronisée via GoHighLevel." 
+                           {isDesignTask(selectedTask) 
+                            ? "Détails de la tâche synchronisée via GoHighLevel ou désignée comme Design." 
                             : "Tâche opérationnelle créée manuellement dans l'application Auclaire."}
                         </DialogDescription>
                     </DialogHeader>
@@ -434,7 +448,7 @@ export default function Tasks() {
                         </div>
 
                         <div className="space-y-4">
-                            {selectedTask?.ghl_id ? (
+                            {isDesignTask(selectedTask) ? (
                                 <div className="bg-luxury-gold/5 p-4 rounded-xl border border-luxury-gold/10">
                                     <div className="flex justify-between items-center mb-4">
                                         <h4 className="text-xs font-bold uppercase tracking-widest text-luxury-gold">Résumé Conversation</h4>
@@ -502,11 +516,12 @@ export default function Tasks() {
                     </div>
 
                     <div className="mt-4 flex justify-between gap-3">
-                        {selectedTask?.ghl_id && (
+                        {isDesignTask(selectedTask) && (
                             <Button
                                 variant="outline"
                                 className="flex-1 border-luxury-gold/20 hover:bg-luxury-gold/5"
                                 onClick={() => selectedTask && (window.open(`https://app.gohighlevel.com/v2/location/${selectedTask.metadata?.location?.id || selectedTask.metadata?.locationId}/contacts/detail/${selectedTask.metadata?.contact_id || selectedTask.metadata?.contactId}`, '_blank'))}
+                                disabled={!selectedTask?.metadata?.contact_id && !selectedTask?.metadata?.contactId && !selectedTask?.ghl_id}
                             >
                                 <ExternalLink className="w-4 h-4 mr-2" />
                                 Ouvrir dans GHL
@@ -527,30 +542,27 @@ export default function Tasks() {
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border-luxury-gold/20">
                     <DialogHeader>
-                        <DialogTitle className="font-serif text-2xl text-luxury-gold">Nouvelle Tâche Opérationnelle</DialogTitle>
-                        <DialogDescription>Créez une tâche interne pour l'équipe Maison Auclaire.</DialogDescription>
+                        <DialogTitle className="font-serif text-2xl text-luxury-gold">Nouvelle Tâche</DialogTitle>
+                        <DialogDescription>Créez une tâche interne ou un nouveau projet de design.</DialogDescription>
                     </DialogHeader>
                     
                     <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="title">Titre</Label>
-                            <Input 
-                                id="title" 
-                                placeholder="ex: Commander les écrins" 
-                                value={newTask.title}
-                                onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="desc">Description</Label>
-                            <Textarea 
-                                id="desc" 
-                                placeholder="Détails de l'opération..." 
-                                value={newTask.description}
-                                onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
-                            />
-                        </div>
                         <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Type de Tâche</Label>
+                                <Select 
+                                    value={newTask.category} 
+                                    onValueChange={(v) => setNewTask(prev => ({ ...prev, category: v }))}
+                                >
+                                    <SelectTrigger className={newTask.category === 'design' ? "border-blue-500/50 text-blue-500" : "border-orange-500/50 text-orange-500"}>
+                                        <SelectValue placeholder="Type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="design" className="text-blue-500">🎨 Design</SelectItem>
+                                        <SelectItem value="operations" className="text-orange-500">🏗️ Opérations</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div className="space-y-2">
                                 <Label>Priorité</Label>
                                 <Select 
@@ -568,6 +580,47 @@ export default function Tasks() {
                                     </SelectContent>
                                 </Select>
                             </div>
+                        </div>
+
+                        {newTask.category === 'design' && (
+                            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                <Label className="text-blue-500 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
+                                    <Layout className="w-3 h-3" />
+                                    ID Contact GHL (Optionnel)
+                                </Label>
+                                <Input 
+                                    placeholder="ex: psh_..." 
+                                    className="border-blue-500/20 focus-visible:ring-blue-500"
+                                    value={newTask.contact_id}
+                                    onChange={(e) => setNewTask(prev => ({ ...prev, contact_id: e.target.value }))}
+                                />
+                                <p className="text-[10px] text-muted-foreground italic leading-tight">
+                                    Permet de générer le résumé technique si l'ID est valide dans GoHighLevel.
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <Label htmlFor="title">Titre</Label>
+                            <Input 
+                                id="title" 
+                                placeholder={newTask.category === 'design' ? "ex: Création Bague Or 18k" : "ex: Commander les écrins"} 
+                                value={newTask.title}
+                                onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="desc">Description</Label>
+                            <Textarea 
+                                id="desc" 
+                                placeholder="Détails de la tâche..." 
+                                value={newTask.description}
+                                onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Assigner à</Label>
                                 <Select 
@@ -584,15 +637,15 @@ export default function Tasks() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="due">Date d'échéance</Label>
-                            <Input 
-                                id="due" 
-                                type="date" 
-                                value={newTask.due_date}
-                                onChange={(e) => setNewTask(prev => ({ ...prev, due_date: e.target.value }))}
-                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="due">Échéance</Label>
+                                <Input 
+                                    id="due" 
+                                    type="date" 
+                                    value={newTask.due_date}
+                                    onChange={(e) => setNewTask(prev => ({ ...prev, due_date: e.target.value }))}
+                                />
+                            </div>
                         </div>
                     </div>
 
