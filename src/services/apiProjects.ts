@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { apiActivities } from './apiActivities';
 
 // --- TYPES ---
 
@@ -232,7 +233,6 @@ export const apiProjects = {
         if (error) throw error;
 
         try {
-            const { apiActivities } = await import('./apiActivities');
             await apiActivities.log({
                 project_id: id,
                 user_id: userContext?.id || 'system',

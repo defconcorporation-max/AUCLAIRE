@@ -3,18 +3,19 @@ title AUCLAIRE FINAL STABILIZE PUSH (v37.1)
 echo ===========================================
 echo [1/3] STAGING ALL CHANGES
 echo ===========================================
-git add --all
+git add .
 echo.
 echo ===========================================
 echo [2/3] COMMITTING FINAL BUILD FIX
 echo ===========================================
-git commit -m "Fix: Final build stability v37.1 - Enhanced Dingo Summaries & Conversation Photos" --no-verify
+git commit -m "[v%VERSION%] %MESSAGE%" --no-verify
 echo.
 echo ===========================================
-echo [3/3] FORCE PUSHING TO PRODUCTION
+echo [3/3] PUSHING TO PRODUCTION
 echo ===========================================
-git push origin HEAD:main --force
+git push origin main
 echo.
+echo All stabilized and pushed.
 echo ===========================================
 echo ALL DONE! REFRESH YOUR BROWSER IN 1 MINUTE
 echo ===========================================

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,10 +41,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { apiUsers } from '@/services/apiUsers';
-import { Plus, Layout, Settings } from 'lucide-react';
+import { apiClients } from '@/services/apiClients';
+import { apiProjects, JewelryType } from '@/services/apiProjects';
+import { Plus, Layout, Settings, FilePlus } from 'lucide-react';
 
 export default function Tasks() {
     const { role, user } = useAuth();
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending');
@@ -158,6 +162,80 @@ export default function Tasks() {
         } finally {
             setSummaryLoading(false);
         }
+    };
+    
+    const extractProjectInfo = (text: string) => {
+        const getValue = (regex: RegExp) => {
+            const match = text.match(regex);
+            return match ? match[1].trim() : null;
+        };
+
+        return {
+            fullName: getValue(/\*\*Nom Complet\*\*\s*:\s*(.*)/i),
+            email: getValue(/\*\*Email\*\*\s*:\s*(.*)/i),
+            phone: getValue(/\*\*Téléphone\*\*\s*:\s*(.*)/i),
+            jewelryType: getValue(/\*\*Type de Bijou\*\*\s*:\s*(.*)/i) as JewelryType | null,
+            budget: getValue(/\*\*Budget\*\*\s*:\s*([\d\s\$€]+)/i)?.replace(/[^\d]/g, ''),
+            deadline: getValue(/\*\*Échéance\*\*\s*:\s*(.*)/i),
+        };
+    };
+
+    const convertToProjectMutation = useMutation({
+        mutationFn: async ({ task, summary }: { task: Task, summary: { summary: string, images: string[] } }) => {
+            const info = extractProjectInfo(summary.summary);
+            let clientId = task.contact_id || task.client?.id;
+
+            // 1. Create client if not exists
+            if (!clientId) {
+                const newClient = await apiClients.create({
+                    full_name: info.fullName || task.title || 'Client Inconnu',
+                    email: info.email || undefined,
+                    phone: info.phone || undefined,
+                    notes: `Créé via conversion de tâche GHL: ${task.id}`
+                });
+                clientId = newClient.id;
+            }
+
+            // 2. Create project
+            const newProject = await apiProjects.create({
+                title: task.title,
+                client_id: clientId,
+                description: `Projet initialisé depuis GHL. ${info.jewelryType ? `Bijou: ${info.jewelryType}` : ''}`,
+                jewelry_type: info.jewelryType || 'Autre',
+                budget: info.budget ? Number(info.budget) : undefined,
+                deadline: info.deadline && !isNaN(Date.parse(info.deadline)) ? new Date(info.deadline).toISOString() : undefined,
+                status: 'designing',
+                stage_details: {
+                    design_notes: summary.summary,
+                    sketch_files: summary.images
+                }
+            });
+
+            // 3. Link task to project
+            await apiTasks.linkToProject(task.id, newProject.id, clientId);
+
+            return newProject;
+        },
+        onSuccess: (project) => {
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            toast({ 
+                title: "Projet créé !", 
+                description: "Le client et le projet ont été initialisés avec succès." 
+            });
+            navigate(`/projects/${project.id}`);
+        },
+        onError: (error: any) => {
+            toast({ 
+                title: "Erreur de conversion", 
+                description: error.message, 
+                variant: "destructive" 
+            });
+        }
+    });
+
+    const handleConvertToProject = () => {
+        if (!selectedTask || !summary) return;
+        convertToProjectMutation.mutate({ task: selectedTask, summary });
     };
 
     const renderTechnicalSummary = (text: string) => {
@@ -527,6 +605,24 @@ export default function Tasks() {
                                                                 </div>
                                                             </a>
                                                         ))}
+                                                    </div>
+
+                                                    <div className="mt-6 pt-4 border-t border-luxury-gold/20 flex flex-col gap-3">
+                                                        <Button 
+                                                            className="w-full bg-luxury-gold text-black hover:bg-luxury-gold/90 h-10 font-bold uppercase tracking-widest text-[10px]"
+                                                            onClick={handleConvertToProject}
+                                                            disabled={convertToProjectMutation.isPending}
+                                                        >
+                                                            {convertToProjectMutation.isPending ? (
+                                                                <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                                                            ) : (
+                                                                <FilePlus className="w-3 h-3 mr-2" />
+                                                            )}
+                                                            Convertir en Projet Initial
+                                                        </Button>
+                                                        <p className="text-[9px] text-center text-muted-foreground italic px-4 uppercase font-medium">
+                                                            Cette action créera un nouveau client et un dossier projet complet avec ces notes.
+                                                        </p>
                                                     </div>
                                                 </div>
                                             )}

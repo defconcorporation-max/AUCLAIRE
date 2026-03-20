@@ -16,7 +16,7 @@ export interface Task {
     updated_at: string;
     // Joined data
     assigned_to_profile?: { full_name: string; email: string };
-    client?: { full_name: string };
+    client?: { id: string; full_name: string };
     project?: { title: string };
 }
 
@@ -27,7 +27,7 @@ export const apiTasks = {
             .select(`
                 *,
                 assigned_to_profile:profiles!tasks_assigned_to_fkey(full_name, email),
-                client:clients(full_name),
+                client:clients(id, full_name),
                 project:projects(title)
             `)
             .order('due_date', { ascending: true, nullsFirst: false })
@@ -40,13 +40,39 @@ export const apiTasks = {
     async updateStatus(id: string, status: Task['status']) {
         const { data, error } = await supabase
             .from('tasks')
-            .update({ status })
+            .update({ status, updated_at: new Date().toISOString() })
             .eq('id', id)
             .select()
             .single();
 
-        if (error) throw error;
-        return data as Task;
+        if (error) {
+            // Assuming 'toast' is defined elsewhere or needs to be imported
+            // toast({ title: 'Error updating task status', description: error.message, variant: 'destructive' });
+            throw error;
+        }
+        return data;
+    },
+
+    async linkToProject(taskId: string, projectId: string, clientId?: string) {
+        const updates: any = {
+            project_id: projectId,
+            updated_at: new Date().toISOString()
+        };
+        if (clientId) updates.contact_id = clientId;
+
+        const { data, error } = await supabase
+            .from('tasks')
+            .update(updates)
+            .eq('id', taskId)
+            .select()
+            .single();
+
+        if (error) {
+            // Assuming 'toast' is defined elsewhere or needs to be imported
+            // toast({ title: 'Error linking task to project', description: error.message, variant: 'destructive' });
+            throw error;
+        }
+        return data;
     },
 
     async create(task: Partial<Task>) {
