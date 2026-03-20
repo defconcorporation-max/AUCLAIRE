@@ -165,26 +165,52 @@ export default function Tasks() {
         const lines = text.split('\n').filter(line => line.trim());
         
         return (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-4">
                 {lines.map((line, idx) => {
-                    const [label, ...valParts] = line.split(':');
-                    const value = valParts.join(':').trim();
-                    
-                    if (valParts.length > 0) {
-                        if (!value || value.toLowerCase() === 'non précisé') return null;
+                    // Handle Headers (###)
+                    if (line.startsWith('###')) {
+                        return (
+                            <h3 key={idx} className="text-sm font-bold text-luxury-gold uppercase tracking-widest mt-6 first:mt-0 border-b border-luxury-gold/20 pb-1">
+                                {line.replace('###', '').trim()}
+                            </h3>
+                        );
+                    }
+
+                    // Handle Bold Labels (**LABEL**)
+                    const labelMatch = line.match(/^\s*-\s*\*\*(.*?)\*\*\s*:(.*)$/);
+                    if (labelMatch) {
+                        const label = labelMatch[1].trim();
+                        const value = labelMatch[2].trim();
+                        
+                        if (!value || value.toLowerCase().includes('non précisé')) return null;
 
                         return (
                             <div key={idx} className="flex flex-col gap-1 p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-lg border border-black/5 dark:border-white/5 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-luxury-gold/70">{label.trim()}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-luxury-gold/70">{label}</span>
                                 <span className="text-sm font-medium text-foreground/90 leading-snug">{value}</span>
                             </div>
                         );
                     }
 
-                    // Fallback for lines without a colon (like headers or intro text)
+                    // Handle standard colon lines
+                    const colonParts = line.split(':');
+                    if (colonParts.length > 1 && line.includes('- ')) {
+                        const label = colonParts[0].replace('- ', '').replace(/\*/g, '').trim();
+                        const value = colonParts.slice(1).join(':').trim();
+                        if (!value || value.toLowerCase().includes('non précisé')) return null;
+
+                        return (
+                            <div key={idx} className="flex flex-col gap-1 p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-lg border border-black/5 dark:border-white/5 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-luxury-gold/70">{label}</span>
+                                <span className="text-sm font-medium text-foreground/90 leading-snug">{value}</span>
+                            </div>
+                        );
+                    }
+
+                    // Fallback for intro text or plain lines
                     return (
-                        <p key={idx} className="text-sm text-muted-foreground/80 italic px-1 py-1">
-                            {line}
+                        <p key={idx} className="text-sm text-muted-foreground/80 italic px-1">
+                            {line.replace(/^- /, '').trim()}
                         </p>
                     );
                 })}

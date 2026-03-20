@@ -1,5 +1,5 @@
 @echo off
-title AUCLAIRE FINAL STABILIZE PUSH (v37.0)
+title AUCLAIRE FINAL STABILIZE PUSH (v37.1)
 echo ===========================================
 echo [1/3] STAGING ALL CHANGES
 echo ===========================================
@@ -8,7 +8,7 @@ echo.
 echo ===========================================
 echo [2/3] COMMITTING FINAL BUILD FIX
 echo ===========================================
-git commit -m "Fix: Final build stability v37.0 - Project Cost Re-initialization & Financial Unlocking" --no-verify
+git commit -m "Fix: Final build stability v37.1 - Enhanced Dingo Summaries & Conversation Photos" --no-verify
 echo.
 echo ===========================================
 echo [3/3] FORCE PUSHING TO PRODUCTION
