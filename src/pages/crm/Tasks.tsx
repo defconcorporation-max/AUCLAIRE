@@ -57,9 +57,10 @@ export default function Tasks() {
         }
     });
 
-    const filteredTasks = (tasks || []).filter(task => {
-        const matchesSearch = (task.title || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             (task.description || "").toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredTasks = (Array.isArray(tasks) ? tasks : []).filter(task => {
+        if (!task) return false;
+        const matchesSearch = ((task.title || "").toLowerCase().includes((searchTerm || "").toLowerCase())) || 
+                             ((task.description || "").toLowerCase().includes((searchTerm || "").toLowerCase()));
         const matchesFilter = filter === 'all' || task.status === filter;
         const matchesOwnership = !viewOnlyMine || task.assigned_to === user?.id;
         return matchesSearch && matchesFilter && matchesOwnership;
@@ -176,8 +177,8 @@ export default function Tasks() {
 
             {/* Task List */}
             <div className="grid grid-cols-1 gap-4">
-                {filteredTasks.length > 0 ? (
-                    filteredTasks.map(task => (
+                {(Array.isArray(filteredTasks) && filteredTasks.length > 0) ? (
+                    filteredTasks.map((task, idx) => (
                         <Card 
                             key={task.id} 
                             onClick={() => {
@@ -265,7 +266,7 @@ export default function Tasks() {
                             <Badge variant="outline" className={getPriorityColor(selectedTask?.priority || 'normal')}>
                                 Priorité {selectedTask?.priority || 'Normal'}
                             </Badge>
-                            <span className="text-xs text-muted-foreground uppercase tracking-tighter italic">ID: {selectedTask?.ghl_id?.substring(0, 15)}...</span>
+                            <span className="text-xs text-muted-foreground uppercase tracking-tighter italic">ID: {String(selectedTask?.ghl_id || "").substring(0, 15)}...</span>
                         </div>
                         <DialogTitle className="text-2xl font-serif text-luxury-gold mt-4">{selectedTask?.title}</DialogTitle>
                         <DialogDescription className="text-muted-foreground mt-2">
@@ -330,9 +331,9 @@ export default function Tasks() {
                                         <p className="text-[13px] text-muted-foreground leading-relaxed">
                                             {summary.summary}
                                         </p>
-                                        {(summary.images && summary.images.length > 0) && (
+                                        {((summary as any)?.images && Array.isArray((summary as any).images) && (summary as any).images.length > 0) && (
                                             <div className="grid grid-cols-2 gap-2 mt-4">
-                                                {summary.images.map((img, i) => (
+                                                {(summary as any).images.map((img: string, i: number) => (
                                                     <a key={i} href={img} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg border border-white/10 overflow-hidden group/img relative">
                                                         <img src={img} alt="Shared" className="w-full h-full object-cover transition-transform group-hover/img:scale-110"/>
                                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">

@@ -1,10 +1,10 @@
 @echo off
-title AUCLAIRE DEFINITIVE FIX PUSH (v34)
+title AUCLAIRE DEFINITIVE FIX PUSH (v35)
 echo ===========================================
-echo [1/3] COMMITTING STABILITY FIXES
+echo [1/3] COMMITTING HYPER-DEFENSIVE FIXES (v35)
 echo ===========================================
 git add .
-git commit -m "Fix: Final defensive checks for Tasks page"
+git commit -m "Fix: Hyper-defensive checks for Tasks page (v35)"
 echo.
 echo ===========================================
 echo [2/3] SYNCING WITH GITHUB
