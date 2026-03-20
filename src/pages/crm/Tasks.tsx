@@ -91,17 +91,17 @@ export default function Tasks() {
             if (res && 'error' in res) {
                 toast({
                     title: "Erreur GHL",
-                    description: (res as any).error,
+                    description: (res as any).error || "Une erreur est survenue lors de la récupération.",
                     variant: "destructive"
                 });
                 setSummary(null);
             } else {
                 setSummary(res);
             }
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "Erreur",
-                description: "Impossible de récupérer le résumé de la conversation.",
+                description: error.message || "Impossible de récupérer le résumé de la conversation.",
                 variant: "destructive"
             });
         } finally {
