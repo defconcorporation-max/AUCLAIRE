@@ -19,5 +19,9 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // shadcn / context files export hooks + variants; Fast Refresh still works in practice
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])

@@ -18,6 +18,7 @@ export default function GemRail({
     gemSize?: number,
     coverage?: number
 }) {
+    void width;
 
     // 1. DIAMOND GEOMETRY (Optimized High Poly)
     const gemGeom = useMemo(() => {
@@ -76,7 +77,7 @@ export default function GemRail({
             items.push({ pos: [x, y, 0] as [number, number, number], rot: [0, 0, rotZ] as [number, number, number] })
         }
         return items
-    }, [radius, width, coverage, gemSize])
+    }, [radius, coverage, gemSize])
 
     return (
         <group>

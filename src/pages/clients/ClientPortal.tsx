@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
-import { apiStories } from '@/services/apiStories';
+import { apiStories, type WIPStory } from '@/services/apiStories';
 
 // Timeline steps: Consultation → Design → Approbation → Production → Livraison
 const TIMELINE_STEPS = [
@@ -168,7 +168,8 @@ function ProjectPaymentSection({ project, invoices }: { project: Project; invoic
     const unpaidInvoice = projectInvoices.find(inv => inv.status !== 'paid' && inv.status !== 'void');
     const stripeLink = unpaidInvoice?.stripe_payment_link;
     const dueDate = unpaidInvoice?.due_date;
-    const daysUntilDue = dueDate ? Math.ceil((new Date(dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+    const nowMs = new Date().getTime();
+    const daysUntilDue = dueDate ? Math.ceil((new Date(dueDate).getTime() - nowMs) / (1000 * 60 * 60 * 24)) : null;
 
     return (
         <div className="space-y-3">
@@ -240,7 +241,7 @@ export default function ClientPortal() {
     const { data: stories = [] } = useQuery({
         queryKey: ['client_stories', user?.id],
         queryFn: async () => {
-            const allStories: any[] = [];
+            const allStories: WIPStory[] = [];
             for (const project of myProjects) {
                 const s = await apiStories.getClientStories(project.id);
                 allStories.push(...s);

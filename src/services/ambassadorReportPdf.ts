@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+type JsPdfWithAutoTable = jsPDF & { lastAutoTable?: { finalY: number } };
+
 interface AmbassadorReportData {
     name: string;
     level: string;
@@ -100,7 +102,7 @@ export function generateAmbassadorReportPDF(data: AmbassadorReportData) {
     });
 
     // Projects Table
-    y = (doc as any).lastAutoTable.finalY + 12;
+    y = ((doc as JsPdfWithAutoTable).lastAutoTable?.finalY ?? y) + 12;
     if (y > 240) { doc.addPage(); y = 20; }
 
     doc.setFont('helvetica', 'bold');
@@ -126,7 +128,7 @@ export function generateAmbassadorReportPDF(data: AmbassadorReportData) {
     });
 
     // Footer
-    const finalY = (doc as any).lastAutoTable.finalY + 15;
+    const finalY = ((doc as JsPdfWithAutoTable).lastAutoTable?.finalY ?? 240) + 15;
     doc.setDrawColor(gold[0], gold[1], gold[2]);
     doc.setLineWidth(0.3);
     doc.line(14, finalY, pageWidth - 14, finalY);

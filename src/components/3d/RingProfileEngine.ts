@@ -88,7 +88,7 @@ export const getProfileShape = (type: RingProfileType, width: number, thickness:
             }
             break
 
-        case "Knife-Edge":
+        case "Knife-Edge": {
             // Flat inner, sharp outer (Rounded Peak!)
 
             // Bottom Right
@@ -123,6 +123,7 @@ export const getProfileShape = (type: RingProfileType, width: number, thickness:
             shape.quadraticCurveTo(-w2, 0, -w2 + r, 0)
 
             break
+        }
 
         default:
             // Fallback D

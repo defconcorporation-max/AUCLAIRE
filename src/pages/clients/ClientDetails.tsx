@@ -71,8 +71,8 @@ export default function ClientDetails() {
             });
             if (error) throw error;
             toast({ title: "Lien envoyé", description: "Un lien d'accès a été envoyé à " + client.email });
-        } catch(err: any) {
-            toast({ title: "Erreur", description: err.message, variant: "destructive" });
+        } catch (err: unknown) {
+            toast({ title: "Erreur", description: err instanceof Error ? err.message : 'Erreur', variant: "destructive" });
         } finally {
             setIsSendingLink(false);
         }
@@ -137,8 +137,8 @@ export default function ClientDetails() {
                                                 toast({ title: "Succès", description: "Mot de passe mis à jour." });
                                                 setIsPasswordModalOpen(false);
                                                 setNewPassword('');
-                                            } catch (err: any) {
-                                                toast({ title: "Erreur", description: err.message, variant: "destructive" });
+                                            } catch (err: unknown) {
+                                                toast({ title: "Erreur", description: err instanceof Error ? err.message : 'Erreur', variant: "destructive" });
                                             } finally {
                                                 setIsUpdatingPassword(false);
                                             }

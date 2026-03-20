@@ -2,6 +2,8 @@
 
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import type { LucideIcon } from 'lucide-react'
+import type { Profile } from '@/context/AuthContext'
 import {
     LayoutDashboard,
     Users,
@@ -38,7 +40,7 @@ import { OfflineIndicator } from '@/components/OfflineIndicator'
 
 interface NavSection {
     section: string;
-    items: { label: string; href: string; icon: any; roles: string[] }[];
+    items: { label: string; href: string; icon: LucideIcon; roles: string[] }[];
 }
 
 const navSections: NavSection[] = [
@@ -93,7 +95,7 @@ const navSections: NavSection[] = [
 ]
 
 const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, onToggleCollapse }: {
-    role: string, profile: any, signOut: () => void, setIsMobileOpen: (v: boolean) => void,
+    role: string, profile: Profile | null, signOut: () => void, setIsMobileOpen: (v: boolean) => void,
     collapsed?: boolean, onToggleCollapse?: () => void
 }) => (
     <div className="flex flex-col h-full bg-white/80 dark:bg-black/40 backdrop-blur-xl border-r border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300">

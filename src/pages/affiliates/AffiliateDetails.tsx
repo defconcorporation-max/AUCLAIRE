@@ -1,9 +1,9 @@
-import { Invoice } from '@/services/apiInvoices';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { apiAffiliates, AffiliateProfile } from '@/services/apiAffiliates';
+import { apiAffiliates, type AffiliateProfile, type AffiliateStats } from '@/services/apiAffiliates';
+import type { Project } from '@/services/apiProjects';
+import { apiProjects } from '@/services/apiProjects';
 import { supabase } from '@/lib/supabase';
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,15 +11,25 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Save, Loader2, CheckCircle, Clock, Trash2, Briefcase, FileDown } from 'lucide-react';
-import { apiProjects } from '@/services/apiProjects';
 import { generateAmbassadorReportPDF } from '@/services/ambassadorReportPdf';
+
+/** Ligne `expenses` + jointure projet (commissions) */
+interface CommissionExpenseUI {
+    id: string;
+    amount: number | string;
+    description: string | null;
+    date: string;
+    status: string;
+    project_id?: string | null;
+    project?: { title?: string } | null;
+}
 
 export default function AffiliateDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [affiliate, setAffiliate] = useState<AffiliateProfile | null>(null);
-    const [stats, setStats] = useState<any>(null);
-    const [pendingCommissions, setPendingCommissions] = useState<any[]>([]);
+    const [stats, setStats] = useState<AffiliateStats | null>(null);
+    const [pendingCommissions, setPendingCommissions] = useState<CommissionExpenseUI[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isPayingId, setIsPayingId] = useState<string | null>(null);
@@ -34,12 +44,8 @@ export default function AffiliateDetails() {
     const [rate, setRate] = useState<number>(10);
     const [type, setType] = useState<string>('percent');
 
-    useEffect(() => {
+    const loadData = useCallback(async () => {
         if (!id) return;
-        loadData();
-    }, [id]);
-
-    const loadData = async () => {
         setIsLoading(true);
         try {
             // 1. Fetch Profile (Manual fetch from apiAffiliates or re-use getAffiliates and find?)
@@ -69,15 +75,23 @@ export default function AffiliateDetails() {
                     .eq('recipient_id', id!)
                     .eq('category', 'commission')
                     .order('date', { ascending: false });
-                setPendingCommissions(commData || []);
+                setPendingCommissions((commData ?? []) as CommissionExpenseUI[]);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Failed to load affiliate", error);
-            setError(error.message);
+            setError(error instanceof Error ? error.message : 'Erreur inconnue');
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        if (!id) {
+            setIsLoading(false);
+            return;
+        }
+        void loadData();
+    }, [id, loadData]);
 
     if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
     if (error) return (
@@ -98,10 +112,10 @@ export default function AffiliateDetails() {
         try {
             await apiAffiliates.updateAffiliate(id, {
                 full_name: fullName,
-                affiliate_status: status as any,
-                affiliate_level: level as any,
+                affiliate_status: status as NonNullable<AffiliateProfile['affiliate_status']>,
+                affiliate_level: level as NonNullable<AffiliateProfile['affiliate_level']>,
                 commission_rate: Number(rate),
-                commission_type: type as any
+                commission_type: type as NonNullable<AffiliateProfile['commission_type']>
             });
             alert("Affiliate updated successfully!");
             loadData(); // Reload
@@ -122,8 +136,8 @@ export default function AffiliateDetails() {
                 .update({ status: 'paid' })
                 .eq('id', commissionId);
             await loadData();
-        } catch (err) {
-            alert('Échec du paiement : ' + err.message);
+        } catch (err: unknown) {
+            alert('Échec du paiement : ' + (err instanceof Error ? err.message : 'Erreur'));
         } finally {
             setIsPayingId(null);
         }
@@ -143,8 +157,8 @@ export default function AffiliateDetails() {
 
             alert('Commission annulée avec succès.');
             await loadData();
-        } catch (err) {
-            alert('Erreur lors de la suppression : ' + err.message);
+        } catch (err: unknown) {
+            alert('Erreur lors de la suppression : ' + (err instanceof Error ? err.message : 'Erreur'));
         }
     };
 
@@ -153,7 +167,7 @@ export default function AffiliateDetails() {
         setIsGeneratingPdf(true);
         try {
             const monthlySales = await apiAffiliates.getMonthlySales(id);
-            const projects = (stats?.projects || []) as any[];
+            const projects = (stats?.projects ?? []) as Project[];
             const projectCount = projects.length || 1;
 
             generateAmbassadorReportPDF({
@@ -163,7 +177,7 @@ export default function AffiliateDetails() {
                 totalSales: stats?.totalSales || 0,
                 salesCount: stats?.salesCount || 0,
                 commissionEarned: stats?.commissionEarned || 0,
-                commissionPending: stats?.commissionPending ?? pendingCommissions.filter((c: any) => c.status === 'pending').reduce((s: number, c: any) => s + Number(c.amount), 0),
+                commissionPending: stats?.commissionPending ?? pendingCommissions.filter((c) => c.status === 'pending').reduce((s, c) => s + Number(c.amount), 0),
                 conversionRate: Number(((stats?.salesCount || 0) / Math.max(projectCount, 1) * 100).toFixed(1)),
                 projects: projects.map(p => {
                     const amount = Number(p.financials?.selling_price || p.budget || 0);
@@ -271,7 +285,7 @@ export default function AffiliateDetails() {
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-amber-600">
                             {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(
-                                pendingCommissions.filter(c => c.status === 'pending').reduce((s: number, c: Invoice) => s + Number(c.amount), 0)
+                                pendingCommissions.filter(c => c.status === 'pending').reduce((s, c) => s + Number(c.amount), 0)
                             )}
                         </div>
                     </CardContent>
@@ -283,7 +297,7 @@ export default function AffiliateDetails() {
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-green-600">
                             {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(
-                                pendingCommissions.filter(c => c.status === 'paid').reduce((s: number, c: Invoice) => s + Number(c.amount), 0)
+                                pendingCommissions.filter(c => c.status === 'paid').reduce((s, c) => s + Number(c.amount), 0)
                             )}
                         </div>
                     </CardContent>
@@ -384,7 +398,7 @@ export default function AffiliateDetails() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {pendingCommissions.map((c: any) => (
+                                        {pendingCommissions.map((c) => (
                                             <TableRow key={c.id}>
                                                 <TableCell className="text-sm">
                                                     <div>{c.description}</div>
@@ -417,7 +431,7 @@ export default function AffiliateDetails() {
                                                                 size="sm"
                                                                 className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white gap-1"
                                                                 disabled={isPayingId === c.id}
-                                                                onClick={() => handlePayCommission(c.id, c.amount)}
+                                                                onClick={() => handlePayCommission(c.id, Number(c.amount))}
                                                             >
                                                                 {isPayingId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
                                                                 Payer
@@ -462,7 +476,7 @@ export default function AffiliateDetails() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {stats?.projects?.map((p: any) => {
+                                    {((stats?.projects ?? []) as Project[]).map((p) => {
                                         const price = Number(p.financials?.selling_price || p.budget || 0);
                                         const commRate = p.affiliate_commission_rate || 0;
                                         return (

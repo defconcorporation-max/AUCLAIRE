@@ -32,9 +32,10 @@ export const supabase = new Proxy(rawSupabase, {
     get(target, prop, receiver) {
         const value = Reflect.get(target, prop, receiver);
         if (typeof value === 'function' && ['from', 'rpc', 'auth'].includes(prop as string)) {
-            return (...args: any[]) => {
+            const fn = value as (...args: unknown[]) => unknown;
+            return (...args: unknown[]) => {
                 rateLimit.check();
-                return value.apply(target, args);
+                return fn.apply(target, args);
             };
         }
         return value;

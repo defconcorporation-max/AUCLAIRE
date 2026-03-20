@@ -1,5 +1,5 @@
 import React, { useState, Suspense, lazy } from 'react'
-import { useRing, ToolType, MetalType, ProfileType } from '../../context/RingContext'
+import { useRing, ToolType, MetalType, ProfileType, type GemType, type RingConfig } from '../../context/RingContext'
 import { Icons } from '../ui/Icons'
 const Viewport3D = lazy(() => import('../3d/Viewport3D'))
 import PreviewModal from '../ui/PreviewModal'
@@ -8,13 +8,13 @@ import { generateSpecSheet } from '../../utils/pdfGenerator'
 
 // --- HELPER COMPONENTS ---
 
-const ToolButton = ({ tool, active, onClick, icon: IconComp }: { tool: string, active: boolean, onClick: () => void, icon: any }) => (
+const ToolButton = ({ tool, active, onClick, icon: IconComp }: { tool: string, active: boolean, onClick: () => void, icon: React.ElementType }) => (
     <button
         onClick={onClick}
         className={`w-10 h-10 flex flex-col items-center justify-center rounded-md transition-colors ${active ? 'bg-[#40a9ff] text-white' : 'text-gray-400 hover:bg-[#333] hover:text-white'}`}
         title={tool}
     >
-        <IconComp className="w-5 h-5 mb-[1px]" />
+        {React.createElement(IconComp as React.ComponentType<React.SVGProps<SVGSVGElement>>, { className: 'w-5 h-5 mb-[1px]' })}
         <span className="text-[8px] uppercase font-bold tracking-tighter opacity-70">{tool}</span>
     </button>
 )
@@ -87,7 +87,14 @@ export default function CADLayout() {
         { id: 'Platinum', color: '#999' }
     ]
 
-    const mockComponents = [
+    type MockCatalogComponent = {
+        id: number;
+        name: string;
+        type: 'head' | 'shank';
+        value: string;
+    };
+
+    const mockComponents: MockCatalogComponent[] = [
         { id: 1, name: "Solitaire Head", type: 'head', value: 'Solitaire' },
         { id: 2, name: "Halo Head", type: 'head', value: 'Halo' },
         { id: 3, name: "Three-Stone", type: 'head', value: 'Three-Stone' },
@@ -98,14 +105,14 @@ export default function CADLayout() {
         { id: 8, name: "Vintage Head", type: 'head', value: 'Vintage' },
     ]
 
-    const handleComponentClick = (comp: any) => {
+    const handleComponentClick = (comp: MockCatalogComponent) => {
         if (comp.type === 'head') {
-            updateRing({ head: { style: comp.value } })
+            updateRing({ head: { style: comp.value as RingConfig['head']['style'] } })
         } else if (comp.type === 'shank') {
             if (comp.value === 'Pave') {
                 updateRing({ sideStones: { active: true } })
             } else {
-                updateRing({ shank: { style: comp.value } })
+                updateRing({ shank: { style: comp.value as RingConfig['shank']['style'] } })
             }
         }
     }
@@ -289,7 +296,7 @@ export default function CADLayout() {
                     <PropRow label="Gallery">
                         <select
                             value={ringConfig.head.gallery || 'Rail'}
-                            onChange={(e) => updateRing({ head: { ...ringConfig.head, gallery: e.target.value as any } })}
+                            onChange={(e) => updateRing({ head: { ...ringConfig.head, gallery: e.target.value as 'Rail' | 'Basket' | 'Trellis' | 'None' } })}
                             className="w-full bg-[#111] border border-[#333] text-xs p-1 rounded text-gray-300 outline-none focus:border-[#40a9ff]"
                         >
                             <option value="Rail">Rail</option>
@@ -376,8 +383,8 @@ export default function CADLayout() {
                                 key={g.id}
                                 label={g.id}
                                 color={g.color}
-                                active={materials.gem === g.id as any}
-                                onClick={() => updateMaterials({ gem: g.id as any })}
+                                active={materials.gem === (g.id as GemType)}
+                                onClick={() => updateMaterials({ gem: g.id as GemType })}
                             />
                         ))}
                     </div>

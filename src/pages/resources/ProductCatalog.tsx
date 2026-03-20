@@ -280,8 +280,10 @@ export default function ProductCatalog() {
     const isBulkMode = bulkParentNodes.length > 0;
 
     // Mutations
+    type NewCatalogPayload = Omit<CatalogNode, 'id' | 'parent_id'>;
+
     const addNodeMutation = useMutation({
-        mutationFn: (data: any) => {
+        mutationFn: (data: NewCatalogPayload) => {
             if (isBulkMode) {
                 return apiCatalog.bulkCreateNode(bulkParentNodes.map(n => n.id), data);
             }
@@ -290,7 +292,7 @@ export default function ProductCatalog() {
                 parent_id: currentParentId
             });
         },
-        onSuccess: async (data: any) => {
+        onSuccess: async (data: CatalogNode | CatalogNode[] | null) => {
             if (propagateAll) {
                 const nodeToPropagateId = Array.isArray(data) ? data[0]?.id : data?.id;
                 if (nodeToPropagateId) {

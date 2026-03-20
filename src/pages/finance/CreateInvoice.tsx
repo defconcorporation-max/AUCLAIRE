@@ -11,6 +11,12 @@ import { apiProjects } from '@/services/apiProjects';
 import { apiActivities } from '@/services/apiActivities';
 import { useAuth } from '@/context/AuthContext';
 
+function getDefaultDueDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+}
+
 export default function CreateInvoice() {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -18,7 +24,7 @@ export default function CreateInvoice() {
     const [projectId, setProjectId] = useState('');
     const [amount, setAmount] = useState('');
     const [paymentLink, setPaymentLink] = useState('');
-    const [dueDate, setDueDate] = useState(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    const [dueDate, setDueDate] = useState(getDefaultDueDate);
 
     const { data: projects } = useQuery({
         queryKey: ['projects'],

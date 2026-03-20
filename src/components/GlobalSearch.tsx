@@ -13,6 +13,11 @@ interface SearchResult {
     href: string;
 }
 
+type SearchProjectRow = { id: string; title: string; client?: { full_name: string } | null };
+type SearchClientRow = { id: string; full_name: string; email: string | null };
+type SearchLeadRow = { id: string; name: string; company?: string | null };
+type SearchInvoiceRow = { id: string; amount: number; status: string; project?: { title: string } | null };
+
 const TYPE_CONFIG = {
     project: { icon: Briefcase, label: 'Projet', color: 'text-blue-500' },
     client: { icon: Users, label: 'Client', color: 'text-green-500' },
@@ -60,33 +65,34 @@ export function GlobalSearch() {
             ]);
 
             // Invoices: search by project title (get matching project IDs first)
-            const projectIds = (projectsRes.data || []).map(p => p.id);
-            let invoicesRes: { data: any[] | null } = { data: [] };
+            const projectRows = (projectsRes.data ?? []) as unknown as SearchProjectRow[];
+            const projectIds = projectRows.map(p => p.id);
+            let invoicesRes: { data: SearchInvoiceRow[] | null } = { data: [] };
             if (projectIds.length > 0) {
                 const { data } = await supabase
                     .from('invoices')
                     .select('id, amount, status, project:projects(title)')
                     .in('project_id', projectIds)
                     .limit(5);
-                invoicesRes = { data };
+                invoicesRes = { data: data as unknown as SearchInvoiceRow[] };
             }
 
             const items: SearchResult[] = [];
-            projectsRes.data?.forEach(p => items.push({
-                id: p.id, title: p.title, subtitle: (p.client as any)?.full_name,
+            projectRows.forEach(p => items.push({
+                id: p.id, title: p.title, subtitle: p.client?.full_name,
                 type: 'project', href: `/dashboard/projects/${p.id}`
             }));
-            clientsRes.data?.forEach(c => items.push({
-                id: c.id, title: c.full_name, subtitle: c.email,
+            (clientsRes.data as SearchClientRow[] | null)?.forEach(c => items.push({
+                id: c.id, title: c.full_name, subtitle: c.email ?? undefined,
                 type: 'client', href: `/dashboard/clients/${c.id}`
             }));
             invoicesRes.data?.forEach(i => items.push({
-                id: i.id, title: (i.project as any)?.title || `Facture #${i.id.slice(0,8)}`,
+                id: i.id, title: i.project?.title || `Facture #${i.id.slice(0,8)}`,
                 subtitle: `${i.amount}$ — ${i.status}`,
                 type: 'invoice', href: `/dashboard/invoices`
             }));
-            leadsRes.data?.forEach(l => items.push({
-                id: l.id, title: l.name, subtitle: l.company,
+            (leadsRes.data as SearchLeadRow[] | null)?.forEach(l => items.push({
+                id: l.id, title: l.name, subtitle: l.company ?? undefined,
                 type: 'lead', href: `/dashboard/leads/${l.id}`
             }));
 

@@ -8,8 +8,7 @@ import { Loader2, Calendar, Filter, Factory, Zap, ChevronLeft, ChevronRight } fr
 import { Button } from '@/components/ui/button';
 import { useState, useMemo } from 'react';
 
-const PRODUCTION_STAGES = ['approved_for_production', 'production', 'delivery'] as const;
-type ProductionStage = (typeof PRODUCTION_STAGES)[number];
+type ProductionStage = 'approved_for_production' | 'production' | 'delivery';
 
 const STAGE_COLORS: Record<ProductionStage, string> = {
     approved_for_production: 'bg-yellow-500/80 border-yellow-400/50',
@@ -109,6 +108,7 @@ export default function ProductionCalendar() {
     }, [allProjects, role, profile?.id, filterManufacturer, filterStage, weekOffset]);
 
     const totalMs = weekEnd.getTime() - weekStart.getTime();
+    const nowMs = new Date().getTime();
 
     const weekLabels = useMemo(() => {
         const labels: { label: string; date: Date }[] = [];
@@ -227,7 +227,7 @@ export default function ProductionCalendar() {
                     <div className="min-w-[800px] relative">
                         {/* Today marker */}
                         {(() => {
-                            const todayPct = ((Date.now() - weekStart.getTime()) / totalMs) * 100;
+                            const todayPct = ((nowMs - weekStart.getTime()) / totalMs) * 100;
                             if (todayPct >= 0 && todayPct <= 100) {
                                 return (
                                     <div

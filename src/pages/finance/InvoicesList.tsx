@@ -34,7 +34,7 @@ export default function InvoicesList() {
     })
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editingInvoice, setEditingInvoice] = useState<any>(null);
+    const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
     const [paymentLink, setPaymentLink] = useState('');
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -128,7 +128,7 @@ export default function InvoicesList() {
                 await refreshInvoice();
             }
             resetNewPaymentForm();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Add payment error:', err);
         } finally { setSaving(false); }
     };
@@ -158,7 +158,7 @@ export default function InvoicesList() {
                 await refreshInvoice();
             }
             setEditingPaymentId(null);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Edit payment error:', err);
         } finally { setSaving(false); }
     };
@@ -174,7 +174,7 @@ export default function InvoicesList() {
             } else {
                 await refreshInvoice();
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Delete payment error:', err);
         } finally { setSaving(false); }
     };

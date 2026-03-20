@@ -1,5 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+type JsPdfWithAutoTable = jsPDF & { lastAutoTable?: { finalY: number } };
 import { CompanySettings } from './apiSettings';
 import { Invoice } from './apiInvoices';
 
@@ -53,7 +55,7 @@ export const generateInvoicePDF = (invoice: Invoice, settings: CompanySettings) 
     });
 
     // -- Total --
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    const finalY = ((doc as JsPdfWithAutoTable).lastAutoTable?.finalY ?? 65) + 10;
     doc.setFontSize(10);
     doc.text(`Subtotal: ${settings.currency_symbol}${invoice.amount.toLocaleString()}`, 140, finalY);
 

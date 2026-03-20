@@ -1,4 +1,22 @@
 import { supabase } from '@/lib/supabase';
+import type { Project } from '@/services/apiProjects';
+
+/** Minimal invoice row from Supabase selects in this module */
+interface AffiliateInvoiceRow {
+    project_id: string;
+    amount: number;
+    amount_paid: number;
+    status: string;
+    paid_at?: string | null;
+    created_at?: string | null;
+}
+
+interface CommissionExpenseRow {
+    amount: number;
+    status: string;
+    description?: string | null;
+    recipient_id?: string | null;
+}
 
 export interface AffiliateStats {
     totalSales: number;
@@ -66,7 +84,7 @@ export const apiAffiliates = {
 
         // 2. Get Invoices to verify sales AND get total cash collected
         const projectIds = projects.map(p => p.id);
-        let invoices: any[] = [];
+        let invoices: AffiliateInvoiceRow[] = [];
         if (projectIds.length > 0) {
             const { data: invData, error: invError } = await supabase
                 .from('invoices')
@@ -218,7 +236,7 @@ export const apiAffiliates = {
             if (affiliateProfiles.length === 0) return [];
 
             const allProjectIds = new Set<string>();
-            const profileProjectMap = new Map<string, any[]>();
+            const profileProjectMap = new Map<string, Project[]>();
 
             const { data: allProjects } = await supabase
                 .from('projects')
@@ -229,27 +247,27 @@ export const apiAffiliates = {
                 const ownerId = p.affiliate_id || p.sales_agent_id;
                 if (ownerId) {
                     if (!profileProjectMap.has(ownerId)) profileProjectMap.set(ownerId, []);
-                    profileProjectMap.get(ownerId)!.push(p);
+                    profileProjectMap.get(ownerId)!.push(p as Project);
                     allProjectIds.add(p.id);
                 }
             });
 
-            let allInvoices: any[] = [];
+            let allInvoices: AffiliateInvoiceRow[] = [];
             if (allProjectIds.size > 0) {
                 const { data: invData } = await supabase
                     .from('invoices')
                     .select('project_id, amount, amount_paid, status, paid_at, created_at')
                     .in('project_id', Array.from(allProjectIds));
-                allInvoices = invData || [];
+                allInvoices = (invData || []) as AffiliateInvoiceRow[];
             }
 
-            const invoiceByProject = new Map<string, any[]>();
+            const invoiceByProject = new Map<string, AffiliateInvoiceRow[]>();
             allInvoices.forEach(inv => {
                 if (!invoiceByProject.has(inv.project_id)) invoiceByProject.set(inv.project_id, []);
                 invoiceByProject.get(inv.project_id)!.push(inv);
             });
 
-            let allExpenses: any[] = [];
+            let allExpenses: CommissionExpenseRow[] = [];
             try {
                 const { data: expData } = await supabase
                     .from('expenses')

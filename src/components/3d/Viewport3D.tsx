@@ -6,16 +6,16 @@ import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
 import RingModel from "./RingModel"
 import { ErrorBoundary } from "./ErrorBoundary"
 import { useRing } from "../../context/RingContext"
+import type { RingConfig } from "../../context/RingContext"
 
 // --- MAIN VIEWPORT COMPONENT ---
 export default function Viewport3D() {
     const { ringConfig, materials } = useRing()
 
-    const activeConfig = useMemo(() => ({
+    const activeConfig = useMemo((): RingConfig => ({
         ...ringConfig,
         metal: materials.metal,
-        gem: materials.gem,
-        type: 'Solitaire'
+        gem: { ...ringConfig.gem, type: materials.gem },
     }), [ringConfig, materials])
 
     return (
@@ -37,7 +37,7 @@ export default function Viewport3D() {
                         maxPolarAngle={Math.PI / 2}
                     />
 
-                    <RingModel config={activeConfig as any} />
+                    <RingModel config={activeConfig} />
 
                     <ContactShadows 
                         position={[0, -2, 0]} 

@@ -4,6 +4,7 @@ import RingModel from "./RingModel"
 import { useEffect, useState } from "react"
 import { OrbitControls } from "@react-three/drei"
 import * as THREE from "three"
+import type { RingConfig, ProfileType } from "@/context/RingContext"
 
 // --- ENVIRONMENT MAP ---
 const createGradientTexture = (width: number, height: number, stop1: string) => {
@@ -62,6 +63,8 @@ function LuxuryStudio({ intensity = 1 }: { intensity?: number }) {
         studioScene.add(rimLight)
 
         const envMap = pmremGenerator.fromScene(studioScene).texture
+        // Three.js / R3F: scene.environment is the supported way to apply PMREM; the hook exposes the mutable Three scene.
+        // eslint-disable-next-line react-hooks/immutability -- intentional Three.js scene mutation
         scene.environment = envMap
 
         return () => {
@@ -142,9 +145,9 @@ const BAND_MODES: { value: BandMode; label: string }[] = [
     { value: 'eternity', label: 'Eternity' },
 ]
 
-export default function RingViewer({ config, intensity = 1.2 }: { config: any, intensity?: number }) {
-    const [profile, setProfile] = useState<any>("Court")
-    const [prongStyle, setProngStyle] = useState<any>("Round")
+export default function RingViewer({ config, intensity = 1.2 }: { config: RingConfig; intensity?: number }) {
+    const [profile, setProfile] = useState<ProfileType>("Court")
+    const [prongStyle, setProngStyle] = useState<string>("Round")
     const [bandMode, setBandMode] = useState<BandMode>('solitaire')
     const [paveShape, setPaveShape] = useState("Round")
     const [paveSize, setPaveSize] = useState(1.5) // 0.3 – 2.8
@@ -213,7 +216,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: any, i
                 <div className="bg-black/60 backdrop-blur-md px-3 py-2 rounded-full shadow-lg pointer-events-auto flex gap-2 border border-white/10">
                     <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest py-1 pl-1">Shank:</span>
                     {PROFILES.map(p => (
-                        <button key={p} onClick={() => setProfile(p)}
+                        <button key={p} onClick={() => setProfile(p as ProfileType)}
                             className={`px-3 py-1 text-[10px] font-bold tracking-wider rounded-full transition-all ${profile === p ? 'bg-neutral-100 text-neutral-900 shadow-md' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
                         >
                             {p}

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Shield, Briefcase, UserCircle, Clock, Trash2, KeyRound, Zap, Factory, Search } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, type UserRole } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -40,7 +40,7 @@ export default function UsersList() {
     });
 
     const updateRoleMutation = useMutation({
-        mutationFn: ({ id, role }: { id: string; role: string }) => apiUsers.updateRole(id, role as any),
+        mutationFn: ({ id, role }: { id: string; role: string }) => apiUsers.updateRole(id, role as UserRole),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },
@@ -321,8 +321,8 @@ export default function UsersList() {
                                     toast({ title: "Succès", description: "Mot de passe mis à jour." });
                                     setPasswordModalUserId(null);
                                     setNewPassword('');
-                                } catch (err: any) {
-                                    toast({ title: "Erreur", description: err.message, variant: "destructive" });
+                                } catch (err: unknown) {
+                                    toast({ title: "Erreur", description: err instanceof Error ? err.message : 'Erreur', variant: "destructive" });
                                 } finally {
                                     setIsUpdatingPassword(false);
                                 }

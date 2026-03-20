@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiSuppliers, Supplier } from '@/services/apiSuppliers';
 import { apiActivities } from '@/services/apiActivities';
@@ -214,8 +214,6 @@ export default function SuppliersList() {
     const totalPages = Math.ceil((filteredSuppliers?.length || 0) / ITEMS_PER_PAGE);
     const paginatedSuppliers = filteredSuppliers?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-    useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType]);
-
     const isFormOpen = isAddOpen || !!editingSupplier;
     const isPending = createMutation.isPending || updateMutation.isPending;
 
@@ -291,7 +289,10 @@ export default function SuppliersList() {
                 <select
                     className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
                     value={filterType}
-                    onChange={e => setFilterType(e.target.value)}
+                    onChange={e => {
+                        setFilterType(e.target.value);
+                        setCurrentPage(1);
+                    }}
                 >
                     <option value="">Tous</option>
                     <option value="diamantaire">Diamantaire</option>
@@ -305,7 +306,10 @@ export default function SuppliersList() {
                     placeholder="Rechercher par nom, contact ou type..."
                     className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                    }}
                 />
             </div>
 

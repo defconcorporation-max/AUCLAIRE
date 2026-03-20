@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Phone, Mail, Clock, Calendar, MessageSquare, Play, PhoneIncoming, PhoneOutgoing, Edit, Save, X, Loader2 } from 'lucide-react';
 import Dialer from '@/components/crm/Dialer';
-import { apiLeads, Lead } from '@/services/apiLeads';
+import { apiLeads, Lead, type Message } from '@/services/apiLeads';
 
 // Mock Call History Data (This will be moved to a real API in Phase 4)
 const mockCallHistory = [
@@ -36,17 +36,6 @@ export default function LeadDetails() {
     });
 
     const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', value: '' });
-
-    useEffect(() => {
-        if (lead) {
-            setEditForm({
-                name: lead.name,
-                email: lead.email || '',
-                phone: lead.phone || '',
-                value: lead.value?.toString() || '0'
-            });
-        }
-    }, [lead]);
 
     const updateLeadMutation = useMutation({
         mutationFn: (updates: Partial<Lead>) => apiLeads.update(id, updates),
@@ -183,7 +172,20 @@ export default function LeadDetails() {
                                     </Button>
                                 </div>
                             ) : (
-                                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-8 text-muted-foreground hover:text-luxury-gold">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        setEditForm({
+                                            name: lead.name,
+                                            email: lead.email || '',
+                                            phone: lead.phone || '',
+                                            value: lead.value?.toString() || '0'
+                                        });
+                                        setIsEditing(true);
+                                    }}
+                                    className="h-8 text-muted-foreground hover:text-luxury-gold"
+                                >
                                     <Edit className="w-3.5 h-3.5 mr-1" /> Edit
                                 </Button>
                             )}
@@ -315,7 +317,7 @@ export default function LeadDetails() {
                             ))}
 
                             {/* Messenger/Omnichannel Messages */}
-                            {messages.map((msg: any) => (
+                            {messages.map((msg: Message) => (
                                 <div key={msg.id} className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20">
                                     <div className={`absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] ${msg.sender_type === 'agent' ? 'bg-luxury-gold text-white' : 'bg-pink-100 text-pink-600 dark:bg-pink-900/30'}`}>
                                         <MessageSquare className="w-3 h-3" />

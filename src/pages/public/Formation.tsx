@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle, ShieldCheck, Scale, Award, Gem, Heart } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle, ShieldCheck, Scale, Award, Gem, Heart, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +10,7 @@ export default function Formation() {
     return <FormationContent />;
 }
 
-function SectionHeader({ id, icon: Icon, title, emoji, expanded, toggleSection }: { id: string, icon?: any, title: string, emoji?: string, expanded: boolean, toggleSection: (id: string) => void }) {
+function SectionHeader({ id, icon: Icon, title, emoji, expanded, toggleSection }: { id: string, icon?: LucideIcon, title: string, emoji?: string, expanded: boolean, toggleSection: (id: string) => void }) {
     return (
         <button
             onClick={() => toggleSection(id)}

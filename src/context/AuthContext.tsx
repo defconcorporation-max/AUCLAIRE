@@ -1,12 +1,12 @@
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 
 export type UserRole = 'admin' | 'manufacturer' | 'client' | 'pending' | 'affiliate' | 'secretary';
 
-interface Profile {
+export interface Profile {
     id: string;
     full_name: string | null;
     role: UserRole;
@@ -22,6 +22,8 @@ interface AuthContextType {
     session: Session | null;
     user: User | null;
     profile: Profile | null;
+    /** Real DB profile (not impersonated / preview) */
+    originalProfile: Profile | null;
     isLoading: boolean;
     isAdmin: boolean;
     role?: UserRole;
@@ -38,18 +40,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [isLoadingSession, setIsLoadingSession] = useState(true);
+    /** Évite une closure périmée sur le timeout 3s (ne pas lire isLoadingSession dans l’effet) */
+    const sessionLoadingRef = useRef(true);
 
     useEffect(() => {
+        sessionLoadingRef.current = true;
         // Safety timeout — if session takes > 3s, unlock the UI
         const timeout = setTimeout(() => {
-            if (isLoadingSession) {
+            if (sessionLoadingRef.current) {
                 console.warn("Auth session loading timed out — unlocking UI");
+                sessionLoadingRef.current = false;
                 setIsLoadingSession(false);
             }
         }, 3000);
 
         supabase.auth.getSession().then(({ data: { session } }) => {
             clearTimeout(timeout);
+            sessionLoadingRef.current = false;
             setSession(session);
             setUser(session?.user ?? null);
             setIsLoadingSession(false);
@@ -66,7 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             clearTimeout(timeout);
             subscription.unsubscribe();
             // Clear any user-specific data from memory if necessary
-            (window as any).currentUserRole = null;
+            const w = window as Window & { currentUserRole?: string | null };
+            w.currentUserRole = null;
         };
     }, []);
 

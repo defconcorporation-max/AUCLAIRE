@@ -26,7 +26,7 @@ export default function BetaFeedback() {
             await apiFeedback.delete(id);
             toast({ title: "Supprimé", description: "Le feedback a été retiré." });
             queryClient.invalidateQueries({ queryKey: ['beta-feedback'] });
-        } catch (error) {
+        } catch {
             toast({ title: "Erreur", description: "Échec de la suppression.", variant: "destructive" });
         }
     };
@@ -38,12 +38,12 @@ export default function BetaFeedback() {
             await apiFeedback.updateStatus(id, newStatus);
             toast({ title: "Statut mis à jour", description: `Feedback marqué comme ${newStatus}.` });
             queryClient.invalidateQueries({ queryKey: ['beta-feedback'] });
-        } catch (error) {
+        } catch {
             toast({ title: "Erreur", description: "Échec de la mise à jour du statut.", variant: "destructive" });
         }
     };
 
-    const handleAddComment = async (id: string, existingComments: any[]) => {
+    const handleAddComment = async (id: string, existingComments: NonNullable<FeedbackEntry['comments']>) => {
         const text = newCommentText[id];
         if (!text?.trim()) return;
 
@@ -57,7 +57,7 @@ export default function BetaFeedback() {
             setNewCommentText(prev => ({ ...prev, [id]: '' }));
             toast({ title: "Commentaire ajouté", description: "Votre message a été enregistré." });
             queryClient.invalidateQueries({ queryKey: ['beta-feedback'] });
-        } catch (error) {
+        } catch {
             toast({ title: "Erreur", description: "Échec de l'ajout du commentaire.", variant: "destructive" });
         }
     };
@@ -247,12 +247,12 @@ export default function BetaFeedback() {
                                                             className="flex-1 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-luxury-gold/50 shadow-sm"
                                                             value={newCommentText[item.id] || ''}
                                                             onChange={(e) => setNewCommentText(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                                            onKeyDown={(e) => e.key === 'Enter' && handleAddComment(item.id, item.comments || [])}
+                                                            onKeyDown={(e) => e.key === 'Enter' && handleAddComment(item.id, (item.comments ?? []) as NonNullable<FeedbackEntry['comments']>)}
                                                         />
                                                         <Button 
                                                             size="sm" 
                                                             className="bg-luxury-gold text-black hover:bg-luxury-gold/80 h-9 px-3 font-bold"
-                                                            onClick={() => handleAddComment(item.id, item.comments || [])}
+                                                            onClick={() => handleAddComment(item.id, (item.comments ?? []) as NonNullable<FeedbackEntry['comments']>)}
                                                         >
                                                             <Send className="w-3 h-3" />
                                                         </Button>

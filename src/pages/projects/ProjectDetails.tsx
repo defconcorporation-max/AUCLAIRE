@@ -2,7 +2,7 @@ import { UserProfile } from '@/services/apiUsers';
 import { useParams, useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiProjects, ProjectStatus } from '@/services/apiProjects';
+import { apiProjects, ProjectStatus, type Project, type QualityIssue } from '@/services/apiProjects';
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiInvoices } from '@/services/apiInvoices';
 import { apiClients } from '@/services/apiClients';
@@ -205,7 +205,7 @@ export default function ProjectDetails() {
                 });
             }
         }
-    }, [project?.id, project?.financials?.supplier_cost, project?.financials?.additional_expense, queryClient, user]);
+    }, [project, queryClient, user]);
 
     if (!project) return <div>Project not found</div>;
 
@@ -301,7 +301,7 @@ export default function ProjectDetails() {
                                 }).catch(err => console.error("Email failed:", err));
                             }
                         });
-                    } catch (err) { /* silent */ }
+                    } catch { /* silent */ }
 
                 } else if (status === 'delivery') {
                     if (project.client_id) {
@@ -323,7 +323,7 @@ export default function ProjectDetails() {
                                 }).catch(err => console.error("Email failed:", err));
                             }
                         });
-                    } catch (err) { /* silent */ }
+                    } catch { /* silent */ }
 
                 } else if (status === 'completed') {
                     if (project.client_id) {
@@ -345,7 +345,7 @@ export default function ProjectDetails() {
                                 }).catch(err => console.error("Email failed:", err));
                             }
                         });
-                    } catch (err) { /* silent */ }
+                    } catch { /* silent */ }
 
                 } else if (status === 'design_modification' && project.manufacturer_id) {
                     apiNotifications.create({
@@ -401,7 +401,7 @@ export default function ProjectDetails() {
             setModNotes('');
             setEditingModVersion(null);
             queryClient.invalidateQueries({ queryKey: ['projects'] });
-        } catch (err) {
+        } catch {
             toast({ title: "Failed to save modification", variant: "destructive" });
         }
     };
@@ -418,7 +418,7 @@ export default function ProjectDetails() {
             });
             toast({ title: "Iteration deleted." });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
-        } catch (err) {
+        } catch {
             toast({ title: "Delete failed", variant: "destructive" });
         }
     };
@@ -670,7 +670,7 @@ export default function ProjectDetails() {
                         value={project.jewelry_type || ''}
                         onChange={(e) => {
                             const val = e.target.value || undefined;
-                            apiProjects.update(project.id, { jewelry_type: val } as any)
+                            apiProjects.update(project.id, { jewelry_type: val as Project['jewelry_type'] })
                                 .then(() => {
                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
                                     toast({ title: 'Type enregistré', description: 'Le type de bijou a été mis à jour.' });
@@ -2407,7 +2407,7 @@ export default function ProjectDetails() {
 
                                     {(project.stage_details?.quality_issues || []).length > 0 ? (
                                         <div className="space-y-2">
-                                            {(project.stage_details?.quality_issues || []).map((issue: any) => (
+                                            {(project.stage_details?.quality_issues || []).map((issue: QualityIssue) => (
                                                 <div key={issue.id} className="flex items-start gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
                                                     <Badge className={`shrink-0 text-[10px] ${
                                                         issue.type === 'return' ? 'bg-red-500/20 text-red-400' :
@@ -2429,7 +2429,7 @@ export default function ProjectDetails() {
                                                             variant="ghost"
                                                             className="text-green-500 text-xs"
                                                             onClick={async () => {
-                                                                const issues = (project.stage_details?.quality_issues || []).map((i: any) =>
+                                                                const issues = (project.stage_details?.quality_issues || []).map((i: QualityIssue) =>
                                                                     i.id === issue.id ? { ...i, resolved_at: new Date().toISOString() } : i
                                                                 );
                                                                 await supabase.from('projects').update({ stage_details: { ...project.stage_details, quality_issues: issues } }).eq('id', project.id);

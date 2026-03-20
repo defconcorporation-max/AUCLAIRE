@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiExpenses, Expense } from '@/services/apiExpenses';
 import { apiActivities } from '@/services/apiActivities';
@@ -81,9 +81,14 @@ export default function ExpensesList() {
             });
             toast({ title: "Dépense enregistrée", description: "La dépense a été ajoutée avec succès." });
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
             console.error("Failed to create expense:", error);
-            toast({ title: "Erreur", description: error.message || (error as any).error_description || "Erreur inconnue", variant: "destructive" });
+            const desc = error instanceof Error
+                ? error.message
+                : (typeof error === 'object' && error !== null && 'error_description' in error
+                    ? String((error as { error_description?: string }).error_description)
+                    : "Erreur inconnue");
+            toast({ title: "Erreur", description: desc, variant: "destructive" });
         }
     });
 
@@ -163,8 +168,6 @@ export default function ExpensesList() {
     const totalPages = Math.ceil((filteredExpenses?.length || 0) / ITEMS_PER_PAGE);
     const paginatedExpenses = filteredExpenses?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-    useEffect(() => { setCurrentPage(1); }, [searchTerm, filterCategory]);
-
     const totalAmount = filteredExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
     return (
@@ -242,7 +245,7 @@ export default function ExpensesList() {
                                 <select
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.category}
-                                    onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value as any })}
+                                    onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value as Expense['category'] })}
                                 >
                                     <option value="commission">Commission</option>
                                     <option value="operational">Opérationnel</option>
@@ -284,7 +287,7 @@ export default function ExpensesList() {
                                 <select
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.status}
-                                    onChange={(e) => setNewExpense({ ...newExpense, status: e.target.value as any })}
+                                    onChange={(e) => setNewExpense({ ...newExpense, status: e.target.value as Expense['status'] })}
                                 >
                                     <option value="paid">Payé</option>
                                     <option value="pending">En attente</option>
@@ -317,7 +320,10 @@ export default function ExpensesList() {
                 <select
                     className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     value={filterCategory}
-                    onChange={e => setFilterCategory(e.target.value)}
+                    onChange={e => {
+                        setFilterCategory(e.target.value);
+                        setCurrentPage(1);
+                    }}
                 >
                     <option value="">Toutes</option>
                     <option value="commission">Commission</option>
@@ -333,7 +339,10 @@ export default function ExpensesList() {
                     placeholder="Rechercher dépenses, destinataires..."
                     className="border-0 bg-transparent focus-visible:ring-0"
                     value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
+                    onChange={e => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                    }}
                 />
             </div>
 

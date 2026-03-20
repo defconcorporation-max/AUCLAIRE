@@ -22,7 +22,8 @@ export interface RingConfig {
     // Head / Setting
     head: {
         style: 'Solitaire' | 'Halo' | 'Three-Stone' | 'Vintage'
-        prongStyle: 'Claw' | 'Round' | 'Tab'
+        /** UI / 3D viewer may use extra values (e.g. Compass, Double) */
+        prongStyle: string
         prongCount: 4 | 6
         gallery: 'Rail' | 'Trellis' | 'Basket' | 'None'
         height: number
@@ -43,6 +44,8 @@ export interface RingConfig {
         style: string // "Pave", "Channel"
         size: number
         length: number // 0.5 (half eternity)
+        /** Pavé stone shape (RingViewer / eternity UI) */
+        shape?: string
     }
 
     // Engraving
@@ -157,8 +160,9 @@ export function RingProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         return () => {
             // Reset global window assignments if any
-            if ((window as Window & { auclaireSettings?: any }).auclaireSettings) {
-                delete (window as Window & { auclaireSettings?: any }).auclaireSettings;
+            const w = window as Window & { auclaireSettings?: unknown }
+            if (w.auclaireSettings !== undefined) {
+                delete w.auclaireSettings;
             }
         };
     }, []);
@@ -189,21 +193,6 @@ export function RingProvider({ children }: { children: ReactNode }) {
             return []
         }
     })
-
-    const deepMerge = <T extends Record<string, any>>(target: T, source: RecursivePartial<T>): T => {
-        const result = { ...target };
-        for (const key of Object.keys(source)) {
-            const sourceValue = (source as any)[key];
-            const targetValue = (target as any)[key];
-            
-            if (sourceValue instanceof Object && key in target && targetValue instanceof Object) {
-                (result as any)[key] = deepMerge(targetValue, sourceValue);
-            } else {
-                (result as any)[key] = sourceValue;
-            }
-        }
-        return result;
-    }
 
     const updateRing = (updates: RecursivePartial<RingConfig>) => {
         setRingConfig(prev => {

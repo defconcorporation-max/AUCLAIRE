@@ -1,13 +1,21 @@
 
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, type ReactElement } from 'react'
 import { Text } from '@react-three/drei'
 import * as THREE from "three"
 import { RingConfig } from "../../context/RingContext"
-import { getGemGeometry } from "./GemGeometryEngine"
+import { getGemGeometry, type GemShape } from "./GemGeometryEngine"
 import { getGemScaleVector, getGemDimensionsMM } from "./GemPhysics"
 import { getProfileShape } from "./RingProfileEngine"
 import { createProceduralRingGeometry } from "./RingGeometryEngine"
 import { getHaloPositions } from "./HaloLogic"
+
+const KNOWN_GEM_SHAPES: readonly GemShape[] = [
+    'Round', 'Princess', 'Emerald', 'Oval', 'Pear', 'Cushion', 'Radiant', 'Asscher', 'Marquise', 'Heart',
+]
+
+function coerceGemShape(raw: string): GemShape {
+    return (KNOWN_GEM_SHAPES as readonly string[]).includes(raw) ? (raw as GemShape) : 'Round'
+}
 
 const METALS: Record<string, string> = {
     "Yellow Gold": "#F0C050",
@@ -33,11 +41,13 @@ export default function RingModel({ config }: { config: RingConfig }) {
     const gemSize = config.gem.size || 1.0
 
     // Get Real Dimensions for Logic
-    const gemDims = useMemo(() => getGemDimensionsMM(gemShape as any, gemSize), [gemShape, gemSize])
+    const gemShapePhysics = useMemo(() => coerceGemShape(gemShape), [gemShape])
+
+    const gemDims = useMemo(() => getGemDimensionsMM(gemShapePhysics, gemSize), [gemShapePhysics, gemSize])
 
     const gemScaleVector = useMemo(() => {
-        return getGemScaleVector(gemShape as any, gemSize)
-    }, [gemShape, gemSize])
+        return getGemScaleVector(gemShapePhysics, gemSize)
+    }, [gemShapePhysics, gemSize])
 
     const finalGemScale = gemScaleVector[0]
     const gemScale: [number, number, number] = gemScaleVector
@@ -78,7 +88,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
     }, [profileType, shankWidth, shankThickness, config.shank.taper, config.shank.style])
 
     // Gem Geometry
-    const currentGemGeom = useMemo(() => getGemGeometry(gemShape as any), [gemShape])
+    const currentGemGeom = useMemo(() => getGemGeometry(coerceGemShape(gemShape)), [gemShape])
     // Halo side gem (fixed round)
     const sideGemGeom = useMemo(() => getGemGeometry('Round'), [])
 
@@ -159,13 +169,13 @@ export default function RingModel({ config }: { config: RingConfig }) {
     const prongMeshes = useMemo(() => {
         if (config.head.style === 'Halo') return null; // Halo handles its own internal prongs or bezel usually
 
-        const meshes: any[] = []
+        const meshes: ReactElement[] = []
 
         // Base angles for prongs
         let angles: number[] = []
         if (prongCount === 4) {
             const baseAngles = [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4]
-            angles = (prongStyle as string) === 'Compass' ? [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2] : baseAngles
+            angles = prongStyle === 'Compass' ? [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2] : baseAngles
         } else if (prongCount === 6) {
             angles = [0, Math.PI / 3, 2 * Math.PI / 3, Math.PI, 4 * Math.PI / 3, 5 * Math.PI / 3]
         }
@@ -233,7 +243,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
 
             // TIPS
             // Positioned exactly at the top of the prong stem
-            if (prongStyle === 'Round' || (prongStyle as string) === 'Compass') {
+            if (prongStyle === 'Round' || prongStyle === 'Compass') {
                 meshes.push(
                     <mesh key={`tip-${i}`} position={top} material={metalMaterial}>
                         <sphereGeometry args={[0.035, 16, 16]} />
@@ -332,6 +342,8 @@ export default function RingModel({ config }: { config: RingConfig }) {
     // --- PAVE STONE DATA ---
     // Ring torus is in XY plane. Gem at (0, +0.825, 0) = top of ring.
     // Outer surface is at placeR = 0.825 + bandThickness*0.3.
+    const sideStoneShape = config.sideStones?.shape ?? 'Round'
+
     const paveStones = useMemo(() => {
         if (!config.sideStones?.active) return []
 
@@ -358,8 +370,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
             : 0
 
         // Create ONE fresh geometry for this pave shape (avoid shared mutation)
-        const shapeKey = (config.sideStones as any)?.shape || 'Round'
-        const geom = getGemGeometry(shapeKey as any)
+        const geom = getGemGeometry(coerceGemShape(sideStoneShape))
 
         const result = []
         for (let i = 0; i < count; i++) {
@@ -406,7 +417,7 @@ export default function RingModel({ config }: { config: RingConfig }) {
         config.sideStones?.active,
         config.sideStones?.length,
         config.sideStones?.size,
-        (config.sideStones as any)?.shape,
+        sideStoneShape,
         shankWidth, shankThickness
     ])
 
@@ -435,8 +446,8 @@ export default function RingModel({ config }: { config: RingConfig }) {
                         {[-1, 1].map(dir => {
                             const sideGemSize = config.threeStone?.size || 0.5
                             const sideScale = sideGemSize // A bit simplistic, but works for scale factor relative to 1.0
-                            const sideShape = (config.threeStone as any)?.shape || 'Round'
-                            const sideGeom = getGemGeometry(sideShape as any)
+                            const sideShape = coerceGemShape(config.threeStone?.shape ?? 'Round')
+                            const sideGeom = getGemGeometry(sideShape)
 
                             // Position: Sides of the main stone, angled down slightly
                             // Gap from center: Main Radius + Side Radius

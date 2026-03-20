@@ -43,7 +43,11 @@ export const apiFeedback = {
         if (error) throw error;
     },
 
-    async addComment(id: string, comment: { user: string; text: string; date: string }, existingComments: any[]) {
+    async addComment(
+        id: string,
+        comment: { user: string; text: string; date: string },
+        existingComments: NonNullable<FeedbackEntry['comments']>
+    ) {
         const newComments = [...(existingComments || []), comment];
         const { error } = await supabase
             .from('beta_feedback')

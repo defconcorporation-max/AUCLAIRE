@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Project } from '@/services/apiProjects';
 import { ActivityLog } from '@/services/apiActivities';
 import { CompanySettings } from '@/services/apiSettings';
@@ -5,6 +6,12 @@ import { financialUtils } from '@/utils/financialUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+declare global {
+    interface Window {
+        auclaireSettings?: CompanySettings;
+    }
+}
 
 interface HealthAlert {
     id: string;
@@ -21,6 +28,12 @@ interface HealthAuditorWidgetProps {
 }
 
 export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidgetProps) {
+    const [nowMs, setNowMs] = useState(() => Date.now());
+    useEffect(() => {
+        const id = window.setInterval(() => setNowMs(Date.now()), 60_000);
+        return () => window.clearInterval(id);
+    }, []);
+
     const alerts: HealthAlert[] = [];
 
     const statusLogs = activities.filter(a => a.action === 'status_change');
@@ -62,11 +75,11 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
         const pLogs = logsByProject[p.id] || [];
         const lastLog = pLogs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
         const lastChangeDate = lastLog ? new Date(lastLog.created_at) : new Date(p.created_at);
-        const daysInStatus = (Date.now() - lastChangeDate.getTime()) / (1000 * 60 * 60 * 24);
+        const daysInStatus = (nowMs - lastChangeDate.getTime()) / (1000 * 60 * 60 * 24);
 
         // CONFIGURABLE THRESHOLDS FROM SETTINGS
         // Fallback to hardcoded defaults if settings are not available/passed
-        const settings = (window as any).auclaireSettings as CompanySettings | undefined;
+        const settings = window.auclaireSettings;
         let warnThreshold = 0;
         let dangerThreshold = 0;
 

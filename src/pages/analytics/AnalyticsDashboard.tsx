@@ -35,7 +35,7 @@ export default function AnalyticsDashboard() {
     // Calculate Trend Data
     const getTrendData = () => {
         const { start: startCurr } = financialUtils.getPeriodRange(timeframe);
-        let startPrev = new Date(startCurr);
+        const startPrev = new Date(startCurr);
         let label = "";
 
         if (timeframe === 'day') {
@@ -720,12 +720,13 @@ export default function AnalyticsDashboard() {
                             return 'Autre';
                         };
 
-                        (projects || []).forEach((p: any) => {
+                        (projects || []).forEach((p: Project) => {
                             const cat = p.jewelry_type || autoDetect(p.title || '');
                             if (!categories[cat]) categories[cat] = { count: 0, revenue: 0, costs: 0 };
                             categories[cat].count++;
                             const revenue = Number(p.financials?.selling_price || p.budget || 0);
-                            const costs = Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0) + Number(p.financials?.customs_fee || 0) + Number(p.financials?.additional_expense || 0) + (p.financials?.cost_items?.reduce((s: number, i: any) => s + (Number(i.amount) || 0), 0) || 0);
+                            const costItemsSum = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
+                            const costs = Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0) + Number(p.financials?.customs_fee || 0) + Number(p.financials?.additional_expense || 0) + costItemsSum;
                             categories[cat].revenue += revenue;
                             categories[cat].costs += costs;
                         });

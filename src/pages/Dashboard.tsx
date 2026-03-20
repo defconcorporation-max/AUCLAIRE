@@ -83,7 +83,6 @@ export default function Dashboard() {
     useEffect(() => {
         apiSettings.get()
             .then(data => {
-                // @ts-expect-error - Global settings for legacy widgets
                 window.auclaireSettings = data;
             })
             .catch(err => {

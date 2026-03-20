@@ -1,6 +1,6 @@
 import { UserProfile } from '@/services/apiUsers';
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, type Profile } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -8,23 +8,30 @@ import { apiUsers } from "@/services/apiUsers";
 import { User, X } from "lucide-react";
 
 export function RoleSwitcher() {
-    const { role, switchRole, user, originalProfile, impersonate, stopImpersonating, impersonatedProfile } = useAuth() as any;
+    const {
+        role,
+        switchRole,
+        user,
+        originalProfile,
+        impersonate,
+        stopImpersonating,
+        impersonatedProfile,
+    } = useAuth();
 
     const roles: UserRole[] = ['admin', 'manufacturer', 'client', 'affiliate', 'secretary'];
-    
-    // Only show for real admins — not when impersonating or switching roles
-    const isRealAdmin = originalProfile?.role === 'admin';
-    if (!isRealAdmin) return null;
 
+    const isRealAdmin = originalProfile?.role === 'admin';
     const showUserPicker = role === 'manufacturer' || role === 'affiliate' || role === 'secretary';
 
     const { data: users = [] } = useQuery({
         queryKey: ['users'],
         queryFn: apiUsers.getAll,
-        enabled: showUserPicker && !!user
+        enabled: isRealAdmin && showUserPicker && !!user,
     });
 
-    const filteredUsers = (users as any[]).filter(u => u.role === role);
+    if (!isRealAdmin) return null;
+
+    const filteredUsers = (users as UserProfile[]).filter((u) => u.role === role);
 
     return (
         <div className="fixed bottom-4 right-4 bg-black/90 border border-white/10 rounded-xl shadow-2xl p-2.5 flex flex-col gap-2 z-50 backdrop-blur-md min-w-[260px]">
@@ -72,7 +79,13 @@ export function RoleSwitcher() {
                             {filteredUsers.map((u: UserProfile) => (
                                 <button
                                     key={u.id}
-                                    onClick={() => impersonate(u)}
+                                    onClick={() => impersonate({
+                                        id: u.id,
+                                        full_name: u.full_name ?? null,
+                                        role: u.role,
+                                        avatar_url: null,
+                                        monthly_goal: u.monthly_goal,
+                                    } satisfies Profile)}
                                     className={`text-left text-xs px-2.5 py-1.5 rounded-lg transition-colors duration-150 ${impersonatedProfile?.id === u.id
                                         ? 'bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30'
                                         : 'text-white/70 hover:bg-white/5 hover:text-white border border-transparent'

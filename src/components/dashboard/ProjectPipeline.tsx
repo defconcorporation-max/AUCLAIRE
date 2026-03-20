@@ -16,7 +16,7 @@ interface ProjectPipelineProps {
     role: string;
 }
 
-export function ProjectPipeline({ design, pending, ongoing, delivery, role: _role }: ProjectPipelineProps) {
+export function ProjectPipeline({ design, pending, ongoing, delivery }: ProjectPipelineProps) {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const categories = [

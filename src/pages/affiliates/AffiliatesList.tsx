@@ -23,7 +23,7 @@ export default function AffiliatesList() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
-    const [selectedAffiliate, setSelectedAffiliate] = useState<any>(null);
+    const [selectedAffiliate, setSelectedAffiliate] = useState<AffiliateProfile | null>(null);
     const [amountToPay, setAmountToPay] = useState('');
     const [paymentNotes, setPaymentNotes] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -81,7 +81,7 @@ export default function AffiliatesList() {
             setAmountToPay('');
             setPaymentNotes('');
             queryClient.invalidateQueries({ queryKey: ['affiliates-stats'] });
-        } catch (err) {
+        } catch {
             toast({ title: "Erreur", description: "Échec du versement.", variant: "destructive" });
         }
     };

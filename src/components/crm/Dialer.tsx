@@ -10,31 +10,25 @@ interface DialerProps {
     phoneNumber: string;
 }
 
-export default function Dialer({ isOpen, onClose, contactName, phoneNumber }: DialerProps) {
-    const [callState, setCallState] = useState<'idle' | 'calling' | 'connected' | 'ended'>('idle');
+/** Mounted only while open — avoids setState-in-effect when resetting call UI */
+function DialerOpen({
+    onClose,
+    contactName,
+    phoneNumber,
+}: Omit<DialerProps, 'isOpen'>) {
+    const [callState, setCallState] = useState<'idle' | 'calling' | 'connected' | 'ended'>('calling');
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
 
-    // Reset when opened
-    useEffect(() => {
-        if (isOpen) {
-            setCallState('calling'); // Start calling immediately when opened
-            setDuration(0);
-            setIsMuted(false);
-        } else {
-            setCallState('idle');
-        }
-    }, [isOpen]);
-
     // Mock call timer behavior
     useEffect(() => {
-        let timer: NodeJS.Timeout;
-        let interval: NodeJS.Timeout;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let interval: ReturnType<typeof setInterval> | undefined;
 
         if (callState === 'calling') {
             timer = setTimeout(() => {
                 setCallState('connected');
-            }, 3000); // Wait 3 seconds to "connect"
+            }, 3000);
         }
 
         if (callState === 'connected') {
@@ -44,8 +38,8 @@ export default function Dialer({ isOpen, onClose, contactName, phoneNumber }: Di
         }
 
         return () => {
-            clearTimeout(timer);
-            clearInterval(interval);
+            if (timer) clearTimeout(timer);
+            if (interval) clearInterval(interval);
         };
     }, [callState]);
 
@@ -57,7 +51,7 @@ export default function Dialer({ isOpen, onClose, contactName, phoneNumber }: Di
         setCallState('ended');
         setTimeout(() => {
             onClose();
-        }, 2000); // Close after showing "ended" for 2 seconds
+        }, 2000);
     };
 
     const formatTime = (seconds: number) => {
@@ -67,7 +61,7 @@ export default function Dialer({ isOpen, onClose, contactName, phoneNumber }: Di
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => {
+        <Dialog open onOpenChange={(open) => {
             if (!open && callState !== 'connected') {
                 onClose();
             }
@@ -152,5 +146,17 @@ export default function Dialer({ isOpen, onClose, contactName, phoneNumber }: Di
                 )}
             </DialogContent>
         </Dialog>
+    );
+}
+
+export default function Dialer({ isOpen, onClose, contactName, phoneNumber }: DialerProps) {
+    if (!isOpen) return null;
+    return (
+        <DialerOpen
+            key={`${phoneNumber}-${contactName}`}
+            onClose={onClose}
+            contactName={contactName}
+            phoneNumber={phoneNumber}
+        />
     );
 }

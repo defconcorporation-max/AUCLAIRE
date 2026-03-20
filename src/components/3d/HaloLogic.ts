@@ -101,7 +101,7 @@ export function getHaloPositions(
                     const sz = Math.sin(angle)
 
                     let px = cx * rx
-                    let pz = sz * rz
+                    const pz = sz * rz
 
                     // Apply tapering for pear effect
                     // If pz > 0 (bottom tip), shrink x

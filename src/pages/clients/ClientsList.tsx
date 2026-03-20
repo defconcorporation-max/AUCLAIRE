@@ -81,9 +81,9 @@ export default function ClientsList() {
         try {
             await apiClients.delete(deleteTarget.id);
             queryClient.invalidateQueries({ queryKey: ['clients'] });
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            toast({ title: "Erreur", description: "Impossible de supprimer le client. " + e.message, variant: "destructive" });
+            toast({ title: "Erreur", description: "Impossible de supprimer le client. " + (e instanceof Error ? e.message : ''), variant: "destructive" });
         } finally {
             setDeleteTarget(null);
         }

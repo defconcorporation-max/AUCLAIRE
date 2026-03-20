@@ -19,9 +19,11 @@ export function OfflineIndicator() {
                 if (action.type === 'insert') {
                     await supabase.from(action.table).insert(action.data);
                 } else if (action.type === 'update') {
-                    await supabase.from(action.table).update(action.data.updates).eq('id', action.data.id);
+                    const payload = action.data as { updates: Record<string, unknown>; id: string };
+                    await supabase.from(action.table).update(payload.updates).eq('id', payload.id);
                 } else if (action.type === 'delete') {
-                    await supabase.from(action.table).delete().eq('id', action.data.id);
+                    const payload = action.data as { id: string };
+                    await supabase.from(action.table).delete().eq('id', payload.id);
                 }
                 synced++;
             } catch (e) {
