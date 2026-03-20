@@ -25,7 +25,7 @@ export default function Tasks() {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending');
-    const [viewOnlyMine, setViewOnlyMine] = useState(true);
+    const [viewOnlyMine, setViewOnlyMine] = useState(false);
 
     const { data: tasks = [], isLoading } = useQuery({
         queryKey: ['tasks'],
