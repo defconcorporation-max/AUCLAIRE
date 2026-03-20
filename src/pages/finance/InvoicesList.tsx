@@ -348,8 +348,12 @@ export default function InvoicesList() {
                                 <div className="flex gap-2">
                                     <Button variant="outline" size="sm" onClick={async (e) => {
                                         e.stopPropagation();
-                                        const settings = await apiSettings.get();
-                                        generateInvoicePDF(invoice, settings);
+                                        try {
+                                            const settings = await apiSettings.get();
+                                            generateInvoicePDF(invoice, settings);
+                                        } catch (err) {
+                                            console.error('PDF generation failed:', err);
+                                        }
                                     }}>
                                         Imprimer PDF
                                     </Button>
@@ -632,8 +636,12 @@ export default function InvoicesList() {
                             variant="default"
                             className="bg-luxury-gold text-black hover:bg-gold-600"
                             onClick={async () => {
-                                const settings = await apiSettings.get();
-                                if (selectedInvoice) generateInvoicePDF(selectedInvoice, settings);
+                                try {
+                                    const settings = await apiSettings.get();
+                                    if (selectedInvoice) generateInvoicePDF(selectedInvoice, settings);
+                                } catch (err) {
+                                    console.error('PDF generation failed:', err);
+                                }
                             }}
                         >
                             Télécharger PDF
