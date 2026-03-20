@@ -49,6 +49,17 @@ export const apiTasks = {
         return data as Task;
     },
 
+    async create(task: Partial<Task>) {
+        const { data, error } = await supabase
+            .from('tasks')
+            .insert([task])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data as Task;
+    },
+
     async delete(id: string) {
         const { error } = await supabase
             .from('tasks')

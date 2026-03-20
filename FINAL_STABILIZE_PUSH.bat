@@ -1,5 +1,5 @@
 @echo off
-title AUCLAIRE FINAL STABILIZE PUSH (v36.0)
+title AUCLAIRE FINAL STABILIZE PUSH (v36.1)
 echo ===========================================
 echo [1/3] STAGING ALL CHANGES
 echo ===========================================
@@ -8,7 +8,7 @@ echo.
 echo ===========================================
 echo [2/3] COMMITTING FINAL BUILD FIX
 echo ===========================================
-git commit -m "Fix: Final build stability v36.0 - Milestone: Scrollable modal & full photo support" --no-verify
+git commit -m "Fix: Final build stability v36.1 - Task differentiation & manual creation" --no-verify
 echo.
 echo ===========================================
 echo [3/3] FORCE PUSHING TO PRODUCTION
