@@ -73,8 +73,12 @@ export default function Tasks() {
     };
 
     const fetchSummary = async (task: Task) => {
-        const contactId = task.metadata?.contact_id || task.metadata?.contact?.id;
-        const locationId = task.metadata?.location?.id;
+        // Log keys for debugging
+        const metadata = task.metadata || {};
+        const contactId = metadata.contact_id || metadata.contact?.id || metadata.contactId || metadata.cid;
+        const locationId = metadata.location_id || metadata.location?.id || metadata.locationId;
+        
+        console.log('Fetching summary for:', { contactId, locationId, metadataKeys: Object.keys(metadata) });
         
         if (!contactId) {
             toast({

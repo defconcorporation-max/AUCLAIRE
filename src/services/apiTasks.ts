@@ -59,18 +59,30 @@ export const apiTasks = {
     },
 
     async getConversationSummary(contactId: string, locationId?: string) {
-        const { data, error } = await supabase.functions.invoke('ghl-conversation-summary', {
-            body: { contactId, locationId }
-        });
+        try {
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            
+            const response = await fetch(`${supabaseUrl}/functions/v1/ghl-conversation-summary`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseAnonKey}`
+                },
+                body: JSON.stringify({ contactId, locationId })
+            });
 
-        if (error) {
-            console.error('Edge Function Error:', error);
-            // If the error has a response, we can try to extract the body
-            if (error instanceof Error && 'context' in (error as any)) {
-                 // Supabase often puts it in context
+            const data = await response.json();
+            
+            if (!response.ok) {
+                console.error('Edge Function Error Response:', data);
+                return { error: data.error || `Erreur ${response.status}: ${response.statusText}`, details: data };
             }
-            return { error: error.message || "Erreur de communication avec Supabase" };
+            
+            return data as { summary: string; images: string[] };
+        } catch (error: any) {
+            console.error('Fetch Error:', error);
+            return { error: error.message || "Erreur de connexion au serveur" };
         }
-        return data as { summary: string; images: string[] };
     }
 };
