@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
@@ -15,15 +16,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import { apiStories, type WIPStory } from '@/services/apiStories';
-
-// Timeline steps: Consultation → Design → Approbation → Production → Livraison
-const TIMELINE_STEPS = [
-    { id: 'consultation', label: 'Consultation' },
-    { id: 'design', label: 'Design' },
-    { id: 'approbation', label: 'Approbation' },
-    { id: 'production', label: 'Production' },
-    { id: 'livraison', label: 'Livraison' },
-] as const;
 
 function getTimelineState(status: Project['status']) {
     const statusOrder: Record<string, number> = {
@@ -55,12 +47,21 @@ function getStepDate(project: Project, stepIndex: number): string | undefined {
 }
 
 function ProjectTimeline({ project }: { project: Project }) {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
+    const timelineSteps = [
+        { id: 'consultation', label: t('clientPortalPage.stepConsultation') },
+        { id: 'design', label: t('clientPortalPage.stepDesign') },
+        { id: 'approbation', label: t('clientPortalPage.stepApproval') },
+        { id: 'production', label: t('clientPortalPage.stepProduction') },
+        { id: 'livraison', label: t('clientPortalPage.stepDelivery') },
+    ] as const;
     const { currentIndex } = getTimelineState(project.status);
     return (
         <div className="space-y-2">
-            <p className="text-[10px] uppercase tracking-widest text-luxury-gold/70 font-serif mb-3">Progression du projet</p>
+            <p className="text-[10px] uppercase tracking-widest text-luxury-gold/70 font-serif mb-3">{t('clientPortalPage.timelineTitle')}</p>
             <div className="flex items-start gap-0">
-                {TIMELINE_STEPS.map((step, idx) => {
+                {timelineSteps.map((step, idx) => {
                     const isCompleted = idx < currentIndex || project.status === 'completed';
                     const isCurrent = idx === currentIndex && project.status !== 'completed' && project.status !== 'cancelled';
                     const isPending = idx > currentIndex;
@@ -86,7 +87,7 @@ function ProjectTimeline({ project }: { project: Project }) {
                                         <span className="text-[10px] font-bold">{idx + 1}</span>
                                     )}
                                 </div>
-                                {idx < TIMELINE_STEPS.length - 1 && (
+                                {idx < timelineSteps.length - 1 && (
                                     <div
                                         className={`flex-1 h-0.5 -ml-px transition-colors ${
                                             isCompleted ? 'bg-green-500/60' : isCurrent ? 'bg-luxury-gold/40' : 'bg-white/10'
@@ -100,7 +101,7 @@ function ProjectTimeline({ project }: { project: Project }) {
                                 </p>
                                 {date && (isCompleted || isCurrent) && (
                                     <p className="text-[9px] text-muted-foreground mt-0.5">
-                                        {new Date(date).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        {new Date(date).toLocaleDateString(localeTag, { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </p>
                                 )}
                             </div>
@@ -113,6 +114,7 @@ function ProjectTimeline({ project }: { project: Project }) {
 }
 
 function DesignGallery({ project }: { project: Project }) {
+    const { t } = useTranslation();
     const sd = project.stage_details || {};
     const sketchFiles = sd.sketch_files || [];
     const designFiles = sd.design_files || [];
@@ -125,7 +127,7 @@ function DesignGallery({ project }: { project: Project }) {
 
     return (
         <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-widest text-luxury-gold/70 font-serif">Galerie des designs approuvés</p>
+            <p className="text-[10px] uppercase tracking-widest text-luxury-gold/70 font-serif">{t('clientPortalPage.galleryTitle')}</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {allFiles.map((url, idx) => (
                     <a
@@ -137,12 +139,12 @@ function DesignGallery({ project }: { project: Project }) {
                     >
                         <img
                             src={url}
-                            alt={`Design ${idx + 1}`}
+                            alt={t('clientPortalPage.designAlt', { n: idx + 1 })}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-2">
                             <span className="text-[10px] text-white flex items-center gap-1">
-                                <ExternalLink className="w-3 h-3" /> Cliquer pour agrandir
+                                <ExternalLink className="w-3 h-3" /> {t('clientPortalPage.clickEnlarge')}
                             </span>
                         </div>
                     </a>
@@ -158,6 +160,8 @@ function DesignGallery({ project }: { project: Project }) {
 }
 
 function ProjectPaymentSection({ project, invoices }: { project: Project; invoices: Invoice[] }) {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const projectInvoices = invoices.filter(inv => inv.project_id === project.id);
     if (projectInvoices.length === 0) return null;
 
@@ -173,12 +177,12 @@ function ProjectPaymentSection({ project, invoices }: { project: Project; invoic
 
     return (
         <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-widest text-luxury-gold/70 font-serif">Paiements</p>
+            <p className="text-[10px] uppercase tracking-widest text-luxury-gold/70 font-serif">{t('clientPortalPage.paymentsTitle')}</p>
             <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Montant payé / Total</span>
+                    <span className="text-muted-foreground">{t('clientPortalPage.paidVsTotal')}</span>
                     <span className="font-mono font-bold text-luxury-gold">
-                        {Number(totalPaid).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })} / {Number(totalAmount).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+                        {Number(totalPaid).toLocaleString(localeTag, { style: 'currency', currency: 'CAD' })} / {Number(totalAmount).toLocaleString(localeTag, { style: 'currency', currency: 'CAD' })}
                     </span>
                 </div>
                 <div className="h-2 rounded-full bg-white/10 overflow-hidden">
@@ -190,9 +194,9 @@ function ProjectPaymentSection({ project, invoices }: { project: Project; invoic
                 {dueDate && hasUnpaid && daysUntilDue !== null && (
                     <p className={`text-xs flex items-center gap-1 ${daysUntilDue <= 7 ? 'text-amber-400' : 'text-muted-foreground'}`}>
                         {daysUntilDue <= 7 && <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
-                        Échéance : {new Date(dueDate).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {daysUntilDue <= 7 && daysUntilDue > 0 && ` (dans ${daysUntilDue} jours)`}
-                        {daysUntilDue <= 0 && ' — En retard'}
+                        {t('clientPortalPage.dueOn', { date: new Date(dueDate).toLocaleDateString(localeTag, { day: 'numeric', month: 'long', year: 'numeric' }) })}
+                        {daysUntilDue <= 7 && daysUntilDue > 0 && t('clientPortalPage.dueInDays', { count: daysUntilDue })}
+                        {daysUntilDue <= 0 && t('clientPortalPage.overdue')}
                     </p>
                 )}
                 {stripeLink && hasUnpaid && (
@@ -203,7 +207,7 @@ function ProjectPaymentSection({ project, invoices }: { project: Project; invoic
                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-green-500/20"
                     >
                         <CreditCard className="w-4 h-4" />
-                        Payer le solde
+                        {t('clientPortalPage.payBalance')}
                     </a>
                 )}
             </div>
@@ -212,6 +216,8 @@ function ProjectPaymentSection({ project, invoices }: { project: Project; invoic
 }
 
 export default function ClientPortal() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const { user, profile } = useAuth();
     const queryClient = useQueryClient();
     const [showFeedbackFor, setShowFeedbackFor] = useState<Record<string, boolean>>({});
@@ -251,17 +257,17 @@ export default function ClientPortal() {
         enabled: myProjects.length > 0
     });
 
-    const clientName = profile?.full_name || 'Client';
+    const clientName = profile?.full_name || t('clientPortalPage.defaultClientName');
 
     return (
         <div className="p-6 space-y-8 max-w-5xl mx-auto page-fade-in">
             {/* Welcome Header */}
             <div className="space-y-2">
                 <h1 className="text-3xl font-serif text-luxury-gold">
-                    Bienvenue, {clientName}
+                    {t('clientPortalPage.welcome', { name: clientName })}
                 </h1>
                 <p className="text-muted-foreground font-serif">
-                    Suivez vos projets de joaillerie, approuvez les designs et gérez vos paiements.
+                    {t('clientPortalPage.subtitle')}
                 </p>
             </div>
 
@@ -271,28 +277,28 @@ export default function ClientPortal() {
                     <CardContent className="p-4 text-center">
                         <Package className="w-6 h-6 mx-auto mb-2 text-luxury-gold" />
                         <div className="text-2xl font-bold font-serif">{activeProjects.length}</div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Projets actifs</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('clientPortalPage.statActive')}</p>
                     </CardContent>
                 </Card>
                 <Card className="glass-card bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20">
                     <CardContent className="p-4 text-center">
                         <Eye className="w-6 h-6 mx-auto mb-2 text-amber-400" />
                         <div className="text-2xl font-bold font-serif">{pendingApproval.length}</div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">En attente d'approbation</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('clientPortalPage.statPending')}</p>
                     </CardContent>
                 </Card>
                 <Card className="glass-card bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
                     <CardContent className="p-4 text-center">
                         <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-green-400" />
                         <div className="text-2xl font-bold font-serif">{completedProjects.length}</div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Terminés</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('clientPortalPage.statCompleted')}</p>
                     </CardContent>
                 </Card>
                 <Card className="glass-card bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
                     <CardContent className="p-4 text-center">
                         <CreditCard className="w-6 h-6 mx-auto mb-2 text-red-400" />
                         <div className="text-2xl font-bold font-serif">{unpaidInvoices.length}</div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Factures impayées</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('clientPortalPage.statUnpaid')}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -302,22 +308,22 @@ export default function ClientPortal() {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-serif text-luxury-gold flex items-center gap-2">
-                            <Camera className="w-5 h-5" /> Fil d'atelier en direct
+                            <Camera className="w-5 h-5" /> {t('clientPortalPage.workshopFeed')}
                         </h2>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] bg-luxury-gold/10 px-2 py-1 rounded">Mises à jour en temps réel</span>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] bg-luxury-gold/10 px-2 py-1 rounded">{t('clientPortalPage.realtimeTag')}</span>
                     </div>
                     <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x">
                         {stories.map((story) => (
                             <div key={story.id} className="relative shrink-0 w-64 aspect-[4/5] rounded-2xl overflow-hidden glass-card snap-start">
                                 <img
                                     src={story.image_url}
-                                    alt="Workshop WIP"
+                                    alt={t('clientPortalPage.workshopAlt')}
                                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
                                 />
                                 <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                                     <p className="text-xs text-white/90 font-serif mb-1">{story.project?.title}</p>
                                     <p className="text-[10px] text-luxury-gold/80 uppercase tracking-wider">
-                                        {new Date(story.created_at).toLocaleDateString()}
+                                        {new Date(story.created_at).toLocaleDateString(localeTag)}
                                     </p>
                                 </div>
                             </div>
@@ -332,9 +338,9 @@ export default function ClientPortal() {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg font-serif flex items-center gap-2 text-luxury-gold">
                             <Eye className="w-5 h-5 text-amber-400" />
-                            Designs en attente de votre approbation
+                            {t('clientPortalPage.pendingDesignsTitle')}
                         </CardTitle>
-                        <CardDescription>Examinez et approuvez les designs pour poursuivre la production.</CardDescription>
+                        <CardDescription>{t('clientPortalPage.pendingDesignsDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {pendingApproval.map(project => (
@@ -345,10 +351,10 @@ export default function ClientPortal() {
                             >
                                 <div>
                                     <p className="font-medium font-serif text-sm">{project.title}</p>
-                                    <p className="text-xs text-muted-foreground">Cliquez pour examiner le design</p>
+                                    <p className="text-xs text-muted-foreground">{t('clientPortalPage.clickReview')}</p>
                                 </div>
                                 <Button size="sm" className="bg-luxury-gold hover:bg-luxury-gold/90 text-black font-serif">
-                                    Examiner le design
+                                    {t('clientPortalPage.reviewBtn')}
                                 </Button>
                             </Link>
                         ))}
@@ -360,13 +366,13 @@ export default function ClientPortal() {
             <div className="space-y-6">
                 <h2 className="text-xl font-serif text-luxury-gold flex items-center gap-2">
                     <Package className="w-5 h-5" />
-                    Vos projets
+                    {t('clientPortalPage.yourProjects')}
                 </h2>
                 {myProjects.length === 0 ? (
                     <Card className="glass-card">
                         <CardContent className="py-12 text-center">
                             <p className="text-muted-foreground text-sm font-serif">
-                                Aucun projet pour le moment. Votre équipe en créera un bientôt !
+                                {t('clientPortalPage.noProjects')}
                             </p>
                         </CardContent>
                     </Card>
@@ -382,9 +388,11 @@ export default function ClientPortal() {
                                             </CardTitle>
                                             <CardDescription className="flex items-center gap-2 mt-1 text-xs">
                                                 <Clock className="w-3 h-3" />
-                                                Créé le {new Date(project.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                {t('clientPortalPage.createdOn', {
+                                                    date: new Date(project.created_at).toLocaleDateString(localeTag, { day: 'numeric', month: 'long', year: 'numeric' }),
+                                                })}
                                                 {project.priority === 'rush' && (
-                                                    <Badge className="bg-red-500/20 text-red-400 text-[10px] px-1.5 ml-1">RUSH</Badge>
+                                                    <Badge className="bg-red-500/20 text-red-400 text-[10px] px-1.5 ml-1">{t('clientPortalPage.rush')}</Badge>
                                                 )}
                                             </CardDescription>
                                         </div>
@@ -392,7 +400,7 @@ export default function ClientPortal() {
                                             <StatusBadge status={project.status} />
                                             <Button size="sm" variant="outline" className="border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10 font-serif" asChild>
                                                 <Link to={`/dashboard/projects/${project.id}`}>
-                                                    Voir le projet
+                                                    {t('clientPortalPage.viewProject')}
                                                 </Link>
                                             </Button>
                                         </div>
@@ -404,7 +412,7 @@ export default function ClientPortal() {
                                         <div className="mt-4 p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 space-y-4">
                                             <div className="flex items-center gap-2">
                                                 <Eye className="w-5 h-5 text-amber-500" />
-                                                <h3 className="font-serif font-bold text-amber-500">Approbation du Design Requise</h3>
+                                                <h3 className="font-serif font-bold text-amber-500">{t('clientPortalPage.approvalTitle')}</h3>
                                             </div>
 
                                             {(() => {
@@ -417,7 +425,7 @@ export default function ClientPortal() {
                                                             <img
                                                                 key={idx}
                                                                 src={url}
-                                                                alt={`Design ${idx + 1}`}
+                                                                alt={t('clientPortalPage.designAlt', { n: idx + 1 })}
                                                                 className="rounded-lg border border-white/10 object-cover aspect-square cursor-pointer hover:opacity-80 transition-opacity"
                                                                 onClick={() => window.open(url, '_blank')}
                                                             />
@@ -438,20 +446,20 @@ export default function ClientPortal() {
                                                                     stage_details: {
                                                                         ...project.stage_details,
                                                                         client_approval_status: 'approved',
-                                                                        client_notes: 'Design approuvé par le client'
+                                                                        client_notes: t('clientPortalPage.noteDesignApproved')
                                                                     }
                                                                 })
                                                                 .eq('id', project.id);
                                                             if (error) {
-                                                                toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                                                                toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
                                                             } else {
-                                                                toast({ title: 'Design approuvé!', description: 'Votre projet passe en production.' });
+                                                                toast({ title: t('clientPortalPage.toastApprovedTitle'), description: t('clientPortalPage.toastApprovedDesc') });
                                                                 queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                             }
                                                         }}
                                                     >
                                                         <ThumbsUp className="w-4 h-4 mr-2" />
-                                                        Approuver le Design
+                                                        {t('clientPortalPage.approveDesign')}
                                                     </Button>
                                                     <Button
                                                         variant="outline"
@@ -459,7 +467,7 @@ export default function ClientPortal() {
                                                         onClick={() => setShowFeedbackFor(prev => ({ ...prev, [project.id]: true }))}
                                                     >
                                                         <MessageSquare className="w-4 h-4 mr-2" />
-                                                        Demander des Modifications
+                                                        {t('clientPortalPage.requestChanges')}
                                                     </Button>
                                                 </div>
                                             ) : (
@@ -467,7 +475,7 @@ export default function ClientPortal() {
                                                     <Textarea
                                                         value={feedbackText[project.id] || ''}
                                                         onChange={(e) => setFeedbackText(prev => ({ ...prev, [project.id]: e.target.value }))}
-                                                        placeholder="Décrivez les modifications souhaitées..."
+                                                        placeholder={t('clientPortalPage.feedbackPlaceholder')}
                                                         className="min-h-[80px]"
                                                     />
                                                     <div className="flex gap-2">
@@ -487,22 +495,22 @@ export default function ClientPortal() {
                                                                     })
                                                                     .eq('id', project.id);
                                                                 if (error) {
-                                                                    toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                                                                    toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
                                                                 } else {
-                                                                    toast({ title: 'Demande envoyée', description: 'L\'équipe sera notifiée de vos commentaires.' });
+                                                                    toast({ title: t('clientPortalPage.toastRequestTitle'), description: t('clientPortalPage.toastRequestDesc') });
                                                                     setShowFeedbackFor(prev => ({ ...prev, [project.id]: false }));
                                                                     setFeedbackText(prev => ({ ...prev, [project.id]: '' }));
                                                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                                 }
                                                             }}
                                                         >
-                                                            Envoyer la Demande
+                                                            {t('clientPortalPage.sendRequest')}
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
                                                             onClick={() => setShowFeedbackFor(prev => ({ ...prev, [project.id]: false }))}
                                                         >
-                                                            Annuler
+                                                            {t('common.cancel')}
                                                         </Button>
                                                     </div>
                                                 </div>

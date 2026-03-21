@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, User, Mail, Phone, StickyNote } from 'lucide-react';
@@ -11,6 +12,7 @@ interface ClientFormProps {
 }
 
 export function ClientForm({ onSuccess, className }: ClientFormProps) {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [loading, setLoading] = useState(false);
 
@@ -50,13 +52,13 @@ export function ClientForm({ onSuccess, className }: ClientFormProps) {
     return (
         <form onSubmit={handleCreate} className={`space-y-4 ${className}`}>
             <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
+                <label className="text-sm font-medium">{t('clientForm.fullName')}</label>
                 <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         className="pl-9"
                         name="full_name"
-                        placeholder="John Doe"
+                        placeholder={t('clientForm.placeholderName')}
                         value={formData.full_name}
                         onChange={handleChange}
                         required
@@ -66,27 +68,27 @@ export function ClientForm({ onSuccess, className }: ClientFormProps) {
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <label className="text-sm font-medium">Email</label>
+                    <label className="text-sm font-medium">{t('clientForm.email')}</label>
                     <div className="relative">
                         <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             className="pl-9"
                             type="email"
                             name="email"
-                            placeholder="john@example.com"
+                            placeholder={t('clientForm.placeholderEmail')}
                             value={formData.email}
                             onChange={handleChange}
                         />
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <label className="text-sm font-medium">Phone</label>
+                    <label className="text-sm font-medium">{t('clientForm.phone')}</label>
                     <div className="relative">
                         <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             className="pl-9"
                             name="phone"
-                            placeholder="+1 555 000 0000"
+                            placeholder={t('clientForm.placeholderPhone')}
                             value={formData.phone}
                             onChange={handleChange}
                         />
@@ -95,13 +97,13 @@ export function ClientForm({ onSuccess, className }: ClientFormProps) {
             </div>
 
             <div className="space-y-2">
-                <label className="text-sm font-medium">Notes</label>
+                <label className="text-sm font-medium">{t('clientForm.notes')}</label>
                 <div className="relative">
                     <StickyNote className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         className="pl-9"
                         name="notes"
-                        placeholder="Preferences, ring size, etc."
+                        placeholder={t('clientForm.placeholderNotes')}
                         value={formData.notes}
                         onChange={handleChange}
                     />
@@ -109,7 +111,7 @@ export function ClientForm({ onSuccess, className }: ClientFormProps) {
             </div>
 
             <Button type="submit" className="w-full bg-luxury-gold text-black hover:bg-luxury-gold-dark" disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Create Client'}
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('clientForm.submitCreate')}
             </Button>
         </form>
     );

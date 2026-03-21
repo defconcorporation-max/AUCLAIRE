@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects, Project } from '@/services/apiProjects';
 import { apiUsers } from '@/services/apiUsers';
@@ -58,6 +59,8 @@ const WEEKS_COUNT = 14;
 const ROW_HEIGHT = 52;
 
 export default function ProductionCalendar() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-FR';
     const navigate = useNavigate();
     const { role, profile } = useAuth();
     const [filterManufacturer, setFilterManufacturer] = useState('');
@@ -136,10 +139,10 @@ export default function ProductionCalendar() {
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <h2 className="text-3xl font-serif font-bold text-white tracking-wide">
-                        Production Calendar
+                        {t('productionCalendarPage.title')}
                     </h2>
                     <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">
-                        Timeline view of projects in production stages.
+                        {t('productionCalendarPage.subtitle')}
                     </p>
                 </div>
 
@@ -149,7 +152,7 @@ export default function ProductionCalendar() {
                             <ChevronLeft className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)} className="text-xs text-white/70 hover:text-white hover:bg-white/10">
-                            Aujourd'hui
+                            {t('productionCalendarPage.today')}
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => setWeekOffset(o => o + 4)} className="text-white/70 hover:text-white hover:bg-white/10">
                             <ChevronRight className="w-4 h-4" />
@@ -159,17 +162,17 @@ export default function ProductionCalendar() {
                     <div className="flex items-center gap-2 p-3 glass-card rounded-xl border-white/10">
                         <Zap className="w-4 h-4 text-luxury-gold shrink-0" />
                         <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">
-                            Stage
+                            {t('productionCalendarPage.stage')}
                         </label>
                         <select
                             className="h-8 rounded-lg border border-white/10 bg-black/40 dark:bg-black/40 text-sm text-white dark:text-white px-3 min-w-[160px] focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/30"
                             value={filterStage}
                             onChange={(e) => setFilterStage(e.target.value as '' | ProductionStage)}
                         >
-                            <option value="">Tous les stages</option>
-                            <option value="approved_for_production">Approuvé</option>
-                            <option value="production">Production</option>
-                            <option value="delivery">Livraison</option>
+                            <option value="">{t('productionCalendarPage.allStages')}</option>
+                            <option value="approved_for_production">{t('productionCalendarPage.stageApproved')}</option>
+                            <option value="production">{t('productionCalendarPage.stageProduction')}</option>
+                            <option value="delivery">{t('productionCalendarPage.stageDelivery')}</option>
                         </select>
                     </div>
 
@@ -177,14 +180,14 @@ export default function ProductionCalendar() {
                         <div className="flex items-center gap-2 p-3 glass-card rounded-xl border-white/10">
                             <Filter className="w-4 h-4 text-luxury-gold shrink-0" />
                             <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">
-                                Manufacturier
+                                {t('productionCalendarPage.manufacturer')}
                             </label>
                             <select
                                 className="h-8 rounded-lg border border-white/10 bg-black/40 dark:bg-black/40 text-sm text-white dark:text-white px-3 min-w-[180px] focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/30"
                                 value={filterManufacturer}
                                 onChange={(e) => setFilterManufacturer(e.target.value)}
                             >
-                                <option value="">Tous</option>
+                                <option value="">{t('productionCalendarPage.all')}</option>
                                 {manufacturers.map((m: UserProfile) => (
                                     <option key={m.id} value={m.id}>
                                         {m.full_name}
@@ -200,25 +203,25 @@ export default function ProductionCalendar() {
                 <div className="p-4 border-b border-white/10">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-luxury-gold/80">
                         <Calendar className="w-4 h-4" />
-                        {weekStart.toLocaleDateString('fr-FR', {
+                        {weekStart.toLocaleDateString(localeTag, {
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric',
                         })}{' '}
-                        — {weekEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        — {weekEnd.toLocaleDateString(localeTag, { day: 'numeric', month: 'short', year: 'numeric' })}
                     </div>
                     <div className="flex gap-1 mt-2">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                            Approuvé
+                            {t('productionCalendarPage.legendApproved')}
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                            Production
+                            {t('productionCalendarPage.legendProduction')}
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            Livraison
+                            {t('productionCalendarPage.legendDelivery')}
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-white/10 text-white/60 border border-white/20">
-                            Délai: 21 jours ouvrables
+                            {t('productionCalendarPage.leadTime')}
                         </span>
                     </div>
                 </div>
@@ -236,7 +239,7 @@ export default function ProductionCalendar() {
                                     >
                                         <div className="w-0.5 h-full bg-red-500/70" />
                                         <div className="absolute top-0 -translate-x-1/2 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-b font-medium whitespace-nowrap">
-                                            Aujourd'hui
+                                            {t('productionCalendarPage.todayMarker')}
                                         </div>
                                     </div>
                                 );
@@ -247,7 +250,7 @@ export default function ProductionCalendar() {
                         {/* Timeline header */}
                         <div className="flex border-b border-white/10 bg-black/20">
                             <div className="w-48 shrink-0 p-3 border-r border-white/10 text-xs font-semibold uppercase tracking-wider text-luxury-gold/70">
-                                Project
+                                {t('productionCalendarPage.project')}
                             </div>
                             <div className="flex-1 flex">
                                 {weekLabels.map((w) => (
@@ -258,7 +261,7 @@ export default function ProductionCalendar() {
                                     >
                                         <span className="text-[10px] text-white/50 block">{w.label}</span>
                                         <span className="text-[10px] text-white/70">
-                                            {w.date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                            {w.date.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })}
                                         </span>
                                     </div>
                                 ))}
@@ -269,9 +272,9 @@ export default function ProductionCalendar() {
                         {projects.length === 0 ? (
                             <div className="p-12 text-center text-muted-foreground">
                                 <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                                <p>No projects in production stages.</p>
+                                <p>{t('productionCalendarPage.emptyTitle')}</p>
                                 <p className="text-sm mt-1">
-                                    Projects in design, approved, production, or delivery will appear here.
+                                    {t('productionCalendarPage.emptyHint')}
                                 </p>
                             </div>
                         ) : (
@@ -298,7 +301,7 @@ export default function ProductionCalendar() {
                                                 {project.priority === 'rush' && (
                                                     <span
                                                         className="shrink-0 w-2 h-2 rounded-full bg-red-500 animate-pulse"
-                                                        title="Rush"
+                                                        title={t('productionCalendarPage.rush')}
                                                     />
                                                 )}
                                                 <button
@@ -350,7 +353,9 @@ export default function ProductionCalendar() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-                {projects.length} project{projects.length !== 1 ? 's' : ''} in production stages
+                {projects.length === 1
+                    ? t('productionCalendarPage.footerSingular', { count: projects.length })
+                    : t('productionCalendarPage.footerPlural', { count: projects.length })}
             </p>
         </div>
     );

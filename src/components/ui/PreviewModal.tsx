@@ -1,4 +1,5 @@
 import { RingConfig, MaterialConfig } from '@/context/RingContext';
+import { useTranslation } from 'react-i18next';
 // import React from 'react' // Unused with new JSX transform
 import { Icons } from './Icons' /** Icons import might need adjustment based on where icons are located, usually ../ui/Icons */
 /** actually Icons is exported from ./Icons.tsx in the same folder usually or ../ui/Icons */
@@ -12,6 +13,7 @@ interface PreviewModalProps {
 }
 
 export default function PreviewModal({ config, materials, onClose }: PreviewModalProps) {
+    const { t } = useTranslation();
 
     // Mock Price Calculation
     const basePrice = 800; // Gold band
@@ -32,11 +34,11 @@ export default function PreviewModal({ config, materials, onClose }: PreviewModa
     const totalPrice = Math.round(basePrice + gemPrice + headPrice + shankPrice + pavePrice);
 
     const handleDownloadSpec = () => {
-        alert("Downloading Spec Sheet (PDF)...\n\n[STUB] This feature would generate a PDF with technical drawings and specs.")
+        alert(t('previewModal.alertPdfStub'))
     }
 
     const handleExportModel = () => {
-        alert("Exporting 3D Model (STL)...\n\n[STUB] This feature would trigger a GLTF/STL export of the current scene.")
+        alert(t('previewModal.alertModelStub'))
     }
 
     return (
@@ -47,7 +49,7 @@ export default function PreviewModal({ config, materials, onClose }: PreviewModa
                 <div className="h-12 bg-[#222] border-b border-[#333] flex items-center justify-between px-4">
                     <span className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
                         <Icons.Select className="w-4 h-4 text-[#40a9ff]" />
-                        Design Preview
+                        {t('previewModal.title')}
                     </span>
                     <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
                         <Icons.Close className="w-5 h-5" />
@@ -61,40 +63,40 @@ export default function PreviewModal({ config, materials, onClose }: PreviewModa
                     {/* Summary Grid */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <span className="text-[10px] text-gray-400 uppercase font-bold">Center Stone</span>
-                            <div className="text-white text-sm font-medium">{config.gem.shape || 'Round'} Diamond</div>
-                            <div className="text-[#40a9ff] text-xs font-mono">{config.gem.size || 1.0} Carat</div>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">{t('previewModal.centerStone')}</span>
+                            <div className="text-white text-sm font-medium">{t('previewModal.diamondLine', { shape: config.gem.shape || 'Round' })}</div>
+                            <div className="text-[#40a9ff] text-xs font-mono">{t('previewModal.caratLine', { ct: config.gem.size || 1.0 })}</div>
                         </div>
                         <div className="space-y-1">
-                            <span className="text-[10px] text-gray-400 uppercase font-bold">Metal</span>
-                            <div className="text-white text-sm font-medium">{materials.metal || 'Gold (18k)'}</div>
-                            <div className="text-gray-300 text-xs">High Polish Finish</div>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">{t('previewModal.metal')}</span>
+                            <div className="text-white text-sm font-medium">{materials.metal || t('previewModal.defaultMetal')}</div>
+                            <div className="text-gray-300 text-xs">{t('previewModal.highPolish')}</div>
                         </div>
                         <div className="space-y-1">
-                            <span className="text-[10px] text-gray-400 uppercase font-bold">Setting Style</span>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">{t('previewModal.settingStyle')}</span>
                             <div className="text-white text-sm font-medium">{config.head.style || 'Solitaire'}</div>
                             <div className="text-gray-300 text-xs">{config.head.prongStyle || '4-Prong'}</div>
                         </div>
                         <div className="space-y-1">
-                            <span className="text-[10px] text-gray-400 uppercase font-bold">Band Style</span>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">{t('previewModal.bandStyle')}</span>
                             <div className="text-white text-sm font-medium">{config.shank.style || 'Classic'}</div>
-                            <div className="text-gray-300 text-xs">{config.shank.profile || 'Court'} Profile</div>
+                            <div className="text-gray-300 text-xs">{t('previewModal.profileLine', { profile: config.shank.profile || 'Court' })}</div>
                         </div>
                     </div>
 
                     {/* Price Estimate */}
                     <div className="p-4 bg-[#111] border border-[#333] rounded flex items-center justify-between">
-                        <span className="text-xs text-gray-300 uppercase font-bold tracking-wider">Estimated Value</span>
+                        <span className="text-xs text-gray-300 uppercase font-bold tracking-wider">{t('previewModal.estimatedValue')}</span>
                         <span className="text-xl text-[#40a9ff] font-mono font-bold">${totalPrice.toLocaleString()}</span>
                     </div>
 
                     {/* Actions */}
                     <div className="flex gap-3 mt-2">
                         <button onClick={handleDownloadSpec} className="flex-1 py-3 bg-[#333] hover:bg-[#444] text-white font-bold rounded text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors">
-                            Spec Sheet
+                            {t('previewModal.specSheet')}
                         </button>
                         <button onClick={handleExportModel} className="flex-1 py-3 bg-[#40a9ff] hover:bg-[#3090ef] text-white font-bold rounded text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-500/20">
-                            Download model
+                            {t('previewModal.downloadModel')}
                         </button>
                     </div>
 

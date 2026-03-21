@@ -4,8 +4,10 @@ import { apiProjects } from '@/services/apiProjects';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Factory, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export function WorkloadMonitor() {
+    const { t } = useTranslation();
     const { data: users } = useQuery({
         queryKey: ['users'],
         queryFn: () => apiUsers.getAll()
@@ -63,18 +65,18 @@ export function WorkloadMonitor() {
             <CardHeader className="py-4 border-b border-white/5">
                 <CardTitle className="text-lg font-serif tracking-wide flex items-center gap-2">
                     <Factory className="w-5 h-5 text-luxury-gold" />
-                    Moniteur de Charge Ateliers
+                    {t('dashboard.workloadTitle')}
                 </CardTitle>
-                <CardDescription className="text-[10px] uppercase tracking-widest">Capacité & Flux de Production</CardDescription>
+                <CardDescription className="text-[10px] uppercase tracking-widest">{t('dashboard.workloadDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="p-4 space-y-6">
                 {bestChoice && (
                     <div className="bg-luxury-gold/5 border border-luxury-gold/20 rounded-lg p-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
                         <Zap className="w-4 h-4 text-luxury-gold mt-0.5" />
                         <div>
-                            <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Assignation Optimale</p>
+                            <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">{t('dashboard.workloadOptimalTitle')}</p>
                             <p className="text-xs mt-1">
-                                <span className="font-bold">{bestChoice.full_name}</span> est actuellement le plus disponible ({bestChoice.loadPercentage}% de charge).
+                                {t('dashboard.workloadOptimalBody', { name: bestChoice.full_name, pct: bestChoice.loadPercentage })}
                             </p>
                         </div>
                     </div>
@@ -82,7 +84,7 @@ export function WorkloadMonitor() {
 
                 <div className="space-y-4">
                     {workshopLoads.length === 0 ? (
-                        <p className="text-center text-xs text-muted-foreground py-8 uppercase tracking-widest">Aucun atelier configuré</p>
+                        <p className="text-center text-xs text-muted-foreground py-8 uppercase tracking-widest">{t('dashboard.workloadEmpty')}</p>
                     ) : (
                         workshopLoads.map((m, idx) => (
                             <div key={m.id} className="space-y-3 p-3 rounded-lg border border-white/5 bg-white/[0.02] animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${idx * 100}ms` }}>
@@ -99,7 +101,7 @@ export function WorkloadMonitor() {
                                 <div className="space-y-1.5">
                                     <div className="flex justify-between items-center px-0.5">
                                         <span className="text-[9px] uppercase tracking-tighter text-muted-foreground flex items-center gap-1">
-                                            <Zap className="w-2 h-2 text-luxury-gold" /> Design (3D)
+                                            <Zap className="w-2 h-2 text-luxury-gold" /> {t('dashboard.workloadDesign3d')}
                                         </span>
                                         <span className="text-[9px] font-bold tabular-nums">
                                             {m.designCount}/{m.designCapacity}
@@ -117,7 +119,7 @@ export function WorkloadMonitor() {
                                 <div className="space-y-1.5">
                                     <div className="flex justify-between items-center px-0.5">
                                         <span className="text-[9px] uppercase tracking-tighter text-muted-foreground flex items-center gap-1">
-                                            <Factory className="w-2 h-2 text-blue-400" /> Production
+                                            <Factory className="w-2 h-2 text-blue-400" /> {t('dashboard.workloadProductionShort')}
                                         </span>
                                         <span className="text-[9px] font-bold tabular-nums">
                                             {m.prodCount}/{m.prodCapacity}

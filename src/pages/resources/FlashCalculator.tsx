@@ -19,6 +19,7 @@ import {
     Coins
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 // --- SUB-COMPONENTS FOR PREMIUM UI ---
@@ -161,6 +162,8 @@ const CalculatorRow = ({ depth, type, parentId, selectedId, onSelect, preferredL
 };
 
 export default function FlashCalculator() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('fr') ? 'fr-CA' : 'en-CA';
     const navigate = useNavigate();
     const [selections, setSelections] = useState<CatalogNode[]>([]);
     const [preferredLabels, setPreferredLabels] = useState<Record<string, string>>({});
@@ -223,7 +226,7 @@ export default function FlashCalculator() {
                     onClick={() => navigate('/dashboard/resources')}
                     className="w-fit text-muted-foreground hover:text-white"
                 >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Retour Ressources
+                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('flashCalculatorPage.back')}
                 </Button>
                 
                 <div className="flex gap-2">
@@ -241,7 +244,7 @@ export default function FlashCalculator() {
                         )}
                     >
                         {showroomMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                        {showroomMode ? "Mode Edit" : "Mode Showroom"}
+                        {showroomMode ? t('flashCalculatorPage.modeEdit') : t('flashCalculatorPage.modeShowroom')}
                     </Button>
 
                     <Button 
@@ -249,7 +252,7 @@ export default function FlashCalculator() {
                         onClick={handleReset}
                         className="border-white/10 hover:bg-white/5"
                     >
-                        <RotateCcw className="w-4 h-4 mr-2" /> Réinitialiser
+                        <RotateCcw className="w-4 h-4 mr-2" /> {t('flashCalculatorPage.reset')}
                     </Button>
                 </div>
             </div>
@@ -260,10 +263,10 @@ export default function FlashCalculator() {
                     <header>
                         <h1 className="text-4xl font-serif text-white flex items-center gap-3">
                             <Calculator className="text-luxury-gold" />
-                            Flash Quote
+                            {t('flashCalculatorPage.title')}
                         </h1>
                         <p className="text-muted-foreground mt-2 font-serif italic">
-                            Estimez instantanément un projet sur-mesure pour votre client.
+                            {t('flashCalculatorPage.subtitle')}
                         </p>
                     </header>
 
@@ -276,7 +279,7 @@ export default function FlashCalculator() {
                                 selections.length === 0 ? "bg-luxury-gold border-luxury-gold text-white shadow-lg" : "border-white/10 text-muted-foreground hover:border-white/30"
                             )}
                         >
-                            Début
+                            {t('flashCalculatorPage.progressStart')}
                         </button>
                         {selections.map((s, i) => (
                             <div key={s.id} className="flex items-center gap-2 shrink-0">
@@ -332,8 +335,10 @@ export default function FlashCalculator() {
                         {selections.length > 0 && selections[selections.length - 1]?.price !== undefined && (
                             <div className="mt-12 py-12 text-center bg-luxury-gold/5 rounded-2xl border border-dashed border-luxury-gold/20 flex flex-col items-center gap-3 animate-in fade-in duration-500">
                                 <CheckCircle2 className="w-12 h-12 text-luxury-gold" />
-                                <h3 className="text-2xl font-serif text-white">Prêt à Chiffrer</h3>
-                                <p className="text-sm text-muted-foreground">Spécifications identifiées pour {selections[selections.length-1].label}.</p>
+                                <h3 className="text-2xl font-serif text-white">{t('flashCalculatorPage.readyTitle')}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {t('flashCalculatorPage.readyDesc', { label: selections[selections.length - 1].label })}
+                                </p>
                             </div>
                         )}
                     </div>
@@ -345,7 +350,7 @@ export default function FlashCalculator() {
                         <CardHeader className="border-b border-white/5 pb-4">
                             <CardTitle className="font-serif text-xl flex items-center gap-2">
                                 <TrendingUp className="w-5 h-5 text-luxury-gold" />
-                                Résumé de l'Estimation
+                                {t('flashCalculatorPage.summaryTitle')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -384,29 +389,29 @@ export default function FlashCalculator() {
                                 ))}
                                 {selections.length === 0 && (
                                     <li className="p-12 text-center text-muted-foreground italic text-sm">
-                                        Commencez par choisir une catégorie...
+                                        {t('flashCalculatorPage.emptySelection')}
                                     </li>
                                 )}
                             </ul>
 
                              <div className="p-6 bg-luxury-gold/5 border-t border-luxury-gold/20">
                                 <div className="flex justify-between items-end mb-4">
-                                    <div className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Total Estimé (HT)</div>
+                                    <div className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">{t('flashCalculatorPage.totalEstimated')}</div>
                                     <div className="text-4xl font-serif font-bold text-luxury-gold">
                                         {(!showroomMode || priceCalculated) ? (
-                                            new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(totalPrice)
+                                            new Intl.NumberFormat(localeTag, { style: 'currency', currency: 'CAD' }).format(totalPrice)
                                         ) : (
                                             <Button 
                                                 onClick={() => setPriceCalculated(true)}
                                                 className="bg-luxury-gold text-black hover:bg-luxury-gold/90 font-bold px-6 py-2 h-auto text-lg animate-in zoom-in-50 duration-500"
                                             >
-                                                <Coins className="w-5 h-5 mr-2" /> Calculer le Prix
+                                                <Coins className="w-5 h-5 mr-2" /> {t('flashCalculatorPage.calculatePrice')}
                                             </Button>
                                         )}
                                     </div>
                                 </div>
                                 <p className="text-[9px] text-muted-foreground italic text-center leading-relaxed">
-                                    *Prix sujet à modification selon le cours des métaux et la sélection finale de la pierre.
+                                    {t('flashCalculatorPage.disclaimer')}
                                 </p>
                             </div>
 
@@ -421,7 +426,7 @@ export default function FlashCalculator() {
                                         } 
                                     })}
                                 >
-                                    Créer le Projet
+                                    {t('flashCalculatorPage.createProject')}
                                 </Button>
                             </div>
 
@@ -430,12 +435,12 @@ export default function FlashCalculator() {
                                 <div className="border-t border-white/10 overflow-hidden relative group aspect-video">
                                     <img 
                                         src={[...selections].reverse().find(s => !!s.image_url)?.image_url} 
-                                        alt="Visual Preview" 
+                                        alt={t('flashCalculatorPage.visualPreviewAlt')} 
                                         className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" 
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                                     <div className="absolute bottom-4 left-4">
-                                        <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Aperçu Visuel</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">{t('flashCalculatorPage.visualPreview')}</p>
                                         <p className="text-sm font-serif text-white">{[...selections].reverse().find(s => !!s.image_url)?.label}</p>
                                     </div>
                                 </div>
@@ -449,9 +454,9 @@ export default function FlashCalculator() {
             {/* Mobile Sticky Action Bar */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-zinc-900/95 backdrop-blur-md border-t border-white/10 p-4 pb-8 z-50 flex items-center justify-between gap-4">
                 <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Total Estimé</span>
+                    <span className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">{t('flashCalculatorPage.totalEstimatedShort')}</span>
                     <span className="text-xl font-serif text-white">
-                        {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(totalPrice)}
+                        {new Intl.NumberFormat(localeTag, { style: 'currency', currency: 'CAD' }).format(totalPrice)}
                     </span>
                 </div>
                 <Button 
@@ -464,7 +469,7 @@ export default function FlashCalculator() {
                         } 
                     })}
                 >
-                    Créer Projet
+                    {t('flashCalculatorPage.createProjectMobile')}
                 </Button>
             </div>
         </div>

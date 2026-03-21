@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +19,7 @@ const parseSourceIcon = (source: string) => {
 };
 
 const LeadCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
+    const { t } = useTranslation();
     return (
         <Card
             onClick={onClick}
@@ -34,7 +36,7 @@ const LeadCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
                         )}
                     </div>
 
-                    <div className="bg-gray-100 dark:bg-gray-800 p-1.5 rounded-full z-10" title={`Source: ${lead.source}`}>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-1.5 rounded-full z-10" title={t('crmLeadsDashboard.sourceTooltip', { source: lead.source })}>
                         {parseSourceIcon(lead.source)}
                     </div>
                 </div>
@@ -59,6 +61,7 @@ const LeadCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
 };
 
 export default function LeadsDashboard() {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
@@ -69,7 +72,6 @@ export default function LeadsDashboard() {
         queryFn: apiLeads.getAll
     });
 
-    // Realtime subscription
     useEffect(() => {
         const channel = supabase
             .channel('leads-realtime')
@@ -111,7 +113,6 @@ export default function LeadsDashboard() {
 
         const newStatus = destination.droppableId as LeadStatus;
 
-        // Optimistic update
         queryClient.setQueryData(['leads'], (old: Lead[] | undefined) => {
             if (!old) return [];
             return old.map(l => l.id === draggableId ? { ...l, status: newStatus } : l);
@@ -119,6 +120,9 @@ export default function LeadsDashboard() {
 
         updateStatusMutation.mutate({ id: draggableId, status: newStatus });
     };
+
+    const columnTitle = (status: LeadStatus) =>
+        t(`leadStatus.${status}` as 'leadStatus.new', { defaultValue: status });
 
     if (isLoading) {
         return (
@@ -131,7 +135,7 @@ export default function LeadsDashboard() {
     if (error) {
         return (
             <div className="flex-1 flex items-center justify-center text-red-500">
-                Error loading leads. Please try again later.
+                {t('crmLeadsDashboard.loadError')}
             </div>
         );
     }
@@ -140,15 +144,15 @@ export default function LeadsDashboard() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 h-full flex flex-col">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-serif font-bold text-luxury-gold tracking-wide">CRM & Leads</h2>
-                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Manage your pipeline.</p>
+                    <h2 className="text-3xl font-serif font-bold text-luxury-gold tracking-wide">{t('crmLeadsDashboard.title')}</h2>
+                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">{t('crmLeadsDashboard.subtitle')}</p>
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <div className="relative flex-1 sm:w-64 mr-2">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search leads..."
+                            placeholder={t('crmLeadsDashboard.searchPlaceholder')}
                             className="pl-9 h-9 bg-white/50 dark:bg-black/20 border-black/10 dark:border-white/10"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -157,12 +161,14 @@ export default function LeadsDashboard() {
 
                     <div className="bg-muted p-1 rounded-md flex">
                         <button
+                            type="button"
                             className={`h-7 w-8 flex items-center justify-center rounded-sm transition-all ${viewMode === 'grid' ? 'bg-background shadow-sm' : 'opacity-50 hover:opacity-100'}`}
                             onClick={() => setViewMode('grid')}
                         >
                             <LayoutGrid className="w-4 h-4" />
                         </button>
                         <button
+                            type="button"
                             className={`h-7 w-8 flex items-center justify-center rounded-sm transition-all ${viewMode === 'list' ? 'bg-background shadow-sm' : 'opacity-50 hover:opacity-100'}`}
                             onClick={() => setViewMode('list')}
                         >
@@ -171,7 +177,7 @@ export default function LeadsDashboard() {
                     </div>
                     <Button className="bg-luxury-gold text-black hover:bg-luxury-gold/90 transition-all shadow-md ml-2 h-9">
                         <Plus className="w-4 h-4 mr-2" />
-                        Add Lead
+                        {t('crmLeadsDashboard.addLead')}
                     </Button>
                 </div>
             </div>
@@ -185,7 +191,7 @@ export default function LeadsDashboard() {
                                 <div key={status} className="min-w-[280px] w-[280px] flex-shrink-0 snap-start flex flex-col">
                                     <div className="flex items-center justify-between px-1 pb-2 border-b border-black/10 dark:border-white/10 mb-2">
                                         <h3 className="font-semibold text-xs text-luxury-gold uppercase tracking-[0.2em]">
-                                            {status === 'new' ? 'New Lead' : status}
+                                            {columnTitle(status)}
                                         </h3>
                                         <span className="text-[10px] font-mono bg-luxury-gold/10 text-luxury-gold px-2.5 py-1 rounded-full ring-1 ring-luxury-gold/20">
                                             {columnLeads.length}
@@ -223,7 +229,7 @@ export default function LeadsDashboard() {
 
                                                 {columnLeads.length === 0 && !snapshot.isDraggingOver && (
                                                     <div className="h-24 rounded-lg border-2 border-dashed border-black/5 dark:border-white/5 flex items-center justify-center">
-                                                        <span className="text-xs text-muted-foreground uppercase tracking-wider">Empty</span>
+                                                        <span className="text-xs text-muted-foreground uppercase tracking-wider">{t('crmLeadsDashboard.columnEmpty')}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -247,7 +253,7 @@ export default function LeadsDashboard() {
                     ))}
                     {filteredLeads.length === 0 && (
                         <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed rounded-lg border-black/10 dark:border-white/10">
-                            No leads found.
+                            {t('crmLeadsDashboard.emptyList')}
                         </div>
                     )}
                 </div>

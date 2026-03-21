@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ import {
 import { apiTasks, Task } from '@/services/apiTasks';
 import { useAuth } from '@/context/AuthContext';
 import { format, isValid } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { Label } from '@/components/ui/label';
@@ -46,6 +47,8 @@ import { apiProjects, JewelryType } from '@/services/apiProjects';
 import { Plus, Layout, Settings, FilePlus } from 'lucide-react';
 
 export default function Tasks() {
+    const { t, i18n } = useTranslation();
+    const dfLocale = i18n.language.startsWith('en') ? enUS : fr;
     const { role, user } = useAuth();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -94,7 +97,7 @@ export default function Tasks() {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
             setIsCreateModalOpen(false);
             setNewTask({ title: '', description: '', priority: 'normal', status: 'pending', category: 'operations', contact_id: '' });
-            toast({ title: "Tâche créée", description: "La tâche a été ajoutée avec succès." });
+            toast({ title: t('tasksPage.toastCreated'), description: t('tasksPage.toastCreatedDesc') });
         }
     });
 
@@ -133,8 +136,8 @@ export default function Tasks() {
 
         if (!contactId) {
             toast({
-                title: "Information manquante",
-                description: "Impossible de trouver l'ID du contact GHL pour cette tâche.",
+                title: t('tasksPage.missingContact'),
+                description: t('tasksPage.missingContactDesc'),
                 variant: "destructive"
             });
             return;
@@ -145,8 +148,8 @@ export default function Tasks() {
             const res = await apiTasks.getConversationSummary(contactId, locationId);
             if (res && 'error' in res) {
                 toast({
-                    title: "Erreur GHL",
-                    description: (res as any).error || "Une erreur est survenue lors de la récupération.",
+                    title: t('tasksPage.ghlError'),
+                    description: (res as { error?: string }).error || t('tasksPage.ghlErrorGeneric'),
                     variant: "destructive"
                 });
                 setSummary(null);
@@ -155,8 +158,8 @@ export default function Tasks() {
             }
         } catch (error: any) {
             toast({
-                title: "Erreur",
-                description: error.message || "Impossible de récupérer le résumé de la conversation.",
+                title: t('common.error'),
+                description: error.message || t('tasksPage.summaryError'),
                 variant: "destructive"
             });
         } finally {
@@ -188,7 +191,7 @@ export default function Tasks() {
             // 1. Create client if not exists
             if (!clientId) {
                 const newClient = await apiClients.create({
-                    full_name: info.fullName || task.title || 'Client Inconnu',
+                    full_name: info.fullName || task.title || t('tasksPage.unknownClient'),
                     email: info.email || undefined,
                     phone: info.phone || undefined,
                     notes: `Créé via conversion de tâche GHL: ${task.id}`
@@ -200,7 +203,9 @@ export default function Tasks() {
             const newProject = await apiProjects.create({
                 title: task.title,
                 client_id: clientId,
-                description: `Projet initialisé depuis GHL. ${info.jewelryType ? `Bijou: ${info.jewelryType}` : ''}`,
+                description: t('tasksPage.projectInitNote', {
+                    jewelry: info.jewelryType ? t('tasksPage.jewelryPart', { type: info.jewelryType }) : '',
+                }),
                 jewelry_type: info.jewelryType || 'Autre',
                 budget: info.budget ? Number(info.budget) : undefined,
                 deadline: info.deadline && !isNaN(Date.parse(info.deadline)) ? new Date(info.deadline).toISOString() : undefined,
@@ -218,17 +223,17 @@ export default function Tasks() {
         },
         onSuccess: (project) => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
-            toast({ 
-                title: "Projet créé !", 
-                description: "Le client et le projet ont été initialisés avec succès." 
+            toast({
+                title: t('tasksPage.projectCreated'),
+                description: t('tasksPage.projectCreatedDesc'),
             });
             navigate(`/projects/${project.id}`);
         },
         onError: (error: any) => {
-            toast({ 
-                title: "Erreur de conversion", 
-                description: error.message, 
-                variant: "destructive" 
+            toast({
+                title: t('tasksPage.convertError'),
+                description: error.message,
+                variant: "destructive"
             });
         }
     });
@@ -260,7 +265,7 @@ export default function Tasks() {
                         const label = labelMatch[1].trim();
                         const value = labelMatch[2].trim();
                         
-                        if (!value || value.toLowerCase().includes('non précisé')) return null;
+                        if (!value || /non précisé|not specified|n\/a/i.test(value)) return null;
 
                         return (
                             <div key={idx} className="flex flex-col gap-1 p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-lg border border-black/5 dark:border-white/5 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]">
@@ -275,7 +280,7 @@ export default function Tasks() {
                     if (colonParts.length > 1 && line.includes('- ')) {
                         const label = colonParts[0].replace('- ', '').replace(/\*/g, '').trim();
                         const value = colonParts.slice(1).join(':').trim();
-                        if (!value || value.toLowerCase().includes('non précisé')) return null;
+                        if (!value || /non précisé|not specified|n\/a/i.test(value)) return null;
 
                         return (
                             <div key={idx} className="flex flex-col gap-1 p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-lg border border-black/5 dark:border-white/5 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]">
@@ -305,6 +310,18 @@ export default function Tasks() {
         }
     };
 
+    const priorityLabel = (p?: string) => {
+        const key = (
+            {
+                low: 'tasksPage.priorityLow',
+                normal: 'tasksPage.priorityNormal',
+                high: 'tasksPage.priorityHigh',
+                urgent: 'tasksPage.priorityUrgent',
+            } as Record<string, string>
+        )[p || 'normal'];
+        return t(key || 'tasksPage.priorityNormal');
+    };
+
     if (isLoading) {
         return (
             <div className="flex h-[400px] items-center justify-center">
@@ -319,10 +336,10 @@ export default function Tasks() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex justify-between items-center w-full">
                     <div>
-                        <h2 className="text-3xl font-serif font-bold text-luxury-gold tracking-wide">Tâches & Synchronisation</h2>
+                        <h2 className="text-3xl font-serif font-bold text-luxury-gold tracking-wide">{t('tasksPage.title')}</h2>
                         <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest flex items-center gap-2">
-                            <CheckSquare className="w-4 h-4" /> 
-                            Flux en direct de GoHighLevel
+                            <CheckSquare className="w-4 h-4" />
+                            {t('tasksPage.subtitleGhl')}
                         </p>
                     </div>
                     <Button 
@@ -330,7 +347,7 @@ export default function Tasks() {
                         className="bg-luxury-gold hover:bg-luxury-gold/90 text-black flex items-center gap-2"
                     >
                         <Plus className="w-4 h-4" />
-                        Nouvelle Tâche
+                        {t('tasksPage.newTask')}
                     </Button>
                 </div>
 
@@ -338,7 +355,7 @@ export default function Tasks() {
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input 
-                            placeholder="Rechercher une tâche..." 
+                            placeholder={t('tasksPage.searchPlaceholder')} 
                             className="pl-9 bg-white/50 dark:bg-black/20 border-black/10 dark:border-white/10"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -350,7 +367,7 @@ export default function Tasks() {
                             className={!viewOnlyMine ? "bg-luxury-gold text-black" : ""}
                             onClick={() => setViewOnlyMine(!viewOnlyMine)}
                         >
-                            {viewOnlyMine ? "Tout voir" : "Mes tâches uniquement"}
+                            {viewOnlyMine ? t('tasksPage.viewAll') : t('tasksPage.viewMine')}
                         </Button>
                     )}
                 </div>
@@ -369,7 +386,7 @@ export default function Tasks() {
                                 : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
-                            {f === 'pending' ? 'En cours' : f === 'completed' ? 'Terminées' : 'Toutes'}
+                            {f === 'pending' ? t('tasksPage.filterPending') : f === 'completed' ? t('tasksPage.filterCompleted') : t('tasksPage.filterAllStatus')}
                         </button>
                     ))}
                 </div>
@@ -384,7 +401,7 @@ export default function Tasks() {
                             : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
-                        Tous types
+                        {t('tasksPage.allTypes')}
                     </button>
                     <button
                         onClick={() => setTypeFilter('design')}
@@ -394,7 +411,7 @@ export default function Tasks() {
                             : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
-                        <Layout className="w-3 h-3" /> Design
+                        <Layout className="w-3 h-3" /> {t('tasksPage.design')}
                     </button>
                     <button
                         onClick={() => setTypeFilter('ops')}
@@ -404,7 +421,7 @@ export default function Tasks() {
                             : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
-                        <Settings className="w-3 h-3" /> Opérations
+                        <Settings className="w-3 h-3" /> {t('tasksPage.operations')}
                     </button>
                 </div>
             </div>
@@ -449,11 +466,11 @@ export default function Tasks() {
                                                 </h3>
                                                 {isDesignTask(task) ? (
                                                     <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border-blue-500/20 flex gap-1 items-center px-2 py-0.5">
-                                                        <Layout className="w-3 h-3" /> Design
+                                                        <Layout className="w-3 h-3" /> {t('tasksPage.design')}
                                                     </Badge>
                                                 ) : (
                                                     <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-500 border-orange-500/20 flex gap-1 items-center px-2 py-0.5">
-                                                        <Settings className="w-3 h-3" /> Opérations
+                                                        <Settings className="w-3 h-3" /> {t('tasksPage.operations')}
                                                     </Badge>
                                                 )}
                                             </div>
@@ -474,19 +491,19 @@ export default function Tasks() {
                                         {task.due_date && isValid(new Date(task.due_date)) && (
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <Calendar className="w-3.5 h-3.5" />
-                                                <span>Échéance: {format(new Date(task.due_date), 'PPP', { locale: fr })}</span>
+                                                <span>{t('tasksPage.dueRow', { date: format(new Date(task.due_date), 'PPP', { locale: dfLocale }) })}</span>
                                             </div>
                                         )}
                                         {task.assigned_to_profile && (
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <User className="w-3.5 h-3.5 text-luxury-gold/60" />
-                                                <span>Assigné à: <span className="text-foreground font-medium">{task.assigned_to_profile.full_name}</span></span>
+                                                <span>{t('tasksPage.assignedRow', { name: task.assigned_to_profile.full_name })}</span>
                                             </div>
                                         )}
                                         {task.client && (
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground border-l border-black/10 dark:border-white/10 pl-4">
                                                 <ExternalLink className="w-3.5 h-3.5 text-luxury-gold/60" />
-                                                <span>Client: <span className="text-foreground font-medium">{task.client.full_name}</span></span>
+                                                <span>{t('tasksPage.clientRow', { name: task.client.full_name })}</span>
                                             </div>
                                         )}
                                     </div>
@@ -497,8 +514,8 @@ export default function Tasks() {
                 ) : (
                     <div className="py-20 text-center border-2 border-dashed border-black/5 dark:border-white/5 rounded-2xl">
                         <Clock className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                        <h4 className="text-lg font-serif text-muted-foreground">Aucune tâche trouvée</h4>
-                        <p className="text-sm text-muted-foreground/60 mt-1 uppercase tracking-widest">Utilisez GHL pour ajouter des tâches quotidiennes.</p>
+                        <h4 className="text-lg font-serif text-muted-foreground">{t('tasksPage.emptyTitle')}</h4>
+                        <p className="text-sm text-muted-foreground/60 mt-1 uppercase tracking-widest">{t('tasksPage.emptyHint')}</p>
                     </div>
                 )}
             </div>
@@ -510,15 +527,15 @@ export default function Tasks() {
                         <div className="flex justify-between items-center pr-8">
                             <div className="flex gap-2">
                                 <Badge variant="outline" className={getPriorityColor(selectedTask?.priority || 'normal')}>
-                                    Priorité {selectedTask?.priority || 'Normal'}
+                                    {t('tasksPage.priorityBadge', { p: priorityLabel(selectedTask?.priority) })}
                                 </Badge>
                                 {isDesignTask(selectedTask) ? (
                                     <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 flex gap-1 items-center">
-                                        <Layout className="w-3 h-3" /> Design
+                                        <Layout className="w-3 h-3" /> {t('tasksPage.design')}
                                     </Badge>
                                 ) : (
                                     <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20 flex gap-1 items-center">
-                                        <Settings className="w-3 h-3" /> Opérations
+                                        <Settings className="w-3 h-3" /> {t('tasksPage.operations')}
                                     </Badge>
                                 )}
                             </div>
@@ -526,36 +543,58 @@ export default function Tasks() {
                         </div>
                         <DialogTitle className="text-2xl font-serif text-luxury-gold mt-4">{selectedTask?.title}</DialogTitle>
                         <DialogDescription className="text-muted-foreground mt-2">
-                           {isDesignTask(selectedTask) 
-                            ? "Détails de la tâche synchronisée via GoHighLevel ou désignée comme Design." 
-                            : "Tâche opérationnelle créée manuellement dans l'application Auclaire."}
+                            {isDesignTask(selectedTask) ? t('tasksPage.modalDesignDesc') : t('tasksPage.modalOpsDesc')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
                         <div className="space-y-4">
                             <div className="bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-black/5 dark:border-white/5">
-                                <h4 className="text-xs font-bold uppercase tracking-widest text-luxury-gold mb-3">Informations Clés</h4>
+                                <h4 className="text-xs font-bold uppercase tracking-widest text-luxury-gold mb-3">{t('tasksPage.keyInfo')}</h4>
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                         <Calendar className="w-4 h-4 text-luxury-gold" />
-                                        <span>Échéance: {(selectedTask?.due_date && isValid(new Date(selectedTask.due_date))) ? format(new Date(selectedTask.due_date), 'PPP', { locale: fr }) : 'Non définie'}</span>
+                                        <span>
+                                            {t('tasksPage.dueRow', {
+                                                date:
+                                                    selectedTask?.due_date && isValid(new Date(selectedTask.due_date))
+                                                        ? format(new Date(selectedTask.due_date), 'PPP', { locale: dfLocale })
+                                                        : t('tasksPage.dueNotSet'),
+                                            })}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                         <User className="w-4 h-4 text-luxury-gold" />
-                                        <span>Assigné à: <b className="text-foreground">{selectedTask?.assigned_to_profile?.full_name || 'Non assigné'}</b></span>
+                                        <span>
+                                            {t('tasksPage.assignedRow', {
+                                                name: selectedTask?.assigned_to_profile?.full_name || t('tasksPage.unassigned'),
+                                            })}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                         <Loader2 className={`w-4 h-4 ${selectedTask?.status === 'completed' ? 'text-green-500' : 'text-blue-500'}`} />
-                                        <span>Statut: <Badge className={selectedTask?.status === 'completed' ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}>{selectedTask?.status === 'completed' ? 'Terminé' : 'En cours'}</Badge></span>
+                                        <span>
+                                            {t('tasksPage.status')}{' '}
+                                            <Badge
+                                                className={
+                                                    selectedTask?.status === 'completed'
+                                                        ? 'bg-green-500/10 text-green-500'
+                                                        : 'bg-blue-500/10 text-blue-500'
+                                                }
+                                            >
+                                                {selectedTask?.status === 'completed'
+                                                    ? t('tasksPage.statusDone')
+                                                    : t('tasksPage.statusInProgress')}
+                                            </Badge>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-black/5 dark:border-white/5">
-                                <h4 className="text-xs font-bold uppercase tracking-widest text-luxury-gold mb-2">Description</h4>
+                                <h4 className="text-xs font-bold uppercase tracking-widest text-luxury-gold mb-2">{t('tasksPage.description')}</h4>
                                 <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                                    {selectedTask?.description || "Aucune description fournie dans GHL."}
+                                    {selectedTask?.description || t('tasksPage.noDescription')}
                                 </p>
                             </div>
                         </div>
@@ -564,7 +603,7 @@ export default function Tasks() {
                             {isDesignTask(selectedTask) ? (
                                 <div className="bg-luxury-gold/5 p-4 rounded-xl border border-luxury-gold/10">
                                     <div className="flex justify-between items-center mb-4">
-                                        <h4 className="text-xs font-bold uppercase tracking-widest text-luxury-gold">Résumé Conversation</h4>
+                                        <h4 className="text-xs font-bold uppercase tracking-widest text-luxury-gold">{t('tasksPage.convSummary')}</h4>
                                         <Button 
                                             size="sm" 
                                             variant="ghost" 
@@ -573,7 +612,7 @@ export default function Tasks() {
                                             disabled={summaryLoading}
                                         >
                                             {summaryLoading ? <Loader2 className="w-3 h-3 animate-spin"/> : <Sparkles className="w-3 h-3"/>}
-                                            {summary ? "Actualiser" : "Générer"}
+                                            {summary ? t('tasksPage.refresh') : t('tasksPage.generate')}
                                         </Button>
                                     </div>
 
@@ -583,7 +622,7 @@ export default function Tasks() {
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-luxury-gold opacity-75"></span>
                                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-luxury-gold"></span>
                                             </span>
-                                            <p className="text-xs text-muted-foreground italic">Analyse des derniers messages GHL...</p>
+                                            <p className="text-xs text-muted-foreground italic">{t('tasksPage.analyzingGhl')}</p>
                                         </div>
                                     ) : summary ? (
                                         <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
@@ -594,12 +633,12 @@ export default function Tasks() {
                                                 <div className="mt-8 border-t border-luxury-gold/10 pt-4">
                                                     <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-luxury-gold mb-3 flex items-center gap-2">
                                                         <ImageIcon className="w-3 h-3" />
-                                                        Photos Partagées
+                                                        {t('tasksPage.sharedPhotos')}
                                                     </h4>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {(summary as any).images.map((img: string, i: number) => (
                                                             <a key={i} href={img} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg border border-white/10 overflow-hidden group/img relative">
-                                                                <img src={img} alt="Shared" referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform group-hover/img:scale-110"/>
+                                                                <img src={img} alt={t('tasksPage.sharedPhotoAlt')} referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform group-hover/img:scale-110"/>
                                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
                                                                     <ImageIcon className="w-4 h-4 text-white"/>
                                                                 </div>
@@ -618,10 +657,10 @@ export default function Tasks() {
                                                             ) : (
                                                                 <FilePlus className="w-3 h-3 mr-2" />
                                                             )}
-                                                            Convertir en Projet Initial
+                                                            {t('tasksPage.convertProject')}
                                                         </Button>
                                                         <p className="text-[9px] text-center text-muted-foreground italic px-4 uppercase font-medium">
-                                                            Cette action créera un nouveau client et un dossier projet complet avec ces notes.
+                                                            {t('tasksPage.convertHint')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -630,7 +669,7 @@ export default function Tasks() {
                                     ) : (
                                         <div className="py-6 text-center">
                                             <MessageSquare className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-                                            <p className="text-xs text-muted-foreground italic">Cliquez sur Générer pour analyser le contexte client.</p>
+                                            <p className="text-xs text-muted-foreground italic">{t('tasksPage.clickGenerate')}</p>
                                         </div>
                                     )}
                                 </div>
@@ -639,8 +678,8 @@ export default function Tasks() {
                                     <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
                                         <Settings className="w-6 h-6 text-orange-500/50" />
                                     </div>
-                                    <h4 className="text-xs font-bold uppercase tracking-widest text-orange-500/70">Tâche Opérationnelle Auto-gérée</h4>
-                                    <p className="text-[11px] text-muted-foreground italic max-w-[200px]">Cette tâche est interne à la Maison Auclaire et ne possède pas de fil de discussion GoHighLevel associé.</p>
+                                    <h4 className="text-xs font-bold uppercase tracking-widest text-orange-500/70">{t('tasksPage.opsAutoTitle')}</h4>
+                                    <p className="text-[11px] text-muted-foreground italic max-w-[200px]">{t('tasksPage.opsAutoHint')}</p>
                                 </div>
                             )}
                         </div>
@@ -655,7 +694,7 @@ export default function Tasks() {
                                 disabled={!selectedTask?.metadata?.contact_id && !selectedTask?.metadata?.contactId && !selectedTask?.ghl_id}
                             >
                                 <ExternalLink className="w-4 h-4 mr-2" />
-                                Ouvrir dans GHL
+                                {t('tasksPage.openGhl')}
                             </Button>
                         )}
                         <Button
@@ -663,7 +702,7 @@ export default function Tasks() {
                             onClick={(e) => selectedTask && handleToggleStatus(e, selectedTask)}
                         >
                             <CheckCircle2 className="w-4 h-4 mr-2" />
-                            {selectedTask?.status === 'completed' ? 'Marquer comme en cours' : 'Marquer comme fini'}
+                            {selectedTask?.status === 'completed' ? t('tasksPage.markInProgress') : t('tasksPage.markDone')}
                         </Button>
                     </div>
                 </DialogContent>
@@ -673,41 +712,41 @@ export default function Tasks() {
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border-luxury-gold/20">
                     <DialogHeader>
-                        <DialogTitle className="font-serif text-2xl text-luxury-gold">Nouvelle Tâche</DialogTitle>
-                        <DialogDescription>Créez une tâche interne ou un nouveau projet de design.</DialogDescription>
+                        <DialogTitle className="font-serif text-2xl text-luxury-gold">{t('tasksPage.createTitle')}</DialogTitle>
+                        <DialogDescription>{t('tasksPage.createDesc')}</DialogDescription>
                     </DialogHeader>
                     
                     <div className="space-y-4 py-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Type de Tâche</Label>
+                                <Label>{t('tasksPage.taskType')}</Label>
                                 <Select 
                                     value={newTask.category} 
                                     onValueChange={(v) => setNewTask(prev => ({ ...prev, category: v }))}
                                 >
                                     <SelectTrigger className={newTask.category === 'design' ? "border-blue-500/50 text-blue-500" : "border-orange-500/50 text-orange-500"}>
-                                        <SelectValue placeholder="Type" />
+                                        <SelectValue placeholder={t('tasksPage.typePlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="design" className="text-blue-500">🎨 Design</SelectItem>
-                                        <SelectItem value="operations" className="text-orange-500">🏗️ Opérations</SelectItem>
+                                        <SelectItem value="design" className="text-blue-500">{t('tasksPage.taskDesignOpt')}</SelectItem>
+                                        <SelectItem value="operations" className="text-orange-500">{t('tasksPage.taskOpsOpt')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Priorité</Label>
+                                <Label>{t('tasksPage.priority')}</Label>
                                 <Select 
                                     value={newTask.priority} 
                                     onValueChange={(v: any) => setNewTask(prev => ({ ...prev, priority: v }))}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Priorité" />
+                                        <SelectValue placeholder={t('tasksPage.priorityPlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="low">Basse</SelectItem>
-                                        <SelectItem value="normal">Normale</SelectItem>
-                                        <SelectItem value="high">Haute</SelectItem>
-                                        <SelectItem value="urgent">Urgent</SelectItem>
+                                        <SelectItem value="low">{t('tasksPage.priorityLow')}</SelectItem>
+                                        <SelectItem value="normal">{t('tasksPage.priorityNormal')}</SelectItem>
+                                        <SelectItem value="high">{t('tasksPage.priorityHigh')}</SelectItem>
+                                        <SelectItem value="urgent">{t('tasksPage.priorityUrgent')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -717,35 +756,35 @@ export default function Tasks() {
                             <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                                 <Label className="text-blue-500 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
                                     <Layout className="w-3 h-3" />
-                                    ID Contact GHL (Optionnel)
+                                    {t('tasksPage.ghlContactId')}
                                 </Label>
                                 <Input 
-                                    placeholder="ex: psh_..." 
+                                    placeholder={t('tasksPage.ghlIdPlaceholder')} 
                                     className="border-blue-500/20 focus-visible:ring-blue-500"
                                     value={newTask.contact_id}
                                     onChange={(e) => setNewTask(prev => ({ ...prev, contact_id: e.target.value }))}
                                 />
                                 <p className="text-[10px] text-muted-foreground italic leading-tight">
-                                    Permet de générer le résumé technique si l'ID est valide dans GoHighLevel.
+                                    {t('tasksPage.ghlContactHint')}
                                 </p>
                             </div>
                         )}
 
                         <div className="space-y-2">
-                            <Label htmlFor="title">Titre</Label>
+                            <Label htmlFor="title">{t('tasksPage.titleLabel')}</Label>
                             <Input 
                                 id="title" 
-                                placeholder={newTask.category === 'design' ? "ex: Création Bague Or 18k" : "ex: Commander les écrins"} 
+                                placeholder={newTask.category === 'design' ? t('tasksPage.titlePlaceholderDesign') : t('tasksPage.titlePlaceholderOps')} 
                                 value={newTask.title}
                                 onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="desc">Description</Label>
+                            <Label htmlFor="desc">{t('tasksPage.descLabel')}</Label>
                             <Textarea 
                                 id="desc" 
-                                placeholder="Détails de la tâche..." 
+                                placeholder={t('tasksPage.descPlaceholder')} 
                                 value={newTask.description}
                                 onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
                             />
@@ -753,13 +792,13 @@ export default function Tasks() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Assigner à</Label>
+                                <Label>{t('tasksPage.assignTo')}</Label>
                                 <Select 
                                     value={newTask.assigned_to} 
                                     onValueChange={(v) => setNewTask(prev => ({ ...prev, assigned_to: v }))}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Choisir..." />
+                                        <SelectValue placeholder={t('tasksPage.assignPlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {users.map((u: any) => (
@@ -769,7 +808,7 @@ export default function Tasks() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="due">Échéance</Label>
+                                <Label htmlFor="due">{t('tasksPage.dueLabel')}</Label>
                                 <Input 
                                     id="due" 
                                     type="date" 
@@ -781,13 +820,13 @@ export default function Tasks() {
                     </div>
 
                     <div className="flex justify-end gap-3 mt-6">
-                        <Button variant="ghost" onClick={() => setIsCreateModalOpen(false)}>Annuler</Button>
+                        <Button variant="ghost" onClick={() => setIsCreateModalOpen(false)}>{t('common.cancel')}</Button>
                         <Button 
                             className="bg-luxury-gold text-black hover:bg-luxury-gold/90"
                             disabled={!newTask.title || createTaskMutation.isPending}
                             onClick={() => createTaskMutation.mutate(newTask)}
                         >
-                            {createTaskMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin"/> : "Créer la tâche"}
+                            {createTaskMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin"/> : t('tasksPage.createSubmit')}
                         </Button>
                     </div>
                 </DialogContent>

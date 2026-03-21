@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ClientForm } from '@/components/forms/ClientForm';
 
 export default function CreateProject() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [loading, setLoading] = useState(false);
@@ -50,8 +52,8 @@ export default function CreateProject() {
 
             navigate(`/dashboard/projects/${newProject.id}`);
         } catch (error) {
-            const message = error instanceof Error ? error.message : "An unknown error occurred";
-            toast({ title: "Failed to create project", description: message, variant: "destructive" });
+            const message = error instanceof Error ? error.message : t('createProjectPage.unknownError');
+            toast({ title: t('createProjectPage.createFailed'), description: message, variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -64,23 +66,23 @@ export default function CreateProject() {
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-serif font-bold text-luxury-gold">New Project</h1>
-                    <p className="text-sm text-muted-foreground">Start a new design journey.</p>
+                    <h1 className="text-2xl font-serif font-bold text-luxury-gold">{t('createProjectPage.title')}</h1>
+                    <p className="text-sm text-muted-foreground">{t('createProjectPage.subtitle')}</p>
                 </div>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Project Details</CardTitle>
-                    <CardDescription>Define the scope and client.</CardDescription>
+                    <CardTitle>{t('createProjectPage.cardTitle')}</CardTitle>
+                    <CardDescription>{t('createProjectPage.cardDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleCreate} className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Project Title</label>
+                            <label className="text-sm font-medium">{t('createProjectPage.projectTitle')}</label>
                             <Input
                                 name="title"
-                                placeholder="e.g. Engage Ring for Sarah"
+                                placeholder={t('createProjectPage.projectTitlePlaceholder')}
                                 value={formData.title}
                                 onChange={handleChange}
                                 required
@@ -89,14 +91,14 @@ export default function CreateProject() {
 
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium">Client</label>
+                                <label className="text-sm font-medium">{t('createProjectPage.client')}</label>
                                 <Button
                                     type="button"
                                     variant="link"
                                     className="h-auto p-0 text-xs text-luxury-gold"
                                     onClick={() => setOpenNewClient(true)}
                                 >
-                                    + New Client
+                                    {t('createProjectPage.newClient')}
                                 </Button>
                             </div>
                             <div className="relative">
@@ -108,7 +110,7 @@ export default function CreateProject() {
                                     onChange={handleChange}
                                     required
                                 >
-                                    <option value="">Select Client...</option>
+                                    <option value="">{t('createProjectPage.selectClient')}</option>
                                     {clients?.map(c => (
                                         <option key={c.id} value={c.id}>{c.full_name}</option>
                                     ))}
@@ -119,9 +121,9 @@ export default function CreateProject() {
                         <Dialog open={openNewClient} onOpenChange={setOpenNewClient}>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Add New Client</DialogTitle>
+                                    <DialogTitle>{t('createProjectPage.dialogTitle')}</DialogTitle>
                                     <DialogDescription>
-                                        Create a new client profile instantly.
+                                        {t('createProjectPage.dialogDescription')}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <ClientForm
@@ -136,7 +138,7 @@ export default function CreateProject() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Deadline</label>
+                                <label className="text-sm font-medium">{t('createProjectPage.deadline')}</label>
                                 <div className="relative">
                                     <CalendarIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -149,21 +151,21 @@ export default function CreateProject() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Priority</label>
+                                <label className="text-sm font-medium">{t('createProjectPage.priority')}</label>
                                 <select
                                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                                     name="priority"
                                     value={formData.priority}
                                     onChange={handleChange}
                                 >
-                                    <option value="normal">Normal</option>
-                                    <option value="rush">Rush 🚨</option>
+                                    <option value="normal">{t('createProjectPage.priorityNormal')}</option>
+                                    <option value="rush">{t('createProjectPage.priorityRush')}</option>
                                 </select>
                             </div>
                         </div>
 
                         <Button type="submit" className="w-full bg-luxury-gold text-black hover:bg-luxury-gold-dark" disabled={loading}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Create Project'}
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('createProjectPage.submitCreate')}
                         </Button>
                     </form>
                 </CardContent>

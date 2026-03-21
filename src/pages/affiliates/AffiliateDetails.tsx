@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiAffiliates, type AffiliateProfile, type AffiliateStats } from '@/services/apiAffiliates';
 import type { Project } from '@/services/apiProjects';
@@ -25,6 +26,9 @@ interface CommissionExpenseUI {
 }
 
 export default function AffiliateDetails() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
+    const fmtMoney = (n: number) => new Intl.NumberFormat(localeTag, { style: 'currency', currency: 'CAD' }).format(n);
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [affiliate, setAffiliate] = useState<AffiliateProfile | null>(null);
@@ -79,7 +83,7 @@ export default function AffiliateDetails() {
             }
         } catch (error: unknown) {
             console.error("Failed to load affiliate", error);
-            setError(error instanceof Error ? error.message : 'Erreur inconnue');
+            setError(error instanceof Error ? error.message : t('affiliateDetailsPage.unknownError'));
         } finally {
             setIsLoading(false);
         }
@@ -96,15 +100,15 @@ export default function AffiliateDetails() {
     if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
     if (error) return (
         <div className="p-8 text-center space-y-4">
-            <h2 className="text-xl font-bold text-red-500">Erreur de chargement des données</h2>
+            <h2 className="text-xl font-bold text-red-500">{t('affiliateDetailsPage.loadErrorTitle')}</h2>
             <p className="text-muted-foreground">{error}</p>
             <p className="text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 p-3 rounded-lg max-w-lg mx-auto font-mono border border-zinc-200 dark:border-zinc-700">
-                Vérifiez que les tables <code className="text-xs">invoices</code>, <code className="text-xs">projects</code> et <code className="text-xs">expenses</code> existent et ont les colonnes attendues.
+                {t('affiliateDetailsPage.loadErrorHint')}
             </p>
-            <Button onClick={loadData}>Réessayer</Button>
+            <Button onClick={loadData}>{t('affiliateDetailsPage.retry')}</Button>
         </div>
     );
-    if (!affiliate) return <div className="p-8 text-center text-red-500">Affiliate not found.</div>;
+    if (!affiliate) return <div className="p-8 text-center text-red-500">{t('affiliateDetailsPage.notFound')}</div>;
 
     const handleSave = async () => {
         if (!id) return;
@@ -117,18 +121,18 @@ export default function AffiliateDetails() {
                 commission_rate: Number(rate),
                 commission_type: type as NonNullable<AffiliateProfile['commission_type']>
             });
-            alert("Affiliate updated successfully!");
+            alert(t('affiliateDetailsPage.saveSuccess'));
             loadData(); // Reload
         } catch (error) {
             console.error("Failed to save", error);
-            alert("Failed to save changes.");
+            alert(t('affiliateDetailsPage.saveFailed'));
         } finally {
             setIsSaving(false);
         }
     };
 
     const handlePayCommission = async (commissionId: string, amount: number) => {
-        if (!confirm(`Marquer cette commission de ${new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(Number(amount))} comme PAYÉE ?`)) return;
+        if (!confirm(t('affiliateDetailsPage.confirmMarkPaid', { amount: fmtMoney(Number(amount)) }))) return;
         setIsPayingId(commissionId);
         try {
             await supabase
@@ -137,14 +141,14 @@ export default function AffiliateDetails() {
                 .eq('id', commissionId);
             await loadData();
         } catch (err: unknown) {
-            alert('Échec du paiement : ' + (err instanceof Error ? err.message : 'Erreur'));
+            alert(t('affiliateDetailsPage.payFailed', { message: err instanceof Error ? err.message : t('common.error') }));
         } finally {
             setIsPayingId(null);
         }
     };
 
     const handleDeleteExpense = async (expenseId: string, projectId?: string) => {
-        if (!confirm(`Êtes-vous sûr de vouloir ANNULER et SUPPRIMER cette commission ?\nCela réinitialisera également la commission du projet à 0%.`)) return;
+        if (!confirm(t('affiliateDetailsPage.confirmDeleteCommission'))) return;
         try {
             // Delete the expense record
             await supabase.from('expenses').delete().eq('id', expenseId);
@@ -155,10 +159,10 @@ export default function AffiliateDetails() {
                 await apiProjects.update(projectId, { affiliate_commission_rate: 0, affiliate_commission_type: 'percent' });
             }
 
-            alert('Commission annulée avec succès.');
+            alert(t('affiliateDetailsPage.deleteSuccess'));
             await loadData();
         } catch (err: unknown) {
-            alert('Erreur lors de la suppression : ' + (err instanceof Error ? err.message : 'Erreur'));
+            alert(t('affiliateDetailsPage.deleteFailed', { message: err instanceof Error ? err.message : t('common.error') }));
         }
     };
 
@@ -173,7 +177,7 @@ export default function AffiliateDetails() {
             generateAmbassadorReportPDF({
                 name: affiliate?.full_name || 'Ambassadeur',
                 level: affiliate?.affiliate_level || 'Starter',
-                period: new Date().toLocaleDateString('fr-CA', { year: 'numeric', month: 'long' }),
+                period: new Date().toLocaleDateString(localeTag, { year: 'numeric', month: 'long' }),
                 totalSales: stats?.totalSales || 0,
                 salesCount: stats?.salesCount || 0,
                 commissionEarned: stats?.commissionEarned || 0,
@@ -195,7 +199,7 @@ export default function AffiliateDetails() {
             });
         } catch (err) {
             console.error('Failed to generate PDF', err);
-            alert('Erreur lors de la génération du rapport PDF.');
+            alert(t('affiliateDetailsPage.pdfError'));
         } finally {
             setIsGeneratingPdf(false);
         }
@@ -218,7 +222,7 @@ export default function AffiliateDetails() {
                             affiliate.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border-luxury-gold/20' : 
                             'bg-zinc-100 dark:bg-zinc-800'
                         }`}>
-                            {affiliate.role === 'admin' ? 'Admin' : affiliate.role === 'ambassador' ? 'Ambassadeur' : 'Vendeur'}
+                            {affiliate.role === 'admin' ? t('affiliatesListPage.roleAdmin') : affiliate.role === 'ambassador' ? t('affiliatesListPage.roleAmbassador') : t('affiliatesListPage.roleSeller')}
                         </Badge>
                         <span className="text-luxury-gold uppercase font-bold text-xs tracking-wider">
                             {affiliate.affiliate_level}
@@ -234,11 +238,11 @@ export default function AffiliateDetails() {
                         className="gap-2"
                     >
                         {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                        Rapport PDF
+                        {t('affiliateDetailsPage.pdfReport')}
                     </Button>
                     <Button onClick={handleSave} disabled={isSaving} className="bg-luxury-gold hover:bg-luxury-gold/90 text-black gap-2">
                         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        Save Changes
+                        {t('affiliateDetailsPage.saveChanges')}
                     </Button>
                 </div>
             </div>
@@ -246,45 +250,45 @@ export default function AffiliateDetails() {
             <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
                 <Card className="bg-zinc-900 text-white border-zinc-800">
                     <CardHeader className="pb-2 text-luxury-gold flex flex-row items-center justify-between space-y-0">
-                        <CardTitle className="text-sm font-medium">Ventes Totales</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('affiliateDetailsPage.totalSales')}</CardTitle>
                         <Briefcase className="h-4 w-4" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(stats?.totalSales || 0)}
+                            {fmtMoney(stats?.totalSales || 0)}
                         </div>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Volume de {stats?.salesCount || 0} vente(s)</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">{t('affiliateDetailsPage.salesVolume', { count: stats?.salesCount || 0 })}</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-zinc-900 text-white border-zinc-800">
                     <CardHeader className="pb-2 text-green-500 flex flex-row items-center justify-between space-y-0">
-                        <CardTitle className="text-sm font-medium">Cash Récolté</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('affiliateDetailsPage.cashCollected')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-green-400">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(stats?.cashCollected || 0)}
+                            {fmtMoney(stats?.cashCollected || 0)}
                         </div>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Factures payées</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">{t('affiliateDetailsPage.invoicesPaid')}</p>
                     </CardContent>
                 </Card>
                 {/* Stats Cards */}
                 <Card className="bg-zinc-900 text-white border-zinc-800">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Commission totale estimée</CardTitle>
+                        <CardTitle className="text-sm font-medium text-zinc-400">{t('affiliateDetailsPage.commissionEstimated')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-luxury-gold">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(stats?.commissionEarned || 0)}
+                            {fmtMoney(stats?.commissionEarned || 0)}
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-amber-700">En attente de paiement</CardTitle>
+                        <CardTitle className="text-sm font-medium text-amber-700">{t('affiliateDetailsPage.pendingPayment')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-amber-600">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(
+                            {fmtMoney(
                                 pendingCommissions.filter(c => c.status === 'pending').reduce((s, c) => s + Number(c.amount), 0)
                             )}
                         </div>
@@ -292,11 +296,11 @@ export default function AffiliateDetails() {
                 </Card>
                 <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-green-700">Déjà payé</CardTitle>
+                        <CardTitle className="text-sm font-medium text-green-700">{t('affiliateDetailsPage.alreadyPaid')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-green-600">
-                            {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(
+                            {fmtMoney(
                                 pendingCommissions.filter(c => c.status === 'paid').reduce((s, c) => s + Number(c.amount), 0)
                             )}
                         </div>
@@ -304,7 +308,7 @@ export default function AffiliateDetails() {
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Default Rate</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-500">{t('affiliateDetailsPage.defaultRate')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif">
@@ -318,56 +322,56 @@ export default function AffiliateDetails() {
                 {/* Edit Profile Form */}
                 <Card className="md:col-span-1 h-fit">
                     <CardHeader>
-                        <CardTitle>Profile Settings</CardTitle>
-                        <CardDescription>Manage status and commission rates.</CardDescription>
+                        <CardTitle>{t('affiliateDetailsPage.profileSettings')}</CardTitle>
+                        <CardDescription>{t('affiliateDetailsPage.profileSettingsDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Full Name</Label>
+                            <Label>{t('affiliateDetailsPage.fullName')}</Label>
                             <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Status</Label>
+                            <Label>{t('affiliateDetailsPage.status')}</Label>
                             <select
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
                             >
-                                <option value="pending">Pending</option>
-                                <option value="active">Active</option>
-                                <option value="rejected">Rejected</option>
+                                <option value="pending">{t('affiliateDetailsPage.statusPending')}</option>
+                                <option value="active">{t('affiliateDetailsPage.statusActive')}</option>
+                                <option value="rejected">{t('affiliateDetailsPage.statusRejected')}</option>
                             </select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Level</Label>
+                            <Label>{t('affiliateDetailsPage.level')}</Label>
                             <select
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 value={level}
                                 onChange={(e) => setLevel(e.target.value)}
                             >
-                                <option value="starter">Starter</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="elite">Elite</option>
-                                <option value="partner">Partner</option>
+                                <option value="starter">{t('affiliateDetailsPage.levelStarter')}</option>
+                                <option value="confirmed">{t('affiliateDetailsPage.levelConfirmed')}</option>
+                                <option value="elite">{t('affiliateDetailsPage.levelElite')}</option>
+                                <option value="partner">{t('affiliateDetailsPage.levelPartner')}</option>
                             </select>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Commission</Label>
+                                <Label>{t('affiliateDetailsPage.commission')}</Label>
                                 <Input type="number" value={rate} onChange={(e) => setRate(Number(e.target.value))} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Type</Label>
+                                <Label>{t('affiliateDetailsPage.type')}</Label>
                                 <select
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                     value={type}
                                     onChange={(e) => setType(e.target.value)}
                                 >
-                                    <option value="percent">% Percent</option>
-                                    <option value="fixed">$ Fixed</option>
+                                    <option value="percent">{t('affiliateDetailsPage.typePercent')}</option>
+                                    <option value="fixed">{t('affiliateDetailsPage.typeFixed')}</option>
                                 </select>
                             </div>
                         </div>
@@ -379,22 +383,22 @@ export default function AffiliateDetails() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-amber-500" />
-                            Commissions
+                            {t('affiliateDetailsPage.commissionsTitle')}
                         </CardTitle>
-                        <CardDescription>Cliquez sur "Payer" pour marquer une commission comme réglée.</CardDescription>
+                        <CardDescription>{t('affiliateDetailsPage.commissionsDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {pendingCommissions.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">Aucune commission enregistrée.</p>
+                            <p className="text-sm text-muted-foreground text-center py-4">{t('affiliateDetailsPage.noCommissions')}</p>
                         ) : (
                             <div className="rounded-md border overflow-hidden">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Description</TableHead>
-                                            <TableHead>Montant</TableHead>
-                                            <TableHead>Statut</TableHead>
-                                            <TableHead className="text-right">Action</TableHead>
+                                            <TableHead>{t('affiliateDetailsPage.colDescription')}</TableHead>
+                                            <TableHead>{t('affiliateDetailsPage.colAmount')}</TableHead>
+                                            <TableHead>{t('affiliateDetailsPage.colStatus')}</TableHead>
+                                            <TableHead className="text-right">{t('affiliateDetailsPage.colAction')}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -402,17 +406,17 @@ export default function AffiliateDetails() {
                                             <TableRow key={c.id}>
                                                 <TableCell className="text-sm">
                                                     <div>{c.description}</div>
-                                                    <div className="text-xs text-muted-foreground">{new Date(c.date).toLocaleDateString('fr-CA')}</div>
+                                                    <div className="text-xs text-muted-foreground">{new Date(c.date).toLocaleDateString(localeTag)}</div>
                                                 </TableCell>
                                                 <TableCell className="font-mono font-bold text-luxury-gold">
-                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(Number(c.amount))}
+                                                    {fmtMoney(Number(c.amount))}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge className={c.status === 'paid'
                                                         ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                                                         : 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
                                                     }>
-                                                        {c.status === 'paid' ? <><CheckCircle className="w-3 h-3 inline mr-1" />Payé</> : '⏳ En attente'}
+                                                        {c.status === 'paid' ? <><CheckCircle className="w-3 h-3 inline mr-1" />{t('affiliateDetailsPage.statusPaid')}</> : `⏳ ${t('affiliateDetailsPage.statusPendingShort')}`}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right">
@@ -425,7 +429,7 @@ export default function AffiliateDetails() {
                                                                 onClick={() => handleDeleteExpense(c.id, c.project_id)}
                                                             >
                                                                 <Trash2 className="w-3 h-3 mr-1" />
-                                                                Annuler
+                                                                {t('affiliateDetailsPage.cancel')}
                                                             </Button>
                                                             <Button
                                                                 size="sm"
@@ -434,11 +438,11 @@ export default function AffiliateDetails() {
                                                                 onClick={() => handlePayCommission(c.id, Number(c.amount))}
                                                             >
                                                                 {isPayingId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                                                                Payer
+                                                                {t('affiliateDetailsPage.pay')}
                                                             </Button>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-xs text-muted-foreground">✓ Réglé</span>
+                                                        <span className="text-xs text-muted-foreground">✓ {t('affiliateDetailsPage.settled')}</span>
                                                     )}
                                                 </TableCell>
                                             </TableRow>
@@ -456,23 +460,23 @@ export default function AffiliateDetails() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Briefcase className="w-4 h-4 text-luxury-gold" />
-                        Historique des Ventes & Projets
+                        {t('affiliateDetailsPage.salesHistoryTitle')}
                     </CardTitle>
-                    <CardDescription>Tous les projets attribués à ce membre, incluant ceux sans commission.</CardDescription>
+                    <CardDescription>{t('affiliateDetailsPage.salesHistoryDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {stats?.projects?.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">Aucun projet attribué.</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">{t('affiliateDetailsPage.noAssignedProjects')}</p>
                     ) : (
                         <div className="rounded-md border overflow-hidden">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
-                                        <TableHead>Projet</TableHead>
-                                        <TableHead>Client</TableHead>
-                                        <TableHead>Statut</TableHead>
-                                        <TableHead className="text-right">Prix de Vente</TableHead>
-                                        <TableHead className="text-right text-luxury-gold">Com. %</TableHead>
+                                        <TableHead>{t('affiliateDetailsPage.colProject')}</TableHead>
+                                        <TableHead>{t('affiliateDetailsPage.colClient')}</TableHead>
+                                        <TableHead>{t('affiliateDetailsPage.colStatus')}</TableHead>
+                                        <TableHead className="text-right">{t('affiliateDetailsPage.colSalePrice')}</TableHead>
+                                        <TableHead className="text-right text-luxury-gold">{t('affiliateDetailsPage.colCommPct')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -482,14 +486,14 @@ export default function AffiliateDetails() {
                                         return (
                                             <TableRow key={p.id} className="border-zinc-100 dark:border-zinc-800">
                                                 <TableCell className="font-medium">{p.title}</TableCell>
-                                                <TableCell className="text-sm text-muted-foreground">{p.client?.full_name || 'Inconnu'}</TableCell>
+                                                <TableCell className="text-sm text-muted-foreground">{p.client?.full_name || t('affiliateDetailsPage.unknownClient')}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline" className="text-[10px] uppercase tracking-tighter">
                                                         {p.status.replace(/_/g, ' ')}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono font-bold">
-                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(price)}
+                                                    {fmtMoney(price)}
                                                 </TableCell>
                                                 <TableCell className="text-right text-xs">
                                                     <span className={commRate > 0 ? 'text-luxury-gold font-bold' : 'text-gray-400'}>

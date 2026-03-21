@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
 import { Loader2, AlertCircle, MessageCircle, PenTool, ThumbsUp, Hammer, Truck, Sparkles, CreditCard, Gem, Ruler, Info, Clock } from 'lucide-react';
@@ -7,13 +8,13 @@ import { useState } from 'react';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 import type { StageDetails } from '@/services/apiProjects';
 
-// Timeline steps: Consultation → Design → Approbation → Production → Livraison
+// Timeline steps (labels via i18n: sharedProjectPage.timeline_<id>)
 const TIMELINE_STEPS = [
-    { id: 'consultation', label: 'Consultation', statuses: ['designing'] },
-    { id: 'design', label: 'Design', statuses: ['3d_model', 'design_ready', 'design_modification', 'waiting_for_approval'] },
-    { id: 'approbation', label: 'Approbation', statuses: ['approved_for_production'] },
-    { id: 'production', label: 'Production', statuses: ['production'] },
-    { id: 'livraison', label: 'Livraison', statuses: ['delivery', 'completed'] },
+    { id: 'consultation', statuses: ['designing'] },
+    { id: 'design', statuses: ['3d_model', 'design_ready', 'design_modification', 'waiting_for_approval'] },
+    { id: 'approval', statuses: ['approved_for_production'] },
+    { id: 'production', statuses: ['production'] },
+    { id: 'delivery', statuses: ['delivery', 'completed'] },
 ] as const;
 
 function getStepIndex(status: string | undefined): number {
@@ -26,6 +27,8 @@ function getStepIndex(status: string | undefined): number {
 }
 
 export default function SharedProjectView() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language?.startsWith('fr') ? 'fr-CA' : 'en-CA';
     const { token } = useParams<{ token: string }>();
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -53,8 +56,8 @@ export default function SharedProjectView() {
         return (
             <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-6 px-6">
                 <AlertCircle className="w-16 h-16 text-red-400/80" />
-                <h1 className="text-2xl font-serif text-white">Invalid or Expired Link</h1>
-                <p className="text-zinc-500 text-center max-w-md">Please contact your representative for a new link.</p>
+                <h1 className="text-2xl font-serif text-white">{t('sharedProjectPage.invalidLink')}</h1>
+                <p className="text-zinc-500 text-center max-w-md">{t('sharedProjectPage.invalidLinkDesc')}</p>
             </div>
         );
     }
@@ -78,7 +81,7 @@ export default function SharedProjectView() {
                     <h1 className="text-3xl md:text-4xl font-serif font-semibold text-[#D2B57B] tracking-[0.2em]">
                         AUCLAIRE
                     </h1>
-                    <p className="text-xs text-zinc-500 uppercase tracking-[0.3em] mt-1">Luxury Jewelry</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-[0.3em] mt-1">{t('sharedProjectPage.brandTagline')}</p>
                 </div>
             </header>
 
@@ -87,7 +90,7 @@ export default function SharedProjectView() {
                 <section className="page-fade-in">
                     {project.status === 'cancelled' && (
                         <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-red-400/90 text-sm">
-                            Ce projet a été annulé.
+                            {t('sharedProjectPage.projectCancelled')}
                         </div>
                     )}
                     <h2 className="text-2xl md:text-3xl font-serif text-white mb-2">{project.title}</h2>
@@ -99,7 +102,7 @@ export default function SharedProjectView() {
                 {/* Project status timeline - horizontal */}
                 <section className="page-fade-in">
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D2B57B]/80 mb-6">
-                        Progression du projet
+                        {t('sharedProjectPage.progressTitle')}
                     </h3>
                     <div className="flex flex-wrap gap-2 md:gap-0 md:flex-nowrap md:justify-between relative">
                         <div className="absolute top-5 left-0 right-0 h-px bg-zinc-800 hidden md:block" style={{ top: '1.25rem' }} />
@@ -128,7 +131,7 @@ export default function SharedProjectView() {
                                             isCurrent ? 'text-[#D2B57B]' : isCompleted ? 'text-emerald-400/80' : 'text-zinc-500'
                                         }`}
                                     >
-                                        {step.label}
+                                        {t(`sharedProjectPage.timeline_${step.id}`)}
                                     </span>
                                 </div>
                             );
@@ -138,13 +141,26 @@ export default function SharedProjectView() {
                         {(project.deadline || project.stage_details?.delivery_date) && (
                             <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-luxury-gold" />
-                                <span>Livraison estimée: <strong className="text-white">{new Date(project.stage_details?.delivery_date || project.deadline!).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+                                <span>
+                                    {t('sharedProjectPage.estimatedDeliveryPrefix')}{' '}
+                                    <strong className="text-white">
+                                        {new Date(project.stage_details?.delivery_date || project.deadline!).toLocaleDateString(localeTag, {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </strong>
+                                </span>
                             </div>
                         )}
                         {project.updated_at && (
                             <div className="flex items-center gap-2">
                                 <Info className="w-4 h-4 text-gray-500" />
-                                <span>Dernière mise à jour: {new Date(project.updated_at).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                <span>
+                                    {t('sharedProjectPage.lastUpdated', {
+                                        date: new Date(project.updated_at).toLocaleDateString(localeTag, { year: 'numeric', month: 'long', day: 'numeric' }),
+                                    })}
+                                </span>
                             </div>
                         )}
                     </div>
@@ -154,7 +170,7 @@ export default function SharedProjectView() {
                 {allDesignImages.length > 0 && (
                     <section className="page-fade-in">
                         <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D2B57B]/80 mb-6 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4" /> Créations & Renders
+                            <Sparkles className="w-4 h-4" /> {t('sharedProjectPage.creationsTitle')}
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {allDesignImages.map((url: string, idx: number) => (
@@ -164,7 +180,7 @@ export default function SharedProjectView() {
                                 >
                                     <img
                                         src={url}
-                                        alt={`Design ${idx + 1}`}
+                                        alt={t('sharedProjectPage.designAlt', { n: idx + 1 })}
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
                                         onClick={() => setPreviewUrl(url)}
                                     />
@@ -178,7 +194,7 @@ export default function SharedProjectView() {
                 {/* Work In Progress */}
                 {project.stage_details?.vault_files && project.stage_details.vault_files.length > 0 && (
                     <section className="page-fade-in space-y-4">
-                        <h2 className="text-xl font-serif text-center">Progression de Votre Pièce</h2>
+                        <h2 className="text-xl font-serif text-center">{t('sharedProjectPage.wipTitle')}</h2>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {project.stage_details.vault_files.map((url: string, idx: number) => (
                                 <div
@@ -186,7 +202,7 @@ export default function SharedProjectView() {
                                     className="aspect-square rounded-xl overflow-hidden border border-white/10 cursor-pointer hover:scale-[1.02] transition-transform duration-300"
                                     onClick={() => setPreviewUrl(url)}
                                 >
-                                    <img src={url} alt={`WIP ${idx + 1}`} className="w-full h-full object-cover" />
+                                    <img src={url} alt={t('sharedProjectPage.wipAlt', { n: idx + 1 })} className="w-full h-full object-cover" />
                                 </div>
                             ))}
                         </div>
@@ -196,12 +212,12 @@ export default function SharedProjectView() {
                 {/* Project specs */}
                 <section className="page-fade-in">
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D2B57B]/80 mb-6 flex items-center gap-2">
-                        <Info className="w-4 h-4" /> Détails du projet
+                        <Info className="w-4 h-4" /> {t('sharedProjectPage.detailsTitle')}
                     </h3>
                     <div className="rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-sm p-6 space-y-4">
                         {details.design_notes && (
                             <div>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-2">Notes de design</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-2">{t('sharedProjectPage.designNotes')}</span>
                                 <p className="text-sm text-zinc-300 whitespace-pre-wrap">{details.design_notes}</p>
                             </div>
                         )}
@@ -210,7 +226,7 @@ export default function SharedProjectView() {
                                 <div className="flex items-center gap-3">
                                     <Ruler className="w-4 h-4 text-[#D2B57B]" />
                                     <div>
-                                        <span className="text-[10px] text-zinc-500 uppercase">Taille</span>
+                                        <span className="text-[10px] text-zinc-500 uppercase">{t('sharedProjectPage.size')}</span>
                                         <p className="text-sm font-medium">{(details as Record<string, unknown>).ring_size as string}</p>
                                     </div>
                                 </div>
@@ -219,7 +235,7 @@ export default function SharedProjectView() {
                                 <div className="flex items-center gap-3">
                                     <Gem className="w-4 h-4 text-[#D2B57B]" />
                                     <div>
-                                        <span className="text-[10px] text-zinc-500 uppercase">Métal</span>
+                                        <span className="text-[10px] text-zinc-500 uppercase">{t('sharedProjectPage.metal')}</span>
                                         <p className="text-sm font-medium">
                                             {((details as Record<string, unknown>).metal_type || (details as Record<string, unknown>).metal) as string}
                                         </p>
@@ -230,7 +246,7 @@ export default function SharedProjectView() {
                                 <div className="flex items-center gap-3">
                                     <Sparkles className="w-4 h-4 text-[#D2B57B]" />
                                     <div>
-                                        <span className="text-[10px] text-zinc-500 uppercase">Pierre</span>
+                                        <span className="text-[10px] text-zinc-500 uppercase">{t('sharedProjectPage.stone')}</span>
                                         <p className="text-sm font-medium">
                                             {((details as Record<string, unknown>).gemstone || (details as Record<string, unknown>).gemstones || (details as Record<string, unknown>).stone_type) as string}
                                         </p>
@@ -240,8 +256,8 @@ export default function SharedProjectView() {
                         </div>
                         {project.deadline && (
                             <div className="pt-4 border-t border-white/5">
-                                <span className="text-[10px] text-zinc-500 uppercase">Échéance prévue</span>
-                                <p className="text-sm text-[#D2B57B]">{new Date(project.deadline).toLocaleDateString('fr-FR', { dateStyle: 'long' })}</p>
+                                <span className="text-[10px] text-zinc-500 uppercase">{t('sharedProjectPage.deadlineExpected')}</span>
+                                <p className="text-sm text-[#D2B57B]">{new Date(project.deadline).toLocaleDateString(localeTag, { dateStyle: 'long' })}</p>
                             </div>
                         )}
                     </div>
@@ -252,9 +268,9 @@ export default function SharedProjectView() {
                     <section className="page-fade-in">
                         <div className="rounded-2xl border border-[#D2B57B]/20 bg-gradient-to-br from-[#D2B57B]/10 to-transparent p-8 text-center">
                             <CreditCard className="w-10 h-10 text-[#D2B57B] mx-auto mb-4" />
-                            <h3 className="text-lg font-serif text-white mb-2">Solde restant</h3>
+                            <h3 className="text-lg font-serif text-white mb-2">{t('sharedProjectPage.balanceTitle')}</h3>
                             <p className="text-3xl font-serif font-semibold text-[#D2B57B] mb-6">
-                                {totalDue.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+                                {totalDue.toLocaleString(localeTag, { style: 'currency', currency: 'CAD' })}
                             </p>
                             <a
                                 href={unpaidInvoices[0].stripe_payment_link!}
@@ -262,7 +278,7 @@ export default function SharedProjectView() {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 px-8 py-4 bg-[#D2B57B] text-black font-semibold uppercase tracking-wider rounded-lg hover:bg-[#E5C98A] transition-all duration-300 shadow-[0_0_25px_rgba(210,181,123,0.3)] hover:shadow-[0_0_35px_rgba(210,181,123,0.4)]"
                             >
-                                Payer maintenant
+                                {t('sharedProjectPage.payNow')}
                             </a>
                         </div>
                     </section>
@@ -271,7 +287,7 @@ export default function SharedProjectView() {
                 {/* Client info note */}
                 <section className="rounded-xl border border-white/5 bg-white/[0.02] p-6">
                     <p className="text-sm text-zinc-500 text-center">
-                        Vous consultez une version en lecture seule de votre projet. Pour toute modification, contactez votre représentant.
+                        {t('sharedProjectPage.readOnlyNote')}
                     </p>
                 </section>
             </main>
@@ -280,7 +296,7 @@ export default function SharedProjectView() {
             <footer className="mt-16 border-t border-white/5 py-10">
                 <div className="max-w-5xl mx-auto px-6 text-center">
                     <h2 className="text-xl font-serif text-[#D2B57B] tracking-[0.15em]">AUCLAIRE</h2>
-                    <p className="text-[10px] text-zinc-600 uppercase tracking-[0.2em] mt-2">Luxury Jewelry — Créations sur mesure</p>
+                    <p className="text-[10px] text-zinc-600 uppercase tracking-[0.2em] mt-2">{t('sharedProjectPage.footerCraft')}</p>
                 </div>
             </footer>
 
@@ -288,7 +304,7 @@ export default function SharedProjectView() {
                 isOpen={!!previewUrl}
                 imageUrl={previewUrl}
                 onClose={() => setPreviewUrl(null)}
-                title="Aperçu du design"
+                title={t('sharedProjectPage.previewTitle')}
             />
         </div>
     );

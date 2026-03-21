@@ -1,0 +1,91 @@
+/** Image grids for Expertise tab: settings, band style, band setting, prongs, his & hers */
+
+export type CatalogCard = { id: string; title: string; desc: string; imgs: string[]; tags: string[] };
+
+const SETTINGS_FR: CatalogCard[] = [
+    { id: 'solitaire', title: 'Solitaire', desc: 'Le style classique et épuré. Une seule pierre centrale montée sur un anneau lisse, mettant en évidence la beauté pure du diamant.', imgs: ['https://images.openai.com/static-rsc-3/jLLpW5twc-nrlOekGSf8X7XYNrp0yl2m_g_3DVPldpgyE8B44bmLR_XxLpzGZTTacm5Onbu6AwgVLOPNDNtP74VbOiWPA3F4RQg1K8UBxtY?purpose=fullsize&v=1', 'https://eragem.com/media/catalog/product/cache/e4507427afc9429093d76362a19cfadc/7/5/75925a.jpg', 'https://i.etsystatic.com/8918992/r/il/d53bd8/3427360428/il_570xN.3427360428_6m39.jpg'], tags: ['une pierre centrale', 'accent sur diamant', 'intemporel'] },
+    { id: 'halo', title: 'Halo', desc: 'La pierre centrale est entourée d’une (ou de plusieurs) rangées de petits diamants, ajoutant un éclat majeur et grossissant la taille perçue.', imgs: ['https://images.openai.com/static-rsc-3/RJ6e4JkTqds8DIGMLf8-l5ng8zXpryNYaXbpss6jZpaemUwKRKiiJmExE73FX5a74YfkeDNhdfOOn6qEo4CwY7pi7DAYcx-pfnTF8COdPZk?purpose=fullsize&v=1', 'https://i.etsystatic.com/10959784/r/il/5f7605/3397691302/il_fullxfull.3397691302_sgom.jpg', 'https://images.openai.com/static-rsc-3/OsQgxlKW7BCFrNCnxpZmpk0OeTc3E0BvQvVGkBFgQy8khDKlRq0VjAqBqY-UgvaoxOzU-kmxu5jsUiosnsJjPAql8QKD9QVqnSqgT-lFPXk?purpose=fullsize&v=1'], tags: ['petits diamants entourent pierre', 'illusion taille', 'brillance'] },
+    { id: 'hiddenHalo', title: 'Hidden Halo', desc: 'Une couronne de diamants cachée sous la base de la pierre centrale. Visible uniquement de profil pour une touche de luxe secrète.', imgs: ['https://www.kingofjewelry.com/cdn/shop/products/330ctroundwithhiddenhalosize475omidfriend-003_480x.jpg?v=1652139175', 'https://www.kingofjewelry.com/cdn/shop/products/DSC_0717_0002_1800x1800.jpg?v=1714585598', 'https://i.etsystatic.com/6659792/r/il/f4b5c7/5408917526/il_fullxfull.5408917526_8rcc.jpg'], tags: ['halo sous la pierre', 'luxe subtil'] },
+    { id: 'pave', title: 'Pavé', desc: 'L’anneau est incrusté de multiples petits diamants scintillants. L’effet de brillance ne s’arrête jamais, peu importe l’angle.', imgs: ['https://images.openai.com/static-rsc-3/wI_AVGI4Xmqvb6GmSevcys37OcQbw_YkbzTaTcQyMDPH3tG7LAx0rThe1NYFieY3HzNnZ9oNTZpEoYeDGqT7adBYJ3GAukndvvIdtGopOTA?purpose=fullsize&v=1', 'https://www.goodstoneinc.com/cdn/shop/products/image_bf834f80-17b3-4ce7-84c3-339515eb7637_1200x.jpg?v=1737402864', 'https://www.laurenbjewelry.com/media/catalog/product/cache/1/image/720x720/9df78eab33525d08d6e5fb8d27136e95/r/o/round_diamond_yellow_gold_ring.jpg'], tags: ['diamants sur jonc', 'éclat continu'] },
+    { id: 'threeStone', title: 'Three-Stone', desc: 'Une pierre centrale flanquée de deux pierres plus petites. Symbolique très prisée évoquant le passé, le présent et le futur du couple.', imgs: ['https://bhjewelers.com/cdn/shop/products/3-50-carat-center-3-stone-round-brilliant-cut-diamond-engagement-ring.jpg?v=1605573760', 'https://www.goodstoneinc.com/cdn/shop/products/image_9b522719-5623-4dac-9b11-1af8fda8f8e0_1200x.jpg?v=1695308605', 'https://appelts.ca/cdn/shop/files/Gabriel-14K-Yellow-Gold-Round-Three-Stone-Diamond-Engagement-Ring_ER14745R4Y44JJ-1.webp?v=1717686368&width=2048'], tags: ['symbolique passé-présent-futur'] },
+];
+
+const SETTINGS_EN: CatalogCard[] = [
+    { id: 'solitaire', title: 'Solitaire', desc: 'The classic clean look: one center stone on a smooth band that puts all focus on the diamond.', imgs: SETTINGS_FR[0].imgs, tags: ['one center stone', 'diamond focus', 'timeless'] },
+    { id: 'halo', title: 'Halo', desc: 'The center stone is framed by one or more rows of small diamonds — extra sparkle and a larger perceived size.', imgs: SETTINGS_FR[1].imgs, tags: ['halo of diamonds', 'size illusion', 'sparkle'] },
+    { id: 'hiddenHalo', title: 'Hidden halo', desc: 'A diamond crown hidden under the center stone — visible from the side for subtle luxury.', imgs: SETTINGS_FR[2].imgs, tags: ['under-stone halo', 'subtle luxury'] },
+    { id: 'pave', title: 'Pavé', desc: 'The band is set with many small diamonds; sparkle from every angle.', imgs: SETTINGS_FR[3].imgs, tags: ['diamonds on shank', 'continuous sparkle'] },
+    { id: 'threeStone', title: 'Three-stone', desc: 'Center stone with two side stones — popular symbolism for past, present, and future.', imgs: SETTINGS_FR[4].imgs, tags: ['past-present-future'] },
+];
+
+const BAND_FR: CatalogCard[] = [
+    { id: 'classic', title: 'Jonc classique', desc: 'Un anneau en métal pur (or ou platine). Simple et robuste, il attire 100% de l’attention sur la pierre du dessus.', imgs: ['https://lilyarkwright.com/cdn/shop/files/PetitePlainWeddingRing1.65mm18kYellowGoldLilyArkwrightFront_1600x.webp?v=1716475838', 'https://i.etsystatic.com/15510683/r/il/b13cee/4604554620/il_1080xN.4604554620_t6gh.jpg', 'https://i.etsystatic.com/5121484/r/il/2b6481/5244534768/il_570xN.5244534768_mqer.jpg'], tags: ['minimaliste', 'intemporel'] },
+    { id: 'paveBand', title: 'Pavé band', desc: 'Des diamants s’étendent sur le dessus du jonc. Procure une esthétique très féminine et multiplie les flashs de lumière.', imgs: ['https://images.openai.com/static-rsc-3/wI_AVGI4Xmqvb6GmSevcys37OcQbw_YkbzTaTcQyMDPH3tG7LAx0rThe1NYFieY3HzNnZ9oNTZpEoYeDGqT7adBYJ3GAukndvvIdtGopOTA?purpose=fullsize&v=1', 'https://www.artemerstudio.com/cdn/shop/products/Arced-Diamond-Pave-Wedding-Band-CLOSEUP_2400x.jpg?v=1660653561', 'https://www.goodstoneinc.com/cdn/shop/products/image_bf834f80-17b3-4ce7-84c3-339515eb7637_1200x.jpg?v=1737402864'], tags: ['brillance', 'luxe'] },
+    { id: 'tapered', title: 'Tapered band', desc: 'Le profil de l’anneau s’affine progressivement en s’approchant de la tête. Ce pincement crée une illusion dramatique agrandissant le rubis ou le diamant central.', imgs: ['https://i.etsystatic.com/9792770/r/il/7cb61f/2445852991/il_1080xN.2445852991_lg2m.jpg', 'https://spencediamonds.com/assets/products/1596-A.jpg', 'https://i.etsystatic.com/15275469/r/il/cc3034/3994108020/il_1080xN.3994108020_ie14.jpg'], tags: ['accent pierre centrale'] },
+    { id: 'splitShank', title: 'Split shank', desc: 'L’anneau se sépare en deux (ou trois) brins formant une fourche avant d’atteindre la pierre principale. Donne un design architectural audacieux.', imgs: ['https://rusticandmain.com/cdn/shop/files/Round-Diamond-Solitaire-Engagement-Ring-Art-Nouveau-Inspired-Split-Shank-Setting-The-Selwyn-Rustic-And-Main_9_800x.jpg?v=1747784784', 'https://berlingerjewelry.com/cdn/shop/files/SplitShankOvalDiamondSolitaire_0006_P2620545_1500x.jpg?v=1727475257', 'https://www.kingofjewelry.com/cdn/shop/products/101ctcushionhalogvs1c6799405DSC_0138_0001s9-ea2_1800x1800.jpg?v=1714585746'], tags: ['design moderne', 'originalité'] },
+];
+
+const BAND_EN: CatalogCard[] = [
+    { id: 'classic', title: 'Classic band', desc: 'Plain metal (gold or platinum) — simple and strong; all attention on the center stone.', imgs: BAND_FR[0].imgs, tags: ['minimal', 'timeless'] },
+    { id: 'paveBand', title: 'Pavé band', desc: 'Diamonds along the top of the shank — feminine look and extra flashes of light.', imgs: BAND_FR[1].imgs, tags: ['sparkle', 'luxury'] },
+    { id: 'tapered', title: 'Tapered band', desc: 'The shank narrows toward the head — a dramatic illusion that enlarges the center stone.', imgs: BAND_FR[2].imgs, tags: ['emphasizes center'] },
+    { id: 'splitShank', title: 'Split shank', desc: 'The band splits into two or three strands before the center — bold, architectural design.', imgs: BAND_FR[3].imgs, tags: ['modern', 'distinctive'] },
+];
+
+const BAND_SET_FR: CatalogCard[] = [
+    { id: 'paveSerti', title: 'Pavé serti', desc: 'Des dizaines de micro-griffes retiennent les petits diamants. Offre la brillance maximale car il dissimule presque totalement le métal.', imgs: ['https://images.openai.com/static-rsc-3/cfN_HgiCnRv94cjCVljC3P3aAbcdOSIDXKa-as6MfVPDJgEWEv2XASN0MnRP3B_MXLjmXPCzKFhIeI5bag47qCHRjd_uiA3QlQK-SuPD04E?purpose=fullsize&v=1', 'https://images.openai.com/static-rsc-3/wI_AVGI4Xmqvb6GmSevcys37OcQbw_YkbzTaTcQyMDPH3tG7LAx0rThe1NYFieY3HzNnZ9oNTZpEoYeDGqT7adBYJ3GAukndvvIdtGopOTA?purpose=fullsize&v=1', 'https://images.openai.com/static-rsc-3/cFWTZW55KEkH_zjLqnTDV06LQ3VOpCnJExQBWUiTmMh44XripfGq2E_fuIdjTg8wnFP5GVZ6ZjSAf___6qSC5vPJ2-Dve7jdlBsClKW3qOE?purpose=fullsize&v=1'], tags: ['très rapprochés', 'effet continu'] },
+    { id: 'channel', title: 'Channel setting', desc: 'Les pierreries sont coincées (glissées) entre deux longues traverses de métal parallèles. Apporte un ruban de brillance lisse et protège fortement la pierre.', imgs: ['https://zoom.jewelryimages.net/edge/diamondsdirect/images/edge/110-00896-02.jpg', 'https://cavaliergastown.com/cdn/shop/files/Round_Diamond_Channel_Set_Band_2.7mm_5.jpg?v=1727892693&width=1080', 'https://media.tiffany.com/is/image/Tiffany/EcomItemL2/the-tiffany-setting-engagement-ring-with-a-channel-set-diamond-band-in-platinum-26208149_996005_ED_M.jpg?%24cropN=0.1%2C0.1%2C0.8%2C0.8&defaultImage=NoImageAvailableInternal&op_usm=1.75%2C1.0%2C6.0'], tags: ['encastrés', 'protection élevée'] },
+    { id: 'bezel', title: 'Bezel setting', desc: 'Un collet (cercle fin de métal) entoure intégralement les petits et les gros brillants. L’option la plus robuste pour une personne à la vie active (pas d’accrochage).', imgs: ['https://www.goodstoneinc.com/cdn/shop/files/5stonehalfwaybezelweddingbandsovalsYG_1200x.png?v=1719003102', 'https://fluidjewellery.com/cdn/shop/files/Bezel-Solitaire-ring-yellow-gold.jpg?v=1712173656', 'https://www.goodstoneinc.com/cdn/shop/files/image_fcc79266-7ebe-4fc3-8ba6-645a07fa7e25_1200x.jpg?v=1740065395'], tags: ['entouré de métal', 'sécurité maximale'] },
+    { id: 'sharedProng', title: 'Shared prong band', desc: 'Chaque griffe maintient fermement une partie de deux pierres adjacentes. Réduit l’utilisation de métal par rapport au perlage standard.', imgs: ['https://www.starlingjewelry.com/cdn/shop/files/shared-prong-2.jpg?v=1684274030&width=1090', 'https://image.brilliantearth.com/media/product_new_images/7D/BE2PD14R40_white_top.jpg', 'https://ferkosfinejewelry.com/cdn/shop/files/R11646LS_1x1_2ef6c8d9-76ed-41e8-84a3-732f294d9604_635x_crop_center%402x.jpg?v=1699105555'], tags: ['maximise lumière'] },
+];
+
+const BAND_SET_EN: CatalogCard[] = [
+    { id: 'paveSerti', title: 'Pavé set', desc: 'Tiny prongs hold small diamonds for maximum sparkle with minimal visible metal.', imgs: BAND_SET_FR[0].imgs, tags: ['tight spacing', 'continuous line'] },
+    { id: 'channel', title: 'Channel setting', desc: 'Stones sit between two parallel metal rails — smooth brilliance ribbon and strong protection.', imgs: BAND_SET_FR[1].imgs, tags: ['channel-set', 'protected'] },
+    { id: 'bezel', title: 'Bezel setting', desc: 'A thin metal rim fully wraps stones — the most secure option for active lifestyles (nothing to snag).', imgs: BAND_SET_FR[2].imgs, tags: ['metal rim', 'maximum security'] },
+    { id: 'sharedProng', title: 'Shared-prong band', desc: 'Each prong secures two adjacent stones — less metal than standard pavé.', imgs: BAND_SET_FR[3].imgs, tags: ['max light'] },
+];
+
+const PRONGS_FR: CatalogCard[] = [
+    { id: 'four', title: '4 prongs', desc: 'Design aéré utilisant quatre griffes (souvent N, S, E, O). Laisse passer la lumière au maximum, créant un profil de diamant légèrement carré.', imgs: ['https://images.openai.com/static-rsc-3/16a7zUVD7iGVnNTb88znrb_nb8kF6wgsq7mczlkQ4C5nC-gxnKq2Y5U5yzUTFCEf7y1w5mdn4xth7rIJNmwZpfqdZKG3l1fgcD0e-dMfeLA?purpose=fullsize&v=1', 'https://assets.vrai.com/25216/1683871270-petite-4-prong-solitaire-ring-oval-1-50-ct-plain-upright-yellow.jpg?ar=1%253A1&auto=format%2C+compress&crop=focalpoint&fit=crop&q=60&w=1440', 'https://spencediamonds.com/assets/products/8082-B.jpg'], tags: ['expose plus pierre', 'minimaliste'] },
+    { id: 'six', title: '6 prongs', desc: 'La structure « Tiffany setting » classique confère une rondeur impeccable et sécurise grandement le centre. Symbole universel du chic.', imgs: ['https://www.diamondmansion.com/media/catalog/product/design/SOL-6272/colorless/white/round/1573500246-Classic-Round-Cut-Knife-Edge-6-Prong-Solitaire-Diamond-Engagement-Ring-White-Gold-Platinum-Front-View.jpg', 'https://images.openai.com/static-rsc-3/X9kZ1qUDpFCOxVyQ5gfOPuH2B5rzpHU7cTQakXEzfTlbmlY92nQV3FJ4Sygs840Y196rMU2YikfLcbccf-xiAG-isdDR42YYJiXnj7pcP9g?purpose=fullsize&v=1', 'https://www.whiteflash.com/photos/2020/01/th500/Valoria-Petite-Six-Prong-Solitaire-Engagement-Ring_gi_11843_b-174662.jpg'], tags: ['sécurité maximale', 'look classique'] },
+    { id: 'claw', title: 'Claw prongs', desc: 'Les extrémités des tenons sont limées pour devenir affinées (en forme de serre gracieuse). Dissimule le métal vu du dessus et apporte une légèreté exquise.', imgs: ['https://www.moissaniteco.com/cache/media/products-media-large/enr139ov_89765.jpg', 'https://i.etsystatic.com/19986056/r/il/e21290/5996294278/il_570xN.5996294278_kns0.jpg', 'https://www.whiteflash.com/articlefiles/prong-sample/whiteflash-4-prong-sample-petite-claw-prong.jpg'], tags: ['look luxueux', 'finesse'] },
+    { id: 'double', title: 'Double prongs', desc: 'Des fourches dédoublées souvent postées aux angles des diamants carrés (Cushion, Radiant, Emerald). Solidité accrue alliée à un style historique fort.', imgs: ['https://www.peoplesjewellers.com/productimages/processed/V-20300938_0_800.jpg', 'https://i.etsystatic.com/19986056/r/il/e21290/5996294278/il_1080xN.5996294278_kns0.jpg', 'https://www.geoffreysdiamonds.com/cdn/shop/products/84958.side_1080x.jpg?v=1677991605'], tags: ['design distinctif', 'sécurité & style'] },
+];
+
+const PRONGS_EN: CatalogCard[] = [
+    { id: 'four', title: '4 prongs', desc: 'Open design with four prongs (often N/S/E/W) — maximum light and a slightly squarer outline.', imgs: PRONGS_FR[0].imgs, tags: ['more exposed stone', 'minimal'] },
+    { id: 'six', title: '6 prongs', desc: 'Classic Tiffany-style structure — rounder look and very secure center.', imgs: PRONGS_FR[1].imgs, tags: ['maximum security', 'classic'] },
+    { id: 'claw', title: 'Claw prongs', desc: 'Prong tips are refined into claws — less metal seen from above, delicate look.', imgs: PRONGS_FR[2].imgs, tags: ['luxury look', 'fine'] },
+    { id: 'double', title: 'Double prongs', desc: 'Split prongs at corners of square shapes — extra strength with a strong vintage feel.', imgs: PRONGS_FR[3].imgs, tags: ['distinctive', 'secure'] },
+];
+
+const HH_FR: CatalogCard[] = [
+    { id: 'classic', title: 'Classique', desc: 'L’anneau massif, symbole ultime et traditionnel de fidélité. Confort incomparable, résiste aux altérations du quotidien et se patinera poliment au fil des années.', imgs: ['https://i.etsystatic.com/12694725/r/il/8aea63/5443450830/il_570xN.5443450830_2eyu.jpg', 'https://images.openai.com/static-rsc-3/1yOnuSiYlq-VKerhtC6H5fE9EGYi8RkYEOixp-3awaO_AHTeO7JJGiLSzjYiNTyJEImB57BDzK3j3g091Zbvpb6QeRJOH7gpLB8ILadCu6I?purpose=fullsize&v=1', 'https://i.etsystatic.com/32363186/r/il/013421/3489083404/il_fullxfull.3489083404_mvs8.jpg'], tags: ['harmonie', 'intemporalité'] },
+    { id: 'diamond', title: 'Diamanté', desc: 'Une alliance somptueuse incrustée de pierres (moitié ou tour complet dit Éternité). Destinée à compléter et magnifier de mille feux la parure de la mariée.', imgs: ['https://m.media-amazon.com/images/I/712FpdCYeEL._AC_UY1000_.jpg', 'https://i.etsystatic.com/24547332/r/il/1f20b8/4157656731/il_570xN.4157656731_tkox.jpg', 'https://i.etsystatic.com/12694725/r/il/1ea40a/5389665711/il_fullxfull.5389665711_qhqe.jpg'], tags: ['luxe', 'cohérence couple'] },
+    { id: 'personalized', title: 'Personnalisé', desc: 'Le choix parfait pour les personnalités uniques. Anneaux gravés, martelés ou aux détails sculpturaux cachant une signification intime à l’histoire du couple.', imgs: ['https://rusticandmain.com/cdn/shop/files/apollo-luna-set-gold-hammered-rustic-and-main.jpg?v=1692722570', 'https://i.etsystatic.com/21424441/r/il/a453f2/5936826851/il_570xN.5936826851_ko2v.jpg', 'https://i.etsystatic.com/25935622/r/il/ed4dac/6555146818/il_570xN.6555146818_g9jm.jpg'], tags: ['unicité', 'storytelling'] },
+    { id: 'mix', title: 'Mix métaux', desc: 'Tendance contemporaine brisant la conformité absolue. Combine habilement l’or blanc, jaune ou rose afin que le marié trouve un coloris qui convienne à sa nature.', imgs: ['https://i.etsystatic.com/12694725/r/il/5c5489/1529065680/il_fullxfull.1529065680_tgwp.jpg', 'https://i.etsystatic.com/40226048/r/il/9cda7b/5818823339/il_fullxfull.5818823339_7ri9.jpg', 'https://images.openai.com/static-rsc-3/BAzGpx5wTHFLbmIDAe2Ov7ip55i7SJhtih4jxOesjA9-3wy-LtQeiE2ftesPPrAMoqbKJDDtdkGMP0xLNNzPQUadTaY1eyEGh471_UYcT5A?purpose=fullsize&v=1'], tags: ['modernité', 'contraste'] },
+];
+
+const HH_EN: CatalogCard[] = [
+    { id: 'classic', title: 'Classic', desc: 'Solid band — ultimate traditional symbol of fidelity. Comfortable and durable for everyday wear.', imgs: HH_FR[0].imgs, tags: ['harmony', 'timeless'] },
+    { id: 'diamond', title: 'Diamond-set', desc: 'Half or full eternity band — complements the bride’s set with extra sparkle.', imgs: HH_FR[1].imgs, tags: ['luxury', 'matching set'] },
+    { id: 'personalized', title: 'Personalized', desc: 'Engraved, hammered, or sculptural details with intimate meaning for the couple.', imgs: HH_FR[2].imgs, tags: ['unique', 'story'] },
+    { id: 'mix', title: 'Mixed metals', desc: 'Contemporary trend combining white, yellow, or rose gold so each partner finds their tone.', imgs: HH_FR[3].imgs, tags: ['modern', 'contrast'] },
+];
+
+export function getSettingsCards(lang: string): CatalogCard[] {
+    return lang.startsWith('en') ? SETTINGS_EN : SETTINGS_FR;
+}
+export function getBandStyleCards(lang: string): CatalogCard[] {
+    return lang.startsWith('en') ? BAND_EN : BAND_FR;
+}
+export function getBandSettingCards(lang: string): CatalogCard[] {
+    return lang.startsWith('en') ? BAND_SET_EN : BAND_SET_FR;
+}
+export function getProngsCards(lang: string): CatalogCard[] {
+    return lang.startsWith('en') ? PRONGS_EN : PRONGS_FR;
+}
+export function getHisHersCards(lang: string): CatalogCard[] {
+    return lang.startsWith('en') ? HH_EN : HH_FR;
+}

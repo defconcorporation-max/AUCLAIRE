@@ -1,5 +1,5 @@
-
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, ArrowLeft } from 'lucide-react'
 
 export default function RegisterAffiliate() {
+    const { t } = useTranslation()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
@@ -37,7 +38,7 @@ export default function RegisterAffiliate() {
 
             setMessage({
                 type: 'success',
-                text: 'Demande envoyée ! Vérifiez votre email pour confirmer. Un administrateur validera votre compte rapidement.'
+                text: t('registerAffiliatePage.successMessage')
             })
             // Optional: Redirect after delay or just show message
         } catch (error) {
@@ -55,7 +56,7 @@ export default function RegisterAffiliate() {
                 </div>
                 <div className="z-10 text-center space-y-6">
                     <h1 className="text-4xl font-serif tracking-wider text-luxury-gold">AMBASSADEUR</h1>
-                    <p className="text-gray-300 italic font-light tracking-widest uppercase text-sm">Rejoignez l'élite Auclaire</p>
+                    <p className="text-gray-300 italic font-light tracking-widest uppercase text-sm">{t('registerAffiliatePage.heroSubtitle')}</p>
                 </div>
             </div>
 
@@ -65,13 +66,13 @@ export default function RegisterAffiliate() {
                         <Link to="/login" className="absolute top-4 left-4 text-muted-foreground hover:text-foreground">
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
-                        <CardTitle className="text-2xl font-serif mb-2 text-luxury-gold">Inscription Ambassadeur</CardTitle>
-                        <CardDescription>Créez votre compte pour accéder au portail partenaire.</CardDescription>
+                        <CardTitle className="text-2xl font-serif mb-2 text-luxury-gold">{t('registerAffiliatePage.cardTitle')}</CardTitle>
+                        <CardDescription>{t('registerAffiliatePage.cardDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <form onSubmit={handleRegister} className="space-y-4">
                             <Input
-                                placeholder="Nom Complet"
+                                placeholder={t('registerAffiliatePage.placeholderName')}
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
                                 required
@@ -79,7 +80,7 @@ export default function RegisterAffiliate() {
                             />
                             <Input
                                 type="email"
-                                placeholder="Email Professionnel"
+                                placeholder={t('registerAffiliatePage.placeholderEmail')}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -87,7 +88,7 @@ export default function RegisterAffiliate() {
                             />
                             <Input
                                 type="password"
-                                placeholder="Mot de passe"
+                                placeholder={t('registerAffiliatePage.placeholderPassword')}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
@@ -96,7 +97,7 @@ export default function RegisterAffiliate() {
 
                             <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold/90 text-black font-medium" disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Soumettre la candidature
+                                {t('registerAffiliatePage.submit')}
                             </Button>
                         </form>
 
@@ -107,7 +108,8 @@ export default function RegisterAffiliate() {
                         )}
 
                         <div className="mt-6 text-center text-sm text-muted-foreground">
-                            Déjà un compte ? <Link to="/login" className="text-luxury-gold hover:underline">Se connecter</Link>
+                            {t('registerAffiliatePage.alreadyAccount')}{' '}
+                            <Link to="/login" className="text-luxury-gold hover:underline">{t('registerAffiliatePage.signIn')}</Link>
                         </div>
                     </CardContent>
                 </Card>

@@ -1,6 +1,7 @@
 import { Project } from '@/services/apiProjects';
 import { Invoice } from '@/services/apiInvoices';
 import { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
@@ -35,6 +36,7 @@ import { BoutiqueMirror } from '@/components/dashboard/BoutiqueMirror';
 
 export default function Dashboard() {
     const { profile, role } = useAuth();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
 
     // Filters State
@@ -404,10 +406,10 @@ export default function Dashboard() {
     if (projectsError || invoicesError || expensesError || usersError || !dashboardData) {
         return (
             <div className="p-8 glass-card border-red-500/20 text-red-500 text-center">
-                <h2 className="text-xl font-serif mb-2">Erreur de Chargement</h2>
-                <p className="text-sm opacity-70">Impossible de récupérer les données du tableau de bord.</p>
+                <h2 className="text-xl font-serif mb-2">{t('dashboard.loadErrorTitle')}</h2>
+                <p className="text-sm opacity-70">{t('dashboard.loadErrorDesc')}</p>
                 <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
-                    Réessayer
+                    {t('dashboard.retry')}
                 </Button>
             </div>
         );
@@ -440,9 +442,9 @@ export default function Dashboard() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="animate-in fade-in slide-in-from-left-4">
-                    <h1 className="text-4xl font-serif text-luxury-gradient tracking-tight mb-2">Tableau de Bord</h1>
+                    <h1 className="text-4xl font-serif text-luxury-gradient tracking-tight mb-2">{t('dashboard.title')}</h1>
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
-                        Bienvenue, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        {t('dashboard.welcome')}, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString(i18n.language?.startsWith('en') ? 'en-CA' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                 </div>
 
@@ -451,7 +453,7 @@ export default function Dashboard() {
                     <div className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 px-3 py-1.5 glass-card rounded-full border-white/10">
                             <Filter className="w-3.5 h-3.5 text-luxury-gold" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-r border-white/10 pr-2 mr-1">Filtres</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-r border-white/10 pr-2 mr-1">{t('dashboard.filters')}</span>
                             
                             {/* Affiliate Select */}
                             <div className="flex items-center gap-2 group">
@@ -461,7 +463,7 @@ export default function Dashboard() {
                                     value={selectedAffiliate}
                                     onChange={(e) => setSelectedAffiliate(e.target.value)}
                                 >
-                                    <option value="all" className="bg-neutral-900 text-foreground">Tous les Ambassadeurs</option>
+                                    <option value="all" className="bg-neutral-900 text-foreground">{t('dashboard.allAmbassadors')}</option>
                                     {affiliates.map(aff => (
                                         <option key={aff.id} value={aff.id} className="bg-neutral-900 text-foreground">{aff.full_name}</option>
                                     ))}
@@ -478,7 +480,7 @@ export default function Dashboard() {
                                     value={selectedManufacturer}
                                     onChange={(e) => setSelectedManufacturer(e.target.value)}
                                 >
-                                    <option value="all" className="bg-neutral-900 text-foreground">Tous les Ateliers</option>
+                                    <option value="all" className="bg-neutral-900 text-foreground">{t('dashboard.allWorkshops')}</option>
                                     {manufacturers.map(m => (
                                         <option key={m.id} value={m.id} className="bg-neutral-900 text-foreground">{m.full_name}</option>
                                     ))}
@@ -508,24 +510,24 @@ export default function Dashboard() {
                 <div className="space-y-5">
                     <div className="flex justify-center items-center gap-3 mb-4">
                         <div className="flex bg-white/5 p-1 rounded-full border border-white/10 gap-1">
-                            {['today', 'week', 'month', 'year', 'total'].map((t) => (
+                            {(['today', 'week', 'month', 'year', 'total'] as const).map((tf) => (
                                 <button
-                                    key={t}
-                                    onClick={() => setTimeframe(t as TimeFrame)}
+                                    key={tf}
+                                    onClick={() => setTimeframe(tf)}
                                     className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
-                                        timeframe === t 
+                                        timeframe === tf 
                                         ? 'bg-luxury-gold text-black shadow-lg shadow-luxury-gold/20' 
                                         : 'text-muted-foreground hover:text-foreground'
                                     }`}
                                 >
-                                    {t === 'today' ? "Aujourd'hui" : t === 'week' ? "Cette Semaine" : t === 'month' ? "Ce Mois" : t === 'year' ? "Cette Année" : "Total"}
+                                    {tf === 'today' ? t('dashboard.timeframeToday') : tf === 'week' ? t('dashboard.timeframeWeek') : tf === 'month' ? t('dashboard.timeframeMonth') : tf === 'year' ? t('dashboard.timeframeYear') : t('dashboard.timeframeTotal')}
                                 </button>
                             ))}
                         </div>
                         <button
                             onClick={() => setShowWidgetConfig(!showWidgetConfig)}
                             className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                            title="Personnaliser le tableau de bord"
+                            title={t('dashboard.customize')}
                         >
                             <Settings className="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -533,21 +535,21 @@ export default function Dashboard() {
 
                     {showWidgetConfig && (
                         <div className="animate-in slide-in-from-top-2 duration-200 bg-white/80 dark:bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-xl">
-                            <h3 className="font-serif text-sm font-bold mb-3 text-luxury-gold">Personnaliser le Dashboard</h3>
+                            <h3 className="font-serif text-sm font-bold mb-3 text-luxury-gold">{t('dashboard.customize')}</h3>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {[
-                                    { key: 'stats', label: 'Statistiques' },
-                                    { key: 'pipeline', label: 'Pipeline' },
-                                    { key: 'leaderboard', label: 'Classement' },
-                                    { key: 'designReview', label: 'Revue Design' },
-                                    { key: 'cashRisk', label: 'Risques Trésorerie' },
-                                    { key: 'deadline', label: 'Délais & SLA' },
-                                    { key: 'timeBased', label: 'Stats Temporelles' },
-                                    { key: 'revenueChart', label: 'Graphique Revenus' },
-                                    { key: 'boutiqueMirror', label: 'Miroir Boutique' },
-                                    { key: 'healthAuditor', label: 'Audit Santé' },
-                                    { key: 'workload', label: 'Charge de Travail' },
-                                ].map(w => (
+                                {([
+                                    { key: 'stats', labelKey: 'dashboard.widgets.stats' as const },
+                                    { key: 'pipeline', labelKey: 'dashboard.widgets.pipeline' as const },
+                                    { key: 'leaderboard', labelKey: 'dashboard.widgets.leaderboard' as const },
+                                    { key: 'designReview', labelKey: 'dashboard.widgets.designReview' as const },
+                                    { key: 'cashRisk', labelKey: 'dashboard.widgets.cashRisk' as const },
+                                    { key: 'deadline', labelKey: 'dashboard.widgets.deadline' as const },
+                                    { key: 'timeBased', labelKey: 'dashboard.widgets.timeBased' as const },
+                                    { key: 'revenueChart', labelKey: 'dashboard.widgets.revenueChart' as const },
+                                    { key: 'boutiqueMirror', labelKey: 'dashboard.widgets.boutiqueMirror' as const },
+                                    { key: 'healthAuditor', labelKey: 'dashboard.widgets.healthAuditor' as const },
+                                    { key: 'workload', labelKey: 'dashboard.widgets.workload' as const },
+                                ] as const).map(w => (
                                     <button
                                         key={w.key}
                                         onClick={() => toggleWidget(w.key)}
@@ -557,7 +559,7 @@ export default function Dashboard() {
                                                 : 'bg-white/5 text-muted-foreground border border-white/5 opacity-50'
                                         }`}
                                     >
-                                        {widgetConfig[w.key] ? '✓ ' : ''}{w.label}
+                                        {widgetConfig[w.key] ? '✓ ' : ''}{t(w.labelKey)}
                                     </button>
                                 ))}
                             </div>
@@ -611,7 +613,7 @@ export default function Dashboard() {
                                 <CardHeader className="py-4">
                                     <CardTitle className="font-serif text-lg tracking-wide flex items-center gap-2">
                                         <span className="text-luxury-gold animate-pulse">✨</span>
-                                        Insights IA
+                                        {t('dashboard.insightsTitle')}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="pb-6">
@@ -649,20 +651,20 @@ export default function Dashboard() {
                                 <div>
                                     <CardTitle className="font-serif text-xl tracking-wide flex items-center gap-2">
                                         <Briefcase className="w-5 h-5 text-luxury-gold" />
-                                        Performance des Ateliers
+                                        {t('dashboard.workshopPerformanceTitle')}
                                     </CardTitle>
-                                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">Vitesse, Qualité et Volume de production</p>
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">{t('dashboard.workshopPerformanceSubtitle')}</p>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0">
                                 <Table>
                                     <TableHeader className="bg-white/5">
                                         <TableRow className="border-white/5 hover:bg-transparent">
-                                            <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground py-3">Atelier</TableHead>
-                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">Projets</TableHead>
-                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">Vitesse Moy.</TableHead>
-                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">Score Qualité</TableHead>
-                                            <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground">Volume Total</TableHead>
+                                            <TableHead className="text-[10px] uppercase tracking-widest text-muted-foreground py-3">{t('dashboard.colWorkshop')}</TableHead>
+                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">{t('dashboard.colProjects')}</TableHead>
+                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">{t('dashboard.colAvgSpeed')}</TableHead>
+                                            <TableHead className="text-center text-[10px] uppercase tracking-widest text-muted-foreground">{t('dashboard.colQualityScore')}</TableHead>
+                                            <TableHead className="text-right text-[10px] uppercase tracking-widest text-muted-foreground">{t('dashboard.colTotalVolume')}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -684,10 +686,10 @@ export default function Dashboard() {
                                                 <TableCell className="text-center font-serif">
                                                     {m.avgSpeed > 0 ? (
                                                         <span className={`text-sm ${m.avgSpeed < 7 ? 'text-green-500' : m.avgSpeed > 14 ? 'text-red-500' : 'text-amber-500'}`}>
-                                                            {m.avgSpeed} Jours
+                                                            {t('dashboard.daysCount', { n: m.avgSpeed })}
                                                         </span>
                                                     ) : (
-                                                        <span className="text-muted-foreground text-[10px] italic">N/A</span>
+                                                        <span className="text-muted-foreground text-[10px] italic">{t('dashboard.notAvailable')}</span>
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-center">
@@ -704,7 +706,7 @@ export default function Dashboard() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right font-serif text-sm font-bold text-luxury-gold">
-                                                    {m.volume.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+                                                    {m.volume.toLocaleString(i18n.language?.startsWith('en') ? 'en-CA' : 'fr-CA', { style: 'currency', currency: 'CAD' })}
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -731,17 +733,17 @@ export default function Dashboard() {
                 <div className="space-y-8">
                     <div className="flex justify-center mb-4">
                         <div className="flex bg-white/5 p-1 rounded-full border border-white/10 gap-1">
-                            {['today', 'week', 'month', 'year', 'total'].map((t) => (
+                            {(['today', 'week', 'month', 'year', 'total'] as const).map((tf) => (
                                 <button
-                                    key={t}
-                                    onClick={() => setTimeframe(t as TimeFrame)}
+                                    key={tf}
+                                    onClick={() => setTimeframe(tf)}
                                     className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
-                                        timeframe === t 
+                                        timeframe === tf 
                                         ? 'bg-luxury-gold text-black shadow-lg shadow-luxury-gold/20' 
                                         : 'text-muted-foreground hover:text-foreground'
                                     }`}
                                 >
-                                    {t === 'today' ? "Aujourd'hui" : t === 'week' ? "Cette Semaine" : t === 'month' ? "Ce Mois" : t === 'year' ? "Cette Année" : "Total"}
+                                    {tf === 'today' ? t('dashboard.timeframeToday') : tf === 'week' ? t('dashboard.timeframeWeek') : tf === 'month' ? t('dashboard.timeframeMonth') : tf === 'year' ? t('dashboard.timeframeYear') : t('dashboard.timeframeTotal')}
                                 </button>
                             ))}
                         </div>
@@ -779,7 +781,7 @@ export default function Dashboard() {
                     {((role === 'admin' || role === 'secretary') && widgetConfig.revenueChart) || role === 'affiliate' ? (
                     <Card className="lg:col-span-2 glass-card">
                         <CardHeader>
-                            <CardTitle className="font-serif text-lg">Aperçu des Revenus</CardTitle>
+                            <CardTitle className="font-serif text-lg">{t('dashboard.revenueOverview')}</CardTitle>
                         </CardHeader>
                         <CardContent className="pl-2">
                             <RevenueChart />
@@ -788,7 +790,7 @@ export default function Dashboard() {
                     ) : null}
                     <Card className="glass-card">
                         <CardHeader>
-                            <CardTitle className="font-serif text-lg">Activité Récente</CardTitle>
+                            <CardTitle className="font-serif text-lg">{t('dashboard.recentActivity')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <RecentActivityList />

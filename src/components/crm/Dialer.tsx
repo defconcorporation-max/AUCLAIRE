@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Phone, PhoneOff, Mic, MicOff, Voicemail } from 'lucide-react';
@@ -16,6 +17,7 @@ function DialerOpen({
     contactName,
     phoneNumber,
 }: Omit<DialerProps, 'isOpen'>) {
+    const { t } = useTranslation();
     const [callState, setCallState] = useState<'idle' | 'calling' | 'connected' | 'ended'>('calling');
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
@@ -69,19 +71,19 @@ function DialerOpen({
             <DialogContent className="sm:max-w-md bg-white dark:bg-black border-black/10 dark:border-white/10 shadow-2xl">
                 <DialogHeader className="text-center">
                     <DialogTitle className="text-xl font-serif text-center">
-                        {callState === 'idle' ? 'Ready to Call' :
-                            callState === 'calling' ? 'Calling...' :
-                                callState === 'connected' ? 'Call in Progress' : 'Call Ended'}
+                        {callState === 'idle' ? t('dialer.titleIdle') :
+                            callState === 'calling' ? t('dialer.titleCalling') :
+                                callState === 'connected' ? t('dialer.titleConnected') : t('dialer.titleEnded')}
                     </DialogTitle>
                     <DialogDescription className="text-center">
                         {callState === 'connected' ? (
                             <span className="text-green-500 font-mono text-lg font-bold block animate-pulse mt-2">{formatTime(duration)}</span>
                         ) : callState === 'calling' ? (
-                            <span className="block mt-2 text-luxury-gold animate-bounce">Ringing...</span>
+                            <span className="block mt-2 text-luxury-gold animate-bounce">{t('dialer.ringing')}</span>
                         ) : callState === 'ended' ? (
-                            <span className="block mt-2 text-gray-500">Duration: {formatTime(duration)}</span>
+                            <span className="block mt-2 text-gray-500">{t('dialer.durationLabel', { time: formatTime(duration) })}</span>
                         ) : (
-                            <span className="block mt-2 text-muted-foreground">Twilio VOIP Integration (Mock)</span>
+                            <span className="block mt-2 text-muted-foreground">{t('dialer.mockNote')}</span>
                         )}
                     </DialogDescription>
                 </DialogHeader>
@@ -141,7 +143,7 @@ function DialerOpen({
                 {callState === 'connected' && (
                     <div className="bg-red-500/10 text-red-500 text-xs text-center py-2 px-4 rounded-b-lg flex items-center justify-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        Call is being recorded for quality and training purposes.
+                        {t('dialer.recordingNotice')}
                     </div>
                 )}
             </DialogContent>

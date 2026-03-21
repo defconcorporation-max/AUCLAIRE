@@ -8,6 +8,7 @@ import { apiClients } from '@/services/apiClients';
 import { apiInvoices } from '@/services/apiInvoices';
 import { formatCurrency } from '@/utils/taxUtils';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from '@/components/ui/use-toast';
 import { apiNotifications } from '@/services/apiNotifications';
 
@@ -19,6 +20,8 @@ interface QuoteLineItem {
 }
 
 export default function ClientQuote() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('fr') ? 'fr-CA' : 'en-CA';
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();
     const [isSending, setIsSending] = useState(false);
@@ -57,14 +60,14 @@ export default function ClientQuote() {
         try {
             await apiNotifications.create({
                 user_id: project.client_id,
-                title: 'Nouvelle soumission disponible',
-                message: `Une soumission pour le projet "${project.title}" est prête à consulter.`,
+                title: t('clientQuotePage.notifTitle'),
+                message: t('clientQuotePage.notifMessage', { title: project.title }),
                 type: 'info',
                 link: `/dashboard/projects/${project.id}`,
             });
-            toast({ title: 'Soumission envoyée', description: `${client.full_name} recevra une notification.` });
+            toast({ title: t('clientQuotePage.toastSentTitle'), description: t('clientQuotePage.toastSentDesc', { name: client.full_name }) });
         } catch {
-            toast({ title: 'Erreur', description: "Impossible d'envoyer la notification.", variant: 'destructive' });
+            toast({ title: t('clientQuotePage.toastErrTitle'), description: t('clientQuotePage.toastErrDesc'), variant: 'destructive' });
         } finally {
             setIsSending(false);
         }
@@ -92,14 +95,14 @@ export default function ClientQuote() {
     if (!project) {
         return (
             <div className="flex h-[60vh] flex-col items-center justify-center gap-4">
-                <p className="text-muted-foreground">Projet introuvable.</p>
-                <Button variant="ghost" onClick={() => navigate(-1)}>Retour</Button>
+                <p className="text-muted-foreground">{t('clientQuotePage.notFound')}</p>
+                <Button variant="ghost" onClick={() => navigate(-1)}>{t('clientQuotePage.back')}</Button>
             </div>
         );
     }
 
     const sellingPrice = project.financials?.selling_price || project.budget || 0;
-    const today = new Date().toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+    const today = new Date().toLocaleDateString(localeTag, { day: 'numeric', month: 'long', year: 'numeric' });
     const refNumber = project.reference_number || `SL-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`;
 
     const designFiles = [
@@ -123,20 +126,20 @@ export default function ClientQuote() {
         <div className="min-h-screen bg-zinc-950 p-4 md:p-8 pb-20 print:bg-white print:p-0">
             <div className="max-w-4xl mx-auto mb-8 flex justify-between items-center print:hidden">
                 <Button variant="ghost" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-white">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Retour
+                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('clientQuotePage.back')}
                 </Button>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => setEditMode(!editMode)}
                         className="border-white/20 text-muted-foreground hover:text-white">
-                        {editMode ? 'Terminer' : 'Modifier les items'}
+                        {editMode ? t('clientQuotePage.doneEdit') : t('clientQuotePage.editItems')}
                     </Button>
                     <Button onClick={handleSendToClient} disabled={isSending || !client} variant="outline"
                         className="border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10">
                         {isSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                        Envoyer au client
+                        {t('clientQuotePage.sendClient')}
                     </Button>
                     <Button onClick={handlePrint} className="bg-luxury-gold hover:bg-yellow-600 text-white font-bold">
-                        <Printer className="w-4 h-4 mr-2" /> Imprimer / PDF
+                        <Printer className="w-4 h-4 mr-2" /> {t('clientQuotePage.printPdf')}
                     </Button>
                 </div>
             </div>
@@ -145,16 +148,16 @@ export default function ClientQuote() {
             {editMode && (
                 <div className="max-w-4xl mx-auto mb-6 p-4 rounded-xl border border-luxury-gold/20 bg-luxury-gold/5 space-y-3 print:hidden">
                     <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-luxury-gold">Items de la soumission</p>
+                        <p className="text-sm font-medium text-luxury-gold">{t('clientQuotePage.quoteItems')}</p>
                         <Button size="sm" onClick={addItem} className="bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30">
-                            <Plus className="w-4 h-4 mr-1" /> Ajouter un item
+                            <Plus className="w-4 h-4 mr-1" /> {t('clientQuotePage.addItem')}
                         </Button>
                     </div>
                     {customItems.map(item => (
                         <div key={item.id} className="flex gap-2 items-start">
-                            <Input placeholder="Titre" value={item.title} onChange={e => updateItem(item.id, 'title', e.target.value)} className="flex-1 h-9" />
-                            <Input placeholder="Description" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} className="flex-1 h-9" />
-                            <Input type="number" placeholder="Prix" value={item.price || ''} onChange={e => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)} className="w-28 h-9" />
+                            <Input placeholder={t('clientQuotePage.phTitle')} value={item.title} onChange={e => updateItem(item.id, 'title', e.target.value)} className="flex-1 h-9" />
+                            <Input placeholder={t('clientQuotePage.phDescription')} value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} className="flex-1 h-9" />
+                            <Input type="number" placeholder={t('clientQuotePage.phPrice')} value={item.price || ''} onChange={e => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)} className="w-28 h-9" />
                             <Button variant="ghost" size="sm" onClick={() => removeItem(item.id)} className="text-red-400 h-9 w-9 p-0">
                                 <Trash2 className="w-4 h-4" />
                             </Button>
@@ -162,7 +165,7 @@ export default function ClientQuote() {
                     ))}
                     <div className="flex items-center gap-2 pt-2 border-t border-white/10">
                         <Percent className="w-4 h-4 text-luxury-gold" />
-                        <span className="text-sm text-muted-foreground">Rabais :</span>
+                        <span className="text-sm text-muted-foreground">{t('clientQuotePage.discountLabel')}</span>
                         <Input type="number" value={discount || ''} onChange={e => setDiscount(parseFloat(e.target.value) || 0)} className="w-28 h-9" placeholder="0" />
                     </div>
                 </div>
@@ -175,30 +178,30 @@ export default function ClientQuote() {
                     <div className="flex flex-col md:flex-row justify-between items-start mb-16 gap-8">
                         <div>
                             <h1 className="text-5xl font-serif tracking-tighter text-zinc-900 mb-2">AUCLAIRE</h1>
-                            <p className="text-xs uppercase tracking-[0.4em] text-luxury-gold font-bold">Bijouterie sur mesure</p>
+                            <p className="text-xs uppercase tracking-[0.4em] text-luxury-gold font-bold">{t('clientQuotePage.tagline')}</p>
                         </div>
                         <div className="text-right">
-                            <h2 className="text-2xl font-serif text-zinc-800 uppercase tracking-widest mb-1">Soumission</h2>
-                            <p className="text-zinc-500 font-mono text-sm">Date : {today}</p>
-                            <p className="text-zinc-500 font-mono text-sm">Ref : #{refNumber}</p>
+                            <h2 className="text-2xl font-serif text-zinc-800 uppercase tracking-widest mb-1">{t('clientQuotePage.quoteTitle')}</h2>
+                            <p className="text-zinc-500 font-mono text-sm">{t('clientQuotePage.dateLabel', { date: today })}</p>
+                            <p className="text-zinc-500 font-mono text-sm">{t('clientQuotePage.refLabel', { ref: refNumber })}</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16 border-t border-b border-zinc-100 py-10">
                         <div>
-                            <h3 className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold mb-4">Préparé pour</h3>
+                            <h3 className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold mb-4">{t('clientQuotePage.preparedFor')}</h3>
                             <div className="space-y-1">
-                                <p className="font-serif text-xl text-zinc-900">{client?.full_name || 'Client'}</p>
+                                <p className="font-serif text-xl text-zinc-900">{client?.full_name || t('clientQuotePage.clientFallback')}</p>
                                 {client?.phone && <p className="text-zinc-600 text-sm">{client.phone}</p>}
                                 {client?.email && <p className="text-zinc-600 text-sm">{client.email}</p>}
                             </div>
                         </div>
                         <div className="md:text-right">
-                            <h3 className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold mb-4">De la part de</h3>
+                            <h3 className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold mb-4">{t('clientQuotePage.fromUs')}</h3>
                             <div className="space-y-1">
                                 <p className="font-serif text-xl text-zinc-900">AUCLAIRE</p>
-                                <p className="text-zinc-600 text-sm italic">Soin, précision et élégance</p>
-                                <p className="text-zinc-600 text-sm">Quebec, Canada</p>
+                                <p className="text-zinc-600 text-sm italic">{t('clientQuotePage.fromTagline')}</p>
+                                <p className="text-zinc-600 text-sm">{t('clientQuotePage.fromLocation')}</p>
                                 <p className="text-zinc-600 text-sm">www.auclaire.com</p>
                             </div>
                         </div>
@@ -213,12 +216,12 @@ export default function ClientQuote() {
                     )}
 
                     <div className="space-y-12 mb-16">
-                        <h3 className="text-sm uppercase tracking-widest text-zinc-900 font-bold border-b border-zinc-900 pb-2">Détails du projet</h3>
+                        <h3 className="text-sm uppercase tracking-widest text-zinc-900 font-bold border-b border-zinc-900 pb-2">{t('clientQuotePage.projectDetails')}</h3>
 
                         {displayItems.map((item, idx) => (
                             <div key={item.id} className={`grid grid-cols-1 md:grid-cols-3 gap-8 ${idx > 0 ? 'pt-8 border-t border-zinc-50' : ''}`}>
                                 <div className="col-span-2">
-                                    <h4 className="font-serif text-2xl text-zinc-900 mb-4">{idx + 1}. {item.title || 'Article'}</h4>
+                                    <h4 className="font-serif text-2xl text-zinc-900 mb-4">{idx + 1}. {item.title || t('clientQuotePage.lineFallback')}</h4>
                                     {item.description && (
                                         <p className="text-zinc-700 text-sm italic mb-2">{item.description}</p>
                                     )}
@@ -232,15 +235,15 @@ export default function ClientQuote() {
 
                     {designFiles.length > 0 && (
                         <div className="mb-16 print:break-before-page">
-                            <h3 className="text-sm uppercase tracking-widest text-zinc-900 font-bold border-b border-zinc-900 pb-2 mb-8">Design & Visuels</h3>
+                            <h3 className="text-sm uppercase tracking-widest text-zinc-900 font-bold border-b border-zinc-900 pb-2 mb-8">{t('clientQuotePage.designVisuals')}</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 {designFiles.slice(0, 4).map((url, idx) => (
                                     <div key={idx} className="aspect-square bg-zinc-50 rounded border border-zinc-100 overflow-hidden">
-                                        <img src={url} alt={`Design ${idx + 1}`} className="w-full h-full object-cover" />
+                                        <img src={url} alt={t('clientQuotePage.designAlt', { n: idx + 1 })} className="w-full h-full object-cover" />
                                     </div>
                                 ))}
                             </div>
-                            <p className="text-[10px] text-zinc-400 mt-4 italic">Les rendus ci-dessus sont des représentations fidèles de la conception finale.</p>
+                            <p className="text-[10px] text-zinc-400 mt-4 italic">{t('clientQuotePage.rendersNote')}</p>
                         </div>
                     )}
 
@@ -248,51 +251,51 @@ export default function ClientQuote() {
                         <div className="space-y-1">
                             {displayItems.length > 1 && (
                                 <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">
-                                    Sous-total : {formatCurrency(subtotal)}
+                                    {t('clientQuotePage.subtotal', { amount: formatCurrency(subtotal) })}
                                 </p>
                             )}
                             {discount > 0 && (
                                 <p className="text-sm uppercase tracking-[0.3em] text-luxury-gold">
-                                    Rabais AUCLAIRE : -{formatCurrency(discount)}
+                                    {t('clientQuotePage.discountLine', { amount: formatCurrency(discount) })}
                                 </p>
                             )}
                             {totalPaid > 0 && (
                                 <p className="text-sm uppercase tracking-[0.3em] text-green-400 flex items-center gap-2">
-                                    <CheckCircle2 className="w-4 h-4" /> Déjà payé : {formatCurrency(totalPaid)}
+                                    <CheckCircle2 className="w-4 h-4" /> {t('clientQuotePage.alreadyPaid', { amount: formatCurrency(totalPaid) })}
                                 </p>
                             )}
                         </div>
                         <div className="text-center md:text-right">
-                            <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Total à payer</p>
+                            <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">{t('clientQuotePage.totalDue')}</p>
                             <p className="text-5xl font-serif text-luxury-gold">{formatCurrency(finalTotal)}</p>
-                            <p className="text-[10px] uppercase tracking-widest text-zinc-500 mt-2">Taxes en sus</p>
+                            <p className="text-[10px] uppercase tracking-widest text-zinc-500 mt-2">{t('clientQuotePage.taxesExtra')}</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-[11px] text-zinc-500 leading-relaxed uppercase tracking-widest">
                         <div>
-                            <h4 className="text-zinc-900 font-bold mb-3 border-b border-zinc-100 pb-1">Modalités de paiement</h4>
+                            <h4 className="text-zinc-900 font-bold mb-3 border-b border-zinc-100 pb-1">{t('clientQuotePage.paymentTerms')}</h4>
                             <ul className="space-y-2">
                                 <li className="flex justify-between">
-                                    <span>Dépôt de 50 %</span>
-                                    <span className="font-bold text-zinc-700">À la signature</span>
+                                    <span>{t('clientQuotePage.deposit50')}</span>
+                                    <span className="font-bold text-zinc-700">{t('clientQuotePage.depositWhen')}</span>
                                 </li>
                                 <li className="flex justify-between">
-                                    <span>Solde restant</span>
-                                    <span className="font-bold text-zinc-700">48h avant livraison</span>
+                                    <span>{t('clientQuotePage.balance')}</span>
+                                    <span className="font-bold text-zinc-700">{t('clientQuotePage.balanceWhen')}</span>
                                 </li>
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-zinc-900 font-bold mb-3 border-b border-zinc-100 pb-1">Conditions</h4>
-                            <p className="mb-2 italic">Les prix indiqués dans ce devis sont valables pour une période de 24 heures suivant son envoi.</p>
-                            <p>Passé ce délai, les prix peuvent être sujets à changement selon le cours des métaux et pierres.</p>
+                            <h4 className="text-zinc-900 font-bold mb-3 border-b border-zinc-100 pb-1">{t('clientQuotePage.conditions')}</h4>
+                            <p className="mb-2 italic">{t('clientQuotePage.conditionsP1')}</p>
+                            <p>{t('clientQuotePage.conditionsP2')}</p>
                         </div>
                     </div>
 
                     <div className="mt-20 pt-10 border-t border-zinc-100 text-center">
                         <p className="text-luxury-gold font-serif text-xl mb-2">AUCLAIRE</p>
-                        <p className="text-[9px] uppercase tracking-[0.5em] text-zinc-400 font-bold">Bijoux sur mesure conçus avec soin, précision et élégance.</p>
+                        <p className="text-[9px] uppercase tracking-[0.5em] text-zinc-400 font-bold">{t('clientQuotePage.footerLine')}</p>
                     </div>
                 </div>
             </div>

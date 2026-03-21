@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Project } from '@/services/apiProjects';
 import { ActivityLog } from '@/services/apiActivities';
 import { CompanySettings } from '@/services/apiSettings';
@@ -28,13 +29,12 @@ interface HealthAuditorWidgetProps {
 }
 
 export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidgetProps) {
+    const { t } = useTranslation();
     const [nowMs, setNowMs] = useState(() => Date.now());
     useEffect(() => {
         const id = window.setInterval(() => setNowMs(Date.now()), 60_000);
         return () => window.clearInterval(id);
     }, []);
-
-    const alerts: HealthAlert[] = [];
 
     const statusLogs = activities.filter(a => a.action === 'status_change');
     const velocityData: Record<string, { totalDays: number, count: number }> = {};
@@ -69,6 +69,9 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
 
     const PIPELINE_STATUSES = ['3d_model', 'design_modification', 'production', 'delivery'];
 
+    const alerts: HealthAlert[] = useMemo(() => {
+        const out: HealthAlert[] = [];
+
     projects.forEach(p => {
         if (!PIPELINE_STATUSES.includes(p.status)) return;
 
@@ -97,22 +100,22 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
         }
 
         if (daysInStatus > dangerThreshold) {
-            alerts.push({
+            out.push({
                 id: `delay-danger-${p.id}`,
                 projectId: p.id,
                 projectTitle: p.title,
                 type: 'delay',
                 severity: 'danger',
-                message: `Stuck for ${Math.round(daysInStatus)} days`
+                message: t('healthAuditor.delayStuck', { days: Math.round(daysInStatus) })
             });
         } else if (daysInStatus > warnThreshold) {
-            alerts.push({
+            out.push({
                 id: `delay-warn-${p.id}`,
                 projectId: p.id,
                 projectTitle: p.title,
                 type: 'delay',
                 severity: 'warning',
-                message: `Slow progress (${Math.round(daysInStatus)} days)`
+                message: t('healthAuditor.delaySlow', { days: Math.round(daysInStatus) })
             });
         }
 
@@ -127,26 +130,29 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
             const marginDanger = (settings?.margin_danger_percent || 10) / 100;
 
             if (margin < marginDanger && totalCosts > 0) {
-                alerts.push({
+                out.push({
                     id: `margin-danger-${p.id}`,
                     projectId: p.id,
                     projectTitle: p.title,
                     type: 'margin',
                     severity: 'danger',
-                    message: `Critical Margin: ${Math.round(margin * 100)}%`
+                    message: t('healthAuditor.marginCritical', { pct: Math.round(margin * 100) })
                 });
             } else if (margin < marginWarn && totalCosts > 0) {
-                alerts.push({
+                out.push({
                     id: `margin-warn-${p.id}`,
                     projectId: p.id,
                     projectTitle: p.title,
                     type: 'margin',
                     severity: 'warning',
-                    message: `Low Margin: ${Math.round(margin * 100)}%`
+                    message: t('healthAuditor.marginLow', { pct: Math.round(margin * 100) })
                 });
             }
         }
     });
+
+        return out;
+    }, [projects, activities, nowMs, t]);
 
     const dangerAlerts = alerts.filter(a => a.severity === 'danger');
 
@@ -154,11 +160,11 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
         <Card className="glass-card overflow-hidden relative">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-white/10">
                 <CardTitle className="text-sm font-bold tracking-widest text-luxury-gold flex items-center gap-2 uppercase">
-                    <Activity className="w-4 h-4" /> Health Monitor
+                    <Activity className="w-4 h-4" /> {t('healthAuditor.title')}
                 </CardTitle>
                 <div className="flex gap-2">
                     <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter border ${dangerAlerts.length > 0 ? 'border-red-500/50 text-red-500 bg-red-500/10' : 'border-green-500/50 text-green-500 bg-green-500/10'}`}>
-                        {dangerAlerts.length} Critical Issues
+                        {t('healthAuditor.criticalIssues', { count: dangerAlerts.length })}
                     </div>
                 </div>
             </CardHeader>
@@ -166,7 +172,7 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
                 {alerts.length === 0 ? (
                     <div className="p-6 flex flex-col items-center justify-center text-center">
                         <CheckCircle2 className="w-8 h-8 text-green-500 mb-2 opacity-50" />
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">All systems optimal</p>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">{t('healthAuditor.allOk')}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-h-[250px] overflow-y-auto divide-y md:divide-y-0 md:border-b border-white/5">

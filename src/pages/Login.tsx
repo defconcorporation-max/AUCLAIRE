@@ -1,6 +1,7 @@
 
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase' // Use directly for Auth
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 
 export default function Login() {
+    const { t } = useTranslation()
     // Mode: 'login' | 'register' | 'forgot' | 'magic-link'
     const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'magic-link'>('login')
 
@@ -31,7 +33,7 @@ export default function Login() {
                     redirectTo: `${window.location.origin}/login`
                 })
                 if (error) throw error
-                setMessage({ type: 'success', text: 'Password reset email sent! Check your inbox.' })
+                setMessage({ type: 'success', text: t('auth.resetEmailSent') })
             } else if (mode === 'register') {
                 const { error } = await supabase.auth.signUp({
                     email,
@@ -43,7 +45,7 @@ export default function Login() {
                     },
                 })
                 if (error) throw error
-                setMessage({ type: 'success', text: 'Account created! Please check your email to confirm.' })
+                setMessage({ type: 'success', text: t('auth.accountCreated') })
             } else if (mode === 'magic-link') {
                 const { error } = await supabase.auth.signInWithOtp({
                     email,
@@ -53,7 +55,7 @@ export default function Login() {
                     }
                 })
                 if (error) throw error
-                setMessage({ type: 'success', text: 'Check your email for the magic link! You can close this window.' })
+                setMessage({ type: 'success', text: t('auth.magicLinkSent') })
             } else {
                 // Login
                 const { error } = await supabase.auth.signInWithPassword({
@@ -65,7 +67,7 @@ export default function Login() {
                 navigate('/dashboard')
             }
         } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : 'An unexpected error occurred';
+            const msg = error instanceof Error ? error.message : t('auth.unexpectedError');
             setMessage({ type: 'error', text: msg })
         } finally {
             setLoading(false)
@@ -82,7 +84,7 @@ export default function Login() {
                 </div>
                 <div className="z-10 text-center space-y-6">
                     <h1 className="text-4xl font-serif tracking-wider">AUCLAIRE</h1>
-                    <p className="text-luxury-gold/80 italic font-light tracking-widest uppercase text-sm">Fine Jewelry Manufacturing</p>
+                    <p className="text-luxury-gold/80 italic font-light tracking-widest uppercase text-sm">{t('auth.tagline')}</p>
                 </div>
             </div>
 
@@ -95,13 +97,13 @@ export default function Login() {
                                 onClick={() => { setMode('login'); setMessage(null); }}
                                 className={`pb-1 border-b-2 transition-colors ${mode === 'login' ? 'text-luxury-gold border-luxury-gold' : 'border-transparent hover:text-foreground'}`}
                             >
-                                Login
+                                {t('auth.login')}
                             </button>
                             <button
                                 onClick={() => { setMode('register'); setMessage(null); }}
                                 className={`pb-1 border-b-2 transition-colors ${mode === 'register' ? 'text-luxury-gold border-luxury-gold' : 'border-transparent hover:text-foreground'}`}
                             >
-                                Register
+                                {t('auth.register')}
                             </button>
                         </div>
                     </CardHeader>
@@ -109,7 +111,7 @@ export default function Login() {
                         <form onSubmit={handleAuth} className="space-y-4">
                             {mode === 'register' && (
                                 <Input
-                                    placeholder="Full Name"
+                                    placeholder={t('auth.fullName')}
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
                                     required
@@ -117,7 +119,7 @@ export default function Login() {
                             )}
                             <Input
                                 type="email"
-                                placeholder="Email"
+                                placeholder={t('auth.email')}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -125,7 +127,7 @@ export default function Login() {
                             {(mode === 'login' || mode === 'register') && (
                                 <Input
                                     type="password"
-                                    placeholder="Password"
+                                    placeholder={t('auth.password')}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -134,7 +136,7 @@ export default function Login() {
 
                             <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black" disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : mode === 'magic-link' ? 'Send Access Link' : 'Send Reset Link'}
+                                {mode === 'login' ? t('auth.signIn') : mode === 'register' ? t('auth.createAccount') : mode === 'magic-link' ? t('auth.sendAccessLink') : t('auth.sendResetLink')}
                             </Button>
 
                             {mode === 'login' && (
@@ -144,14 +146,14 @@ export default function Login() {
                                         onClick={() => { setMode('magic-link'); setMessage(null); }}
                                         className="w-full mt-2 p-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-black transition-colors text-sm font-medium"
                                     >
-                                        Client? Get a Login Link (No Password)
+                                        {t('auth.clientMagicLink')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => { setMode('forgot'); setMessage(null); }}
                                         className="w-full text-center text-xs text-muted-foreground hover:text-luxury-gold transition-colors block mt-4"
                                     >
-                                        Forgot your password?
+                                        {t('auth.forgotPassword')}
                                     </button>
                                 </div>
                             )}
@@ -161,7 +163,7 @@ export default function Login() {
                                     onClick={() => { setMode('login'); setMessage(null); }}
                                     className="w-full text-center text-xs text-muted-foreground hover:text-luxury-gold transition-colors"
                                 >
-                                    Back to Login
+                                    {t('auth.backToLogin')}
                                 </button>
                             )}
                         </form>
@@ -173,8 +175,8 @@ export default function Login() {
                         )}
                     </CardContent>
                     <div className="p-6 pt-0 text-center text-xs text-muted-foreground">
-                        Vous souhaitez collaborer avec nous ? <br />
-                        <Link to="/affiliate/register" className="text-luxury-gold hover:underline">Devenir Ambassadeur</Link>
+                        {t('auth.affiliatePrompt')} <br />
+                        <Link to="/affiliate/register" className="text-luxury-gold hover:underline">{t('auth.becomeAmbassador')}</Link>
                     </div>
                 </Card>
             </div>

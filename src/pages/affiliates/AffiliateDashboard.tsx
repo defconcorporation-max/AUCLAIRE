@@ -2,6 +2,7 @@ import { Project } from '@/services/apiProjects';
 import { formatCurrency } from '@/lib/utils';
 import { financialUtils } from '@/utils/financialUtils';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { apiAffiliates, AffiliateStats } from '@/services/apiAffiliates';
 import { supabase } from '@/lib/supabase';
@@ -28,11 +29,11 @@ interface MonthlyData {
 }
 
 const BADGE_TIERS = [
-    { name: 'Bronze', min: 0, max: 10000, color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-500/20' },
-    { name: 'Silver', min: 10000, max: 25000, color: 'text-zinc-400', bg: 'bg-zinc-400/20' },
-    { name: 'Gold', min: 25000, max: 50000, color: 'text-luxury-gold', bg: 'bg-luxury-gold/20' },
-    { name: 'Diamond', min: 50000, max: Infinity, color: 'text-cyan-300', bg: 'bg-cyan-400/20' },
-];
+    { nameKey: 'badgeBronze', min: 0, max: 10000, color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-500/20' },
+    { nameKey: 'badgeSilver', min: 10000, max: 25000, color: 'text-zinc-400', bg: 'bg-zinc-400/20' },
+    { nameKey: 'badgeGold', min: 25000, max: 50000, color: 'text-luxury-gold', bg: 'bg-luxury-gold/20' },
+    { nameKey: 'badgeDiamond', min: 50000, max: Infinity, color: 'text-cyan-300', bg: 'bg-cyan-400/20' },
+] as const;
 
 function getBadgeForVolume(totalSales: number) {
     for (let i = BADGE_TIERS.length - 1; i >= 0; i--) {
@@ -44,6 +45,8 @@ function getBadgeForVolume(totalSales: number) {
 }
 
 export default function AffiliateDashboard() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const { profile } = useAuth();
     const [stats, setStats] = useState<AffiliateStats | null>(null);
     const [pendingCommissions, setPendingCommissions] = useState<PendingCommission[]>([]);
@@ -135,10 +138,11 @@ export default function AffiliateDashboard() {
         <div className="space-y-8">
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-serif text-gray-900 dark:text-white">
-                    Bonjour, {profile?.full_name?.split(' ')[0]}
+                    {t('affiliateDashboardPage.hello', { name: profile?.full_name?.split(' ')[0] ?? '' })}
                 </h1>
                 <p className="text-gray-500">
-                    Niveau: <span className="text-luxury-gold font-bold uppercase">{profile?.affiliate_level || 'Starter'}</span>
+                    {t('affiliateDashboardPage.level')}{' '}
+                    <span className="text-luxury-gold font-bold uppercase">{profile?.affiliate_level || 'Starter'}</span>
                 </p>
             </div>
 
@@ -146,53 +150,53 @@ export default function AffiliateDashboard() {
             <div className="grid gap-4 md:grid-cols-4">
                 <Card className="glass-card border border-white/5 bg-zinc-900/80 backdrop-blur-sm shadow-xl">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-400">Volume Total</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-400">{t('affiliateDashboardPage.volumeTotal')}</CardTitle>
                         <DollarSign className="h-4 w-4 text-luxury-gold" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-luxury-gold">
                             {formatCurrency(totalSales)}
                         </div>
-                        <p className="text-xs text-gray-500">Ventes cumulées</p>
+                        <p className="text-xs text-gray-500">{t('affiliateDashboardPage.cumulativeSales')}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="glass-card border border-white/5 bg-zinc-900/80 backdrop-blur-sm shadow-xl">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-400">Commissions Gagnées</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-400">{t('affiliateDashboardPage.commissionsEarned')}</CardTitle>
                         <TrendingUp className="h-4 w-4 text-luxury-gold" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-luxury-gold">
                             {formatCurrency(commissionEarned)}
                         </div>
-                        <p className="text-xs text-gray-500">Revenus totaux</p>
+                        <p className="text-xs text-gray-500">{t('affiliateDashboardPage.totalRevenue')}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="glass-card border border-white/5 bg-zinc-900/80 backdrop-blur-sm shadow-xl">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-400">Projets Actifs</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-400">{t('affiliateDashboardPage.activeProjects')}</CardTitle>
                         <Briefcase className="h-4 w-4 text-luxury-gold" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-white">
                             {activeProjects}
                         </div>
-                        <p className="text-xs text-gray-500">En cours</p>
+                        <p className="text-xs text-gray-500">{t('affiliateDashboardPage.inProgress')}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="glass-card border border-white/5 bg-zinc-900/80 backdrop-blur-sm shadow-xl">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-400">Taux de Conversion</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-400">{t('affiliateDashboardPage.conversionRate')}</CardTitle>
                         <Percent className="h-4 w-4 text-luxury-gold" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold font-serif text-white">
                             {conversionRate}%
                         </div>
-                        <p className="text-xs text-gray-500">Dossiers gagnés / total</p>
+                        <p className="text-xs text-gray-500">{t('affiliateDashboardPage.wonVsTotal')}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -203,7 +207,7 @@ export default function AffiliateDashboard() {
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
                             <Target className="h-4 w-4 text-luxury-gold" />
-                            Objectif Mensuel
+                            {t('affiliateDashboardPage.monthlyGoal')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -254,21 +258,21 @@ export default function AffiliateDashboard() {
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
                             <Award className="h-4 w-4 text-luxury-gold" />
-                            Classement & Badge
+                            {t('affiliateDashboardPage.rankingBadge')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className={`rounded-full px-4 py-2 ${badge.bg} ${badge.color} font-serif font-bold`}>
-                                {badge.name}
+                                {t(`affiliateDashboardPage.${badge.nameKey}`)}
                             </div>
                             <div>
                                 <p className="text-lg font-serif font-bold text-white">
-                                    #{myRank || '-'} sur {sortedAffiliates.length} ambassadeurs
+                                    {t('affiliateDashboardPage.rankOf', { rank: myRank || '-', total: sortedAffiliates.length })}
                                 </p>
                                 {topVolume > 0 && totalSales < topVolume && (
                                     <p className="text-xs text-gray-500">
-                                        Meilleur: {formatCurrency(topVolume)} — Vous: {formatCurrency(totalSales)}
+                                        {t('affiliateDashboardPage.bestVsYou', { best: formatCurrency(topVolume), you: formatCurrency(totalSales) })}
                                     </p>
                                 )}
                             </div>
@@ -282,7 +286,7 @@ export default function AffiliateDashboard() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
                         <BarChart3 className="h-4 w-4 text-luxury-gold" />
-                        Ventes Mensuelles (6 derniers mois)
+                        {t('affiliateDashboardPage.monthlySalesChart')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -306,19 +310,19 @@ export default function AffiliateDashboard() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <CardTitle className="text-lg font-serif flex items-center gap-2">
                             <DollarSign className="w-5 h-5 text-luxury-gold" />
-                            Détail des Commissions
+                            {t('affiliateDashboardPage.commissionDetail')}
                         </CardTitle>
                         <div className="flex items-center gap-2">
                             <Tabs value={commissionFilter} onValueChange={(v) => setCommissionFilter(v as 'all' | 'pending' | 'paid')}>
                                 <TabsList className="bg-zinc-800 border border-white/5">
-                                    <TabsTrigger value="all" className="data-[state=active]:bg-luxury-gold/20 data-[state=active]:text-luxury-gold">Tous</TabsTrigger>
-                                    <TabsTrigger value="pending" className="data-[state=active]:bg-luxury-gold/20 data-[state=active]:text-luxury-gold">En attente</TabsTrigger>
-                                    <TabsTrigger value="paid" className="data-[state=active]:bg-luxury-gold/20 data-[state=active]:text-luxury-gold">Payés</TabsTrigger>
+                                    <TabsTrigger value="all" className="data-[state=active]:bg-luxury-gold/20 data-[state=active]:text-luxury-gold">{t('affiliateDashboardPage.tabAll')}</TabsTrigger>
+                                    <TabsTrigger value="pending" className="data-[state=active]:bg-luxury-gold/20 data-[state=active]:text-luxury-gold">{t('affiliateDashboardPage.tabPending')}</TabsTrigger>
+                                    <TabsTrigger value="paid" className="data-[state=active]:bg-luxury-gold/20 data-[state=active]:text-luxury-gold">{t('affiliateDashboardPage.tabPaid')}</TabsTrigger>
                                 </TabsList>
                             </Tabs>
                             {pendingTotal > 0 && (
                                 <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 font-serif">
-                                    {formatCurrency(pendingTotal)} en attente
+                                    {t('affiliateDashboardPage.pendingAmount', { amount: formatCurrency(pendingTotal) })}
                                 </Badge>
                             )}
                         </div>
@@ -329,26 +333,26 @@ export default function AffiliateDashboard() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-zinc-950/50 border-white/5">
-                                    <TableHead className="text-gray-400">Projet</TableHead>
-                                    <TableHead className="text-gray-400">Client</TableHead>
-                                    <TableHead className="text-right text-gray-400">Montant Vente</TableHead>
-                                    <TableHead className="text-right text-gray-400">Taux</TableHead>
-                                    <TableHead className="text-right text-luxury-gold font-bold">Commission</TableHead>
-                                    <TableHead className="text-right text-gray-400">Statut</TableHead>
+                                    <TableHead className="text-gray-400">{t('affiliateDashboardPage.colProject')}</TableHead>
+                                    <TableHead className="text-gray-400">{t('affiliateDashboardPage.colClient')}</TableHead>
+                                    <TableHead className="text-right text-gray-400">{t('affiliateDashboardPage.colSaleAmount')}</TableHead>
+                                    <TableHead className="text-right text-gray-400">{t('affiliateDashboardPage.colRate')}</TableHead>
+                                    <TableHead className="text-right text-luxury-gold font-bold">{t('affiliateDashboardPage.colCommission')}</TableHead>
+                                    <TableHead className="text-right text-gray-400">{t('affiliateDashboardPage.colStatus')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredRows.length === 0 ? (
                                     <TableRow className="border-white/5">
                                         <TableCell colSpan={6} className="h-24 text-center text-gray-500">
-                                            Aucune commission à afficher.
+                                            {t('affiliateDashboardPage.noCommissions')}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     filteredRows.map(({ project, commission, status }) => {
                                         const price = Number(project.financials?.selling_price || project.budget || 0);
                                         const rate = project.affiliate_commission_rate || 0;
-                                        const rateDisplay = project.affiliate_commission_type === 'fixed' ? 'Fixe' : `${rate}%`;
+                                        const rateDisplay = project.affiliate_commission_type === 'fixed' ? t('affiliateDashboardPage.rateFixed') : `${rate}%`;
                                         const clientName = (project.client as { full_name?: string })?.full_name ?? '-';
 
                                         return (
@@ -360,11 +364,11 @@ export default function AffiliateDashboard() {
                                                 <TableCell className="text-right font-mono font-bold text-luxury-gold">{formatCurrency(commission)}</TableCell>
                                                 <TableCell className="text-right">
                                                     {status === 'paid' ? (
-                                                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">✓ Payé</Badge>
+                                                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">✓ {t('affiliateDashboardPage.statusPaid')}</Badge>
                                                     ) : status === 'pending' ? (
-                                                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">⏳ En attente</Badge>
+                                                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">⏳ {t('affiliateDashboardPage.statusPending')}</Badge>
                                                     ) : (
-                                                        <Badge variant="outline" className="text-gray-500 border-white/10">Non soumis</Badge>
+                                                        <Badge variant="outline" className="text-gray-500 border-white/10">{t('affiliateDashboardPage.statusNotSubmitted')}</Badge>
                                                     )}
                                                 </TableCell>
                                             </TableRow>
@@ -383,7 +387,7 @@ export default function AffiliateDashboard() {
                     <CardHeader>
                         <CardTitle className="text-lg font-serif flex items-center gap-2">
                             <Clock className="w-5 h-5 text-luxury-gold" />
-                            Historique des Versements
+                            {t('affiliateDashboardPage.payoutHistory')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -391,17 +395,17 @@ export default function AffiliateDashboard() {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-zinc-950/50 border-white/5">
-                                        <TableHead className="text-gray-400">Date</TableHead>
-                                        <TableHead className="text-gray-400">Description</TableHead>
-                                        <TableHead className="text-gray-400">Statut</TableHead>
-                                        <TableHead className="text-right text-gray-400">Montant</TableHead>
+                                        <TableHead className="text-gray-400">{t('affiliateDashboardPage.colDate')}</TableHead>
+                                        <TableHead className="text-gray-400">{t('affiliateDashboardPage.colDescription')}</TableHead>
+                                        <TableHead className="text-gray-400">{t('affiliateDashboardPage.colStatus')}</TableHead>
+                                        <TableHead className="text-right text-gray-400">{t('affiliateDashboardPage.colAmount')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {pendingCommissions.map(c => (
                                         <TableRow key={c.id} className="border-white/5">
                                             <TableCell className="text-sm text-gray-500">
-                                                {new Date(c.date).toLocaleDateString('fr-CA')}
+                                                {new Date(c.date).toLocaleDateString(localeTag)}
                                             </TableCell>
                                             <TableCell className="font-medium text-white">{c.description}</TableCell>
                                             <TableCell>
@@ -409,7 +413,7 @@ export default function AffiliateDashboard() {
                                                     ? 'bg-green-500/20 text-green-400 border-green-500/30'
                                                     : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                                                 }>
-                                                    {c.status === 'paid' ? '✓ Payé' : '⏳ En attente'}
+                                                    {c.status === 'paid' ? `✓ ${t('affiliateDashboardPage.statusPaid')}` : `⏳ ${t('affiliateDashboardPage.statusPending')}`}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right font-mono font-bold text-luxury-gold">
@@ -427,25 +431,25 @@ export default function AffiliateDashboard() {
             {/* Projects Table (Vos Dossiers Clients) - keep existing */}
             <Card className="border-none shadow-none bg-transparent">
                 <CardHeader className="px-0">
-                    <CardTitle className="text-xl font-serif text-white">Vos Dossiers Clients</CardTitle>
+                    <CardTitle className="text-xl font-serif text-white">{t('affiliateDashboardPage.yourClientFiles')}</CardTitle>
                 </CardHeader>
                 <CardContent className="px-0">
                     <div className="rounded-md border border-white/5 bg-zinc-900/80 overflow-hidden">
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-zinc-950/50 border-white/5">
-                                    <TableHead className="text-gray-400">Dossier</TableHead>
-                                    <TableHead className="text-gray-400">Statut</TableHead>
-                                    <TableHead className="text-right text-gray-400">Montant Vente</TableHead>
-                                    <TableHead className="text-right text-luxury-gold font-bold">Votre Com.</TableHead>
-                                    <TableHead className="text-right text-gray-400">Commission</TableHead>
+                                    <TableHead className="text-gray-400">{t('affiliateDashboardPage.colFile')}</TableHead>
+                                    <TableHead className="text-gray-400">{t('affiliateDashboardPage.colStatus')}</TableHead>
+                                    <TableHead className="text-right text-gray-400">{t('affiliateDashboardPage.colSaleAmount')}</TableHead>
+                                    <TableHead className="text-right text-luxury-gold font-bold">{t('affiliateDashboardPage.colYourComm')}</TableHead>
+                                    <TableHead className="text-right text-gray-400">{t('affiliateDashboardPage.colCommissionStatus')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {projects.length === 0 ? (
                                     <TableRow className="border-white/5">
                                         <TableCell colSpan={5} className="h-24 text-center text-gray-500">
-                                            Aucun projet assigné pour le moment.
+                                            {t('affiliateDashboardPage.noAssignedProjects')}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -453,7 +457,7 @@ export default function AffiliateDashboard() {
                                         const price = Number(project.financials?.selling_price || project.budget || 0);
                                         const com = financialUtils.computeCommissionAmount(project);
                                         const rate = project.affiliate_commission_rate || 0;
-                                        const rateDisplay = project.affiliate_commission_type === 'fixed' ? 'Fixe' : `${rate}%`;
+                                        const rateDisplay = project.affiliate_commission_type === 'fixed' ? t('affiliateDashboardPage.rateFixed') : `${rate}%`;
                                         const isExported = project.financials?.commission_exported_to_expenses;
 
                                         return (
@@ -476,11 +480,11 @@ export default function AffiliateDashboard() {
                                                 <TableCell className="text-right">
                                                     {isExported ? (
                                                         <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">
-                                                            ⏳ En attente paiement
+                                                            ⏳ {t('affiliateDashboardPage.pendingPaymentBadge')}
                                                         </Badge>
                                                     ) : (
                                                         <Badge variant="outline" className="text-xs text-gray-500 border-white/10">
-                                                            Non soumis
+                                                            {t('affiliateDashboardPage.statusNotSubmitted')}
                                                         </Badge>
                                                     )}
                                                 </TableCell>

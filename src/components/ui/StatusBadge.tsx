@@ -1,22 +1,11 @@
+import { useTranslation } from 'react-i18next';
 
 interface StatusBadgeProps {
     status: string;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-    designing: 'Design',
-    '3d_model': 'Modèle 3D',
-    design_ready: 'Design prêt',
-    waiting_for_approval: 'Attente approbation',
-    design_modification: 'Modification',
-    approved_for_production: 'Approuvé',
-    production: 'Production',
-    delivery: 'Livraison',
-    completed: 'Complété',
-    cancelled: 'Annulé',
-};
-
 export const StatusBadge = ({ status }: StatusBadgeProps) => {
+    const { t } = useTranslation();
     const styles: Record<string, string> = {
         designing: 'bg-white/5 text-blue-300 border-blue-500/30 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]',
         '3d_model': 'bg-white/5 text-purple-300 border-purple-500/30 shadow-[inset_0_0_10px_rgba(168,85,247,0.1)]',
@@ -30,7 +19,7 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
         cancelled: 'bg-white/5 text-red-300 border-red-500/30 shadow-[inset_0_0_10px_rgba(239,68,68,0.1)]',
     };
 
-    const label = (STATUS_LABELS[status] || status.replace(/_/g, ' ')).toUpperCase();
+    const label = t(`projectStatus.${status}`, { defaultValue: status.replace(/_/g, ' ') }).toUpperCase();
 
     return (
         <span className={`px-2.5 py-0.5 rounded text-[10px] font-medium tracking-widest border ${styles[status] || 'bg-white/5 text-gray-400 border-white/10'}`}>

@@ -1,5 +1,5 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { apiClients } from '@/services/apiClients';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,8 @@ import { apiProjects } from '@/services/apiProjects';
 import type { Project } from '@/services/apiProjects';
 
 export default function ClientDetails() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { role } = useAuth();
@@ -49,16 +51,16 @@ export default function ClientDetails() {
 
     if (!client) return (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-            <p className="font-serif text-lg">Client introuvable</p>
+            <p className="font-serif text-lg">{t('clientDetailsPage.notFound')}</p>
             <Button variant="link" className="mt-2 text-luxury-gold" onClick={() => navigate('/dashboard/clients')}>
-                Retour à la liste
+                {t('clientDetailsPage.backToList')}
             </Button>
         </div>
     );
 
     const handleSendAccessLink = async () => {
         if (!client.email) {
-            toast({ title: "Erreur", description: "Ce client n'a pas d'adresse courriel.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('clientDetailsPage.noEmailError'), variant: "destructive" });
             return;
         }
         setIsSendingLink(true);
@@ -70,9 +72,9 @@ export default function ClientDetails() {
                 }
             });
             if (error) throw error;
-            toast({ title: "Lien envoyé", description: "Un lien d'accès a été envoyé à " + client.email });
+            toast({ title: t('clientDetailsPage.linkSent'), description: t('clientDetailsPage.linkSentDesc', { email: client.email }) });
         } catch (err: unknown) {
-            toast({ title: "Erreur", description: err instanceof Error ? err.message : 'Erreur', variant: "destructive" });
+            toast({ title: t('common.error'), description: err instanceof Error ? err.message : t('common.error'), variant: "destructive" });
         } finally {
             setIsSendingLink(false);
         }
@@ -82,12 +84,12 @@ export default function ClientDetails() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/clients')} className="text-muted-foreground hover:text-luxury-gold gap-1">
-                    <ArrowLeft className="w-4 h-4" /> Clients
+                    <ArrowLeft className="w-4 h-4" /> {t('clientDetailsPage.backClients')}
                 </Button>
                 <div>
                     <h1 className="text-3xl font-serif font-bold text-black dark:text-white tracking-wide">{client.full_name}</h1>
                     <div className="flex items-center gap-2 text-sm text-luxury-gold mt-1">
-                        <span className="uppercase text-[10px] tracking-[0.2em] font-medium">Profil Client</span>
+                        <span className="uppercase text-[10px] tracking-[0.2em] font-medium">{t('clientDetailsPage.profileBadge')}</span>
                     </div>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
@@ -98,21 +100,21 @@ export default function ClientDetails() {
                         onClick={handleSendAccessLink}
                         disabled={isSendingLink || !client.email}
                     >
-                        <LinkIcon className="w-4 h-4" /> {isSendingLink ? 'Envoi...' : 'Envoyer le lien portail'}
+                        <LinkIcon className="w-4 h-4" /> {isSendingLink ? t('clientDetailsPage.sending') : t('clientDetailsPage.sendPortalLink')}
                     </Button>
 
                     {role === 'admin' && (
                         <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="outline" size="sm" className="gap-2 border-luxury-gold/50 text-luxury-gold hover:bg-luxury-gold hover:text-black">
-                                    <KeyRound className="w-4 h-4" /> Réinitialiser le mot de passe
+                                    <KeyRound className="w-4 h-4" /> {t('clientDetailsPage.resetPassword')}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
                                 <DialogHeader>
-                                    <DialogTitle>Réinitialiser le mot de passe du client</DialogTitle>
+                                    <DialogTitle>{t('clientDetailsPage.resetPasswordTitle')}</DialogTitle>
                                     <DialogDescription>
-                                        Entrez un nouveau mot de passe pour {client.full_name}. Le client pourra se connecter immédiatement avec ce nouveau mot de passe.
+                                        {t('clientDetailsPage.resetPasswordDesc', { name: client.full_name })}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
@@ -120,7 +122,7 @@ export default function ClientDetails() {
                                         <Input
                                             id="new_password"
                                             type="password"
-                                            placeholder="Nouveau mot de passe (min. 6 caractères)..."
+                                            placeholder={t('clientDetailsPage.passwordPlaceholder')}
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
                                         />
@@ -134,24 +136,28 @@ export default function ClientDetails() {
                                             setIsUpdatingPassword(true);
                                             try {
                                                 await apiUsers.adminUpdatePassword(id, newPassword);
-                                                toast({ title: "Succès", description: "Mot de passe mis à jour." });
+                                                toast({ title: t('clientDetailsPage.passwordUpdated') });
                                                 setIsPasswordModalOpen(false);
                                                 setNewPassword('');
                                             } catch (err: unknown) {
-                                                toast({ title: "Erreur", description: err instanceof Error ? err.message : 'Erreur', variant: "destructive" });
+                                                toast({ title: t('common.error'), description: err instanceof Error ? err.message : t('common.error'), variant: "destructive" });
                                             } finally {
                                                 setIsUpdatingPassword(false);
                                             }
                                         }}
                                     >
-                                        {isUpdatingPassword ? 'Enregistrement...' : 'Enregistrer'}
+                                        {isUpdatingPassword ? t('clientDetailsPage.saving') : t('common.save')}
                                     </Button>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
                     )}
                     <Badge variant="outline" className={`border-luxury-gold/50 tracking-widest uppercase text-[10px] ${client.status === 'active' ? 'bg-luxury-gold/10 text-luxury-gold' : 'text-gray-500 dark:text-gray-400 border-black/10 dark:border-white/10'}`}>
-                        {client.status}
+                        {client.status === 'active'
+                            ? t('clientDetailsPage.statusActive')
+                            : client.status === 'inactive'
+                              ? t('clientDetailsPage.statusInactive')
+                              : client.status}
                     </Badge>
                 </div>
             </div>
@@ -159,32 +165,34 @@ export default function ClientDetails() {
             <div className="grid gap-6 md:grid-cols-3">
                 <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 hover:border-luxury-gold/30 dark:hover:border-luxury-gold/30 transition-colors duration-500 shadow-xl group">
                     <CardHeader className="pb-4 border-b border-black/5 dark:border-white/5">
-                        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">Informations de contact</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">{t('clientDetailsPage.contactInfo')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5 pt-6">
                         <div className="flex items-center gap-4 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
                             <div className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-luxury-gold/70 group-hover:bg-luxury-gold/10 group-hover:text-luxury-gold transition-colors">
                                 <Mail className="w-4 h-4" />
                             </div>
-                            <span className="font-medium text-gray-600 dark:text-gray-300">{client.email || 'N/A'}</span>
+                            <span className="font-medium text-gray-600 dark:text-gray-300">{client.email || t('clientDetailsPage.na')}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
                             <div className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-luxury-gold/70 group-hover:bg-luxury-gold/10 group-hover:text-luxury-gold transition-colors">
                                 <Phone className="w-4 h-4" />
                             </div>
-                            <span className="font-medium text-gray-600 dark:text-gray-300">{client.phone || 'N/A'}</span>
+                            <span className="font-medium text-gray-600 dark:text-gray-300">{client.phone || t('clientDetailsPage.na')}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
                             <div className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-luxury-gold/70 group-hover:bg-luxury-gold/10 group-hover:text-luxury-gold transition-colors">
                                 <MapPin className="w-4 h-4" />
                             </div>
-                            <span className="font-medium text-gray-600 dark:text-gray-300">Aucune adresse enregistrée</span>
+                            <span className="font-medium text-gray-600 dark:text-gray-300">{t('clientDetailsPage.noAddress')}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
                             <div className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-luxury-gold/70 group-hover:bg-luxury-gold/10 group-hover:text-luxury-gold transition-colors">
                                 <Calendar className="w-4 h-4" />
                             </div>
-                            <span className="font-medium text-gray-600 dark:text-gray-300">Créé le {new Date(client.created_at).toLocaleDateString()}</span>
+                            <span className="font-medium text-gray-600 dark:text-gray-300">
+                                {t('clientDetailsPage.createdOn', { date: new Date(client.created_at).toLocaleDateString(localeTag) })}
+                            </span>
                         </div>
                     </CardContent>
                 </Card>
@@ -192,10 +200,10 @@ export default function ClientDetails() {
                 <Card className="md:col-span-2 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-luxury-gold/5 to-transparent pointer-events-none" />
                     <CardHeader className="pb-4 border-b border-black/5 dark:border-white/5 relative z-10">
-                        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">Notes</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">{t('clientDetailsPage.notes')}</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6 relative z-10">
-                        <p className="text-sm text-gray-600 dark:text-gray-300 font-serif leading-relaxed italic">{client.notes || 'Aucune note privée.'}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 font-serif leading-relaxed italic">{client.notes || t('clientDetailsPage.noNotes')}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -203,12 +211,12 @@ export default function ClientDetails() {
             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/10 dark:border-white/10 shadow-xl">
                 <CardHeader className="pb-4 border-b border-black/5 dark:border-white/5">
                     <CardTitle className="text-xs font-semibold uppercase tracking-widest text-luxury-gold">
-                        Projets ({clientProjects.length})
+                        {t('clientDetailsPage.projectsTitle', { count: clientProjects.length })}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
                     {clientProjects.length === 0 ? (
-                        <p className="text-sm text-muted-foreground italic">Aucun projet pour ce client.</p>
+                        <p className="text-sm text-muted-foreground italic">{t('clientDetailsPage.noProjects')}</p>
                     ) : (
                         <div className="space-y-3">
                             {clientProjects.map((p: Project) => (

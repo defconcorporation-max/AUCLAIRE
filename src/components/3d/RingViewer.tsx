@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { OrbitControls } from "@react-three/drei"
 import * as THREE from "three"
 import type { RingConfig, ProfileType } from "@/context/RingContext"
+import { useTranslation } from "react-i18next"
 
 // --- ENVIRONMENT MAP ---
 const createGradientTexture = (width: number, height: number, stop1: string) => {
@@ -146,6 +147,7 @@ const BAND_MODES: { value: BandMode; label: string }[] = [
 ]
 
 export default function RingViewer({ config, intensity = 1.2 }: { config: RingConfig; intensity?: number }) {
+    const { t } = useTranslation()
     const [profile, setProfile] = useState<ProfileType>("Court")
     const [prongStyle, setProngStyle] = useState<string>("Round")
     const [bandMode, setBandMode] = useState<BandMode>('solitaire')
@@ -171,7 +173,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: RingCo
 
                 {/* Band Mode */}
                 <div className="bg-black/60 backdrop-blur-md px-3 py-2 rounded-full shadow-lg pointer-events-auto flex gap-2 border border-white/10">
-                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest py-1 pl-1">Style:</span>
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest py-1 pl-1">{t("studioPage.ringViewerStyle")}</span>
                     {BAND_MODES.map(m => (
                         <button key={m.value} onClick={() => setBandMode(m.value)}
                             className={`px-3 py-1 text-[10px] font-bold tracking-wider rounded-full transition-all ${bandMode === m.value ? 'bg-amber-600 text-white shadow-md' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
@@ -186,7 +188,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: RingCo
                     <div className="bg-black/60 backdrop-blur-md px-3 py-2 rounded-xl shadow-lg pointer-events-auto flex flex-wrap gap-x-4 gap-y-2 items-center border border-amber-500/30 animate-in fade-in slide-in-from-top-2 duration-300">
                         {/* Shape picker */}
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-amber-400/70 uppercase tracking-widest">Pavé:</span>
+                            <span className="text-[10px] font-bold text-amber-400/70 uppercase tracking-widest">{t("studioPage.ringViewerPave")}</span>
                             {PAVE_SHAPES.map(s => (
                                 <button key={s} onClick={() => setPaveShape(s)}
                                     className={`px-3 py-1 text-[10px] font-bold tracking-wider rounded-full transition-all ${paveShape === s ? 'bg-amber-600 text-white shadow-md' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
@@ -197,7 +199,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: RingCo
                         </div>
                         {/* Size slider */}
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-amber-400/70 uppercase tracking-widest whitespace-nowrap">Taille:</span>
+                            <span className="text-[10px] font-bold text-amber-400/70 uppercase tracking-widest whitespace-nowrap">{t("studioPage.ringViewerSize")}</span>
                             <input
                                 type="range"
                                 min={0.3}
@@ -214,7 +216,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: RingCo
 
                 {/* Shank Profile */}
                 <div className="bg-black/60 backdrop-blur-md px-3 py-2 rounded-full shadow-lg pointer-events-auto flex gap-2 border border-white/10">
-                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest py-1 pl-1">Shank:</span>
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest py-1 pl-1">{t("studioPage.ringViewerShank")}</span>
                     {PROFILES.map(p => (
                         <button key={p} onClick={() => setProfile(p as ProfileType)}
                             className={`px-3 py-1 text-[10px] font-bold tracking-wider rounded-full transition-all ${profile === p ? 'bg-neutral-100 text-neutral-900 shadow-md' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
@@ -227,7 +229,7 @@ export default function RingViewer({ config, intensity = 1.2 }: { config: RingCo
                 {/* Prongs — hidden in eternity mode */}
                 {bandMode === 'solitaire' && (
                     <div className="bg-black/60 backdrop-blur-md px-3 py-2 rounded-full shadow-lg pointer-events-auto flex gap-2 border border-white/10 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest py-1 pl-1">Prongs:</span>
+                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest py-1 pl-1">{t("studioPage.ringViewerProngs")}</span>
                         {["Round", "Claw", "Tab", "Double", "Compass"].map(s => (
                             <button key={s} onClick={() => setProngStyle(s)}
                                 className={`px-3 py-1 text-[10px] font-bold tracking-wider rounded-full transition-all ${prongStyle === s ? 'bg-rose-600 text-white shadow-md' : 'text-white/50 hover:text-white hover:bg-white/10'}`}

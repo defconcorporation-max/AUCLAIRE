@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { apiProjects } from '@/services/apiProjects';
 import { apiChats } from '@/services/apiChats';
@@ -19,6 +20,9 @@ const markAsRead = (projectId: string) => {
 };
 
 export default function MessageCenter() {
+    const { t } = useTranslation();
+    const statusLabel = (s: string | undefined) =>
+        s ? t(`projectStatus.${s}`, { defaultValue: s.replace(/_/g, ' ') }) : '';
     const { profile, role } = useAuth();
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -72,8 +76,8 @@ export default function MessageCenter() {
     return (
         <div className="space-y-4">
             <div>
-                <h1 className="text-3xl font-serif text-luxury-gold">Messages</h1>
-                <p className="text-muted-foreground mt-1">Canal de communication interne par projet</p>
+                <h1 className="text-3xl font-serif text-luxury-gold">{t('messagesPage.title')}</h1>
+                <p className="text-muted-foreground mt-1">{t('messagesPage.subtitle')}</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
@@ -85,14 +89,14 @@ export default function MessageCenter() {
                             <Input
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Rechercher un projet..."
+                                placeholder={t('messagesPage.searchPlaceholder')}
                                 className="pl-9 bg-white/5 border-white/10"
                             />
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto">
                         {filteredProjects.length === 0 ? (
-                            <div className="p-8 text-center text-muted-foreground text-sm">Aucun projet</div>
+                            <div className="p-8 text-center text-muted-foreground text-sm">{t('messagesPage.noProjects')}</div>
                         ) : (
                             filteredProjects.map(p => (
                                 <button
@@ -112,7 +116,7 @@ export default function MessageCenter() {
                                             )}
                                             <p className="font-serif text-sm font-medium truncate">{p.title}</p>
                                         </div>
-                                        <Badge variant="outline" className="text-[10px] shrink-0 ml-2">{p.status?.replace(/_/g, ' ')}</Badge>
+                                        <Badge variant="outline" className="text-[10px] shrink-0 ml-2">{statusLabel(p.status)}</Badge>
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-0.5 truncate">{p.client?.full_name}</p>
                                 </button>
@@ -139,8 +143,8 @@ export default function MessageCenter() {
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
                             <MessageCircle className="w-12 h-12 mb-4 opacity-20" />
-                            <p className="font-serif text-lg">Sélectionnez un projet</p>
-                            <p className="text-sm mt-1">pour voir et envoyer des messages</p>
+                            <p className="font-serif text-lg">{t('messagesPage.selectProject')}</p>
+                            <p className="text-sm mt-1">{t('messagesPage.selectProjectHint')}</p>
                         </div>
                     )}
                 </Card>

@@ -24,10 +24,12 @@ import { apiActivities } from '@/services/apiActivities';
 import { cn, formatCurrency } from "@/lib/utils";
 import { financialUtils } from "@/utils/financialUtils";
 import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 /** Données sensibles (CA, encaissements, marges) — jamais exposées aux manufacturiers */
 export default function DailyReportSheet() {
     const { role } = useAuth();
+    const { t, i18n } = useTranslation();
     const hideFinancialFlash = role === 'manufacturer';
 
     const [open, setOpen] = useState(false);
@@ -94,11 +96,11 @@ export default function DailyReportSheet() {
             paymentCount: activities.filter(act => 
                 act.action === 'financial' && act.details.includes('Paiement enregistré:') && isInRange(act.created_at)
             ).length,
-            label: timeframe === 'day' ? "aujourd'hui" : 
-                   timeframe === 'week' ? "7 derniers jours" : 
-                   timeframe === 'month' ? "30 derniers jours" : "tout l'historique"
+            label: timeframe === 'day' ? t('dailyReport.periodDay') :
+                   timeframe === 'week' ? t('dailyReport.periodWeek') :
+                   timeframe === 'month' ? t('dailyReport.periodMonth') : t('dailyReport.periodTotal')
         };
-    }, [invoices, expenses, activities, timeframe]);
+    }, [invoices, expenses, activities, timeframe, t]);
 
     if (hideFinancialFlash) {
         return null;
@@ -109,7 +111,7 @@ export default function DailyReportSheet() {
             <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 border-luxury-gold/30 hover:bg-luxury-gold/10 text-luxury-gold">
                     <Activity size={16} />
-                    <span className="hidden sm:inline">Rapport Flash</span>
+                    <span className="hidden sm:inline">{t('dailyReport.button')}</span>
                 </Button>
             </SheetTrigger>
             <SheetContent className="w-[400px] sm:w-[540px] bg-luxury-charcoal border-l-luxury-gold/20 overflow-hidden flex flex-col p-0 text-white">
@@ -119,31 +121,31 @@ export default function DailyReportSheet() {
                             <Calendar size={18} />
                             <span className="text-sm font-medium uppercase tracking-widest italic">{stats.label}</span>
                         </div>
-                        <SheetTitle className="text-3xl font-serif text-white">Business Snapshot</SheetTitle>
+                        <SheetTitle className="text-3xl font-serif text-white">{t('dailyReport.snapshotTitle')}</SheetTitle>
                         <SheetDescription className="text-zinc-400">
-                            Performance et activités sur la période sélectionnée.
+                            {t('dailyReport.snapshotSubtitle')}
                         </SheetDescription>
                     </SheetHeader>
 
                     {/* Timeframe Toggles */}
                     <div className="flex bg-luxury-black/50 p-1 rounded-lg border border-zinc-800 w-fit">
-                        {[
-                            { id: 'day', label: 'Jour' },
-                            { id: 'week', label: 'Semaine' },
-                            { id: 'month', label: 'Mois' },
-                            { id: 'total', label: 'Total' }
-                        ].map((t) => (
+                        {([
+                            { id: 'day' as const, labelKey: 'dailyReport.day' },
+                            { id: 'week' as const, labelKey: 'dailyReport.week' },
+                            { id: 'month' as const, labelKey: 'dailyReport.month' },
+                            { id: 'total' as const, labelKey: 'dailyReport.total' }
+                        ]).map((period) => (
                             <button
-                                key={t.id}
-                                onClick={() => setTimeframe(t.id as 'day' | 'week' | 'month' | 'total')}
+                                key={period.id}
+                                onClick={() => setTimeframe(period.id)}
                                 className={cn(
                                     "px-4 py-1.5 text-xs font-medium rounded-md transition-all",
-                                    timeframe === t.id 
+                                    timeframe === period.id 
                                         ? "bg-luxury-gold text-luxury-black shadow-lg" 
                                         : "text-zinc-500 hover:text-zinc-300"
                                 )}
                             >
-                                {t.label}
+                                {t(period.labelKey)}
                             </button>
                         ))}
                     </div>
@@ -155,21 +157,21 @@ export default function DailyReportSheet() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-4 rounded-xl bg-luxury-black/50 border border-zinc-800">
                                 <div className="text-zinc-500 text-xs uppercase tracking-wider mb-1 flex items-center gap-1">
-                                    <DollarSign size={12} /> Facturé
+                                    <DollarSign size={12} /> {t('dailyReport.invoiced')}
                                 </div>
                                 <div className="text-xl font-bold text-white">{formatCurrency(stats.invoiced)}</div>
-                                <div className="text-[10px] text-zinc-500 mt-1">{stats.invoiceCount} factures</div>
+                                <div className="text-[10px] text-zinc-500 mt-1">{t('dailyReport.invoicesCount', { count: stats.invoiceCount })}</div>
                             </div>
                             <div className="p-4 rounded-xl bg-luxury-black/50 border border-zinc-800">
                                 <div className="text-green-500 text-xs uppercase tracking-wider mb-1 flex items-center gap-1">
-                                    <TrendingUp size={12} /> Encaissé
+                                    <TrendingUp size={12} /> {t('dailyReport.collected')}
                                 </div>
                                 <div className="text-xl font-bold text-green-400">{formatCurrency(stats.collected)}</div>
-                                <div className="text-[10px] text-zinc-500 mt-1">{stats.paymentCount} paiements</div>
+                                <div className="text-[10px] text-zinc-500 mt-1">{t('dailyReport.paymentsCount', { count: stats.paymentCount })}</div>
                             </div>
                             <div className="p-4 rounded-xl bg-luxury-black/50 border border-zinc-800">
                                 <div className="text-red-500 text-xs uppercase tracking-wider mb-1 flex items-center gap-1">
-                                    <DollarSign size={12} /> Dépensé
+                                    <DollarSign size={12} /> {t('dailyReport.spent')}
                                 </div>
                                 <div className="text-xl font-bold text-red-400">{formatCurrency(stats.spent)}</div>
                             </div>
@@ -178,7 +180,7 @@ export default function DailyReportSheet() {
                                 stats.profit >= 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20"
                             )}>
                                 <div className="text-xs uppercase tracking-wider mb-1 flex items-center gap-1 text-zinc-400">
-                                    Profit Net (Cash)
+                                    {t('dailyReport.netProfit')}
                                 </div>
                                 <div className={cn(
                                     "text-xl font-bold",
@@ -193,13 +195,13 @@ export default function DailyReportSheet() {
                         <div className="space-y-4">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-luxury-gold flex items-center gap-2">
                                 <Briefcase size={16} />
-                                Historique des Statuts
+                                {t('dailyReport.statusHistory')}
                             </h4>
                             
                             {stats.advancements.length === 0 ? (
                                 <div className="py-8 text-center border-dashed border-zinc-800 border rounded-xl">
                                     <Clock className="mx-auto mb-2 text-zinc-700" size={24} />
-                                    <p className="text-sm text-zinc-500">Aucun changement de statut sur cette période.</p>
+                                    <p className="text-sm text-zinc-500">{t('dailyReport.noStatusChanges')}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
@@ -214,11 +216,11 @@ export default function DailyReportSheet() {
                                                         {act.details.split('by')[0].trim()}
                                                     </p>
                                                     <span className="text-[10px] text-zinc-600 whitespace-nowrap ml-2">
-                                                        {new Date(act.created_at).toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}
+                                                        {new Date(act.created_at).toLocaleDateString(i18n.language?.startsWith('en') ? 'en-CA' : 'fr-CA', { month: 'short', day: 'numeric' })}
                                                     </span>
                                                 </div>
                                                 <p className="text-xs text-zinc-500">
-                                                    Par <span className="text-zinc-400 font-medium">{act.user_name}</span>
+                                                    {t('dailyReport.byAuthor')} <span className="text-zinc-400 font-medium">{act.user_name}</span>
                                                 </p>
                                             </div>
                                         </div>
@@ -229,7 +231,7 @@ export default function DailyReportSheet() {
 
                         <div className="p-4 rounded-lg bg-luxury-gold/5 border border-luxury-gold/10">
                             <p className="text-[11px] text-luxury-gold/70 italic leading-relaxed">
-                                * Les données affichées correspondent à la période sélectionnée ({stats.label}). Le profit correspond au cash flow net encaissé.
+                                {t('dailyReport.footnote', { period: stats.label })}
                             </p>
                         </div>
                     </div>
@@ -240,7 +242,7 @@ export default function DailyReportSheet() {
                         className="w-full bg-luxury-gold hover:bg-luxury-gold/90 text-luxury-black font-bold uppercase tracking-widest"
                         onClick={() => setOpen(false)}
                     >
-                        Quitter le Rapport
+                        {t('dailyReport.close')}
                     </Button>
                 </div>
             </SheetContent>

@@ -6,8 +6,10 @@ import { UserRole } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { apiUsers } from "@/services/apiUsers";
 import { User, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function RoleSwitcher() {
+    const { t } = useTranslation();
     const {
         role,
         switchRole,
@@ -36,7 +38,7 @@ export function RoleSwitcher() {
     return (
         <div className="fixed bottom-4 right-4 bg-black/90 border border-white/10 rounded-xl shadow-2xl p-2.5 flex flex-col gap-2 z-50 backdrop-blur-md min-w-[260px]">
             <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Demo Mode</span>
+                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">{t('debugRoleSwitcher.demoMode')}</span>
             </div>
 
 
@@ -50,7 +52,7 @@ export function RoleSwitcher() {
                             className={`text-xs h-7 px-2.5 ${role === r ? "bg-luxury-gold text-black border-luxury-gold" : "border-white/15 text-white/60 hover:text-white hover:border-white/30"}`}
                             onClick={() => switchRole(r)}
                         >
-                            {r.charAt(0).toUpperCase() + r.slice(1)}
+                            {t(`usersListPage.role_${r}` as 'usersListPage.role_admin')}
                         </Button>
                     ))}
                 </div>
@@ -61,19 +63,19 @@ export function RoleSwitcher() {
                 <div className="border-t border-white/10 pt-2">
                     <div className="flex items-center justify-between mb-1.5">
                         <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest flex items-center gap-1">
-                            <User className="w-3 h-3" /> View as
+                            <User className="w-3 h-3" /> {t('debugRoleSwitcher.viewAs')}
                         </span>
                         {impersonatedProfile && (
                             <button
                                 onClick={stopImpersonating}
                                 className="text-[9px] text-red-400 hover:text-red-300 flex items-center gap-0.5"
                             >
-                                <X className="w-2.5 h-2.5" /> Reset
+                                <X className="w-2.5 h-2.5" /> {t('debugRoleSwitcher.reset')}
                             </button>
                         )}
                     </div>
                     {filteredUsers.length === 0 ? (
-                        <p className="text-[10px] text-white/30 italic">No {role} users found.</p>
+                        <p className="text-[10px] text-white/30 italic">{t('debugRoleSwitcher.noUsersForRole', { role: t(`usersListPage.role_${role}` as 'usersListPage.role_admin') })}</p>
                     ) : (
                         <div className="flex flex-col gap-1">
                             {filteredUsers.map((u: UserProfile) => (

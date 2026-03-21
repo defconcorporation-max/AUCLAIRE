@@ -16,8 +16,10 @@ import { useLocation } from 'react-router-dom';
 import { apiFeedback } from '@/services/apiFeedback';
 import { uploadImage } from '@/utils/storage';
 import { toast } from '@/components/ui/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function FeedbackWidget() {
+    const { t } = useTranslation();
     const { profile, user } = useAuth();
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
@@ -55,8 +57,8 @@ export default function FeedbackWidget() {
         } catch (error) {
             console.error('Upload failed', error);
             toast({
-                title: "Upload Failed",
-                description: "Could not upload screenshot.",
+                title: t('betaFeedback.uploadFailTitle'),
+                description: t('betaFeedback.uploadFailDesc'),
                 variant: "destructive"
             });
         } finally {
@@ -75,15 +77,15 @@ export default function FeedbackWidget() {
         try {
             await apiFeedback.submit({
                 user_id: user?.id || '',
-                user_name: profile?.full_name || 'Anonymous',
+                user_name: profile?.full_name || t('betaFeedback.anonymous'),
                 page_url: window.location.href,
                 comment,
                 screenshots
             });
 
             toast({
-                title: "Feedback sent!",
-                description: "Thank you for helping us improve.",
+                title: t('betaFeedback.sentTitle'),
+                description: t('betaFeedback.sentDesc'),
             });
             setComment('');
             setScreenshots([]);
@@ -91,8 +93,8 @@ export default function FeedbackWidget() {
         } catch (error) {
             console.error('Submission failed', error);
             toast({
-                title: "Error",
-                description: "Failed to send feedback. Please try again.",
+                title: t('betaFeedback.errorTitle'),
+                description: t('betaFeedback.errorDesc'),
                 variant: "destructive"
             });
         } finally {
@@ -106,7 +108,7 @@ export default function FeedbackWidget() {
                 <div className="px-4 py-2">
                     <button className="w-full aspect-square rounded-xl border border-dashed border-luxury-gold/30 bg-luxury-gold/5 hover:bg-luxury-gold/10 hover:border-luxury-gold transition-all duration-300 flex flex-col items-center justify-center gap-2 group p-2">
                         <MessageSquarePlus className="w-5 h-5 text-luxury-gold group-hover:scale-110 transition-transform" />
-                        <span className="text-[10px] font-medium text-luxury-gold uppercase tracking-wider text-center">Beta Feedback</span>
+                        <span className="text-[10px] font-medium text-luxury-gold uppercase tracking-wider text-center">{t('betaFeedback.widgetButton')}</span>
                     </button>
                 </div>
             </DialogTrigger>
@@ -114,18 +116,18 @@ export default function FeedbackWidget() {
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-luxury-gold">
                         <MessageSquarePlus className="w-5 h-5" />
-                        Beta Testing Feedback
+                        {t('betaFeedback.dialogTitle')}
                     </DialogTitle>
                     <DialogDescription>
-                        Help us improve Auclaire. Report a bug or suggest a feature.
-                        Current page: <span className="text-xs font-mono text-gray-500 truncate block">{location.pathname}</span>
+                        {t('betaFeedback.dialogDesc')}{' '}
+                        {t('betaFeedback.currentPage')} <span className="text-xs font-mono text-gray-500 truncate block">{location.pathname}</span>
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Textarea
-                            placeholder="Describe your feedback... (You can paste screenshots here directly)"
+                            placeholder={t('betaFeedback.textareaPlaceholder')}
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             onPaste={handlePaste}
@@ -136,10 +138,10 @@ export default function FeedbackWidget() {
 
                     <div className="space-y-2">
                         <div className="flex items-center justify-between overflow-hidden">
-                            <span className="text-sm font-medium">Screenshots ({screenshots.length})</span>
+                            <span className="text-sm font-medium">{t('betaFeedback.screenshotsHeading', { count: screenshots.length })}</span>
                             <label className="cursor-pointer text-xs text-luxury-gold hover:underline flex items-center gap-1">
                                 <ImageIcon className="w-3 h-3" />
-                                Attach Files
+                                {t('betaFeedback.attachFiles')}
                                 <input type="file" className="hidden" accept="image/*" multiple onChange={handleFileChange} disabled={isSubmitting || isUploading} />
                             </label>
                         </div>
@@ -148,7 +150,7 @@ export default function FeedbackWidget() {
                             <div className="grid grid-cols-4 gap-2">
                                 {screenshots.map((url, i) => (
                                     <div key={i} className="relative aspect-square rounded-md overflow-hidden border border-black/10 dark:border-white/10 group">
-                                        <img src={url} alt="Screenshot" className="w-full h-full object-cover" />
+                                        <img src={url} alt={t('betaFeedback.screenshotAlt')} className="w-full h-full object-cover" />
                                         <button
                                             onClick={() => removeScreenshot(i)}
                                             className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -162,7 +164,7 @@ export default function FeedbackWidget() {
                         {isUploading && (
                             <div className="flex items-center gap-2 text-xs text-gray-500">
                                 <Loader2 className="w-3 h-3 animate-spin" />
-                                Uploading screenshot...
+                                {t('betaFeedback.uploadingScreenshot')}
                             </div>
                         )}
                     </div>
@@ -175,7 +177,7 @@ export default function FeedbackWidget() {
                         className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black gap-2"
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        Submit Feedback
+                        {t('betaFeedback.submitButton')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

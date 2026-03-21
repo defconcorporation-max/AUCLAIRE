@@ -1,6 +1,7 @@
 import { UserProfile } from '@/services/apiUsers';
 import { useParams, useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiProjects, ProjectStatus, type Project, type QualityIssue } from '@/services/apiProjects';
 import { apiExpenses } from '@/services/apiExpenses';
@@ -70,7 +71,8 @@ export default function ProjectDetails() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { user, role } = useAuth();
- // Get current role and user
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('fr') ? 'fr-CA' : 'en-CA';
     const [isAddingRender, setIsAddingRender] = useState(false);
     const [isAddingSketch, setIsAddingSketch] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -105,22 +107,22 @@ export default function ProjectDetails() {
                     }
                 });
                 if (error) throw error;
-                alert(`Portal access link successfully sent to ${project.client.email}!`);
+                alert(t('projectDetailsPage.shareSentEmail', { email: project.client.email }));
             } else {
                 // If they DON'T have an email, copy the anonymous share link to clipboard
                 const token = project.share_token;
                 if (!token) {
-                    alert("This project doesn't have a share token yet. Please contact admin.");
+                    alert(t('projectDetailsPage.shareNoToken'));
                     return;
                 }
                 const shareUrl = `${window.location.origin}/shared/${token}`;
                 await navigator.clipboard.writeText(shareUrl);
-                alert("Client has no email. A direct access link has been copied to your clipboard. You can paste it in a message (WhatsApp, SMS, etc) to send to them.");
+                alert(t('projectDetailsPage.shareNoEmailCopied'));
             }
         } catch (err) {
             console.error(err);
             const message = err instanceof Error ? err.message : String(err);
-            alert("Failed: " + message);
+            alert(t('projectDetailsPage.shareFailed', { message }));
         } finally {
             setIsSharing(false);
         }
@@ -181,11 +183,11 @@ export default function ProjectDetails() {
             let changed = false;
 
             if (hasLegacyMfg) {
-                newItems.push({ id: crypto.randomUUID(), detail: 'Manufacturing Cost', amount: project.financials.supplier_cost! });
+                newItems.push({ id: crypto.randomUUID(), detail: t('projectDetailsPage.legacyDetail_manufacturingCost'), amount: project.financials.supplier_cost! });
                 changed = true;
             }
             if (hasLegacyAdd) {
-                newItems.push({ id: crypto.randomUUID(), detail: 'Additional Expense', amount: project.financials.additional_expense! });
+                newItems.push({ id: crypto.randomUUID(), detail: t('projectDetailsPage.legacyDetail_additionalExpense'), amount: project.financials.additional_expense! });
                 changed = true;
             }
 
@@ -201,17 +203,17 @@ export default function ProjectDetails() {
                         user_id: user?.id || 'admin',
                         user_name: user?.user_metadata?.full_name || 'System',
                         action: 'update',
-                        details: `Auto-migrated legacy costs to dynamic line items.`
+                        details: t('projectDetailsPage.activity_autoMigratedLegacyCosts')
                     });
                 });
             }
         }
-    }, [project, queryClient, user]);
+    }, [project, queryClient, user, t]);
 
-    if (!project) return <div>Project not found</div>;
+    if (!project) return <div>{t('projectDetailsPage.notFound')}</div>;
 
     const handleStatusUpdate = (status: ProjectStatus) => {
-        const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || 'Utilisateur' } : undefined;
+        const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || t('common.user') } : undefined;
         apiProjects.updateStatus(project.id, status, userContext)
             .then(async () => {
                 queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -223,8 +225,8 @@ export default function ProjectDetails() {
                     if (project.client_id) {
                         apiNotifications.create({
                             user_id: project.client_id,
-                            title: 'Design Ready for Review',
-                            message: `Your project "${project.title}" has a new 3D design ready for your approval.`,
+                            title: t('projectDetailsPage.notif_designReady_client_title'),
+                            message: t('projectDetailsPage.notif_designReady_client_msg', { title: project.title }),
                             type: 'info',
                             link: `/dashboard/projects/${project.id}`
                         }).then(() => console.log('[Notifications] Client notification created'))
@@ -242,8 +244,8 @@ export default function ProjectDetails() {
                             try {
                                 await apiNotifications.create({
                                     user_id: userToNotify.id,
-                                    title: 'Design Ready for Review',
-                                    message: `The project "${project.title}" is Design Ready and awaits client review.`,
+                                    title: t('projectDetailsPage.notif_designReady_staff_title'),
+                                    message: t('projectDetailsPage.notif_designReady_staff_msg', { title: project.title }),
                                     type: 'info',
                                     link: `/dashboard/projects/${project.id}`
                                 });
@@ -256,18 +258,19 @@ export default function ProjectDetails() {
                             const emailAddress = userToNotify.email;
                             if (emailAddress) {
                                 console.log(`[Notifications] Sending email to ${emailAddress}...`);
+                                const projectUrl = `${window.location.origin}/dashboard/projects/${project.id}`;
                                 supabase.functions.invoke('send-email', {
                                     body: {
                                         to: emailAddress,
-                                        subject: `Design Ready: ${project.title}`,
+                                        subject: t('projectDetailsPage.emailSubject_designReady', { title: project.title }),
                                         html: `
                                             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                                                <h2 style="color: #6a5100;">Design Ready for Review</h2>
-                                                <p>Hello ${userToNotify.full_name},</p>
-                                                <p>The manufacturing team has marked the project <strong>"${project.title}"</strong> as Design Ready.</p>
-                                                <p>Please review the design files and coordinate with the client for approval.</p>
+                                                <h2 style="color: #6a5100;">${t('projectDetailsPage.emailHtml_designReady_h2')}</h2>
+                                                <p>${t('projectDetailsPage.emailHtml_hello', { name: userToNotify.full_name })}</p>
+                                                <p>${t('projectDetailsPage.emailHtml_designReady_p1', { title: project.title })}</p>
+                                                <p>${t('projectDetailsPage.emailHtml_designReady_p2')}</p>
                                                 <br/>
-                                                <a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color: #6a5100; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Project</a>
+                                                <a href="${projectUrl}" style="background-color: #6a5100; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">${t('projectDetailsPage.emailHtml_viewProject')}</a>
                                             </div>
                                         `
                                     }
@@ -285,8 +288,8 @@ export default function ProjectDetails() {
                     if (project.client_id) {
                         apiNotifications.create({
                             user_id: project.client_id,
-                            title: 'Production Started',
-                            message: `Great news! "${project.title}" is now in production.`,
+                            title: t('projectDetailsPage.notif_production_client_title'),
+                            message: t('projectDetailsPage.notif_production_client_msg', { title: project.title }),
                             type: 'success',
                             link: `/dashboard/projects/${project.id}`
                         });
@@ -294,11 +297,16 @@ export default function ProjectDetails() {
                     // Email secretaries & admins
                     try {
                         const allUsers = await apiUsers.getAll();
+                        const projectUrl = `${window.location.origin}/dashboard/projects/${project.id}`;
                         allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
                             const email = u.email;
                             if (email) {
                                 supabase.functions.invoke('send-email', {
-                                    body: { to: email, subject: `Production Started: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Production Started</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has entered production.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
+                                    body: {
+                                        to: email,
+                                        subject: t('projectDetailsPage.emailSubject_productionStarted', { title: project.title }),
+                                        html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">${t('projectDetailsPage.emailHtml_production_h2')}</h2><p>${t('projectDetailsPage.emailHtml_hello', { name: u.full_name })}</p><p>${t('projectDetailsPage.emailHtml_production_p', { title: project.title })}</p><a href="${projectUrl}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">${t('projectDetailsPage.emailHtml_viewProject')}</a></div>`
+                                    }
                                 }).catch(err => console.error("Email failed:", err));
                             }
                         });
@@ -308,19 +316,24 @@ export default function ProjectDetails() {
                     if (project.client_id) {
                         apiNotifications.create({
                             user_id: project.client_id,
-                            title: 'Order Shipped',
-                            message: `Your project "${project.title}" is on its way!`,
+                            title: t('projectDetailsPage.notif_delivery_client_title'),
+                            message: t('projectDetailsPage.notif_delivery_client_msg', { title: project.title }),
                             type: 'success',
                             link: `/dashboard/projects/${project.id}`
                         });
                     }
                     try {
                         const allUsers = await apiUsers.getAll();
+                        const projectUrl = `${window.location.origin}/dashboard/projects/${project.id}`;
                         allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
                             const email = u.email;
                             if (email) {
                                 supabase.functions.invoke('send-email', {
-                                    body: { to: email, subject: `Shipped: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Order Shipped</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has been shipped for delivery.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
+                                    body: {
+                                        to: email,
+                                        subject: t('projectDetailsPage.emailSubject_shipped', { title: project.title }),
+                                        html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">${t('projectDetailsPage.emailHtml_shipped_h2')}</h2><p>${t('projectDetailsPage.emailHtml_hello', { name: u.full_name })}</p><p>${t('projectDetailsPage.emailHtml_shipped_p', { title: project.title })}</p><a href="${projectUrl}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">${t('projectDetailsPage.emailHtml_viewProject')}</a></div>`
+                                    }
                                 }).catch(err => console.error("Email failed:", err));
                             }
                         });
@@ -330,19 +343,24 @@ export default function ProjectDetails() {
                     if (project.client_id) {
                         apiNotifications.create({
                             user_id: project.client_id,
-                            title: 'Project Completed',
-                            message: `Your project "${project.title}" is complete! Thank you for choosing Auclaire.`,
+                            title: t('projectDetailsPage.notif_completed_client_title'),
+                            message: t('projectDetailsPage.notif_completed_client_msg', { title: project.title }),
                             type: 'success',
                             link: `/dashboard/projects/${project.id}`
                         });
                     }
                     try {
                         const allUsers = await apiUsers.getAll();
+                        const projectUrl = `${window.location.origin}/dashboard/projects/${project.id}`;
                         allUsers.filter(u => u.role === 'secretary' || u.role === 'admin').forEach(u => {
                             const email = u.email;
                             if (email) {
                                 supabase.functions.invoke('send-email', {
-                                    body: { to: email, subject: `Completed: ${project.title}`, html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">Project Completed 🎉</h2><p>Hello ${u.full_name},</p><p>The project <strong>"${project.title}"</strong> has been marked as completed.</p><a href="${window.location.origin}/dashboard/projects/${project.id}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View Project</a></div>` }
+                                    body: {
+                                        to: email,
+                                        subject: t('projectDetailsPage.emailSubject_completed', { title: project.title }),
+                                        html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#6a5100;">${t('projectDetailsPage.emailHtml_completed_h2')}</h2><p>${t('projectDetailsPage.emailHtml_hello', { name: u.full_name })}</p><p>${t('projectDetailsPage.emailHtml_completed_p', { title: project.title })}</p><a href="${projectUrl}" style="background-color:#6a5100;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">${t('projectDetailsPage.emailHtml_viewProject')}</a></div>`
+                                    }
                                 }).catch(err => console.error("Email failed:", err));
                             }
                         });
@@ -351,8 +369,8 @@ export default function ProjectDetails() {
                 } else if (status === 'design_modification' && project.manufacturer_id) {
                     apiNotifications.create({
                         user_id: project.manufacturer_id,
-                        title: 'Modifications Requested',
-                        message: `Changes have been requested on "${project.title}".`,
+                        title: t('projectDetailsPage.notif_modManufacturer_title'),
+                        message: t('projectDetailsPage.notif_modManufacturer_msg', { title: project.title }),
                         type: 'warning',
                         link: `/dashboard/projects/${project.id}`
                     });
@@ -377,7 +395,7 @@ export default function ProjectDetails() {
                     design_versions: newVersions,
                     client_notes: role === 'client' ? modNotes : project.stage_details?.client_notes
                 });
-                toast({ title: "Modification updated." });
+                toast({ title: t('projectDetailsPage.toastModificationUpdated') });
             } else {
                 // NEW MOD REQUEST
                 const newVersion = {
@@ -395,7 +413,7 @@ export default function ProjectDetails() {
                     client_notes: role === 'client' ? modNotes : project.stage_details?.client_notes
                 });
                 await handleStatusUpdate('design_modification');
-                toast({ title: "Modifications requested & design archived." });
+                toast({ title: t('projectDetailsPage.toastModificationsRequested') });
             }
 
             setIsModDialogOpen(false);
@@ -403,7 +421,7 @@ export default function ProjectDetails() {
             setEditingModVersion(null);
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         } catch {
-            toast({ title: "Failed to save modification", variant: "destructive" });
+            toast({ title: t('projectDetailsPage.toastModificationFailed'), variant: "destructive" });
         }
     };
 
@@ -416,7 +434,7 @@ export default function ProjectDetails() {
             (project.financials?.customs_fee || 0) +
             dynamicCosts;
 
-        if (confirm(`Voulez-vous déverrouiller les coûts de ce projet ?\n\nCela supprimera la dépense de production de $${totalCost.toLocaleString()} associée dans le grand livre pour éviter les doublons.`)) {
+        if (confirm(t('projectDetailsPage.unlockCostsConfirm', { amount: formatCurrency(totalCost) }))) {
             try {
                 // 1. Delete associated expense
                 await apiExpenses.deleteByProjectAndCategory(project.id, 'material');
@@ -432,20 +450,20 @@ export default function ProjectDetails() {
                     user_id: user?.id || 'admin',
                     user_name: user?.user_metadata?.full_name || 'Admin',
                     action: 'update',
-                    details: `Unlocked production costs. Removed $${totalCost.toLocaleString()} from expenses.`
+                    details: t('projectDetailsPage.activity_unlockCostsDetails', { amount: formatCurrency(totalCost) })
                 });
 
                 queryClient.invalidateQueries({ queryKey: ['projects'] });
                 queryClient.invalidateQueries({ queryKey: ['expenses'] });
-                toast({ title: "Coûts déverrouillés", description: "L'ancienne dépense a été retirée et les coûts sont modifiables." });
+                toast({ title: t('projectDetailsPage.toastCostsUnlocked'), description: t('projectDetailsPage.toastCostsUnlockedDesc') });
             } catch (err: any) {
-                toast({ title: "Erreur", description: err.message, variant: "destructive" });
+                toast({ title: t('common.error'), description: err.message, variant: "destructive" });
             }
         }
     };
 
     const handleDeleteMod = async (verNumber: number) => {
-        if (!confirm("Are you sure you want to delete this historical iteration? This cannot be undone.")) return;
+        if (!confirm(t('projectDetailsPage.confirmDeleteIteration'))) return;
         
         try {
             const currentVersions = project.stage_details?.design_versions || [];
@@ -454,10 +472,10 @@ export default function ProjectDetails() {
             await apiProjects.updateDetails(project.id, {
                 design_versions: newVersions
             });
-            toast({ title: "Iteration deleted." });
+            toast({ title: t('projectDetailsPage.toastIterationDeleted') });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         } catch {
-            toast({ title: "Delete failed", variant: "destructive" });
+            toast({ title: t('projectDetailsPage.toastDeleteFailed'), variant: "destructive" });
         }
     };
 
@@ -478,7 +496,7 @@ export default function ProjectDetails() {
 
         // Simple size check before compression processing (cancel if > 5MB raw)
         if (file.size > 5 * 1024 * 1024) {
-            setUploadError("Image too large. Please pick something under 5MB.");
+            setUploadError(t('projectDetailsPage.uploadTooLarge'));
             return;
         }
 
@@ -492,13 +510,13 @@ export default function ProjectDetails() {
                     user_id: user?.id || 'admin',
                     user_name: user?.user_metadata?.full_name || 'User',
                     action: 'update',
-                    details: 'Added a new sketch/reference image'
+                    details: t('projectDetailsPage.activity_sketchAdded')
                 });
                 if (project.client_id) {
                     apiNotifications.create({
                         user_id: 'admin',
-                        title: 'New Sketch Uploaded',
-                        message: `A new sketch has been added to "${project.title}".`,
+                        title: t('projectDetailsPage.notif_sketchUploaded_title'),
+                        message: t('projectDetailsPage.notif_sketchUploaded_msg', { title: project.title }),
                         type: 'info',
                         link: `/dashboard/projects/${project.id}`
                     });
@@ -513,14 +531,14 @@ export default function ProjectDetails() {
                     user_id: user?.id || 'admin',
                     user_name: user?.user_metadata?.full_name || 'User',
                     action: 'update',
-                    details: 'Uploaded a new 3D rendering'
+                    details: t('projectDetailsPage.activity_renderUploaded')
                 });
                 // Notify Client if Renders are uploaded (optional, but good)
                 if (project.client_id && project.status === 'design_ready') {
                     apiNotifications.create({
                         user_id: project.client_id,
-                        title: 'New 3D Render Uploaded',
-                        message: `A new 3D rendering has been added to "${project.title}".`,
+                        title: t('projectDetailsPage.notif_renderUploaded_title'),
+                        message: t('projectDetailsPage.notif_renderUploaded_msg', { title: project.title }),
                         type: 'info',
                         link: `/dashboard/projects/${project.id}`
                     });
@@ -528,8 +546,8 @@ export default function ProjectDetails() {
                 if (project.client_id) {
                     apiNotifications.create({
                         user_id: 'admin',
-                        title: 'New 3D Render Uploaded',
-                        message: `A new 3D rendering has been added to "${project.title}".`,
+                        title: t('projectDetailsPage.notif_renderUploaded_title'),
+                        message: t('projectDetailsPage.notif_renderUploaded_msg', { title: project.title }),
                         type: 'info',
                         link: `/dashboard/projects/${project.id}`
                     });
@@ -540,10 +558,10 @@ export default function ProjectDetails() {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         } catch (error) {
             console.error("Upload failed", error);
-            setUploadError("Failed to save. Storage limit likely reached.");
+            setUploadError(t('projectDetailsPage.uploadSaveFailed'));
             // If checking persistence quota specifically
             if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-                setUploadError("Demo Limit: Browser storage full. Delete some items.");
+                setUploadError(t('projectDetailsPage.uploadQuotaDemo'));
             }
         }
     };
@@ -565,13 +583,13 @@ export default function ProjectDetails() {
                                 className="gap-2 bg-luxury-gold/10 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-colors border border-luxury-gold/50"
                             >
                                 <LinkIcon className="w-4 h-4" />
-                                {isSharing ? "Processing..." : "Share Link"}
+                                {isSharing ? t('projectDetailsPage.shareProcessing') : t('projectDetailsPage.shareLink')}
                             </Button>
                         )}
                         {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
                             <Button variant="outline" size="sm" onClick={() => setIsEditingClient(true)} className="gap-2 border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10">
                                 <Pencil className="w-4 h-4" />
-                                Edit Client
+                                {t('projectDetailsPage.editClient')}
                             </Button>
                         )}
                         {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
@@ -582,7 +600,7 @@ export default function ProjectDetails() {
                                 className="gap-2 bg-luxury-gold/10 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-colors border border-luxury-gold/50"
                             >
                                 <FileText className="w-4 h-4" />
-                                Soumission
+                                {t('projectDetailsPage.quoteButton')}
                             </Button>
                         )}
                         <h1 className="text-3xl font-serif font-bold text-black dark:text-white tracking-wide ml-2">
@@ -593,7 +611,7 @@ export default function ProjectDetails() {
                             <User className="w-4 h-4 text-luxury-gold/70" />
                             {!isEditingClient ? (
                                 <div className="flex items-center gap-2">
-                                    <span>Client: {project.client?.full_name}</span>
+                                    <span>{t('projectDetailsPage.clientLabel')} {project.client?.full_name}</span>
                                     {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
                                         <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
                                             setSelectedClientId(project.client_id);
@@ -623,7 +641,7 @@ export default function ProjectDetails() {
                                                     user_id: user?.id || 'admin',
                                                     user_name: user?.user_metadata?.full_name || 'Admin',
                                                     action: 'update',
-                                                    details: `Reassigned client to ${newClient?.full_name || 'Unknown'}`
+                                                    details: t('projectDetailsPage.activity_reassignedClient', { name: newClient?.full_name || t('projectDetailsPage.activity_unknownClient') })
                                                 });
                                                 queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                 setIsEditingClient(false);
@@ -641,7 +659,7 @@ export default function ProjectDetails() {
                 </div>
                 {(role === 'admin' || role === 'secretary') && (
                     <Button variant="ghost" size="icon" className="absolute right-0 top-0 text-red-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" onClick={async () => {
-                        if (confirm("DELETE PROJECT? This action cannot be undone.")) {
+                        if (confirm(t('projectDetailsPage.deleteProjectConfirm'))) {
                             await apiProjects.delete(project.id);
                             navigate('/dashboard');
                         }
@@ -654,24 +672,24 @@ export default function ProjectDetails() {
                 <div className="flex items-center gap-2 flex-wrap">
                     {role !== 'client' && (
                         <>
-                            <span className="text-xs font-medium text-gray-500 mr-2">Quick Actions:</span>
+                            <span className="text-xs font-medium text-gray-500 mr-2">{t('projectDetailsPage.quickActions')}</span>
                             <Button size="sm" variant={project.status === 'design_ready' ? 'default' : 'outline'} className={project.status === 'design_ready' ? 'bg-luxury-gold hover:bg-luxury-gold-dark text-black' : ''} onClick={() => handleStatusUpdate('design_ready')}>
-                                Design Ready
+                                {t('projectDetailsPage.quickDesignReady')}
                             </Button>
                             <Button size="sm" variant={project.status === 'design_modification' ? 'default' : 'outline'} className={project.status === 'design_modification' ? 'bg-luxury-gold hover:bg-luxury-gold-dark text-black' : ''} onClick={() => handleStatusUpdate('design_modification')}>
-                                Modif Requested
+                                {t('projectDetailsPage.quickModRequested')}
                             </Button>
                             <Button size="sm" variant={project.status === 'approved_for_production' ? 'default' : 'outline'} className={project.status === 'approved_for_production' ? 'bg-luxury-gold hover:bg-luxury-gold-dark text-black' : ''} onClick={() => handleStatusUpdate('approved_for_production')}>
-                                Approved (Prod)
+                                {t('projectDetailsPage.quickApprovedProd')}
                             </Button>
                             <Button size="sm" variant={project.status === 'production' ? 'default' : 'outline'} className={project.status === 'production' ? 'bg-luxury-gold hover:bg-luxury-gold-dark text-black' : ''} onClick={() => handleStatusUpdate('production')}>
-                                Start Production
+                                {t('projectDetailsPage.quickStartProduction')}
                             </Button>
                         </>
                     )}
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Priority:</span>
+                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">{t('projectDetailsPage.priorityLabel')}</span>
                     <select
                         className={`h-8 px-2 rounded-md border border-input font-medium text-sm capitalize ${(localPriority || project.priority) === 'rush' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-background'}`}
                         value={localPriority || project.priority || 'normal'}
@@ -685,7 +703,9 @@ export default function ProjectDetails() {
                                         user_id: user?.id || 'admin',
                                         user_name: user?.user_metadata?.full_name || 'Admin',
                                         action: 'update',
-                                        details: `Changed priority to ${newPriority.toUpperCase()}`
+                                        details: t('projectDetailsPage.activity_priorityChanged', {
+                                            priority: newPriority === 'rush' ? t('projectDetailsPage.priorityRush') : t('projectDetailsPage.priorityNormal'),
+                                        })
                                     });
                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
                                     queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
@@ -697,12 +717,12 @@ export default function ProjectDetails() {
                         }}
                         disabled={role === 'client' || role === 'affiliate' || role === 'manufacturer'} // Secretary can update priority
                     >
-                        <option value="normal">Normal</option>
-                        <option value="rush">Rush 🚨</option>
+                        <option value="normal">{t('projectDetailsPage.priorityNormal')}</option>
+                        <option value="rush">{t('projectDetailsPage.priorityRush')}</option>
                     </select>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Type:</span>
+                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">{t('projectDetailsPage.jewelryTypeLabel')}</span>
                     <select
                         className="h-8 px-2 rounded-md border border-input bg-background font-medium text-sm"
                         value={project.jewelry_type || ''}
@@ -711,36 +731,36 @@ export default function ProjectDetails() {
                             apiProjects.update(project.id, { jewelry_type: val as Project['jewelry_type'] })
                                 .then(() => {
                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                    toast({ title: 'Type enregistré', description: 'Le type de bijou a été mis à jour.' });
+                                    toast({ title: t('projectDetailsPage.toastTypeSaved'), description: t('projectDetailsPage.toastTypeSavedDesc') });
                                 })
                                 .catch((err: Error) => {
                                     const msg = err?.message || '';
                                     if (msg.includes('jewelry_type') || msg.includes('schema cache')) {
                                         toast({
-                                            title: 'Colonne manquante',
-                                            description: 'Ajoutez la colonne jewelry_type à la table projects dans Supabase (SQL Editor). Voir supabase/migrations/20260318_add_jewelry_type_to_projects.sql',
+                                            title: t('projectDetailsPage.toastMissingColumnTitle'),
+                                            description: t('projectDetailsPage.toastMissingColumnDesc'),
                                             variant: 'destructive',
                                         });
                                     } else {
-                                        toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+                                        toast({ title: t('common.error'), description: msg, variant: 'destructive' });
                                     }
                                 });
                         }}
                         disabled={role === 'client' || role === 'manufacturer'}
                     >
-                        <option value="">Auto-détection</option>
-                        <option value="Bague">Bague</option>
-                        <option value="Bracelet">Bracelet</option>
-                        <option value="Collier">Collier</option>
-                        <option value="Pendentif">Pendentif</option>
-                        <option value="Boucles d'oreilles">Boucles d'oreilles</option>
-                        <option value="Chevalière">Chevalière</option>
-                        <option value="Alliance">Alliance</option>
-                        <option value="Autre">Autre</option>
+                        <option value="">{t('projectDetailsPage.jewelryAuto')}</option>
+                        <option value="Bague">{t('projectDetailsPage.jewelry_Bague')}</option>
+                        <option value="Bracelet">{t('projectDetailsPage.jewelry_Bracelet')}</option>
+                        <option value="Collier">{t('projectDetailsPage.jewelry_Collier')}</option>
+                        <option value="Pendentif">{t('projectDetailsPage.jewelry_Pendentif')}</option>
+                        <option value="Boucles d'oreilles">{t('projectDetailsPage.jewelry_BouclesOreilles')}</option>
+                        <option value="Chevalière">{t('projectDetailsPage.jewelry_Chevaliere')}</option>
+                        <option value="Alliance">{t('projectDetailsPage.jewelry_Alliance')}</option>
+                        <option value="Autre">{t('projectDetailsPage.jewelry_Autre')}</option>
                     </select>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">Status:</span>
+                    <span className="text-xs uppercase tracking-widest font-medium text-gray-400">{t('projectDetailsPage.statusLabel')}</span>
                     <select
                         className="h-8 px-2 rounded-md border border-input bg-background font-medium text-sm capitalize"
                         value={localStatus || project.status}
@@ -753,7 +773,10 @@ export default function ProjectDetails() {
                                 user_id: user?.id || 'admin',
                                 user_name: user?.user_metadata?.full_name || 'Admin',
                                 action: 'status_change',
-                                details: `Changed status from ${project.status.replace('_', ' ')} to ${newStatus.replace('_', ' ')}`
+                                details: t('projectDetailsPage.activity_statusChanged', {
+                                    from: t(`projectStatus.${project.status}` as 'projectStatus.designing'),
+                                    to: t(`projectStatus.${newStatus}` as 'projectStatus.designing'),
+                                })
                             }).then(() => {
                                 queryClient.invalidateQueries({ queryKey: ['projects'] });
                                 queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
@@ -761,16 +784,16 @@ export default function ProjectDetails() {
                         }}
                         disabled={role === 'client'} // Clients shouldn't manually update status
                     >
-                        <option value="designing">Designing</option>
-                        <option value="3d_model">3D Model</option>
-                        <option value="design_ready">Design Ready (Review)</option>
-                        <option value="waiting_for_approval">Waiting Approval (Decision)</option>
-                        <option value="design_modification">Mod Requested</option>
-                        <option value="approved_for_production">Approved (Pending Prod)</option>
-                        <option value="production">Production</option>
-                        <option value="delivery">Delivery</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="designing">{t('projectStatus.designing')}</option>
+                        <option value="3d_model">{t('projectStatus.3d_model')}</option>
+                        <option value="design_ready">{t('projectStatus.design_ready')}</option>
+                        <option value="waiting_for_approval">{t('projectStatus.waiting_for_approval')}</option>
+                        <option value="design_modification">{t('projectStatus.design_modification')}</option>
+                        <option value="approved_for_production">{t('projectStatus.approved_for_production')}</option>
+                        <option value="production">{t('projectStatus.production')}</option>
+                        <option value="delivery">{t('projectStatus.delivery')}</option>
+                        <option value="completed">{t('projectStatus.completed')}</option>
+                        <option value="cancelled">{t('projectStatus.cancelled')}</option>
                     </select>
                 </div>
             </div>
@@ -785,8 +808,8 @@ export default function ProjectDetails() {
                                 <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                             </div>
                             <div>
-                                <h3 className="font-medium text-amber-900 dark:text-amber-100">Design Ready for Review</h3>
-                                <p className="text-sm text-amber-700 dark:text-amber-300">Manufacturer has submitted 3D designs for approval.</p>
+                                <h3 className="font-medium text-amber-900 dark:text-amber-100">{t('projectDetailsPage.bannerDesignReviewTitle')}</h3>
+                                <p className="text-sm text-amber-700 dark:text-amber-300">{t('projectDetailsPage.bannerDesignReviewDesc')}</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -799,10 +822,10 @@ export default function ProjectDetails() {
                                     setIsModDialogOpen(true);
                                 }}
                             >
-                                Request Changes
+                                {t('projectDetailsPage.requestChanges')}
                             </Button>
                             <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleStatusUpdate('approved_for_production')}>
-                                Approve for Production
+                                {t('projectDetailsPage.approveForProduction')}
                             </Button>
                         </div>
                     </div>
@@ -817,12 +840,12 @@ export default function ProjectDetails() {
                                 <Factory className="w-5 h-5 text-green-600 dark:text-green-400" />
                             </div>
                             <div>
-                                <h3 className="font-medium text-green-900 dark:text-green-100">Ready for Production</h3>
-                                <p className="text-sm text-green-700 dark:text-green-300">Design is approved. Start production when ready.</p>
+                                <h3 className="font-medium text-green-900 dark:text-green-100">{t('projectDetailsPage.bannerMfgReadyTitle')}</h3>
+                                <p className="text-sm text-green-700 dark:text-green-300">{t('projectDetailsPage.bannerMfgReadyDesc')}</p>
                             </div>
                         </div>
                         <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleStatusUpdate('production')}>
-                            Start Production
+                            {t('projectDetailsPage.startProduction')}
                         </Button>
                     </div>
                 )
@@ -835,8 +858,8 @@ export default function ProjectDetails() {
                             <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                            <h3 className="font-medium text-blue-900 dark:text-blue-100">Approved for Production</h3>
-                            <p className="text-sm text-blue-700 dark:text-blue-300">Pending manufacturer to start production.</p>
+                            <h3 className="font-medium text-blue-900 dark:text-blue-100">{t('projectDetailsPage.bannerAdminApprovedTitle')}</h3>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">{t('projectDetailsPage.bannerAdminApprovedDesc')}</p>
                         </div>
                     </div>
                 )
@@ -849,8 +872,8 @@ export default function ProjectDetails() {
                             <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                            <h3 className="font-medium text-blue-900 dark:text-blue-100">Modification Requested</h3>
-                            <p className="text-sm text-blue-700 dark:text-blue-300">Admin requested changes. Please update the design and re-submit.</p>
+                            <h3 className="font-medium text-blue-900 dark:text-blue-100">{t('projectDetailsPage.bannerModReqTitle')}</h3>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">{t('projectDetailsPage.bannerModReqDesc')}</p>
                         </div>
                     </div>
                 )
@@ -864,24 +887,27 @@ export default function ProjectDetails() {
                         <CardHeader className="pb-4">
                             <CardTitle className="flex items-center gap-2 text-luxury-gold font-serif text-xl">
                                 <Clock className="w-5 h-5 text-luxury-gold" />
-                                Design Approval Required
+                                {t('projectDetailsPage.clientApprovalTitle')}
                             </CardTitle>
-                            <CardDescription className="text-gray-600 dark:text-gray-300">Your custom design is ready for review! Please leave feedback or approve it for production.</CardDescription>
+                            <CardDescription className="text-gray-600 dark:text-gray-300">{t('projectDetailsPage.clientApprovalDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-5">
                             <div className="flex gap-4">
                                 <Button
                                     className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2"
                                     onClick={() => {
-                                        if (confirm("Are you sure you want to approve this design? It will wait for the manufacturer to start production.")) {
+                                        if (confirm(t('projectDetailsPage.confirmClientApproveDesign'))) {
                                             apiProjects.updateDetails(project.id, { client_approval_status: 'approved' })
                                                 .then(() => apiProjects.updateStatus(project.id, 'approved_for_production'))
                                                 .then(() => {
                                                     // Create Notification for Admin
                                                     apiNotifications.create({
                                                         user_id: 'admin',
-                                                        title: 'Design Approved',
-                                                        message: `${project.client?.full_name || 'Client'} approved design for ${project.title}`,
+                                                        title: t('projectDetailsPage.notif_designApproved_title'),
+                                                        message: t('projectDetailsPage.notif_designApproved_msg', {
+                                                            clientName: project.client?.full_name || t('projectDetailsPage.labelClientFallback'),
+                                                            title: project.title,
+                                                        }),
                                                         type: 'success',
                                                         link: `/dashboard/projects/${project.id}`
                                                     });
@@ -889,9 +915,9 @@ export default function ProjectDetails() {
                                                     apiActivities.log({
                                                         project_id: project.id,
                                                         user_id: 'client',
-                                                        user_name: project.client?.full_name || 'Client',
+                                                        user_name: project.client?.full_name || t('projectDetailsPage.labelClientFallback'),
                                                         action: 'approval',
-                                                        details: 'Approved design for production'
+                                                        details: t('projectDetailsPage.activity_approvedDesignProduction')
                                                     });
                                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                     queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
@@ -899,7 +925,7 @@ export default function ProjectDetails() {
                                         }
                                     }}
                                 >
-                                    <ThumbsUp className="w-4 h-4" /> Approve Design
+                                    <ThumbsUp className="w-4 h-4" /> {t('projectDetailsPage.approveDesign')}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -910,12 +936,12 @@ export default function ProjectDetails() {
                                         setIsModDialogOpen(true);
                                     }}
                                 >
-                                    <ThumbsDown className="w-4 h-4" /> Request Changes
+                                    <ThumbsDown className="w-4 h-4" /> {t('projectDetailsPage.requestChanges')}
                                 </Button>
                             </div>
                             {project.stage_details?.client_approval_status === 'changes_requested' && (
                                 <div className="text-sm text-red-600 bg-red-50 p-3 rounded border border-red-100">
-                                    <span className="font-bold">Your Feedback:</span> {project.stage_details.client_notes}
+                                    <span className="font-bold">{t('projectDetailsPage.yourFeedback')}</span> {project.stage_details.client_notes}
                                 </div>
                             )}
                         </CardContent>
@@ -926,10 +952,10 @@ export default function ProjectDetails() {
             {/* Tab Navigation */}
             <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
                 {([
-                    { id: 'overview', label: "Vue d'ensemble", icon: Eye },
-                    { id: 'finance', label: 'Finance', icon: DollarSign },
-                    { id: 'timeline', label: 'Suivi', icon: Clock },
-                    { id: 'chat', label: 'Chat', icon: MessageSquare },
+                    { id: 'overview', labelKey: 'projectDetailsPage.tabOverview' as const, icon: Eye },
+                    { id: 'finance', labelKey: 'projectDetailsPage.tabFinance' as const, icon: DollarSign },
+                    { id: 'timeline', labelKey: 'projectDetailsPage.tabTimeline' as const, icon: Clock },
+                    { id: 'chat', labelKey: 'projectDetailsPage.tabChat' as const, icon: MessageSquare },
                 ] as const).map(tab => (
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -938,7 +964,7 @@ export default function ProjectDetails() {
                                 : 'text-muted-foreground hover:text-white hover:bg-white/5'
                         }`}>
                         <tab.icon className="w-4 h-4" />
-                        {tab.label}
+                        {t(tab.labelKey)}
                     </button>
                 ))}
             </div>
@@ -948,27 +974,33 @@ export default function ProjectDetails() {
                     <div className="md:col-span-3 space-y-6">
                             <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border-black/5 dark:border-white/5 shadow-xl">
                                 <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
-                                    <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Project Timeline</CardTitle>
-                                    <CardDescription className="text-xs uppercase tracking-widest text-[#A68A56]">Design & Manufacturing Progress</CardDescription>
+                                    <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">{t('projectDetailsPage.timelineTitle')}</CardTitle>
+                                    <CardDescription className="text-xs uppercase tracking-widest text-[#A68A56]">{t('projectDetailsPage.timelineSubtitle')}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     {/* Mock Timeline Visual */}
                                     <div className="relative border-l border-zinc-200 dark:border-zinc-800 ml-4 space-y-8 pb-4">
-                                        {[
-                                            { status: 'designing', label: 'Initial Design', date: project.created_at, active: isStepActive('designing') },
-                                            { status: '3d_model', label: '3D Modeling', date: 'TBD', active: isStepActive('3d_model') },
-                                            { status: 'design_ready', label: 'Design Ready (Review)', date: 'TBD', active: isStepActive('design_ready') },
-                                            { status: 'waiting_for_approval', label: 'Waiting Approval (Client)', date: 'TBD', active: isStepActive('waiting_for_approval') },
-                                            { status: 'design_modification', label: 'Modifications Requested', date: 'TBD', active: isStepActive('design_modification') },
-                                            { status: 'approved_for_production', label: 'Approved (Pending Prod)', date: 'TBD', active: isStepActive('approved_for_production') },
-                                            { status: 'production', label: 'Production', date: 'TBD', active: isStepActive('production') },
-                                            { status: 'delivery', label: 'Final QC & Delivery', date: project.deadline, active: isStepActive('delivery') },
-                                            { status: 'completed', label: 'Completed', date: 'TBD', active: isStepActive('completed') },
-                                        ].map((step, i) => (
+                                        {([
+                                            { status: 'designing', date: project.created_at, active: isStepActive('designing') },
+                                            { status: '3d_model', date: 'TBD', active: isStepActive('3d_model') },
+                                            { status: 'design_ready', date: 'TBD', active: isStepActive('design_ready') },
+                                            { status: 'waiting_for_approval', date: 'TBD', active: isStepActive('waiting_for_approval') },
+                                            { status: 'design_modification', date: 'TBD', active: isStepActive('design_modification') },
+                                            { status: 'approved_for_production', date: 'TBD', active: isStepActive('approved_for_production') },
+                                            { status: 'production', date: 'TBD', active: isStepActive('production') },
+                                            { status: 'delivery', date: project.deadline, active: isStepActive('delivery') },
+                                            { status: 'completed', date: 'TBD', active: isStepActive('completed') },
+                                        ] as const).map((step, i) => (
                                             <div key={i} className="relative pl-6 group cursor-pointer" onClick={() => handleStatusUpdate(step.status as ProjectStatus)}>
                                                 <div className={`absolute -left-1.5 w-3 h-3 rounded-full border-2 transition-colors ${step.active ? 'bg-luxury-gold border-luxury-gold' : 'bg-background border-zinc-300 group-hover:border-luxury-gold'}`} />
-                                                <p className={`text-sm font-medium transition-colors ${step.active ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'}`}>{step.label}</p>
-                                                <p className="text-xs text-muted-foreground">{step.date ? (!step.date.includes('T') ? step.date : new Date(step.date).toLocaleDateString()) : 'Pending'}</p>
+                                                <p className={`text-sm font-medium transition-colors ${step.active ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'}`}>{t(`projectDetailsPage.timeline_${step.status}`)}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {step.date === 'TBD'
+                                                        ? t('projectDetailsPage.dateTBD')
+                                                        : step.date
+                                                            ? (!String(step.date).includes('T') ? String(step.date) : new Date(step.date as string).toLocaleDateString(localeTag))
+                                                            : t('projectDetailsPage.datePending')}
+                                                </p>
                                             </div>
                                         ))}
                                     </div>
@@ -990,7 +1022,7 @@ export default function ProjectDetails() {
                                                     value="internal" 
                                                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-luxury-gold rounded-none px-0 pb-2 text-xs uppercase tracking-widest"
                                                 >
-                                                    Canal Interne
+                                                    {t('projectDetailsPage.chatInternal')}
                                                 </TabsTrigger>
                                             )}
                                             {(role === 'admin' || role === 'secretary' || role === 'affiliate' || role === 'client') && (
@@ -998,7 +1030,7 @@ export default function ProjectDetails() {
                                                     value="client" 
                                                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-luxury-gold rounded-none px-0 pb-2 text-xs uppercase tracking-widest"
                                                 >
-                                                    Canal Client
+                                                    {t('projectDetailsPage.chatClient')}
                                                 </TabsTrigger>
                                             )}
                                         </TabsList>
@@ -1030,7 +1062,7 @@ export default function ProjectDetails() {
                 <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl relative overflow-hidden group">
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                     <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02]">
-                        <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Financial Details</CardTitle>
+                        <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">{t('projectDetailsPage.financialDetails')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5 pt-6">
                         {/* Margin Health Gauge */}
@@ -1084,7 +1116,7 @@ export default function ProjectDetails() {
                                             </svg>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">Marge</p>
+                                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">{t('projectDetailsPage.marginLabel')}</p>
                                             <div className="flex items-baseline gap-2 flex-wrap">
                                                 <span className={`text-xl font-serif font-bold ${isHealthy ? 'text-green-600 dark:text-green-400' : isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
                                                     {marginPercent.toFixed(1)}%
@@ -1094,12 +1126,12 @@ export default function ProjectDetails() {
                                                 </span>
                                             </div>
                                             <p className="text-[10px] text-muted-foreground mt-1">
-                                                sur {formatCurrency(revenue)} de revenu
+                                                {t('projectDetailsPage.marginOnRevenue', { amount: formatCurrency(revenue) })}
                                             </p>
                                             {isCritical && (
                                                 <p className="text-xs text-red-500 dark:text-red-400 font-medium mt-2 flex items-center gap-1.5">
                                                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                                    Marge sous 20% — vérifier les coûts ou le prix de vente
+                                                    {t('projectDetailsPage.marginCriticalWarning')}
                                                 </p>
                                             )}
                                         </div>
@@ -1113,11 +1145,11 @@ export default function ProjectDetails() {
                             <>
                                 <div className="flex items-center justify-between border-b pb-2">
                                     <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                        <Handshake className="w-3 h-3" /> Ambassador
+                                        <Handshake className="w-3 h-3" /> {t('projectDetailsPage.ambassadorLabel')}
                                     </span>
                                     {!isEditingAffiliate ? (
                                         <div className="flex items-center gap-2">
-                                            <span className="font-medium">{project.affiliate?.full_name || 'None'}</span>
+                                            <span className="font-medium">{project.affiliate?.full_name || t('projectDetailsPage.noneOption')}</span>
                                             {(role === 'admin' || role === 'secretary') && (
                                                 <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => {
                                                     setSelectedAffiliateId(project.affiliate_id || '');
@@ -1134,7 +1166,7 @@ export default function ProjectDetails() {
                                                 value={selectedAffiliateId}
                                                 onChange={(e) => setSelectedAffiliateId(e.target.value)}
                                             >
-                                                <option value="">None</option>
+                                                <option value="">{t('projectDetailsPage.noneOption')}</option>
                                                 {affiliates?.map((a) => (
                                                     <option key={a.id} value={a.id}>{a.full_name}</option>
                                                 ))}
@@ -1157,12 +1189,12 @@ export default function ProjectDetails() {
                                                                 user_id: user?.id || 'admin',
                                                                 user_name: user?.user_metadata?.full_name || 'Admin',
                                                                 action: 'update',
-                                                                details: `Assigned ambassador ${affiliate.full_name}`
+                                                                details: t('projectDetailsPage.activity_assignedAmbassador', { name: affiliate.full_name })
                                                             });
                                                             apiNotifications.create({
                                                                 user_id: selectedAffiliateId,
-                                                                title: 'New Ambassador Assignment',
-                                                                message: `You've been assigned to the project "${project.title}"!`,
+                                                                title: t('projectDetailsPage.notif_newAmbassador_title'),
+                                                                message: t('projectDetailsPage.notif_newAmbassador_msg', { title: project.title }),
                                                                 type: 'info',
                                                                 link: `/dashboard/projects/${project.id}`
                                                             });
@@ -1170,7 +1202,7 @@ export default function ProjectDetails() {
                                                     })
                                                     .catch(error => {
                                                         console.error(error);
-                                                        alert(`Failed to assign ambassador. Likely database schema mismatch.\nDid you run the SQL script?\n\nError: ${error.message}`);
+                                                        alert(t('projectDetailsPage.assignAmbassadorFailed', { message: error.message }));
                                                     });
                                             }}>
                                                 <Save className="w-3 h-3" />
@@ -1185,11 +1217,11 @@ export default function ProjectDetails() {
                                 {(role === 'admin' || role === 'secretary') && (
                                     <div className="flex items-center justify-between border-b pb-2">
                                         <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                            <Factory className="w-3 h-3" /> Manufacturer
+                                            <Factory className="w-3 h-3" /> {t('projectDetailsPage.manufacturerLabel')}
                                         </span>
                                         {!isEditingManufacturer ? (
                                             <div className="flex items-center gap-2">
-                                                <span className="font-medium">{project.manufacturer?.full_name || 'None'}</span>
+                                                <span className="font-medium">{project.manufacturer?.full_name || t('projectDetailsPage.noneOption')}</span>
                                                 <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => {
                                                     setSelectedManufacturerId(project.manufacturer_id || '');
                                                     setIsEditingManufacturer(true);
@@ -1204,7 +1236,7 @@ export default function ProjectDetails() {
                                                     value={selectedManufacturerId}
                                                     onChange={(e) => setSelectedManufacturerId(e.target.value)}
                                                 >
-                                                    <option value="">None</option>
+                                                    <option value="">{t('projectDetailsPage.noneOption')}</option>
                                                     {manufacturers?.map((m: UserProfile) => (
                                                         <option key={m.id} value={m.id}>{m.full_name}</option>
                                                     ))}
@@ -1221,18 +1253,18 @@ export default function ProjectDetails() {
                                                                     user_id: user?.id || 'admin',
                                                                     user_name: user?.user_metadata?.full_name || 'Admin',
                                                                     action: 'update',
-                                                                    details: `Assigned manufacturer ${mfg.full_name}`
+                                                                    details: t('projectDetailsPage.activity_assignedManufacturer', { name: mfg.full_name })
                                                                 });
                                                                 apiNotifications.create({
                                                                     user_id: selectedManufacturerId,
-                                                                    title: 'New Manufacturing Assignment',
-                                                                    message: `You've been assigned to manufacture "${project.title}"!`,
+                                                                    title: t('projectDetailsPage.notif_newManufacturer_title'),
+                                                                    message: t('projectDetailsPage.notif_newManufacturer_msg', { title: project.title }),
                                                                     type: 'info',
                                                                     link: `/dashboard/projects/${project.id}`
                                                                 });
                                                             }
                                                         })
-                                                        .catch(err => alert('Failed to assign manufacturer: ' + err.message));
+                                                        .catch(err => alert(t('projectDetailsPage.assignManufacturerFailed', { message: err.message })));
                                                 }}>
                                                     <Save className="w-3 h-3" />
                                                 </Button>
@@ -1247,7 +1279,7 @@ export default function ProjectDetails() {
                                 {project.affiliate_id && (role === 'admin' || role === 'affiliate' || role === 'secretary') && (
                                     <>
                                         <div className="flex items-center justify-between mt-2 pl-5">
-                                            <span className="text-xs text-muted-foreground">Commission</span>
+                                            <span className="text-xs text-muted-foreground">{t('projectDetailsPage.commissionLabel')}</span>
                                             <div className="flex items-center gap-1">
                                                 <input
                                                     type="number"
@@ -1278,7 +1310,7 @@ export default function ProjectDetails() {
                                         </div>
                                         <div className="flex items-center justify-between mt-3 pl-5">
                                             <div className="flex flex-col">
-                                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Calculated</span>
+                                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('projectDetailsPage.calculatedLabel')}</span>
                                                 <span className="text-sm font-bold text-luxury-gold">
                                                     ${financialUtils.computeCommissionAmount(project).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </span>
@@ -1292,11 +1324,14 @@ export default function ProjectDetails() {
                                                         const amount = financialUtils.computeCommissionAmount(project);
 
                                                         if (amount <= 0) {
-                                                            alert("Commission amount must be greater than 0.");
+                                                            alert(t('projectDetailsPage.commissionMustBePositive'));
                                                             return;
                                                         }
 
-                                                        if (confirm(`Export $${amount.toLocaleString()} commission for ${project.affiliate?.full_name} to Expenses?`)) {
+                                                        if (confirm(t('projectDetailsPage.commissionExportConfirm', {
+                                                            amount: formatCurrency(amount),
+                                                            name: project.affiliate?.full_name ?? '',
+                                                        }))) {
                                                             try {
                                                                 await apiExpenses.create({
                                                                     date: new Date().toISOString().split('T')[0],
@@ -1322,26 +1357,27 @@ export default function ProjectDetails() {
 
                                                                 queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                                 queryClient.invalidateQueries({ queryKey: ['expenses'] });
-                                                                alert("Commission exported successfully!");
-                                                            } catch (err) {
-                                                                alert("Export failed: " + err.message);
+                                                                alert(t('projectDetailsPage.commissionExportedSuccess'));
+                                                            } catch (err: unknown) {
+                                                                const msg = err instanceof Error ? err.message : String(err);
+                                                                alert(t('projectDetailsPage.exportFailedGeneric', { message: msg }));
                                                             }
                                                         }
                                                     }}
                                                 >
-                                                    🚀 Send to Commission
+                                                    🚀 {t('projectDetailsPage.sendToCommissionButton')}
                                                 </Button>
                                             ) : (
                                                 <div className="flex items-center gap-2">
                                                     <div className="text-[10px] text-zinc-400 flex items-center gap-1">
-                                                        <CheckCircle2 className="w-3 h-3 text-green-500" /> Commission Sent
+                                                        <CheckCircle2 className="w-3 h-3 text-green-500" /> {t('projectDetailsPage.commissionSentLabel')}
                                                     </div>
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
                                                         className="text-[10px] h-7 px-2 text-red-500 hover:bg-red-500/10 transition-colors"
                                                         onClick={async () => {
-                                                            if (confirm(`Are you sure you want to REVERT this commission export? This will delete the matching expense.`)) {
+                                                            if (confirm(t('projectDetailsPage.revertCommissionExportConfirm'))) {
                                                                 try {
                                                                     await apiExpenses.deleteByProjectAndCategory(project.id, 'commission');
 
@@ -1365,14 +1401,15 @@ export default function ProjectDetails() {
 
                                                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                                     queryClient.invalidateQueries({ queryKey: ['expenses'] });
-                                                                    alert("Commission export reverted successfully!");
-                                                                } catch (err) {
-                                                                    alert("Revert failed: " + err.message);
+                                                                    alert(t('projectDetailsPage.commissionRevertedSuccess'));
+                                                                } catch (err: unknown) {
+                                                                    const msg = err instanceof Error ? err.message : String(err);
+                                                                    alert(t('projectDetailsPage.revertFailedGeneric', { message: msg }));
                                                                 }
                                                             }
                                                         }}
                                                     >
-                                                        Undo Export
+                                                        {t('projectDetailsPage.undoExport')}
                                                     </Button>
                                                 </div>
                                             )}
@@ -1386,7 +1423,7 @@ export default function ProjectDetails() {
                         {role !== 'client' && role !== 'manufacturer' && (
                             <>
                                 <div className="flex items-center justify-between border-b pb-2">
-                                    <span className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="w-3 h-3" /> Sale Price (Net)</span>
+                                    <span className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="w-3 h-3" /> {t('projectDetailsPage.salePriceNet')}</span>
                                     <input
                                         type="number"
                                         className="w-32 text-right border rounded px-2 py-1 text-sm font-medium bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
@@ -1413,7 +1450,7 @@ export default function ProjectDetails() {
 
                                 {/* Tax Region Selector */}
                                 <div className="flex items-center justify-between border-b pb-2">
-                                    <span className="text-sm text-muted-foreground flex items-center gap-2">📍 Tax Region (Canada)</span>
+                                    <span className="text-sm text-muted-foreground flex items-center gap-2">📍 {t('projectDetailsPage.taxRegionCanada')}</span>
                                     <select
                                         className="h-8 rounded border border-input bg-background text-xs px-1 w-32"
                                         value={project.financials?.tax_province || ''}
@@ -1423,7 +1460,7 @@ export default function ProjectDetails() {
                                                 .then(() => queryClient.invalidateQueries({ queryKey: ['projects'] }));
                                         }}
                                     >
-                                        <option value="">None / Intl</option>
+                                        <option value="">{t('projectDetailsPage.noneOrIntl')}</option>
                                         {Object.entries(provinceNames).map(([code, name]) => (
                                             <option key={code} value={code}>{name} ({code})</option>
                                         ))}
@@ -1438,23 +1475,23 @@ export default function ProjectDetails() {
                                             return (
                                                 <>
                                                     <div className="flex justify-between">
-                                                        <span>GST/TPS (5%):</span>
+                                                        <span>{t('projectDetailsPage.gstTps')}</span>
                                                         <span>{formatCurrency(breakdown.gst)}</span>
                                                     </div>
                                                     {breakdown.pst > 0 && (
                                                         <div className="flex justify-between">
-                                                            <span>PST/TVQ ({project.financials.tax_province === 'QC' ? '9.975%' : '7%'}):</span>
+                                                            <span>{t('projectDetailsPage.pstTvq', { rate: project.financials.tax_province === 'QC' ? '9.975%' : '7%' })}</span>
                                                             <span>{formatCurrency(breakdown.pst)}</span>
                                                         </div>
                                                     )}
                                                     {breakdown.hst > 0 && (
                                                         <div className="flex justify-between">
-                                                            <span>HST ({breakdown.totalRate.toFixed(0)}%):</span>
+                                                            <span>{t('projectDetailsPage.hstLabel', { rate: breakdown.totalRate.toFixed(0) })}</span>
                                                             <span>{formatCurrency(breakdown.hst)}</span>
                                                         </div>
                                                     )}
                                                     <div className="flex justify-between font-bold border-t pt-1 mt-1 text-luxury-gold">
-                                                        <span>Total Gross:</span>
+                                                        <span>{t('projectDetailsPage.totalGross')}</span>
                                                         <span>{formatCurrency(net + breakdown.total)}</span>
                                                     </div>
                                                 </>
@@ -1466,7 +1503,7 @@ export default function ProjectDetails() {
                                 {/* Payment Tracking */}
                                 <div className="space-y-2 pt-2">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Paid Amount</span>
+                                        <span className="text-muted-foreground">{t('projectDetailsPage.paidAmountLabel')}</span>
                                         <input
                                             type="number"
                                             className="w-24 text-right border rounded px-1 py-0.5 text-xs bg-transparent"
@@ -1484,7 +1521,7 @@ export default function ProjectDetails() {
                                         />
                                     </div>
                                     <div className="flex items-center justify-between text-sm font-bold">
-                                        <span>Balance Due</span>
+                                        <span>{t('projectDetailsPage.balanceDueLabel')}</span>
                                         {(() => {
                                             const net = project.budget || 0;
                                             const tax = project.financials?.tax_province 
@@ -1515,35 +1552,35 @@ export default function ProjectDetails() {
                         )}
 
                         <div className="flex items-center justify-between border-b pb-2">
-                            <span className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="w-3 h-3" /> Deadline</span>
-                            <span className="font-medium">{project.deadline ? new Date(project.deadline).toLocaleDateString() : 'None'}</span>
+                            <span className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="w-3 h-3" /> {t('projectDetailsPage.deadlineLabel')}</span>
+                            <span className="font-medium">{project.deadline ? new Date(project.deadline).toLocaleDateString(localeTag) : t('projectDetailsPage.noneOption')}</span>
                         </div>
 
                         {/* Precious Metals Market Price */}
                         {(role === 'admin' || role === 'secretary') && metalsPrice && (
                             <div className="bg-gradient-to-r from-amber-500/10 to-amber-900/10 border border-amber-500/20 p-3 rounded-md space-y-2 mt-4 mb-4">
                                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-500 flex items-center gap-1 mb-2">
-                                    <Activity className="w-3 h-3" /> Live Metals Market (Per Gram)
+                                    <Activity className="w-3 h-3" /> {t('projectDetailsPage.liveMetalsTitle')}
                                 </h4>
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-mono">
                                     <div className="flex flex-col">
-                                        <span className="text-muted-foreground text-[9px]">Silver 925</span>
+                                        <span className="text-muted-foreground text-[9px]">{t('projectDetailsPage.metalSilver925')}</span>
                                         <span className="font-bold text-gray-700 dark:text-gray-300">${metalsPrice.silver925.toFixed(2)}/g</span>
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-muted-foreground text-[9px]">Gold 10k</span>
+                                        <span className="text-muted-foreground text-[9px]">{t('projectDetailsPage.metalGold10k')}</span>
                                         <span className="font-bold text-amber-600 dark:text-amber-400">${metalsPrice.gold10k.toFixed(2)}/g</span>
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-muted-foreground text-[9px]">Gold 14k</span>
+                                        <span className="text-muted-foreground text-[9px]">{t('projectDetailsPage.metalGold14k')}</span>
                                         <span className="font-bold text-luxury-gold">${metalsPrice.gold14k.toFixed(2)}/g</span>
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-muted-foreground text-[9px]">Gold 18k</span>
+                                        <span className="text-muted-foreground text-[9px]">{t('projectDetailsPage.metalGold18k')}</span>
                                         <span className="font-bold text-amber-500">${metalsPrice.gold18k.toFixed(2)}/g</span>
                                     </div>
                                 </div>
-                                <div className="text-[9px] text-right text-muted-foreground mt-1 opacity-60">XAu/USD Index: ${metalsPrice.xauOunce.toFixed(2)} / oz</div>
+                                <div className="text-[9px] text-right text-muted-foreground mt-1 opacity-60">{t('projectDetailsPage.xauUsdIndex', { price: `$${metalsPrice.xauOunce.toFixed(2)}` })}</div>
                             </div>
                         )}
 
@@ -1551,25 +1588,25 @@ export default function ProjectDetails() {
                         {(role === 'admin' || role === 'secretary') && (
                             <div className="bg-zinc-50 dark:bg-zinc-900 p-3 rounded-md space-y-2">
                                 <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                    <Shield className="w-3 h-3" /> Admin Financials
+                                    <Shield className="w-3 h-3" /> {t('projectDetailsPage.adminFinancialsTitle')}
                                 </h4>
                                 <div className="grid grid-cols-2 gap-2 text-sm">
-                                    <div>Supplier Cost:</div>
+                                    <div>{t('projectDetailsPage.supplierCost')}</div>
                                     <div className="font-mono text-right text-red-500">-${project.financials?.supplier_cost || 0}</div>
 
-                                    <div>Shipping/Customs:</div>
+                                    <div>{t('projectDetailsPage.shippingCustoms')}</div>
                                     <div className="font-mono text-right text-red-500">-${(project.financials?.shipping_cost || 0) + (project.financials?.customs_fee || 0)}</div>
 
                                     {project.financials?.additional_expense ? (
                                         <>
-                                            <div>Additional Expense:</div>
+                                            <div>{t('projectDetailsPage.additionalExpense')}</div>
                                             <div className="font-mono text-right text-red-500">-${project.financials.additional_expense}</div>
                                         </>
                                     ) : null}
 
                                     {project.financials?.cost_items?.map((item, idx) => (
                                         <React.Fragment key={item.id || idx}>
-                                            <div>{item.detail || "Cost Item"}:</div>
+                                            <div>{item.detail || t('projectDetailsPage.costItemFallback')}:</div>
                                             <div className="font-mono text-right text-red-500">-${item.amount}</div>
                                         </React.Fragment>
                                     ))}
@@ -1577,7 +1614,9 @@ export default function ProjectDetails() {
                                     {/* Commission Display */}
                                     {project.affiliate_id && (
                                         <>
-                                            <div>Commission ({project.affiliate_commission_type === 'fixed' ? 'Fixed' : `${project.affiliate_commission_rate}%`}):</div>
+                                            <div>{project.affiliate_commission_type === 'fixed'
+                                                ? t('projectDetailsPage.commissionLineFixed')
+                                                : t('projectDetailsPage.commissionLinePercent', { rate: project.affiliate_commission_rate ?? 0 })}</div>
                                             <div className="font-mono text-right text-red-500">
                                                 -${financialUtils
                                                     .computeCommissionAmount(project)
@@ -1586,7 +1625,7 @@ export default function ProjectDetails() {
                                         </>
                                     )}
 
-                                    <div className="border-t pt-1 font-bold">Net Profit:</div>
+                                    <div className="border-t pt-1 font-bold">{t('projectDetailsPage.netProfit')}</div>
                                     <div
                                         className={`border-t pt-1 font-mono text-right font-bold ${
                                             (() => {
@@ -1621,17 +1660,17 @@ export default function ProjectDetails() {
                                                     dynamicCosts;
 
                                                 if (totalCost <= 0) {
-                                                    alert("No costs to export (Supplier + Shipping + Customs + Cost Items = 0)");
+                                                    alert(t('projectDetailsPage.exportNoCostsAlert'));
                                                     return;
                                                 }
 
-                                                if (confirm(`Export $${totalCost.toLocaleString()} to Expenses?`)) {
+                                                if (confirm(t('projectDetailsPage.exportCostsConfirm', { amount: formatCurrency(totalCost) }))) {
                                                     try {
                                                         await apiExpenses.create({
                                                             date: new Date().toISOString().split('T')[0],
                                                             category: 'material',
                                                             amount: totalCost,
-                                                            description: `Production Costs: ${project.title}`,
+                                                            description: t('projectDetailsPage.exportExpenseDescription', { title: project.title }),
                                                             project_id: project.id,
                                                             status: 'paid'
                                                         });
@@ -1646,24 +1685,24 @@ export default function ProjectDetails() {
                                                             user_id: user?.id || 'admin',
                                                             user_name: user?.user_metadata?.full_name || 'Admin User',
                                                             action: 'update',
-                                                            details: `Exported $${totalCost.toLocaleString()} to global expenses`
+                                                            details: t('projectDetailsPage.activity_exportedToGlobalExpenses', { amount: formatCurrency(totalCost) })
                                                         });
 
                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                         queryClient.invalidateQueries({ queryKey: ['expenses'] });
-                                                        alert("Exported successfully!");
+                                                        alert(t('projectDetailsPage.exportSuccessAlert'));
                                                     } catch (err: any) {
-                                                        alert("Export failed: " + err.message);
+                                                        alert(t('projectDetailsPage.exportFailedGeneric', { message: err.message }));
                                                     }
                                                 }
                                             }}
                                         >
-                                            🚀 Send to Expenses
+                                            🚀 {t('projectDetailsPage.sendToExpensesButton')}
                                         </Button>
                                     ) : (
                                         <div className="flex items-center gap-2">
                                             <div className="text-xs text-zinc-400 flex items-center gap-1">
-                                                <CheckCircle2 className="w-3 h-3" /> Exported
+                                                <CheckCircle2 className="w-3 h-3" /> {t('projectDetailsPage.exportedLabel')}
                                             </div>
                                             {(role === 'admin' || role === 'secretary') && (
                                                 <Button 
@@ -1672,7 +1711,7 @@ export default function ProjectDetails() {
                                                     className="h-7 text-[10px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1 px-1.5 border border-amber-200/50"
                                                     onClick={handleUnlockFinancials}
                                                 >
-                                                    <RotateCcw className="w-3 h-3" /> Réinitialiser
+                                                    <RotateCcw className="w-3 h-3" /> {t('projectDetailsPage.resetCostsButton')}
                                                 </Button>
                                             )}
                                         </div>
@@ -1683,7 +1722,7 @@ export default function ProjectDetails() {
                                         if (!hasInvoice) {
                                             return (
                                                 <Button size="sm" variant="outline" className="text-xs" onClick={async () => {
-                                                    if (confirm("Create an invoice for this project?")) {
+                                                    if (confirm(t('projectDetailsPage.createInvoiceConfirm'))) {
                                                         await apiInvoices.create({
                                                             project_id: project.id,
                                                             amount: project.budget,
@@ -1693,11 +1732,11 @@ export default function ProjectDetails() {
                                                         queryClient.invalidateQueries({ queryKey: ['invoices'] });
                                                     }
                                                 }}>
-                                                    + Create Invoice
+                                                    {t('projectDetailsPage.createInvoiceButton')}
                                                 </Button>
                                             );
                                         } else {
-                                            return <div className="text-xs text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Invoice Created</div>;
+                                            return <div className="text-xs text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t('projectDetailsPage.invoiceCreatedLabel')}</div>;
                                         }
                                     })()}
                                 </div>
@@ -1705,9 +1744,9 @@ export default function ProjectDetails() {
                         )}
 
                         <div className="pt-4">
-                            <h4 className="text-sm font-medium mb-2">Description</h4>
+                            <h4 className="text-sm font-medium mb-2">{t('projectDetailsPage.descriptionSection')}</h4>
                             <p className="text-xs text-muted-foreground">
-                                {project.description || "No description provided. Custom design request."}
+                                {project.description || t('projectDetailsPage.noDescriptionFallback')}
                             </p>
                         </div>
 
@@ -1718,9 +1757,9 @@ export default function ProjectDetails() {
                                 <div className="flex items-center justify-between mb-4">
                                     <div>
                                         <h3 className="text-lg font-serif text-luxury-gold flex items-center gap-2">
-                                            <ShieldCheck className="w-5 h-5" /> The Vault
+                                            <ShieldCheck className="w-5 h-5" /> {t('projectDetailsPage.theVaultTitle')}
                                         </h3>
-                                        <p className="text-[10px] uppercase tracking-widest text-luxury-gold/60">Concierge Document Storage</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-luxury-gold/60">{t('projectDetailsPage.conciergeStorage')}</p>
                                     </div>
                                     {(role === 'admin' || role === 'secretary') && (
                                         <label className="cursor-pointer">
@@ -1747,11 +1786,11 @@ export default function ProjectDetails() {
                                                         vault_files: [...currentVault, ...uploadedUrls]
                                                     });
                                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                    toast({ title: "Documents secured in the Vault" });
+                                                    toast({ title: t('projectDetailsPage.vaultDocumentsSecured') });
                                                 }}
                                             />
                                             <Button size="sm" variant="outline" className="h-8 border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-all">
-                                                <Upload className="w-3 h-3 mr-2" /> Secure Doc
+                                                <Upload className="w-3 h-3 mr-2" /> {t('projectDetailsPage.secureDocButton')}
                                             </Button>
                                         </label>
                                     )}
@@ -1759,7 +1798,7 @@ export default function ProjectDetails() {
 
                                 {(!project.stage_details?.vault_files || project.stage_details.vault_files.length === 0) ? (
                                     <div className="text-center py-8 bg-zinc-900/20 rounded-lg border border-dashed border-luxury-gold/10 text-muted-foreground text-xs italic">
-                                        The vault is currently empty.
+                                        {t('projectDetailsPage.vaultEmpty')}
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1773,7 +1812,7 @@ export default function ProjectDetails() {
                                                         </div>
                                                         <div className="min-w-0">
                                                             <p className="text-sm font-medium text-white/90 truncate max-w-[150px]">{fileName}</p>
-                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Secured Document</p>
+                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('projectDetailsPage.securedDocumentLabel')}</p>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
@@ -1791,7 +1830,7 @@ export default function ProjectDetails() {
                                                                 size="icon"
                                                                 className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
                                                                 onClick={async () => {
-                                                                    if (confirm("Remove this document from the Vault?")) {
+                                                                    if (confirm(t('projectDetailsPage.removeVaultDocConfirm'))) {
                                                                         const newVault = project.stage_details?.vault_files?.filter((_file: string, i: number) => i !== idx);
                                                                         await apiProjects.updateDetails(project.id, { vault_files: newVault });
                                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -1831,9 +1870,9 @@ export default function ProjectDetails() {
                         <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02] flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide flex items-center gap-2">
-                                    <Clock className="w-5 h-5" /> Design History & Versions
+                                    <Clock className="w-5 h-5" /> {t('projectDetailsPage.designHistoryTitle')}
                                 </CardTitle>
-                                <CardDescription className="text-xs uppercase tracking-widest text-gray-500">Historical iterations and archived design snapshots.</CardDescription>
+                                <CardDescription className="text-xs uppercase tracking-widest text-gray-500">{t('projectDetailsPage.designHistoryDesc')}</CardDescription>
                             </div>
                         </CardHeader>
                         <CardContent className="pt-6">
@@ -1847,12 +1886,18 @@ export default function ProjectDetails() {
                                                         v{ver.version_number}
                                                     </span>
                                                     <span className="text-[10px] text-zinc-500 uppercase tracking-tight">
-                                                        {new Date(ver.created_at).toLocaleDateString()}
+                                                        {new Date(ver.created_at).toLocaleDateString(localeTag)}
                                                     </span>
                                                 </div>
                                                 <div className="flex gap-1 items-center">
                                                     <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-tighter font-bold ${ver.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-500'}`}>
-                                                        {ver.status}
+                                                        {ver.status === 'approved'
+                                                            ? t('projectDetailsPage.versionStatus_approved')
+                                                            : ver.status === 'rejected'
+                                                                ? t('projectDetailsPage.versionStatus_rejected')
+                                                                : ver.status === 'submitted'
+                                                                    ? t('projectDetailsPage.versionStatus_submitted')
+                                                                    : ver.status}
                                                     </span>
                                                     {(role === 'admin' || role === 'secretary' || (role === 'client' && ver.status === 'rejected')) && (
                                                         <div className="flex gap-0.5 opacity-0 group-hover/ver:opacity-100 transition-opacity">
@@ -1886,7 +1931,7 @@ export default function ProjectDetails() {
                                                 
                                                 {ver.model_link && (
                                                     <a href={ver.model_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 transition-colors text-xs">
-                                                        <LinkIcon className="w-3 h-3" /> <span className="underline">Modèle 3D (CAD)</span>
+                                                        <LinkIcon className="w-3 h-3" /> <span className="underline">{t('projectDetailsPage.model3dCadLink')}</span>
                                                     </a>
                                                 )}
 
@@ -1911,7 +1956,7 @@ export default function ProjectDetails() {
                                                 {ver.feedback && (
                                                     <div className="mt-2 pt-2 border-t border-black/5 dark:border-white/5 flex items-start gap-2">
                                                         <AlertCircle className="w-3 h-3 text-red-500 mt-0.5" />
-                                                        <div className="text-red-500/80 text-[10px] italic font-medium line-clamp-2">Rejet: {ver.feedback}</div>
+                                                        <div className="text-red-500/80 text-[10px] italic font-medium line-clamp-2">{t('projectDetailsPage.rejectionPrefix')} {ver.feedback}</div>
                                                     </div>
                                                 )}
                                             </div>
@@ -1929,15 +1974,15 @@ export default function ProjectDetails() {
                         <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
                             <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide flex items-center gap-2">
                                 <Shield className="w-5 h-5" />
-                                Notes Internes
+                                {t('projectDetailsPage.internalNotesTitle')}
                             </CardTitle>
-                            <CardDescription className="text-xs text-muted-foreground">Visible uniquement par admin et secrétaire. Non visible par le client ou l'ambassadeur.</CardDescription>
+                            <CardDescription className="text-xs text-muted-foreground">{t('projectDetailsPage.internalNotesDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-4">
                             <Textarea
                                 value={internalNotes}
                                 onChange={(e) => setInternalNotes(e.target.value)}
-                                placeholder="Ajouter des notes internes sur ce projet..."
+                                placeholder={t('projectDetailsPage.internalNotesPlaceholder')}
                                 className="min-h-[120px] bg-white/50 dark:bg-black/30 border-black/10 dark:border-white/10 resize-y"
                             />
                             <div className="flex justify-end mt-3">
@@ -1950,15 +1995,15 @@ export default function ProjectDetails() {
                                             .update({ internal_notes: internalNotes })
                                             .eq('id', project.id);
                                         if (error) {
-                                            toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                                            toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
                                         } else {
-                                            toast({ title: 'Notes sauvegardées' });
+                                            toast({ title: t('projectDetailsPage.notesSavedToast') });
                                             queryClient.invalidateQueries({ queryKey: ['projects'] });
                                         }
                                     }}
                                 >
                                     <Save className="w-4 h-4 mr-2" />
-                                    Sauvegarder
+                                    {t('common.save')}
                                 </Button>
                             </div>
                         </CardContent>
@@ -1968,17 +2013,17 @@ export default function ProjectDetails() {
                 {/* Stage Specific Data Form */}
                 <Card className="md:col-span-3 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl group">
                     <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02]">
-                        <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">Stage Information: {project.status.replace(/_/g, ' ').toUpperCase()}</CardTitle>
-                        <CardDescription className="text-xs uppercase tracking-widest text-gray-500">Update information for the current stage.</CardDescription>
+                        <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">{t('projectDetailsPage.stageInfoTitle', { stage: t(`projectStatus.${project.status}` as 'projectStatus.designing') })}</CardTitle>
+                        <CardDescription className="text-xs uppercase tracking-widest text-gray-500">{t('projectDetailsPage.updateStageDescription')}</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="space-y-4">
                             {project.status === 'designing' && (
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Design Notes</label>
+                                    <label className="text-sm font-medium">{t('projectDetailsPage.designNotesLabel')}</label>
                                     <textarea
                                         className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none overflow-hidden"
-                                        placeholder="Add notes about sketches, stones, etc."
+                                        placeholder={t('projectDetailsPage.designNotesPlaceholder')}
                                         defaultValue={project.stage_details?.design_notes}
                                         onInput={(e) => {
                                             const target = e.target as HTMLTextAreaElement;
@@ -1994,7 +2039,7 @@ export default function ProjectDetails() {
                                         }}
                                     />
                                     <div className="pt-2">
-                                        <label className="text-sm font-medium mb-2 block">Reference Images / Sketches</label>
+                                        <label className="text-sm font-medium mb-2 block">{t('projectDetailsPage.referenceImagesLabel')}</label>
                                         <div className="flex gap-2 flex-wrap mb-2">
                                             {project.stage_details?.sketch_files?.map((url, i) => (
                                                 <div key={i} className="relative group cursor-pointer" onClick={() => setPreviewImage(url)}>
@@ -2017,7 +2062,7 @@ export default function ProjectDetails() {
                                                                         user_id: user?.id || 'admin',
                                                                         user_name: user?.user_metadata?.full_name || 'User',
                                                                         action: 'delete',
-                                                                        details: 'Deleted a sketch/reference image'
+                                                                        details: t('projectDetailsPage.activity_deletedSketch')
                                                                     });
                                                                     queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                                     queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
@@ -2045,7 +2090,7 @@ export default function ProjectDetails() {
                                             </div>
                                         ) : (
                                             <Button size="sm" variant="outline" onClick={() => setIsAddingSketch(true)}>
-                                                + Add Sketch
+                                                {t('projectDetailsPage.addSketchButton')}
                                             </Button>
                                         )}
                                         {uploadError && isAddingSketch && <span className="text-xs text-red-500 ml-2">{uploadError}</span>}
@@ -2057,15 +2102,15 @@ export default function ProjectDetails() {
                                 <>
                                     {/* Initial Design Reference (Read Only) */}
                                     <div className="bg-zinc-50 dark:bg-zinc-900 p-4 rounded-md border border-zinc-200 dark:border-zinc-800 mb-6">
-                                        <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Initial Design Brief</h4>
+                                        <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">{t('projectDetailsPage.initialDesignBrief')}</h4>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="text-xs font-medium text-muted-foreground">Notes</label>
-                                                <p className="text-sm whitespace-pre-wrap">{project.stage_details?.design_notes || "No notes provided."}</p>
+                                                <label className="text-xs font-medium text-muted-foreground">{t('projectDetailsPage.notesLabel')}</label>
+                                                <p className="text-sm whitespace-pre-wrap">{project.stage_details?.design_notes || t('projectDetailsPage.noNotesProvided')}</p>
                                             </div>
                                             {project.stage_details?.sketch_files && project.stage_details.sketch_files.length > 0 && (
                                                 <div>
-                                                    <label className="text-xs font-medium text-muted-foreground block mb-2">Sketches & Reference</label>
+                                                    <label className="text-xs font-medium text-muted-foreground block mb-2">{t('projectDetailsPage.sketchesReferenceLabel')}</label>
                                                     <div className="flex gap-2 flex-wrap">
                                                         {project.stage_details.sketch_files.map((url, i) => (
                                                             <div key={i} className="cursor-pointer hover:opacity-90" onClick={() => setPreviewImage(url)}>
@@ -2078,10 +2123,10 @@ export default function ProjectDetails() {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Model Link (CAD)</label>
+                                        <label className="text-sm font-medium">{t('projectDetailsPage.modelLinkLabel')}</label>
                                         <input
                                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                            placeholder="https://..."
+                                            placeholder={t('projectDetailsPage.httpsPlaceholder')}
                                             defaultValue={project.stage_details?.model_link}
                                             onBlur={(e) => {
                                                 const val = e.target.value;
@@ -2102,10 +2147,10 @@ export default function ProjectDetails() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Model Notes</label>
+                                        <label className="text-sm font-medium">{t('projectDetailsPage.modelNotesLabel')}</label>
                                         <textarea
                                             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                            placeholder="Notes on the 3D model..."
+                                            placeholder={t('projectDetailsPage.modelNotesPlaceholder')}
                                             defaultValue={project.stage_details?.model_notes}
                                             onBlur={(e) => {
                                                 const val = e.target.value;
@@ -2126,7 +2171,7 @@ export default function ProjectDetails() {
                                         />
                                     </div>
                                     <div className="pt-2">
-                                        <label className="text-sm font-medium mb-2 block">Renderings</label>
+                                        <label className="text-sm font-medium mb-2 block">{t('projectDetailsPage.renderingsLabel')}</label>
                                         {/* Renderings Logic reused */}
                                         <div className="flex gap-2 flex-wrap mb-2">
                                             {project.stage_details?.design_files?.map((url, i) => (
@@ -2152,7 +2197,7 @@ export default function ProjectDetails() {
                                                                             user_id: user?.id || 'admin',
                                                                             user_name: user?.user_metadata?.full_name || 'User',
                                                                             action: 'delete',
-                                                                            details: 'Deleted a 3D rendering image'
+                                                                            details: t('projectDetailsPage.activity_deletedRender')
                                                                         });
                                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                                         queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
@@ -2189,7 +2234,7 @@ export default function ProjectDetails() {
                                                     disabled={project.status === 'design_ready'}
                                                     onClick={() => setIsAddingRender(true)}
                                                 >
-                                                    + Add Render
+                                                    {t('projectDetailsPage.addRenderButton')}
                                                 </Button>
                                                 {uploadError && <span className="text-xs text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">{uploadError}</span>}
                                             </div>
@@ -2201,7 +2246,7 @@ export default function ProjectDetails() {
                                         <div className="space-y-4 border-t pt-4">
                                             <div className="flex items-center justify-between">
                                                 <label className="text-sm font-medium flex items-center gap-2 text-amber-600">
-                                                    <DollarSign className="w-3 h-3" /> Cost Line Items (Internal)
+                                                    <DollarSign className="w-3 h-3" /> {t('projectDetailsPage.costLineItemsLabel')}
                                                 </label>
                                                 {!project.financials?.exported_to_expenses && (
                                                     <Button size="sm" variant="outline" onClick={() => {
@@ -2211,7 +2256,7 @@ export default function ProjectDetails() {
                                                             queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                         });
                                                     }}>
-                                                        + Add Cost Row
+                                                        {t('projectDetailsPage.addCostRowButton')}
                                                     </Button>
                                                 )}
                                             </div>
@@ -2220,7 +2265,7 @@ export default function ProjectDetails() {
                                                 <div key={item.id || idx} className="flex gap-2 items-center">
                                                     <input
                                                         className={`flex-1 h-10 rounded-md border ${project.financials?.exported_to_expenses ? 'border-zinc-200 bg-zinc-100 dark:bg-zinc-900 cursor-not-allowed opacity-75' : 'border-amber-200 bg-amber-50 dark:bg-amber-950/20'} px-3 py-2 text-sm`}
-                                                        placeholder="Detail (e.g. 14k gold, shipping)"
+                                                        placeholder={t('projectDetailsPage.costDetailPlaceholder')}
                                                         defaultValue={item.detail}
                                                         readOnly={!!project.financials?.exported_to_expenses}
                                                         onBlur={(e) => {
@@ -2261,7 +2306,7 @@ export default function ProjectDetails() {
                                                     />
                                                     {!project.financials?.exported_to_expenses && (
                                                         <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-700 h-10 w-10 shrink-0" onClick={() => {
-                                                            if (!window.confirm('Remove this cost item?')) return;
+                                                            if (!window.confirm(t('projectDetailsPage.confirmRemoveCostItem'))) return;
                                                             const currentItems = project.financials?.cost_items || [];
                                                             const newItems = currentItems.filter((_, i) => i !== idx);
                                                             apiProjects.updateFinancials(project.id, { cost_items: newItems }).then(() => {
@@ -2273,7 +2318,7 @@ export default function ProjectDetails() {
                                                     )}
                                                 </div>
                                             ))}
-                                            <p className="text-[10px] text-muted-foreground">{project.financials?.exported_to_expenses ? "Costs locked, already exported to expenses." : "Update production costs at any stage before exporting."}</p>
+                                            <p className="text-[10px] text-muted-foreground">{project.financials?.exported_to_expenses ? t('projectDetailsPage.costsLockedHint') : t('projectDetailsPage.costsUpdateHint')}</p>
                                         </div>
                                     )}
 
@@ -2285,7 +2330,7 @@ export default function ProjectDetails() {
                                                     variant="outline"
                                                     className="flex-1 gap-2 border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
                                                     onClick={async () => {
-                                                        if (!confirm("This will archive current renders and nodes into a new version history entry. Continue?")) return;
+                                                        if (!confirm(t('projectDetailsPage.archiveVersionConfirm'))) return;
                                                         
                                                         const currentVersions = project.stage_details?.design_versions || [];
                                                         const newVersion = {
@@ -2304,21 +2349,21 @@ export default function ProjectDetails() {
                                                             // For now, let's keep them so they don't "disappear" until updated.
                                                         });
 
-                                                        toast({ title: `Version ${newVersion.version_number} archived.` });
+                                                        toast({ title: t('projectDetailsPage.versionArchivedTitle', { n: newVersion.version_number }) });
                                                         queryClient.invalidateQueries({ queryKey: ['projects'] });
                                                     }}
                                                 >
                                                     <Clock className="w-4 h-4" />
-                                                    Archive as Version (History)
+                                                    {t('projectDetailsPage.archiveVersionButton')}
                                                 </Button>
 
                                                 <Button className="flex-1 gap-2 bg-luxury-gold text-black hover:bg-gold-600" onClick={() => handleStatusUpdate('design_ready')}>
                                                     <Send className="w-4 h-4" />
-                                                    Submit Final Design
+                                                    {t('projectDetailsPage.submitFinalDesignButton')}
                                                 </Button>
                                             </div>
                                             <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest">
-                                                Archive before marking as 'Design Ready' to keep track of iterations.
+                                                {t('projectDetailsPage.archiveBeforeDesignReadyHint')}
                                             </p>
                                         </div>
                                     )}
@@ -2328,10 +2373,10 @@ export default function ProjectDetails() {
                             {project.status === 'production' && (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Production / Casting Notes</label>
+                                        <label className="text-sm font-medium">{t('projectDetailsPage.productionNotesLabel')}</label>
                                         <textarea
                                             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                            placeholder="Casting details, stone setting notes..."
+                                            placeholder={t('projectDetailsPage.productionNotesPlaceholder')}
                                             defaultValue={project.stage_details?.production_notes}
                                             readOnly={role === 'client'}
                                             onBlur={(e) => {
@@ -2359,10 +2404,10 @@ export default function ProjectDetails() {
                                 <div className="space-y-4">
                                     {/* ... delivery view ... */}
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Tracking Number</label>
+                                        <label className="text-sm font-medium">{t('projectDetailsPage.trackingNumberLabel')}</label>
                                         <input
                                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                            placeholder="FedEx / DHL Tracking"
+                                            placeholder={t('projectDetailsPage.trackingPlaceholder')}
                                             defaultValue={project.stage_details?.tracking_number}
                                             readOnly={role === 'client'}
                                             onBlur={(e) => {
@@ -2374,13 +2419,13 @@ export default function ProjectDetails() {
                                                             user_id: user?.id || 'admin',
                                                             user_name: user?.user_metadata?.full_name || 'Admin',
                                                             action: 'update',
-                                                            details: `Added/Updated tracking number: ${val}`
+                                                            details: t('projectDetailsPage.activity_trackingUpdated', { tracking: val })
                                                         });
                                                         if (project.client_id && val) {
                                                             apiNotifications.create({
                                                                 user_id: project.client_id,
-                                                                title: 'Project Shipped!',
-                                                                message: `A tracking number (${val}) has been added to your project "${project.title}".`,
+                                                                title: t('projectDetailsPage.notif_trackingAdded_title'),
+                                                                message: t('projectDetailsPage.notif_trackingAdded_msg', { tracking: val, title: project.title }),
                                                                 type: 'success',
                                                                 link: `/dashboard/projects/${project.id}`
                                                             });
@@ -2400,30 +2445,30 @@ export default function ProjectDetails() {
                                     <div className="flex items-center justify-between">
                                         <h4 className="text-sm font-serif font-bold flex items-center gap-2">
                                             <ShieldCheck className="w-4 h-4 text-luxury-gold" />
-                                            Suivi Qualité
+                                            {t('projectDetailsPage.qualityTrackingTitle')}
                                         </h4>
                                         <Button size="sm" variant="outline" onClick={() => setShowAddQuality(!showAddQuality)}>
-                                            {showAddQuality ? 'Annuler' : '+ Signaler'}
+                                            {showAddQuality ? t('common.cancel') : t('projectDetailsPage.reportIssueShow')}
                                         </Button>
                                     </div>
 
                                     {showAddQuality && (
                                         <div className="p-3 rounded-lg border border-white/10 bg-white/5 space-y-3">
                                             <div className="flex gap-2">
-                                                {(['rework', 'repair', 'return', 'defect'] as const).map(t => (
+                                                {(['rework', 'repair', 'return', 'defect'] as const).map((qKind) => (
                                                     <button
-                                                        key={t}
-                                                        onClick={() => setQualityType(t)}
-                                                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${qualityType === t ? 'bg-luxury-gold text-black' : 'bg-white/5 text-muted-foreground hover:bg-white/10'}`}
+                                                        key={qKind}
+                                                        onClick={() => setQualityType(qKind)}
+                                                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${qualityType === qKind ? 'bg-luxury-gold text-black' : 'bg-white/5 text-muted-foreground hover:bg-white/10'}`}
                                                     >
-                                                        {t === 'rework' ? 'Reprise' : t === 'repair' ? 'Réparation' : t === 'return' ? 'Retour' : 'Défaut'}
+                                                        {qKind === 'rework' ? t('projectDetailsPage.qualityTypeRework') : qKind === 'repair' ? t('projectDetailsPage.qualityTypeRepair') : qKind === 'return' ? t('projectDetailsPage.qualityTypeReturn') : t('projectDetailsPage.qualityTypeDefect')}
                                                     </button>
                                                 ))}
                                             </div>
                                             <Textarea
                                                 value={qualityDesc}
                                                 onChange={(e) => setQualityDesc(e.target.value)}
-                                                placeholder="Décrire le problème..."
+                                                placeholder={t('projectDetailsPage.qualityDescPlaceholder')}
                                                 className="min-h-[60px]"
                                             />
                                             <Button
@@ -2441,16 +2486,16 @@ export default function ProjectDetails() {
                                                         .from('projects')
                                                         .update({ stage_details: { ...project.stage_details, quality_issues: issues } })
                                                         .eq('id', project.id);
-                                                    if (error) toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                                                    if (error) toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
                                                     else {
-                                                        toast({ title: 'Problème signalé' });
+                                                        toast({ title: t('projectDetailsPage.qualityIssueReportedToast') });
                                                         setQualityDesc('');
                                                         setShowAddQuality(false);
                                                         queryClient.invalidateQueries({ queryKey: ['project', id] });
                                                     }
                                                 }}
                                             >
-                                                Signaler
+                                                {t('projectDetailsPage.submitQualityReport')}
                                             </Button>
                                         </div>
                                     )}
@@ -2464,13 +2509,13 @@ export default function ProjectDetails() {
                                                         issue.type === 'defect' ? 'bg-amber-500/20 text-amber-400' :
                                                         'bg-blue-500/20 text-blue-400'
                                                     }`}>
-                                                        {issue.type === 'rework' ? 'Reprise' : issue.type === 'repair' ? 'Réparation' : issue.type === 'return' ? 'Retour' : 'Défaut'}
+                                                        {issue.type === 'rework' ? t('projectDetailsPage.qualityTypeRework') : issue.type === 'repair' ? t('projectDetailsPage.qualityTypeRepair') : issue.type === 'return' ? t('projectDetailsPage.qualityTypeReturn') : t('projectDetailsPage.qualityTypeDefect')}
                                                     </Badge>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm">{issue.description}</p>
                                                         <p className="text-[10px] text-muted-foreground mt-1">
-                                                            {new Date(issue.reported_at).toLocaleDateString('fr-CA')}
-                                                            {issue.resolved_at && ` — Résolu le ${new Date(issue.resolved_at).toLocaleDateString('fr-CA')}`}
+                                                            {new Date(issue.reported_at).toLocaleDateString(localeTag)}
+                                                            {issue.resolved_at && `${t('projectDetailsPage.resolvedOnPrefix')}${new Date(issue.resolved_at).toLocaleDateString(localeTag)}`}
                                                         </p>
                                                     </div>
                                                     {!issue.resolved_at && (
@@ -2483,23 +2528,23 @@ export default function ProjectDetails() {
                                                                     i.id === issue.id ? { ...i, resolved_at: new Date().toISOString() } : i
                                                                 );
                                                                 await supabase.from('projects').update({ stage_details: { ...project.stage_details, quality_issues: issues } }).eq('id', project.id);
-                                                                toast({ title: 'Marqué comme résolu' });
+                                                                toast({ title: t('projectDetailsPage.markedResolvedToast') });
                                                                 queryClient.invalidateQueries({ queryKey: ['project', id] });
                                                             }}
                                                         >
-                                                            ✓ Résolu
+                                                            {t('projectDetailsPage.resolvedButton')}
                                                         </Button>
                                                     )}
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-muted-foreground text-center py-2">Aucun problème signalé</p>
+                                        <p className="text-xs text-muted-foreground text-center py-2">{t('projectDetailsPage.noQualityIssues')}</p>
                                     )}
                                 </div>
                             )}
 
-                            <p className="text-xs text-muted-foreground italic mt-4">Changes save automatically when you click outside the field.</p>
+                            <p className="text-xs text-muted-foreground italic mt-4">{t('projectDetailsPage.savesAutomaticallyHint')}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -2517,17 +2562,17 @@ export default function ProjectDetails() {
                     <DialogHeader>
                         <DialogTitle className="text-xl font-serif text-luxury-gold flex items-center gap-2">
                             <Pencil className="w-5 h-5" />
-                            {editingModVersion ? "Edit Modification Request" : "Request Design Changes"}
+                            {editingModVersion ? t('projectDetailsPage.editModificationRequest') : t('projectDetailsPage.requestDesignChanges')}
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground">
                             {editingModVersion 
-                                ? "Update your feedback for this design iteration." 
-                                : "Describe exactly what you would like to change. The current design will be archived automatically."}
+                                ? t('projectDetailsPage.modDialogDescEdit') 
+                                : t('projectDetailsPage.modDialogDescNew')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <Textarea 
-                            placeholder="Example: Make the band slightly thinner, or change the center stone to a square cut..."
+                            placeholder={t('projectDetailsPage.modDialogPlaceholder')}
                             className="min-h-[120px] bg-neutral-50 dark:bg-zinc-900/50 border-input focus:ring-luxury-gold"
                             value={modNotes}
                             onChange={(e) => setModNotes(e.target.value)}
@@ -2535,14 +2580,14 @@ export default function ProjectDetails() {
                     </div>
                     <DialogFooter className="flex gap-2 sm:justify-end">
                         <Button variant="ghost" onClick={() => setIsModDialogOpen(false)} className="hover:bg-neutral-100 dark:hover:bg-zinc-800">
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button 
                             className="bg-luxury-gold text-black hover:bg-gold-600 transition-all shadow-lg"
                             onClick={handleSubmitModification}
                             disabled={!modNotes.trim()}
                         >
-                            {editingModVersion ? "Save Changes" : "Submit Request"}
+                            {editingModVersion ? t('common.save') : t('projectDetailsPage.modDialogSubmitRequest')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

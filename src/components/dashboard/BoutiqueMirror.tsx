@@ -8,8 +8,10 @@ import { Camera, Eye, EyeOff, Trash2, Plus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 export const BoutiqueMirror: React.FC = () => {
+    const { t } = useTranslation();
     const { role, user } = useAuth();
     const queryClient = useQueryClient();
     const [isUploading, setIsUploading] = useState(false);
@@ -29,7 +31,7 @@ export const BoutiqueMirror: React.FC = () => {
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !selectedProject) {
-            if (!selectedProject) toast({ title: "Select a project first", variant: "destructive" });
+            if (!selectedProject) toast({ title: t('boutiqueMirror.selectProjectFirst'), variant: "destructive" });
             return;
         }
 
@@ -54,14 +56,14 @@ export const BoutiqueMirror: React.FC = () => {
                 manufacturer_id: user?.id,
                 image_url: publicUrl,
                 is_client_visible: false, // Default to hidden, admin must approve
-                caption: 'Workshop WIP'
+                caption: t('boutiqueMirror.captionDefault')
             });
 
-            toast({ title: "Story uploaded! Awaiting admin approval." });
+            toast({ title: t('boutiqueMirror.storyUploaded') });
             queryClient.invalidateQueries({ queryKey: ['wip_stories'] });
         } catch (error) {
-            const message = error instanceof Error ? error.message : "An unknown error occurred";
-            toast({ title: "Upload failed", description: message, variant: "destructive" });
+            const message = error instanceof Error ? error.message : t('boutiqueMirror.unknownError');
+            toast({ title: t('boutiqueMirror.uploadFailed'), description: message, variant: "destructive" });
         } finally {
             setIsUploading(false);
         }
@@ -73,7 +75,7 @@ export const BoutiqueMirror: React.FC = () => {
     };
 
     const deleteStory = async (id: string) => {
-        if (!confirm("Delete this story?")) return;
+        if (!confirm(t('boutiqueMirror.deleteConfirm'))) return;
         await apiStories.delete(id);
         queryClient.invalidateQueries({ queryKey: ['wip_stories'] });
     };
@@ -85,9 +87,9 @@ export const BoutiqueMirror: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-serif font-bold text-luxury-gold flex items-center gap-2">
-                        <Camera className="w-5 h-5" /> Boutique Mirror
+                        <Camera className="w-5 h-5" /> {t('boutiqueMirror.title')}
                     </h3>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Live Workshop Feed</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('boutiqueMirror.subtitle')}</p>
                 </div>
 
                 {role === 'manufacturer' && (
@@ -97,7 +99,7 @@ export const BoutiqueMirror: React.FC = () => {
                             value={selectedProject}
                             onChange={(e) => setSelectedProject(e.target.value)}
                         >
-                            <option value="">Project...</option>
+                            <option value="">{t('boutiqueMirror.projectSelectPlaceholder')}</option>
                             {projects?.filter(p => p.status === 'production').map(p => (
                                 <option key={p.id} value={p.id}>{p.title}</option>
                             ))}
@@ -106,7 +108,7 @@ export const BoutiqueMirror: React.FC = () => {
                             <input type="file" className="hidden" accept="image/*" onChange={handleUpload} disabled={isUploading} />
                             <Button size="sm" variant="outline" className="h-8 gap-2" disabled={isUploading}>
                                 {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                                Post WIP
+                                {t('boutiqueMirror.postWip')}
                             </Button>
                         </label>
                     </div>
@@ -116,19 +118,19 @@ export const BoutiqueMirror: React.FC = () => {
             <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x">
                 {stories?.length === 0 && (
                     <div className="w-full text-center py-12 text-muted-foreground text-sm italic">
-                        No recent workshop updates.
+                        {t('boutiqueMirror.empty')}
                     </div>
                 )}
                 {stories?.map((story) => (
                     <div key={story.id} className="relative shrink-0 w-48 aspect-[3/4] rounded-xl overflow-hidden group snap-start border border-luxury-gold/10">
                         <img 
                             src={story.image_url} 
-                            alt="WIP" 
+                            alt={t('boutiqueMirror.wipAlt')} 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                         <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
                             <p className="text-[10px] text-white/70 truncate">{story.project?.title}</p>
-                            <p className="text-[10px] text-luxury-gold font-medium">By {story.manufacturer?.full_name}</p>
+                            <p className="text-[10px] text-luxury-gold font-medium">{t('boutiqueMirror.byManufacturer', { name: story.manufacturer?.full_name ?? '—' })}</p>
                         </div>
 
                         {/* Admin Controls */}
@@ -156,7 +158,7 @@ export const BoutiqueMirror: React.FC = () => {
                         {/* Status Badge */}
                         <div className="absolute top-2 left-2">
                             <div className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest ${story.is_client_visible ? 'bg-green-500/80 text-white' : 'bg-amber-500/80 text-white'}`}>
-                                {story.is_client_visible ? 'Live' : 'Pending'}
+                                {story.is_client_visible ? t('boutiqueMirror.statusLive') : t('boutiqueMirror.statusPending')}
                             </div>
                         </div>
                     </div>

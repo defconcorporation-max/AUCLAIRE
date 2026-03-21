@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiCatalog, CatalogNode } from '@/services/apiCatalog';
@@ -45,6 +46,7 @@ interface ImageUploaderProps {
 }
 
 function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
+    const { t } = useTranslation();
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -55,7 +57,7 @@ function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
             onChange(url);
         } catch (error) {
             console.error('Upload failed:', error);
-            alert('L\'envoi de l\'image a échoué.');
+            alert(t('productCatalogPage.uploadFailed'));
         } finally {
             setIsUploading(false);
         }
@@ -94,11 +96,11 @@ function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
                 {isUploading ? (
                     <div className="flex flex-col items-center gap-2">
                         <Loader2 className="w-8 h-8 animate-spin text-luxury-gold" />
-                        <span className="text-xs text-muted-foreground animate-pulse">Envoi en cours...</span>
+                        <span className="text-xs text-muted-foreground animate-pulse">{t('productCatalogPage.uploading')}</span>
                     </div>
                 ) : value ? (
                     <>
-                        <img src={value} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={value} alt={t('productCatalogPage.previewAlt')} className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                             <div className="bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/20">
                                 <Upload className="w-5 h-5 text-white" />
@@ -120,8 +122,8 @@ function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
                             <Upload className="w-6 h-6 text-muted-foreground" />
                         </div>
                         <div className="text-center">
-                            <p className="text-sm text-white font-medium">Glisser une image ici</p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">ou cliquez pour parcourir</p>
+                            <p className="text-sm text-white font-medium">{t('productCatalogPage.dropImageTitle')}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">{t('productCatalogPage.dropImageSub')}</p>
                         </div>
                     </>
                 )}
@@ -141,6 +143,7 @@ interface TreeItemProps {
 }
 
 function TreeItem({ node, allNodes, currentId, onSelect, onAdd, onBulkAdd, level = 0 }: TreeItemProps) {
+    const { t } = useTranslation();
     const [isExpanded, setIsExpanded] = useState(false);
     const children = allNodes.filter(n => n.parent_id === node.id);
     const isActive = currentId === node.id;
@@ -182,7 +185,7 @@ function TreeItem({ node, allNodes, currentId, onSelect, onAdd, onBulkAdd, level
                 {onAdd && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onAdd(node); }}
-                        title="Ajouter un enfant"
+                        title={t('productCatalogPage.addChildTitle')}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-luxury-gold hover:text-white rounded transition-all ml-1"
                     >
                         <Plus className="w-2.5 h-2.5" />
@@ -193,11 +196,11 @@ function TreeItem({ node, allNodes, currentId, onSelect, onAdd, onBulkAdd, level
                 {onBulkAdd && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onBulkAdd(node); }}
-                        title={`Bulk Add (Children: ${children.length})`}
+                        title={t('productCatalogPage.bulkAddTitle', { count: children.length })}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-600 hover:text-white rounded transition-all ml-1 flex items-center gap-1"
                     >
                         <Layers className="w-2.5 h-2.5" />
-                        <span className="text-[6px] font-bold">BULK ({children.length})</span>
+                        <span className="text-[6px] font-bold">{t('productCatalogPage.bulkShort', { count: children.length })}</span>
                     </button>
                 )}
             </div>
@@ -223,6 +226,8 @@ function TreeItem({ node, allNodes, currentId, onSelect, onAdd, onBulkAdd, level
 }
 
 export default function ProductCatalog() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('fr') ? 'fr-CA' : 'en-CA';
     const navigate = useNavigate();
     const { role, isAdmin } = useAuth();
     const queryClient = useQueryClient();
@@ -302,7 +307,7 @@ export default function ProductCatalog() {
                         await apiCatalog.propagateNode(nodeToPropagateId);
                     } catch (err) {
                         console.error("Propagation failed:", err);
-                        alert("L'ajout a réussi, mais la synchronisation globale a échoué.");
+                        alert(t('productCatalogPage.propagationAddFailed'));
                     }
                 }
             }
@@ -324,7 +329,7 @@ export default function ProductCatalog() {
                     await apiCatalog.propagateNode(id);
                 } catch (err) {
                     console.error("Propagation failed:", err);
-                    alert("La modification a réussi, mais la synchronisation aux autres modèles a échoué.");
+                    alert(t('productCatalogPage.propagationEditFailed'));
                 }
             }
             queryClient.invalidateQueries({ queryKey: ['catalog-nodes', currentParentId] });
@@ -367,7 +372,7 @@ export default function ProductCatalog() {
     const handleBulkAdd = (parentCategoryNode: CatalogNode) => {
         const childrenNodes = allNodes.filter(n => n.parent_id === parentCategoryNode.id);
         if (childrenNodes.length === 0) {
-            alert("Cette catégorie n'a pas d'enfants. Utilisez l'ajout classique (+).");
+            alert(t('productCatalogPage.bulkNoChildren'));
             return;
         }
         setBulkParentNodes(childrenNodes);
@@ -396,7 +401,7 @@ export default function ProductCatalog() {
                         onClick={() => navigate('/dashboard/resources')}
                         className="w-fit text-muted-foreground hover:text-white"
                     >
-                        <ArrowLeft className="w-4 h-4 mr-2" /> Menu Ressources
+                        <ArrowLeft className="w-4 h-4 mr-2" /> {t('productCatalogPage.backMenu')}
                     </Button>
                     <span className="text-[10px] text-white/20 uppercase tracking-[0.3em] font-mono">v3.4.7</span>
                 </div>
@@ -408,7 +413,7 @@ export default function ProductCatalog() {
                         onClick={() => navigate('/dashboard/resources/calculator')}
                         className="border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
                     >
-                        <Calculator className="w-4 h-4 mr-2" /> Flash Quote
+                        <Calculator className="w-4 h-4 mr-2" /> {t('productCatalogPage.flashQuote')}
                     </Button>
                     )}
 
@@ -418,7 +423,7 @@ export default function ProductCatalog() {
                             className="bg-luxury-gold hover:bg-yellow-600 text-white shadow-lg shadow-luxury-gold/10"
                         >
                             <Plus className="w-4 h-4 mr-2" /> 
-                            Ajouter option
+                            {t('productCatalogPage.addOption')}
                         </Button>
                     )}
 
@@ -433,7 +438,7 @@ export default function ProductCatalog() {
                         )}
                     >
                         {showroomMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                        {showroomMode ? "Mode Edit" : "Mode Showroom"}
+                        {showroomMode ? t('productCatalogPage.modeEdit') : t('productCatalogPage.modeShowroom')}
                     </Button>
                 </div>
             </div>
@@ -447,14 +452,14 @@ export default function ProductCatalog() {
                     <div className="flex items-center justify-between items-center mb-6 px-1">
                         <div className="flex items-center gap-2">
                             <ShoppingBag className="w-4 h-4 text-luxury-gold" />
-                            <h2 className="text-sm font-bold uppercase tracking-widest text-white/50">Explorateur</h2>
+                            <h2 className="text-sm font-bold uppercase tracking-widest text-white/50">{t('productCatalogPage.explorer')}</h2>
                         </div>
                     </div>
 
                     <div className="space-y-4 mb-6">
                         <div className="relative">
                             <Input 
-                                placeholder="Rechercher..." 
+                                placeholder={t('productCatalogPage.searchPlaceholder')} 
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="bg-white/5 border-white/10 text-xs h-9 pl-8"
@@ -487,7 +492,7 @@ export default function ProductCatalog() {
 
                     {searchTerm.length > 1 && (
                         <div className="mt-4 pt-4 border-t border-white/5">
-                            <p className="text-[10px] uppercase tracking-widest text-luxury-gold mb-2 font-bold">Résultats</p>
+                            <p className="text-[10px] uppercase tracking-widest text-luxury-gold mb-2 font-bold">{t('productCatalogPage.results')}</p>
                             <div className="space-y-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                                 {filteredSearch.map(res => (
                                     <button 
@@ -525,7 +530,7 @@ export default function ProductCatalog() {
                             className={`flex items-center gap-1 hover:text-luxury-gold transition-colors ${currentPath.length === 0 ? 'text-luxury-gold font-bold' : 'text-muted-foreground'}`}
                         >
                             <Home className="w-4 h-4" />
-                            <span className="text-xs uppercase tracking-widest">Catalogue</span>
+                            <span className="text-xs uppercase tracking-widest">{t('productCatalogPage.breadcrumbCatalog')}</span>
                         </button>
                         {currentPath.map((node, i) => (
                             <div key={node.id} className="flex items-center gap-2">
@@ -543,7 +548,7 @@ export default function ProductCatalog() {
                     <header className="relative">
                         <div className="absolute -top-10 -left-10 w-48 h-48 bg-luxury-gold/5 rounded-full blur-[60px] -z-10" />
                         <h1 className="text-4xl font-serif text-white flex items-center gap-3 lowercase first-letter:uppercase">
-                            {currentPath.length === 0 ? "Nos Produits" : currentPath[currentPath.length - 1].label}
+                            {currentPath.length === 0 ? t('productCatalogPage.titleOurProducts') : currentPath[currentPath.length - 1].label}
                         </h1>
                         <div className="flex items-center gap-2 mt-2">
                             {currentPath.length > 0 && (
@@ -553,8 +558,8 @@ export default function ProductCatalog() {
                             )}
                             <p className="text-muted-foreground italic text-sm font-serif">
                                 {currentPath.length === 0 
-                                    ? "Sélectionnez une catégorie pour commencer" 
-                                    : currentPath[currentPath.length - 1].description || "Aucune description"
+                                    ? t('productCatalogPage.pickCategory') 
+                                    : currentPath[currentPath.length - 1].description || t('productCatalogPage.noDescription')
                                 }
                             </p>
                         </div>
@@ -569,8 +574,8 @@ export default function ProductCatalog() {
                         ) : nodes.length === 0 ? (
                             <div className="col-span-full py-20 text-center bg-white/5 rounded-3xl border border-dashed border-white/10">
                                 <Plus className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                                <h3 className="text-xl font-serif text-muted-foreground">Cette section est vide</h3>
-                                {canManage && <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Ajouter option" pour garnir ce niveau.</p>}
+                                <h3 className="text-xl font-serif text-muted-foreground">{t('productCatalogPage.emptySection')}</h3>
+                                {canManage && <p className="text-sm text-muted-foreground mt-2">{t('productCatalogPage.emptySectionHint')}</p>}
                             </div>
                         ) : (
                             nodes.map((node) => (
@@ -599,7 +604,7 @@ export default function ProductCatalog() {
                                                 className="h-8 w-8 bg-red-500/80 hover:bg-red-500"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    if(confirm('Supprimer cet élément et tous ses sous-éléments?')) deleteNodeMutation.mutate(node.id);
+                                                    if (confirm(t('productCatalogPage.deleteConfirm'))) deleteNodeMutation.mutate(node.id);
                                                 }}
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
@@ -638,7 +643,7 @@ export default function ProductCatalog() {
                                         <div className="flex items-center justify-between mt-4">
                                             {(node.price && node.price > 0 && !showroomMode) ? (
                                                 <div className="text-lg font-serif text-luxury-gold/90">
-                                                    {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(node.price)}
+                                                    {new Intl.NumberFormat(localeTag, { style: 'currency', currency: 'CAD' }).format(node.price)}
                                                 </div>
                                             ) : (
                                                 <div className="h-6" />
@@ -666,29 +671,34 @@ export default function ProductCatalog() {
                 <DialogContent className="max-w-md bg-zinc-950 border-white/10">
                     <DialogHeader>
                         <DialogTitle className="font-serif text-2xl text-white">
-                            Ajouter une variation
+                            {t('productCatalogPage.dialogAddTitle')}
                         </DialogTitle>
                         <DialogDescription>
                             {isBulkMode ? (
                                 <div className="bg-blue-600/10 border border-blue-600/20 p-2 rounded-lg mt-2">
                                     <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest flex items-center gap-2">
-                                        <Layers className="w-3 h-3" /> Mode Groupé (Bulk)
+                                        <Layers className="w-3 h-3" /> {t('productCatalogPage.bulkModeBadge')}
                                     </p>
                                     <p className="text-xs text-blue-200 mt-1">
-                                        Cet élément sera ajouté à <strong>{bulkParentNodes.length}</strong> modèles enfants.
+                                        {t('productCatalogPage.dialogBulkDesc', { count: bulkParentNodes.length })}
                                     </p>
                                 </div>
                             ) : (
-                                <>Cet élément sera ajouté sous : <span className="text-luxury-gold font-bold">{currentParentId ? currentPath[currentPath.length - 1].label : 'Racine'}</span></>
+                                <>
+                                    {t('productCatalogPage.dialogAddUnder')}{' '}
+                                    <span className="text-luxury-gold font-bold">
+                                        {currentParentId ? currentPath[currentPath.length - 1].label : t('productCatalogPage.root')}
+                                    </span>
+                                </>
                             )}
                         </DialogDescription>
                     </DialogHeader>
                     
                     <div className="space-y-4 py-4 px-2 overflow-y-auto max-h-[60vh]">
                         <div className="space-y-2">
-                            <Label>Nom / Label</Label>
+                            <Label>{t('productCatalogPage.labelName')}</Label>
                             <Input 
-                                placeholder="ex: 1.5ct, Or 18k, Oval Cut..." 
+                                placeholder={t('productCatalogPage.phLabel')} 
                                 value={newNode.label}
                                 onChange={(e) => setNewNode({...newNode, label: e.target.value})}
                             />
@@ -696,39 +706,39 @@ export default function ProductCatalog() {
 
                         <div className="space-y-3">
                             <Label className="flex items-center justify-between">
-                                Type de variation
-                                <span className="text-[10px] text-luxury-gold uppercase tracking-tighter">Crucial</span>
+                                {t('productCatalogPage.labelVariationType')}
+                                <span className="text-[10px] text-luxury-gold uppercase tracking-tighter">{t('productCatalogPage.crucial')}</span>
                             </Label>
                             <Input 
-                                placeholder="ex: style, carat, metal, model..." 
+                                placeholder={t('productCatalogPage.phType')} 
                                 value={newNode.type}
                                 onChange={(e) => setNewNode({...newNode, type: e.target.value.toLowerCase()})}
                                 className="bg-white/5 border-white/10"
                             />
                             <div className="flex flex-wrap gap-1.5 mt-2">
-                                {['model', 'style', 'carat', 'metal', 'color'].map(t => (
+                                {(['model', 'style', 'carat', 'metal', 'color'] as const).map((preset) => (
                                     <button 
-                                        key={t}
+                                        key={preset}
                                         type="button"
-                                        onClick={() => setNewNode({...newNode, type: t})}
+                                        onClick={() => setNewNode({...newNode, type: preset})}
                                         className={cn(
                                             "px-2 py-1 rounded-md text-[9px] uppercase tracking-widest border transition-all",
-                                            newNode.type === t ? "bg-luxury-gold/20 border-luxury-gold text-luxury-gold" : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                            newNode.type === preset ? "bg-luxury-gold/20 border-luxury-gold text-luxury-gold" : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
                                         )}
                                     >
-                                        {t}
+                                        {preset}
                                     </button>
                                 ))}
                             </div>
                             <p className="text-[10px] text-muted-foreground italic leading-tight">
-                                Le type définit le nom de la ligne dans le calculateur. Utilisez des minuscules et des underscores (ex: `metal_color`).
+                                {t('productCatalogPage.typeHint')}
                             </p>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Description</Label>
+                            <Label>{t('productCatalogPage.labelDescription')}</Label>
                             <Textarea 
-                                placeholder="Détails descriptifs (optionnel)..." 
+                                placeholder={t('productCatalogPage.phDescription')} 
                                 className="bg-white/5 border-white/10"
                                 value={newNode.description}
                                 onChange={(e) => setNewNode({...newNode, description: e.target.value})}
@@ -737,22 +747,22 @@ export default function ProductCatalog() {
 
                         {/* Image Uploader for all types */}
                         <ImageUploader 
-                            label="Image de l'élément"
+                            label={t('productCatalogPage.imageLabel')}
                             value={newNode.image_url}
                             onChange={(url) => setNewNode({...newNode, image_url: url})}
                         />
 
                         {/* Price field for all types */}
                         <div className="space-y-2">
-                            <Label>Prix par défaut (CAD)</Label>
+                            <Label>{t('productCatalogPage.priceLabel')}</Label>
                             <Input 
                                 type="number"
-                                placeholder="0.00" 
+                                placeholder={t('productCatalogPage.phPrice')} 
                                 value={newNode.price}
                                 onChange={(e) => setNewNode({...newNode, price: parseFloat(e.target.value) || 0})}
                             />
                             <p className="text-[10px] text-muted-foreground italic">
-                                Ce prix sera cumulé dans le Flash Quote.
+                                {t('productCatalogPage.priceHint')}
                             </p>
                         </div>
 
@@ -767,21 +777,21 @@ export default function ProductCatalog() {
                                     className="w-4 h-4 accent-luxury-gold"
                                 />
                                 <Label htmlFor="propagateAdd" className="cursor-pointer text-xs font-bold text-luxury-gold uppercase tracking-widest">
-                                    Synchroniser cet élément avec les autres parents du même type
+                                    {t('productCatalogPage.propagateAddLabel')}
                                 </Label>
                             </div>
                         )}
                     </div>
 
                     <DialogFooter className="px-2">
-                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>{t('common.cancel')}</Button>
                         <Button 
                             className="bg-luxury-gold text-white"
                             onClick={() => addNodeMutation.mutate(newNode)}
                             disabled={!newNode.label || !newNode.type || addNodeMutation.isPending}
                         >
                             {addNodeMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                            Enregistrer
+                            {t('productCatalogPage.save')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -791,16 +801,16 @@ export default function ProductCatalog() {
                 <DialogContent className="max-w-md bg-zinc-950 border-white/10 text-white">
                     <DialogHeader>
                         <DialogTitle className="font-serif text-2xl">
-                            Modifier {editingNode?.label}
+                            {editingNode ? t('productCatalogPage.dialogEditTitle', { label: editingNode.label }) : ''}
                         </DialogTitle>
                         <DialogDescription className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <span>Type : <span className="text-luxury-gold uppercase tracking-widest text-xs font-bold">{editingNode?.type}</span></span>
+                                <span>{t('productCatalogPage.typeColon')} <span className="text-luxury-gold uppercase tracking-widest text-xs font-bold">{editingNode?.type}</span></span>
                             </div>
                             <div className="bg-luxury-gold/5 p-3 rounded-lg border border-luxury-gold/10">
                                 <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
                                     <Info className="w-3 h-3 text-luxury-gold" />
-                                    Le "Type" détermine comment cet élément est groupé et nommé dans le calculateur.
+                                    {t('productCatalogPage.editTypeHint')}
                                 </p>
                             </div>
                         </DialogDescription>
@@ -809,7 +819,7 @@ export default function ProductCatalog() {
                     {editingNode && (
                         <div className="space-y-4 py-4 px-2 overflow-y-auto max-h-[60vh]">
                             <div className="space-y-2">
-                                <Label>Nom / Label</Label>
+                                <Label>{t('productCatalogPage.labelName')}</Label>
                                 <Input 
                                     className="bg-white/5 border-white/10"
                                     value={editingNode.label}
@@ -818,7 +828,7 @@ export default function ProductCatalog() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Description</Label>
+                                <Label>{t('productCatalogPage.labelDescription')}</Label>
                                 <Textarea 
                                     className="bg-white/5 border-white/10"
                                     value={editingNode.description || ''}
@@ -828,14 +838,14 @@ export default function ProductCatalog() {
 
                              {/* Image Uploader for all types */}
                              <ImageUploader 
-                                 label="Image de l'élément"
+                                 label={t('productCatalogPage.imageLabel')}
                                  value={editingNode.image_url}
                                  onChange={(url) => setEditingNode({...editingNode, image_url: url})}
                              />
 
                             {/* Price field for all types */}
                             <div className="space-y-2">
-                                <Label>Prix par défaut (CAD)</Label>
+                                <Label>{t('productCatalogPage.priceLabel')}</Label>
                                 <Input 
                                     className="bg-white/5 border-white/10"
                                     type="number"
@@ -843,7 +853,7 @@ export default function ProductCatalog() {
                                     onChange={(e) => setEditingNode({...editingNode, price: parseFloat(e.target.value) || 0})}
                                 />
                                 <p className="text-[10px] text-muted-foreground italic">
-                                    Ce prix sera cumulé dans le Flash Quote.
+                                    {t('productCatalogPage.priceHint')}
                                 </p>
                             </div>
 
@@ -858,7 +868,7 @@ export default function ProductCatalog() {
                                         className="w-4 h-4 accent-luxury-gold"
                                     />
                                     <Label htmlFor="propagateEdit" className="cursor-pointer text-xs font-bold text-luxury-gold uppercase tracking-widest">
-                                        Synchroniser ce changement sur les éléments similaires
+                                        {t('productCatalogPage.propagateEditLabel')}
                                     </Label>
                                 </div>
                             )}
@@ -866,14 +876,14 @@ export default function ProductCatalog() {
                     )}
 
                     <DialogFooter className="px-2">
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>{t('common.cancel')}</Button>
                         <Button 
                             className="bg-luxury-gold text-white"
                             onClick={() => editingNode && updateNodeMutation.mutate({ id: editingNode.id, updates: editingNode })}
                             disabled={!editingNode?.label || updateNodeMutation.isPending}
                         >
                             {updateNodeMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                            Enregistrer les modifications
+                            {t('productCatalogPage.saveChanges')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

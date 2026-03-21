@@ -3,18 +3,7 @@ import { Timer, BarChart3 } from 'lucide-react';
 import type { Project } from '@/services/apiProjects';
 import { useQuery } from '@tanstack/react-query';
 import { apiActivities, ActivityLog } from '@/services/apiActivities';
-
-const STAGE_LABELS: Record<string, string> = {
-    designing: 'Design',
-    '3d_model': 'Modélisation 3D',
-    design_ready: 'Design prêt',
-    waiting_for_approval: 'En attente approbation',
-    design_modification: 'Modification design',
-    approved_for_production: 'Approuvé production',
-    production: 'Production',
-    delivery: 'Livraison',
-    completed: 'Complété',
-};
+import { useTranslation } from 'react-i18next';
 
 const STAGE_COLORS: Record<string, string> = {
     designing: 'bg-blue-500',
@@ -86,6 +75,9 @@ interface TimeTrackerProps {
 }
 
 export function TimeTracker({ project }: TimeTrackerProps) {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('fr') ? 'fr-CA' : 'en-CA';
+
     const { data: activities = [] } = useQuery({
         queryKey: ['activities'],
         queryFn: apiActivities.getAll,
@@ -97,9 +89,16 @@ export function TimeTracker({ project }: TimeTrackerProps) {
     const totalDays = durations.reduce((s, d) => s + d.days, 0);
     const totalHours = durations.reduce((s, d) => s + d.hours, 0);
 
+    const stageLabel = (stage: string) => {
+        const key = `projectStatus.${stage}` as Parameters<typeof t>[0];
+        const translated = t(key);
+        return translated !== key ? translated : stage;
+    };
+
     const formatDuration = (days: number) => {
-        if (days < 1) return `${Math.round(days * 24)}h`;
-        return `${Math.round(days * 10) / 10}j`;
+        if (days < 1) return t('timeTracker.hoursShort', { n: Math.round(days * 24) });
+        const n = Math.round(days * 10) / 10;
+        return t('timeTracker.daysShort', { n: localeTag.startsWith('fr') ? String(n).replace('.', ',') : String(n) });
     };
 
     return (
@@ -107,11 +106,11 @@ export function TimeTracker({ project }: TimeTrackerProps) {
             <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-serif flex items-center justify-between">
                     <span className="flex items-center gap-2 text-luxury-gold">
-                        <Timer className="w-5 h-5" /> Temps de production
+                        <Timer className="w-5 h-5" /> {t('timeTracker.title')}
                     </span>
                     <span className="text-sm font-mono text-muted-foreground">
-                        Total : <span className="text-white font-bold">{formatDuration(totalDays)}</span>
-                        <span className="text-muted-foreground ml-1">({Math.round(totalHours)}h)</span>
+                        {t('timeTracker.total')} : <span className="text-white font-bold">{formatDuration(totalDays)}</span>
+                        <span className="text-muted-foreground ml-1">{t('timeTracker.hoursInParens', { n: Math.round(totalHours) })}</span>
                     </span>
                 </CardTitle>
             </CardHeader>
@@ -124,7 +123,7 @@ export function TimeTracker({ project }: TimeTrackerProps) {
                                     key={d.stage}
                                     className={`${STAGE_COLORS[d.stage] || 'bg-zinc-500'} transition-all`}
                                     style={{ width: `${(d.days / totalDays) * 100}%` }}
-                                    title={`${STAGE_LABELS[d.stage] || d.stage}: ${formatDuration(d.days)}`}
+                                    title={`${stageLabel(d.stage)}: ${formatDuration(d.days)}`}
                                 />
                             ))}
                         </div>
@@ -133,20 +132,20 @@ export function TimeTracker({ project }: TimeTrackerProps) {
                                 <div key={d.stage} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5">
                                     <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STAGE_COLORS[d.stage] || 'bg-zinc-500'}`} />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-xs truncate">{STAGE_LABELS[d.stage] || d.stage}</p>
+                                        <p className="text-xs truncate">{stageLabel(d.stage)}</p>
                                     </div>
                                     <span className="font-mono text-xs font-bold text-luxury-gold shrink-0">{formatDuration(d.days)}</span>
                                 </div>
                             ))}
                         </div>
                         <p className="text-[10px] text-muted-foreground text-center italic">
-                            Calculé automatiquement à partir de l'historique du pipeline
+                            {t('timeTracker.hint')}
                         </p>
                     </>
                 ) : (
                     <div className="text-center py-6 text-muted-foreground">
                         <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">Aucune donnée de temps disponible.</p>
+                        <p className="text-sm">{t('timeTracker.empty')}</p>
                     </div>
                 )}
             </CardContent>

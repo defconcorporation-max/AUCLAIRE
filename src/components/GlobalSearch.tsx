@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
-import { Search, Briefcase, Users, FileText, Target, Loader2 } from 'lucide-react';
+import { Search, Briefcase, Users, FileText, Target, Loader2, type LucideIcon } from 'lucide-react';
 
 interface SearchResult {
     id: string;
@@ -18,14 +19,22 @@ type SearchClientRow = { id: string; full_name: string; email: string | null };
 type SearchLeadRow = { id: string; name: string; company?: string | null };
 type SearchInvoiceRow = { id: string; amount: number; status: string; project?: { title: string } | null };
 
-const TYPE_CONFIG = {
-    project: { icon: Briefcase, label: 'Projet', color: 'text-blue-500' },
-    client: { icon: Users, label: 'Client', color: 'text-green-500' },
-    invoice: { icon: FileText, label: 'Facture', color: 'text-amber-500' },
-    lead: { icon: Target, label: 'Lead', color: 'text-purple-500' },
+const TYPE_ICONS: Record<SearchResult['type'], LucideIcon> = {
+    project: Briefcase,
+    client: Users,
+    invoice: FileText,
+    lead: Target,
+};
+
+const TYPE_COLORS: Record<SearchResult['type'], string> = {
+    project: 'text-blue-500',
+    client: 'text-green-500',
+    invoice: 'text-amber-500',
+    lead: 'text-purple-500',
 };
 
 export function GlobalSearch() {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -33,6 +42,16 @@ export function GlobalSearch() {
     const [selectedIdx, setSelectedIdx] = useState(0);
     const navigate = useNavigate();
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const typeLabels = useMemo(
+        () => ({
+            project: t('globalSearch.typeProject'),
+            client: t('globalSearch.typeClient'),
+            invoice: t('globalSearch.typeInvoice'),
+            lead: t('globalSearch.typeLead'),
+        }),
+        [t]
+    );
 
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
@@ -64,7 +83,6 @@ export function GlobalSearch() {
                 supabase.from('leads').select('id, name, company').ilike('name', pattern).limit(5),
             ]);
 
-            // Invoices: search by project title (get matching project IDs first)
             const projectRows = (projectsRes.data ?? []) as unknown as SearchProjectRow[];
             const projectIds = projectRows.map(p => p.id);
             let invoicesRes: { data: SearchInvoiceRow[] | null } = { data: [] };
@@ -87,7 +105,8 @@ export function GlobalSearch() {
                 type: 'client', href: `/dashboard/clients/${c.id}`
             }));
             invoicesRes.data?.forEach(i => items.push({
-                id: i.id, title: i.project?.title || `Facture #${i.id.slice(0,8)}`,
+                id: i.id,
+                title: i.project?.title || t('globalSearch.invoiceTitle', { id: i.id.slice(0, 8) }),
                 subtitle: `${i.amount}$ — ${i.status}`,
                 type: 'invoice', href: `/dashboard/invoices`
             }));
@@ -103,7 +122,7 @@ export function GlobalSearch() {
         } finally {
             setIsSearching(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         const timer = setTimeout(() => search(query), 250);
@@ -124,11 +143,12 @@ export function GlobalSearch() {
     return (
         <>
             <button
+                type="button"
                 onClick={() => setOpen(true)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 <Search className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Rechercher...</span>
+                <span className="hidden sm:inline">{t('globalSearch.trigger')}</span>
                 <kbd className="hidden sm:inline-flex h-5 items-center gap-0.5 rounded border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-1.5 text-[10px] font-mono">
                     ⌘K
                 </kbd>
@@ -143,7 +163,7 @@ export function GlobalSearch() {
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Rechercher un projet, client, facture..."
+                            placeholder={t('globalSearch.inputPlaceholder')}
                             className="border-0 focus-visible:ring-0 bg-transparent text-base h-12 px-0"
                             autoFocus
                         />
@@ -153,20 +173,20 @@ export function GlobalSearch() {
                     <div className="max-h-[320px] overflow-y-auto">
                         {query.length < 2 ? (
                             <div className="p-8 text-center text-muted-foreground text-sm">
-                                Tapez au moins 2 caractères pour rechercher...
+                                {t('globalSearch.minChars')}
                             </div>
                         ) : results.length === 0 && !isSearching ? (
                             <div className="p-8 text-center text-muted-foreground text-sm">
-                                Aucun résultat pour "{query}"
+                                {t('globalSearch.noResults', { query })}
                             </div>
                         ) : (
                             <div className="py-2">
                                 {results.map((result, idx) => {
-                                    const config = TYPE_CONFIG[result.type];
-                                    const Icon = config.icon;
+                                    const Icon = TYPE_ICONS[result.type];
                                     return (
                                         <button
                                             key={`${result.type}-${result.id}`}
+                                            type="button"
                                             onClick={() => handleSelect(result)}
                                             className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                                                 idx === selectedIdx
@@ -175,7 +195,7 @@ export function GlobalSearch() {
                                             }`}
                                             onMouseEnter={() => setSelectedIdx(idx)}
                                         >
-                                            <div className={`w-8 h-8 rounded-lg bg-black/5 dark:bg-white/5 flex items-center justify-center ${config.color}`}>
+                                            <div className={`w-8 h-8 rounded-lg bg-black/5 dark:bg-white/5 flex items-center justify-center ${TYPE_COLORS[result.type]}`}>
                                                 <Icon className="w-4 h-4" />
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -185,7 +205,7 @@ export function GlobalSearch() {
                                                 )}
                                             </div>
                                             <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium shrink-0">
-                                                {config.label}
+                                                {typeLabels[result.type]}
                                             </span>
                                         </button>
                                     );

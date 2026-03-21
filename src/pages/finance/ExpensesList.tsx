@@ -23,9 +23,15 @@ import {
 import { formatCurrency } from '@/utils/taxUtils';
 
 import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function ExpensesList() {
+    const { t, i18n } = useTranslation();
+    const dateLocale = i18n.language.startsWith('en') ? 'en-US' : 'fr-CA';
     const { profile } = useAuth();
+
+    const expenseCategoryLabel = (c: string) =>
+        t(`expensesPage.cat_${c}` as 'expensesPage.cat_commission', { defaultValue: c });
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -79,7 +85,7 @@ export default function ExpensesList() {
                 description: '',
                 recipient_id: undefined
             });
-            toast({ title: "Dépense enregistrée", description: "La dépense a été ajoutée avec succès." });
+            toast({ title: t('expensesPage.toastRecorded'), description: t('expensesPage.toastRecordedDesc') });
         },
         onError: (error: unknown) => {
             console.error("Failed to create expense:", error);
@@ -87,8 +93,8 @@ export default function ExpensesList() {
                 ? error.message
                 : (typeof error === 'object' && error !== null && 'error_description' in error
                     ? String((error as { error_description?: string }).error_description)
-                    : "Erreur inconnue");
-            toast({ title: "Erreur", description: desc, variant: "destructive" });
+                    : t('expensesPage.unknownError'));
+            toast({ title: t('common.error'), description: desc, variant: "destructive" });
         }
     });
 
@@ -109,7 +115,7 @@ export default function ExpensesList() {
         e.preventDefault();
 
         if (profile?.id?.toString().startsWith('demo-')) {
-            toast({ title: "Mode Démo", description: "Dépense simulée avec succès." });
+            toast({ title: t('expensesPage.toastDemo'), description: t('expensesPage.toastDemoDesc') });
             setIsAddOpen(false);
             const demoExpense = {
                 ...newExpense,
@@ -174,8 +180,8 @@ export default function ExpensesList() {
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-serif text-luxury-gold">Dépenses & Versements</h1>
-                    <p className="text-muted-foreground">Suivi des coûts opérationnels et commissions.</p>
+                    <h1 className="text-3xl font-serif text-luxury-gold">{t('expensesPage.title')}</h1>
+                    <p className="text-muted-foreground">{t('expensesPage.subtitle')}</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -184,7 +190,15 @@ export default function ExpensesList() {
                         size="sm"
                         onClick={() => {
                             if (!expenses?.length) return;
-                            const headers = ['Date', 'Catégorie', 'Description', 'Montant', 'Statut', 'Destinataire', 'Projet'];
+                            const headers = [
+                                t('expensesPage.csvDate'),
+                                t('expensesPage.csvCategory'),
+                                t('expensesPage.csvDescription'),
+                                t('expensesPage.csvAmount'),
+                                t('expensesPage.csvStatus'),
+                                t('expensesPage.csvRecipient'),
+                                t('expensesPage.csvProject'),
+                            ];
                             const rows = expenses.map(e => [
                                 e.date?.split('T')[0] || '',
                                 e.category,
@@ -205,22 +219,22 @@ export default function ExpensesList() {
                         }}
                     >
                         <Download className="w-4 h-4 mr-1" />
-                        Export CSV
+                        {t('expensesPage.exportCsv')}
                     </Button>
 
                     <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <SheetTrigger asChild>
                         <Button className="bg-luxury-gold text-black hover:bg-luxury-gold/90 gap-2">
-                            <Plus className="w-4 h-4" /> Ajouter une dépense
+                            <Plus className="w-4 h-4" /> {t('expensesPage.addExpense')}
                         </Button>
                     </SheetTrigger>
                     <SheetContent className="overflow-y-auto">
                         <SheetHeader>
-                            <SheetTitle>Nouvelle dépense</SheetTitle>
+                            <SheetTitle>{t('expensesPage.sheetTitle')}</SheetTitle>
                         </SheetHeader>
                         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
                             <div className="space-y-2">
-                                <Label>Date</Label>
+                                <Label>{t('expensesPage.date')}</Label>
                                 <Input
                                     type="date"
                                     required
@@ -230,7 +244,7 @@ export default function ExpensesList() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Montant ($)</Label>
+                                <Label>{t('expensesPage.amount')}</Label>
                                 <Input
                                     type="number"
                                     step="0.01"
@@ -241,30 +255,30 @@ export default function ExpensesList() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Catégorie</Label>
+                                <Label>{t('expensesPage.category')}</Label>
                                 <select
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.category}
                                     onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value as Expense['category'] })}
                                 >
-                                    <option value="commission">Commission</option>
-                                    <option value="operational">Opérationnel</option>
-                                    <option value="material">Matériaux</option>
-                                    <option value="marketing">Marketing</option>
-                                    <option value="salary">Salaire</option>
-                                    <option value="software">Logiciel / Outils</option>
-                                    <option value="other">Autre</option>
+                                    <option value="commission">{t('expensesPage.cat_commission')}</option>
+                                    <option value="operational">{t('expensesPage.cat_operational')}</option>
+                                    <option value="material">{t('expensesPage.cat_material')}</option>
+                                    <option value="marketing">{t('expensesPage.cat_marketing')}</option>
+                                    <option value="salary">{t('expensesPage.cat_salary')}</option>
+                                    <option value="software">{t('expensesPage.cat_software')}</option>
+                                    <option value="other">{t('expensesPage.cat_other')}</option>
                                 </select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Destinataire (Optionnel)</Label>
+                                <Label>{t('expensesPage.recipientOptional')}</Label>
                                 <select
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.recipient_id || "none"}
                                     onChange={(e) => setNewExpense({ ...newExpense, recipient_id: e.target.value === "none" ? undefined : e.target.value })}
                                 >
-                                    <option value="none">-- Aucun / Externe --</option>
+                                    <option value="none">{t('expensesPage.recipientNone')}</option>
                                     {profiles?.map(p => (
                                         <option key={p.id} value={p.id}>
                                             {p.full_name} ({p.role})
@@ -274,28 +288,28 @@ export default function ExpensesList() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Description</Label>
+                                <Label>{t('expensesPage.description')}</Label>
                                 <Input
                                     value={newExpense.description || ''}
                                     onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
-                                    placeholder="ex. Coulée bague pour commande #123"
+                                    placeholder={t('expensesPage.descriptionPlaceholder')}
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Statut</Label>
+                                <Label>{t('expensesPage.status')}</Label>
                                 <select
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                     value={newExpense.status}
                                     onChange={(e) => setNewExpense({ ...newExpense, status: e.target.value as Expense['status'] })}
                                 >
-                                    <option value="paid">Payé</option>
-                                    <option value="pending">En attente</option>
+                                    <option value="paid">{t('expensesPage.statusPaid')}</option>
+                                    <option value="pending">{t('expensesPage.statusPending')}</option>
                                 </select>
                             </div>
 
                             <Button type="submit" className="w-full bg-luxury-gold text-black" disabled={createMutation.isPending}>
-                                {createMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+                                {createMutation.isPending ? t('expensesPage.saving') : t('expensesPage.save')}
                             </Button>
                         </form>
                     </SheetContent>
@@ -307,7 +321,7 @@ export default function ExpensesList() {
             <div className="grid md:grid-cols-3 gap-4">
                 <Card className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total (Filtré)</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{t('expensesPage.totalFiltered')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
@@ -325,18 +339,18 @@ export default function ExpensesList() {
                         setCurrentPage(1);
                     }}
                 >
-                    <option value="">Toutes</option>
-                    <option value="commission">Commission</option>
-                    <option value="operational">Opérationnel</option>
-                    <option value="material">Matériaux</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="salary">Salaire</option>
-                    <option value="software">Logiciel / Outils</option>
-                    <option value="other">Autre</option>
+                    <option value="">{t('expensesPage.filterAll')}</option>
+                    <option value="commission">{t('expensesPage.cat_commission')}</option>
+                    <option value="operational">{t('expensesPage.cat_operational')}</option>
+                    <option value="material">{t('expensesPage.cat_material')}</option>
+                    <option value="marketing">{t('expensesPage.cat_marketing')}</option>
+                    <option value="salary">{t('expensesPage.cat_salary')}</option>
+                    <option value="software">{t('expensesPage.cat_software')}</option>
+                    <option value="other">{t('expensesPage.cat_other')}</option>
                 </select>
                 <Search className="w-4 h-4 text-muted-foreground ml-2" />
                 <Input
-                    placeholder="Rechercher dépenses, destinataires..."
+                    placeholder={t('expensesPage.searchPlaceholder')}
                     className="border-0 bg-transparent focus-visible:ring-0"
                     value={searchTerm}
                     onChange={e => {
@@ -358,18 +372,18 @@ export default function ExpensesList() {
                                         <ArrowUpDown className={`w-3 h-3 ${sortField === 'date' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
                                     </span>
                                 </TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Destinataire</TableHead>
+                                <TableHead>{t('expensesPage.colDescription')}</TableHead>
+                                <TableHead>{t('expensesPage.colRecipient')}</TableHead>
                                 <TableHead className="cursor-pointer select-none" onClick={() => handleSort('category')}>
                                     <span className="inline-flex items-center gap-1">
-                                        Catégorie
+                                        {t('expensesPage.colCategory')}
                                         <ArrowUpDown className={`w-3 h-3 ${sortField === 'category' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
                                     </span>
                                 </TableHead>
-                                <TableHead>Statut</TableHead>
+                                <TableHead>{t('expensesPage.colStatus')}</TableHead>
                                 <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort('amount')}>
                                     <span className="inline-flex items-center gap-1 justify-end">
-                                        Montant
+                                        {t('expensesPage.colAmount')}
                                         <ArrowUpDown className={`w-3 h-3 ${sortField === 'amount' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
                                     </span>
                                 </TableHead>
@@ -379,16 +393,16 @@ export default function ExpensesList() {
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8">Chargement...</TableCell>
+                                    <TableCell colSpan={7} className="text-center py-8">{t('expensesPage.loading')}</TableCell>
                                 </TableRow>
                             ) : filteredExpenses?.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune dépense trouvée.</TableCell>
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('expensesPage.empty')}</TableCell>
                                 </TableRow>
                             ) : (
                                 paginatedExpenses?.map((expense) => (
                                     <TableRow key={expense.id}>
-                                        <TableCell>{new Date(expense.date).toLocaleDateString('fr-CA')}</TableCell>
+                                        <TableCell>{new Date(expense.date).toLocaleDateString(dateLocale)}</TableCell>
                                         <TableCell className="font-medium">{expense.description || '-'}</TableCell>
                                         <TableCell>
                                             {expense.recipient ? (
@@ -399,11 +413,11 @@ export default function ExpensesList() {
                                             ) : '-'}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="capitalize">{expense.category}</Badge>
+                                            <Badge variant="outline" className="capitalize">{expenseCategoryLabel(expense.category)}</Badge>
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={expense.status === 'paid' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}>
-                                                {expense.status === 'paid' ? 'Payé' : 'En attente'}
+                                                {expense.status === 'paid' ? t('expensesPage.statusPaid') : t('expensesPage.statusPending')}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-mono">
@@ -434,7 +448,7 @@ export default function ExpensesList() {
                     </p>
                     <div className="flex items-center gap-1">
                         <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
-                            Précédent
+                            {t('common.previous')}
                         </Button>
                         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                             const page = currentPage <= 3 ? i + 1 : currentPage + i - 2;
@@ -456,14 +470,14 @@ export default function ExpensesList() {
             <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
-                        <DialogTitle>Confirmer la suppression</DialogTitle>
+                        <DialogTitle>{t('expensesPage.deleteTitle')}</DialogTitle>
                         <DialogDescription>
-                            Êtes-vous sûr de vouloir supprimer cette dépense ? Cette action est irréversible.
+                            {t('expensesPage.deleteDesc')}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-                        <Button variant="destructive" onClick={() => { deleteMutation.mutate(deleteTarget!); setDeleteTarget(null); }}>Supprimer</Button>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
+                        <Button variant="destructive" onClick={() => { deleteMutation.mutate(deleteTarget!); setDeleteTarget(null); }}>{t('common.delete')}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

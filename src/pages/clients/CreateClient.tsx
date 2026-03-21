@@ -1,5 +1,6 @@
 
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
@@ -7,6 +8,7 @@ import { ClientForm } from '@/components/forms/ClientForm';
 
 export default function CreateClient() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     return (
         <div className="max-w-xl mx-auto space-y-6">
@@ -15,15 +17,15 @@ export default function CreateClient() {
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-serif font-bold text-luxury-gold">New Client</h1>
-                    <p className="text-sm text-muted-foreground">Add a new client to your rolodex.</p>
+                    <h1 className="text-2xl font-serif font-bold text-luxury-gold">{t('createClientPage.title')}</h1>
+                    <p className="text-sm text-muted-foreground">{t('createClientPage.subtitle')}</p>
                 </div>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Client Information</CardTitle>
-                    <CardDescription>Enter the client's contact details.</CardDescription>
+                    <CardTitle>{t('createClientPage.cardTitle')}</CardTitle>
+                    <CardDescription>{t('createClientPage.cardDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ClientForm

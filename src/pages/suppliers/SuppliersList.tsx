@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiSuppliers, Supplier } from '@/services/apiSuppliers';
 import { apiActivities } from '@/services/apiActivities';
@@ -23,14 +24,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 
-const SUPPLIER_TYPES: { value: Supplier['type']; label: string }[] = [
-    { value: 'diamantaire', label: 'Diamantaire' },
-    { value: 'fondeur', label: 'Fondeur' },
-    { value: 'sertisseur', label: 'Sertisseur' },
-    { value: 'graveur', label: 'Graveur' },
-    { value: 'other', label: 'Autre' },
-];
-
 function StarRating({ value }: { value?: number }) {
     const rating = Math.min(5, Math.max(0, value ?? 0));
     return (
@@ -46,7 +39,23 @@ function StarRating({ value }: { value?: number }) {
 }
 
 export default function SuppliersList() {
+    const { t } = useTranslation();
     const { profile } = useAuth();
+
+    const supplierTypeOptions = useMemo(
+        () =>
+            [
+                { value: 'diamantaire' as const, label: t('suppliersPage.type_diamantaire') },
+                { value: 'fondeur' as const, label: t('suppliersPage.type_fondeur') },
+                { value: 'sertisseur' as const, label: t('suppliersPage.type_sertisseur') },
+                { value: 'graveur' as const, label: t('suppliersPage.type_graveur') },
+                { value: 'other' as const, label: t('suppliersPage.type_other') },
+            ],
+        [t]
+    );
+
+    const supplierTypeLabel = (type: string) =>
+        t(`suppliersPage.type_${type}` as 'suppliersPage.type_other', { defaultValue: type });
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -116,7 +125,7 @@ export default function SuppliersList() {
         },
         onError: (error) => {
             console.error('Failed to create supplier:', error);
-            toast({ title: "Erreur", description: (error as Error).message, variant: "destructive" });
+            toast({ title: t('common.error'), description: (error as Error).message, variant: "destructive" });
         },
     });
 
@@ -136,7 +145,7 @@ export default function SuppliersList() {
         },
         onError: (error) => {
             console.error('Failed to update supplier:', error);
-            toast({ title: "Erreur", description: (error as Error).message, variant: "destructive" });
+            toast({ title: t('common.error'), description: (error as Error).message, variant: "destructive" });
         },
     });
 
@@ -221,8 +230,8 @@ export default function SuppliersList() {
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-serif text-luxury-gold">Fournisseurs</h1>
-                    <p className="text-muted-foreground">Gérez vos fournisseurs diamantaires, fondeurs, sertisseurs et graveurs.</p>
+                    <h1 className="text-3xl font-serif text-luxury-gold">{t('suppliersPage.title')}</h1>
+                    <p className="text-muted-foreground">{t('suppliersPage.subtitle')}</p>
                 </div>
 
                 <Button
@@ -232,7 +241,7 @@ export default function SuppliersList() {
                         setIsAddOpen(true);
                     }}
                 >
-                    <Plus className="w-4 h-4" /> Ajouter un fournisseur
+                    <Plus className="w-4 h-4" /> {t('suppliersPage.addSupplier')}
                 </Button>
             </div>
 
@@ -240,7 +249,7 @@ export default function SuppliersList() {
             {manufacturers.length > 0 && (
                 <div className="space-y-3">
                     <h2 className="text-lg font-serif text-luxury-gold flex items-center gap-2">
-                        <Factory className="w-5 h-5" /> Ateliers / Manufacturiers
+                        <Factory className="w-5 h-5" /> {t('suppliersPage.workshopsTitle')}
                     </h2>
                     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                         {manufacturers.map((m: UserProfile) => {
@@ -261,11 +270,11 @@ export default function SuppliersList() {
                                         <div className="flex items-center gap-4 text-xs">
                                             <div className="flex items-center gap-1.5">
                                                 <Briefcase className="w-3 h-3 text-amber-400" />
-                                                <span className="text-muted-foreground">Actifs:</span>
+                                                <span className="text-muted-foreground">{t('suppliersPage.active')}</span>
                                                 <span className="font-bold">{active}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-muted-foreground">Complétés:</span>
+                                                <span className="text-muted-foreground">{t('suppliersPage.completed')}</span>
                                                 <span className="font-bold text-green-400">{completed}</span>
                                             </div>
                                         </div>
@@ -294,16 +303,14 @@ export default function SuppliersList() {
                         setCurrentPage(1);
                     }}
                 >
-                    <option value="">Tous</option>
-                    <option value="diamantaire">Diamantaire</option>
-                    <option value="fondeur">Fondeur</option>
-                    <option value="sertisseur">Sertisseur</option>
-                    <option value="graveur">Graveur</option>
-                    <option value="other">Autre</option>
+                    <option value="">{t('suppliersPage.filterAll')}</option>
+                    {supplierTypeOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
                 </select>
                 <Search className="w-4 h-4 text-muted-foreground ml-2" />
                 <Input
-                    placeholder="Rechercher par nom, contact ou type..."
+                    placeholder={t('suppliersPage.searchPlaceholder')}
                     className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                     value={searchTerm}
                     onChange={(e) => {
@@ -321,21 +328,21 @@ export default function SuppliersList() {
                             <TableRow className="border-white/5 hover:bg-transparent">
                                 <TableHead className="text-luxury-gold/80 cursor-pointer select-none" onClick={() => handleSort('name')}>
                                     <span className="inline-flex items-center gap-1">
-                                        Nom
+                                        {t('suppliersPage.colName')}
                                         <ArrowUpDown className={`w-3 h-3 ${sortField === 'name' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
                                     </span>
                                 </TableHead>
                                 <TableHead className="text-luxury-gold/80 cursor-pointer select-none" onClick={() => handleSort('type')}>
                                     <span className="inline-flex items-center gap-1">
-                                        Type
+                                        {t('suppliersPage.colType')}
                                         <ArrowUpDown className={`w-3 h-3 ${sortField === 'type' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
                                     </span>
                                 </TableHead>
-                                <TableHead className="text-luxury-gold/80">Contact</TableHead>
-                                <TableHead className="text-luxury-gold/80">Email / Téléphone</TableHead>
+                                <TableHead className="text-luxury-gold/80">{t('suppliersPage.colContact')}</TableHead>
+                                <TableHead className="text-luxury-gold/80">{t('suppliersPage.colEmailPhone')}</TableHead>
                                 <TableHead className="text-luxury-gold/80 cursor-pointer select-none" onClick={() => handleSort('rating')}>
                                     <span className="inline-flex items-center gap-1">
-                                        Note
+                                        {t('suppliersPage.colRating')}
                                         <ArrowUpDown className={`w-3 h-3 ${sortField === 'rating' ? 'text-luxury-gold' : 'text-muted-foreground/50'}`} />
                                     </span>
                                 </TableHead>
@@ -346,13 +353,13 @@ export default function SuppliersList() {
                             {isLoading ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                                        Chargement des fournisseurs...
+                                        {t('suppliersPage.loading')}
                                     </TableCell>
                                 </TableRow>
                             ) : filteredSuppliers?.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                                        Aucun fournisseur trouvé.
+                                        {t('suppliersPage.empty')}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -367,7 +374,7 @@ export default function SuppliersList() {
                                                 variant="outline"
                                                 className="capitalize border-luxury-gold/30 text-luxury-gold/90 bg-luxury-gold/5"
                                             >
-                                                {supplier.type}
+                                                {supplierTypeLabel(supplier.type)}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>{supplier.contact_name || '-'}</TableCell>
@@ -416,11 +423,11 @@ export default function SuppliersList() {
             {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
                     <p className="text-sm text-muted-foreground">
-                        Page {currentPage} sur {totalPages} ({filteredSuppliers?.length} résultats)
+                        {t('suppliersPage.pageOf', { current: currentPage, total: totalPages, count: filteredSuppliers?.length ?? 0 })}
                     </p>
                     <div className="flex items-center gap-1">
                         <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
-                            Précédent
+                            {t('common.previous')}
                         </Button>
                         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                             const page = currentPage <= 3 ? i + 1 : currentPage + i - 2;
@@ -432,7 +439,7 @@ export default function SuppliersList() {
                             );
                         })}
                         <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
-                            Suivant
+                            {t('common.next')}
                         </Button>
                     </div>
                 </div>
@@ -452,23 +459,23 @@ export default function SuppliersList() {
                 <SheetContent className="overflow-y-auto border-l border-luxury-gold/20 bg-background">
                     <SheetHeader>
                         <SheetTitle className="text-luxury-gold">
-                            {editingSupplier ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}
+                            {editingSupplier ? t('suppliersPage.sheetEdit') : t('suppliersPage.sheetNew')}
                         </SheetTitle>
                     </SheetHeader>
                     <form onSubmit={handleSubmit} className="space-y-6 mt-6">
                         <div className="space-y-2">
-                            <Label>Nom *</Label>
+                            <Label>{t('suppliersPage.nameRequired')}</Label>
                             <Input
                                 required
                                 value={formData.name || ''}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="Nom du fournisseur"
+                                placeholder={t('suppliersPage.namePlaceholder')}
                                 className="border-white/10 focus-visible:ring-luxury-gold/50"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Type</Label>
+                            <Label>{t('suppliersPage.type')}</Label>
                             <select
                                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
                                 value={formData.type}
@@ -476,47 +483,47 @@ export default function SuppliersList() {
                                     setFormData({ ...formData, type: e.target.value as Supplier['type'] })
                                 }
                             >
-                                {SUPPLIER_TYPES.map((t) => (
-                                    <option key={t.value} value={t.value}>
-                                        {t.label}
+                                {supplierTypeOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
                                     </option>
                                 ))}
                             </select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Contact</Label>
+                            <Label>{t('suppliersPage.contact')}</Label>
                             <Input
                                 value={formData.contact_name || ''}
                                 onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                                placeholder="Nom du contact"
+                                placeholder={t('suppliersPage.contactPlaceholder')}
                                 className="border-white/10 focus-visible:ring-luxury-gold/50"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Email</Label>
+                            <Label>{t('suppliersPage.email')}</Label>
                             <Input
                                 type="email"
                                 value={formData.email || ''}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="email@exemple.com"
+                                placeholder={t('suppliersPage.emailPlaceholder')}
                                 className="border-white/10 focus-visible:ring-luxury-gold/50"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Téléphone</Label>
+                            <Label>{t('suppliersPage.phone')}</Label>
                             <Input
                                 value={formData.phone || ''}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+33 6 12 34 56 78"
+                                placeholder={t('suppliersPage.phonePlaceholder')}
                                 className="border-white/10 focus-visible:ring-luxury-gold/50"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Note (1-5)</Label>
+                            <Label>{t('suppliersPage.ratingLabel')}</Label>
                             <div className="flex gap-2 items-center">
                                 {[1, 2, 3, 4, 5].map((i) => (
                                     <button
@@ -541,11 +548,11 @@ export default function SuppliersList() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Notes</Label>
+                            <Label>{t('suppliersPage.notes')}</Label>
                             <textarea
                                 value={formData.notes || ''}
                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                placeholder="Notes internes..."
+                                placeholder={t('suppliersPage.notesPlaceholder')}
                                 rows={3}
                                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
                             />
@@ -557,10 +564,10 @@ export default function SuppliersList() {
                             disabled={isPending}
                         >
                             {isPending
-                                ? 'Enregistrement...'
+                                ? t('expensesPage.saving')
                                 : editingSupplier
-                                  ? 'Mettre à jour'
-                                  : 'Enregistrer'}
+                                  ? t('suppliersPage.submitUpdate')
+                                  : t('suppliersPage.submitSave')}
                         </Button>
                     </form>
                 </SheetContent>
@@ -570,14 +577,14 @@ export default function SuppliersList() {
             <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
-                        <DialogTitle>Confirmer la suppression</DialogTitle>
+                        <DialogTitle>{t('suppliersPage.deleteTitle')}</DialogTitle>
                         <DialogDescription>
-                            Êtes-vous sûr de vouloir supprimer {deleteTarget?.name} ? Cette action est irréversible.
+                            {deleteTarget ? t('suppliersPage.deleteDesc', { name: deleteTarget.name }) : ''}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-                        <Button variant="destructive" onClick={() => { deleteMutation.mutate(deleteTarget!.id); setDeleteTarget(null); }}>Supprimer</Button>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
+                        <Button variant="destructive" onClick={() => { deleteMutation.mutate(deleteTarget!.id); setDeleteTarget(null); }}>{t('common.delete')}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

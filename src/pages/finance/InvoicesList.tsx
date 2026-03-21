@@ -23,10 +23,21 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useAuth } from '@/context/AuthContext'
+import { useTranslation } from 'react-i18next'
 
 export default function InvoicesList() {
+    const { t, i18n } = useTranslation()
     const navigate = useNavigate()
     const { role } = useAuth();
+    const dateLocale = i18n.language.startsWith('en') ? 'en-US' : 'fr-FR'
+
+    const invoiceStatusBadge = (status: string) => {
+        if (status === 'paid') return t('invoicesPage.badge_paid')
+        if (status === 'partial') return t('invoicesPage.badge_partial')
+        if (status === 'sent') return t('invoicesPage.badge_sent')
+        if (status === 'draft') return t('invoicesPage.badge_draft')
+        return status.toUpperCase()
+    }
     const queryClient = useQueryClient();
     const { data: invoices, isLoading } = useQuery({
         queryKey: ['invoices'],
@@ -197,8 +208,8 @@ export default function InvoicesList() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-serif font-bold text-luxury-gold">Factures</h2>
-                    <p className="text-muted-foreground">Gestion des paiements et facturation.</p>
+                    <h2 className="text-2xl font-serif font-bold text-luxury-gold">{t('invoicesPage.title')}</h2>
+                    <p className="text-muted-foreground">{t('invoicesPage.subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
@@ -206,7 +217,16 @@ export default function InvoicesList() {
                         size="sm"
                         onClick={() => {
                             if (!invoices?.length) return;
-                            const headers = ['Titre', 'Client', 'Montant', 'Payé', 'Statut', 'Date création', 'Date paiement', 'Échéance'];
+                            const headers = [
+                                t('invoicesPage.csvTitle'),
+                                t('invoicesPage.csvClient'),
+                                t('invoicesPage.csvAmount'),
+                                t('invoicesPage.csvPaid'),
+                                t('invoicesPage.csvStatus'),
+                                t('invoicesPage.csvCreated'),
+                                t('invoicesPage.csvPaidDate'),
+                                t('invoicesPage.csvDue'),
+                            ];
                             const rows = invoices.map(inv => [
                                 inv.project?.title || '',
                                 inv.project?.client?.full_name || '',
@@ -228,14 +248,14 @@ export default function InvoicesList() {
                         }}
                     >
                         <FileText className="w-4 h-4 mr-1" />
-                        Export CSV
+                        {t('invoicesPage.exportCsv')}
                     </Button>
                     <Button
                         className="bg-luxury-gold text-black hover:bg-luxury-gold-dark"
                         onClick={() => navigate('/dashboard/invoices/new')}
                     >
                         <Plus className="w-4 h-4 mr-2" />
-                        Nouvelle facture
+                        {t('invoicesPage.newInvoice')}
                     </Button>
                 </div>
             </div>
@@ -243,15 +263,15 @@ export default function InvoicesList() {
             <div className="flex items-center gap-3 flex-wrap">
                 <div className="relative flex-1 min-w-[200px] max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Rechercher par projet, client..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <Input placeholder={t('invoicesPage.searchPlaceholder')} className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
                 <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
                     {[
-                        { value: '', label: 'Toutes' },
-                        { value: 'draft', label: 'Brouillon' },
-                        { value: 'sent', label: 'Envoyée' },
-                        { value: 'partial', label: 'Partiel' },
-                        { value: 'paid', label: 'Payée' },
+                        { value: '', label: t('invoicesPage.filterAll') },
+                        { value: 'draft', label: t('invoicesPage.filterDraft') },
+                        { value: 'sent', label: t('invoicesPage.filterSent') },
+                        { value: 'partial', label: t('invoicesPage.filterPartial') },
+                        { value: 'paid', label: t('invoicesPage.filterPaid') },
                     ].map(tab => (
                         <button key={tab.value} onClick={() => setFilterStatus(tab.value)}
                             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filterStatus === tab.value ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
@@ -278,7 +298,7 @@ export default function InvoicesList() {
                     ))
                 ) : filteredInvoices?.length === 0 ? (
                     <div className="text-center p-8 border border-dashed rounded-lg text-muted-foreground">
-                        Aucune facture trouvée.
+                        {t('invoicesPage.empty')}
                     </div>
                 ) : (
                     filteredInvoices?.map(invoice => (
@@ -288,9 +308,9 @@ export default function InvoicesList() {
                                     <FileText className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h4 className="font-medium font-serif">{invoice.project?.title || 'Projet inconnu'}</h4>
+                                    <h4 className="font-medium font-serif">{invoice.project?.title || t('invoicesPage.unknownProject')}</h4>
                                     <p className="text-sm text-muted-foreground">
-                                        Client : {invoice.project?.client?.full_name || 'N/A'}
+                                        {t('invoicesPage.clientLabel')} {invoice.project?.client?.full_name || t('invoicesPage.na')}
                                     </p>
                                 </div>
                             </div>
@@ -299,12 +319,15 @@ export default function InvoicesList() {
                                 <div className="text-right min-w-[160px]">
                                     {invoice.project?.financials?.tax_province ? (
                                         <div className="space-y-0.5">
-                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Total TTC</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{t('invoicesPage.totalTTC')}</p>
                                             <p className="font-bold text-lg text-luxury-gold">
                                                 {formatCurrency(invoice.amount + calculateCanadianTax(invoice.amount, invoice.project.financials.tax_province as CanadianProvince).total)}
                                             </p>
                                             <p className="text-[9px] text-muted-foreground">
-                                                Net: {formatCurrency(invoice.amount)} + Taxes ({invoice.project.financials.tax_province})
+                                                {t('invoicesPage.netTaxes', {
+                                                    net: formatCurrency(invoice.amount),
+                                                    province: invoice.project.financials.tax_province,
+                                                })}
                                             </p>
                                         </div>
                                     ) : (
@@ -330,11 +353,20 @@ export default function InvoicesList() {
 
                                     {invoice.status === 'paid' && (
                                         <p className="text-[10px] text-green-600/70 font-medium uppercase tracking-widest mt-1">
-                                            Payé le {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date(invoice.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                            {t('invoicesPage.paidOn', {
+                                                date: (invoice.paid_at
+                                                    ? new Date(invoice.paid_at)
+                                                    : new Date(invoice.created_at)
+                                                ).toLocaleDateString(dateLocale, invoice.paid_at
+                                                    ? { day: 'numeric', month: 'short', year: 'numeric' }
+                                                    : { day: 'numeric', month: 'short' }),
+                                            })}
                                         </p>
                                     )}
                                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                                        {invoice.due_date ? `Échéance: ${new Date(invoice.due_date).toLocaleDateString('fr-FR')}` : ''}
+                                        {invoice.due_date
+                                            ? `${t('invoicesPage.duePrefix')} ${new Date(invoice.due_date).toLocaleDateString(dateLocale)}`
+                                            : ''}
                                     </p>
                                 </div>
                                 <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'} className={
@@ -343,7 +375,7 @@ export default function InvoicesList() {
                                             invoice.status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
                                                 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                                 }>
-                                    {invoice.status === 'paid' ? 'PAYÉE' : invoice.status === 'partial' ? 'PARTIEL' : invoice.status === 'sent' ? 'ENVOYÉE' : invoice.status === 'draft' ? 'BROUILLON' : invoice.status.toUpperCase()}
+                                    {invoiceStatusBadge(invoice.status)}
                                 </Badge>
                                 <div className="flex gap-2">
                                     <Button variant="outline" size="sm" onClick={async (e) => {
@@ -355,13 +387,13 @@ export default function InvoicesList() {
                                             console.error('PDF generation failed:', err);
                                         }
                                     }}>
-                                        Imprimer PDF
+                                        {t('invoicesPage.printPdf')}
                                     </Button>
                                     {(role === 'admin' || role === 'secretary') && (
                                         <>
                                             {invoice.status !== 'paid' && (
                                                 <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); openEditModal(invoice); }}>
-                                                    Modifier le lien
+                                                    {t('invoicesPage.editLink')}
                                                 </Button>
                                             )}
                                             <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={async (e) => {
@@ -379,7 +411,7 @@ export default function InvoicesList() {
                                             className="bg-green-600 hover:bg-green-700 text-white"
                                             onClick={(e) => { e.stopPropagation(); window.open(invoice.stripe_payment_link, '_blank'); }}
                                         >
-                                            Payer
+                                            {t('invoicesPage.pay')}
                                         </Button>
                                     )}
                                 </div>
@@ -393,18 +425,18 @@ export default function InvoicesList() {
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Modifier le lien de paiement</DialogTitle>
-                        <DialogDescription>Ajoutez ou modifiez le lien de paiement Stripe.</DialogDescription>
+                        <DialogTitle>{t('invoicesPage.modalEditTitle')}</DialogTitle>
+                        <DialogDescription>{t('invoicesPage.modalEditDesc')}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Lien Stripe</Label>
+                            <Label>{t('invoicesPage.stripeLink')}</Label>
                             <Input placeholder="https://buy.stripe.com/..." value={paymentLink} onChange={(e) => setPaymentLink(e.target.value)} />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Annuler</Button>
-                        <Button onClick={handleSaveLink}>Enregistrer</Button>
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>{t('common.cancel')}</Button>
+                        <Button onClick={handleSaveLink}>{t('common.save')}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -413,9 +445,9 @@ export default function InvoicesList() {
             <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-serif">Détails de la facture</DialogTitle>
+                        <DialogTitle className="text-2xl font-serif">{t('invoicesPage.detailsTitle')}</DialogTitle>
                         <DialogDescription>
-                            Invoice #{selectedInvoice?.id.slice(0, 8)}
+                            {t('invoicesPage.detailsInvoiceId', { id: selectedInvoice?.id.slice(0, 8) })}
                         </DialogDescription>
                     </DialogHeader>
                     
@@ -424,31 +456,31 @@ export default function InvoicesList() {
                             {/* Project / Client */}
                             <div className="grid grid-cols-2 gap-4 border-b pb-4">
                                 <div>
-                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Projet</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">{t('invoicesPage.labelProject')}</Label>
                                     <p className="font-serif text-lg">{selectedInvoice.project?.title}</p>
                                 </div>
                                 <div>
-                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Client</Label>
-                                    <p className="font-medium">{selectedInvoice.project?.client?.full_name || 'N/A'}</p>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">{t('invoicesPage.labelClient')}</Label>
+                                    <p className="font-medium">{selectedInvoice.project?.client?.full_name || t('invoicesPage.na')}</p>
                                 </div>
                             </div>
 
                             {/* Financial Breakdown */}
                             <div className="space-y-3">
-                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">Détails financiers</Label>
+                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">{t('invoicesPage.financialDetails')}</Label>
                                 <div className="space-y-1 bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 font-mono text-sm">
                                     <div className="flex justify-between">
-                                        <span>Montant (Net)</span>
+                                        <span>{t('invoicesPage.amountNet')}</span>
                                         <span>{formatCurrency(selectedInvoice.amount)}</span>
                                     </div>
                                     {selectedInvoice.project?.financials?.tax_province && (
                                         <>
                                             <div className="flex justify-between text-muted-foreground text-xs mt-1">
-                                                <span>Tax ({selectedInvoice.project.financials.tax_province})</span>
+                                                <span>{t('invoicesPage.taxLine', { province: selectedInvoice.project.financials.tax_province })}</span>
                                                 <span>+ {formatCurrency(calculateCanadianTax(selectedInvoice.amount, selectedInvoice.project.financials.tax_province as CanadianProvince).total)}</span>
                                             </div>
                                             <div className="flex justify-between font-bold border-t pt-2 mt-2 text-luxury-gold text-lg">
-                                                <span>Total TTC</span>
+                                                <span>{t('invoicesPage.totalTTC')}</span>
                                                 <span>{formatCurrency(selectedInvoice.amount + calculateCanadianTax(selectedInvoice.amount, selectedInvoice.project.financials.tax_province as CanadianProvince).total)}</span>
                                             </div>
                                         </>
@@ -459,10 +491,10 @@ export default function InvoicesList() {
                             {/* Status & Dates */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Statut</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">{t('invoicesPage.labelStatus')}</Label>
                                     <div className="flex items-center gap-2">
                                         <Badge variant={selectedInvoice.status === 'paid' ? 'default' : 'secondary'}>
-                                            {selectedInvoice.status.toUpperCase()}
+                                            {invoiceStatusBadge(selectedInvoice.status)}
                                         </Badge>
                                         <span className="text-sm font-medium">
                                             {formatCurrency(selectedInvoice.amount_paid || 0)} / {formatCurrency(selectedInvoice.amount)}
@@ -470,20 +502,20 @@ export default function InvoicesList() {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Dates</Label>
-                                    <p className="text-xs">Créée le : {new Date(selectedInvoice.created_at).toLocaleDateString('fr-FR')}</p>
-                                    <p className="text-xs">Échéance : {selectedInvoice.due_date ? new Date(selectedInvoice.due_date).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">{t('invoicesPage.labelDates')}</Label>
+                                    <p className="text-xs">{t('invoicesPage.createdOn', { date: new Date(selectedInvoice.created_at).toLocaleDateString(dateLocale) })}</p>
+                                    <p className="text-xs">{t('invoicesPage.dueOn', { date: selectedInvoice.due_date ? new Date(selectedInvoice.due_date).toLocaleDateString(dateLocale) : t('invoicesPage.na') })}</p>
                                 </div>
                             </div>
 
                             {/* ====== PAYMENT HISTORY ====== */}
                             <div className="space-y-3 pt-2 border-t">
                                 <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
-                                    <DollarSign className="w-3 h-3" /> Paiements
+                                    <DollarSign className="w-3 h-3" /> {t('invoicesPage.payments')}
                                 </Label>
 
                                 {payments.length === 0 && (Number(selectedInvoice.amount_paid) || 0) === 0 && (
-                                    <p className="text-xs text-muted-foreground italic">Aucun paiement enregistré.</p>
+                                    <p className="text-xs text-muted-foreground italic">{t('invoicesPage.noPayments')}</p>
                                 )}
 
                                 {/* Payment entries list */}
@@ -491,29 +523,29 @@ export default function InvoicesList() {
                                     <div key={p.id} className={`rounded-lg p-3 space-y-2 ${p.id.startsWith('legacy-') ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800' : 'bg-zinc-50 dark:bg-zinc-900'}`}>
                                         {p.id.startsWith('legacy-') && editingPaymentId === p.id && (
                                             <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-                                                Paiement existant — modifiez la date et cliquez Sauvegarder.
+                                                {t('invoicesPage.legacyPaymentHint')}
                                             </p>
                                         )}
                                         {editingPaymentId === p.id ? (
                                             <div className="space-y-2">
                                                 <div className="grid grid-cols-3 gap-2">
                                                     <div>
-                                                        <Label className="text-[9px] uppercase text-muted-foreground">Montant ($)</Label>
+                                                        <Label className="text-[9px] uppercase text-muted-foreground">{t('invoicesPage.amountUsd')}</Label>
                                                         <Input type="number" value={editPayAmount} onChange={(e) => setEditPayAmount(e.target.value)} className="h-8 text-sm" />
                                                     </div>
                                                     <div>
-                                                        <Label className="text-[9px] uppercase text-muted-foreground">Date</Label>
+                                                        <Label className="text-[9px] uppercase text-muted-foreground">{t('invoicesPage.date')}</Label>
                                                         <Input type="date" value={editPayDate} onChange={(e) => setEditPayDate(e.target.value)} className="h-8 text-sm" />
                                                     </div>
                                                     <div>
-                                                        <Label className="text-[9px] uppercase text-muted-foreground">Note</Label>
-                                                        <Input value={editPayNote} onChange={(e) => setEditPayNote(e.target.value)} placeholder="Dépôt, Solde..." className="h-8 text-sm" />
+                                                        <Label className="text-[9px] uppercase text-muted-foreground">{t('invoicesPage.note')}</Label>
+                                                        <Input value={editPayNote} onChange={(e) => setEditPayNote(e.target.value)} placeholder={t('invoicesPage.notePlaceholder')} className="h-8 text-sm" />
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2 justify-end">
-                                                    <Button size="sm" variant="ghost" onClick={() => setEditingPaymentId(null)} disabled={saving}>Annuler</Button>
+                                                    <Button size="sm" variant="ghost" onClick={() => setEditingPaymentId(null)} disabled={saving}>{t('common.cancel')}</Button>
                                                     <Button size="sm" onClick={handleSaveEditPayment} disabled={saving}>
-                                                        {saving ? 'Enregistrement…' : 'Sauvegarder'}
+                                                        {saving ? t('invoicesPage.saving') : t('common.save')}
                                                     </Button>
                                                 </div>
                                             </div>
@@ -525,7 +557,7 @@ export default function InvoicesList() {
                                                         <p className="text-sm font-semibold">{formatCurrency(p.amount)}</p>
                                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                             <CalendarDays className="w-3 h-3" />
-                                                            {new Date(p.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                            {new Date(p.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })}
                                                             {p.note && <span className="ml-1 text-luxury-gold">— {p.note}</span>}
                                                         </div>
                                                     </div>
@@ -546,11 +578,11 @@ export default function InvoicesList() {
                                 {/* Add new payment form — always visible unless fully paid */}
                                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 space-y-2">
                                     <Label className="text-[10px] uppercase text-green-700 dark:text-green-400 font-bold">
-                                        + Ajouter un paiement
+                                        {t('invoicesPage.addPayment')}
                                     </Label>
                                     <div className="grid grid-cols-3 gap-2">
                                         <div>
-                                            <Label className="text-[9px] uppercase text-muted-foreground">Montant ($)</Label>
+                                            <Label className="text-[9px] uppercase text-muted-foreground">{t('invoicesPage.amountUsd')}</Label>
                                             <Input
                                                 type="number"
                                                 placeholder="0.00"
@@ -559,12 +591,12 @@ export default function InvoicesList() {
                                                 className="h-8 text-sm"
                                             />
                                             <p className="text-[10px] text-muted-foreground mt-0.5">
-                                                Total facture: {formatCurrency(selectedInvoice.amount)}
-                                                {remainingAmount > 0 && <> · Restant: {formatCurrency(remainingAmount)}</>}
+                                                {t('invoicesPage.invoiceTotal', { amount: formatCurrency(selectedInvoice.amount) })}
+                                                {remainingAmount > 0 && <> · {t('invoicesPage.remaining', { amount: formatCurrency(remainingAmount) })}</>}
                                             </p>
                                         </div>
                                         <div>
-                                            <Label className="text-[9px] uppercase text-muted-foreground">Date</Label>
+                                            <Label className="text-[9px] uppercase text-muted-foreground">{t('invoicesPage.date')}</Label>
                                             <Input
                                                 type="date"
                                                 value={newPayDate}
@@ -573,18 +605,18 @@ export default function InvoicesList() {
                                             />
                                         </div>
                                         <div>
-                                            <Label className="text-[9px] uppercase text-muted-foreground">Note</Label>
+                                            <Label className="text-[9px] uppercase text-muted-foreground">{t('invoicesPage.note')}</Label>
                                             <Input
                                                 value={newPayNote}
                                                 onChange={(e) => setNewPayNote(e.target.value)}
-                                                placeholder="Dépôt, Solde..."
+                                                placeholder={t('invoicesPage.notePlaceholder')}
                                                 className="h-8 text-sm"
                                             />
                                         </div>
                                     </div>
                                     <div className="flex justify-end">
                                         <Button size="sm" onClick={handleAddPayment} disabled={saving || !newPayAmount}>
-                                            {saving ? 'Enregistrement…' : 'Enregistrer le paiement'}
+                                            {saving ? t('invoicesPage.saving') : t('invoicesPage.savePayment')}
                                         </Button>
                                     </div>
                                 </div>
@@ -593,7 +625,7 @@ export default function InvoicesList() {
                             {/* Payment Link */}
                             {selectedInvoice.stripe_payment_link && (
                                 <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-md">
-                                    <Label className="text-[10px] uppercase text-green-600 font-bold mb-1 block">Lien de paiement</Label>
+                                    <Label className="text-[10px] uppercase text-green-600 font-bold mb-1 block">{t('invoicesPage.paymentLinkSection')}</Label>
                                     <a href={selectedInvoice.stripe_payment_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline break-all">
                                         {selectedInvoice.stripe_payment_link}
                                     </a>
@@ -605,7 +637,7 @@ export default function InvoicesList() {
                               (selectedInvoice.project?.stage_details?.sketch_files?.length || 0) > 0 ||
                               (selectedInvoice.project?.stage_details?.design_files?.length || 0) > 0) && (
                                 <div className="space-y-4 pt-4 border-t">
-                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Contenu & Designs du projet</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">{t('invoicesPage.projectContent')}</Label>
                                     
                                     {selectedInvoice.project.stage_details.design_notes && (
                                         <div className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded border border-black/5 text-sm italic text-muted-foreground whitespace-pre-wrap">
@@ -618,7 +650,7 @@ export default function InvoicesList() {
                                             <div key={idx} className="relative group">
                                                 <img 
                                                     src={url} 
-                                                    alt={`Design ${idx}`} 
+                                                    alt={t('invoicesPage.designAlt', { n: idx + 1 })} 
                                                     className="w-24 h-24 object-cover rounded border border-black/10 shadow-sm transition-transform hover:scale-110 cursor-zoom-in"
                                                     onClick={() => window.open(url, '_blank')}
                                                 />
@@ -631,7 +663,7 @@ export default function InvoicesList() {
                     )}
 
                     <DialogFooter className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>Fermer</Button>
+                        <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>{t('invoicesPage.close')}</Button>
                         <Button
                             variant="default"
                             className="bg-luxury-gold text-black hover:bg-gold-600"
@@ -654,13 +686,13 @@ export default function InvoicesList() {
             <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
-                        <DialogTitle>Supprimer la facture ?</DialogTitle>
+                        <DialogTitle>{t('invoicesPage.deleteTitle')}</DialogTitle>
                         <DialogDescription>
-                            Cette action est irréversible. La facture et son historique de paiements seront supprimés.
+                            {t('invoicesPage.deleteDesc')}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>{t('common.cancel')}</Button>
                         <Button variant="destructive" onClick={async () => {
                             if (invoiceToDelete) {
                                 await apiInvoices.delete(invoiceToDelete);
@@ -668,7 +700,7 @@ export default function InvoicesList() {
                             }
                             setIsDeleteConfirmOpen(false);
                             setInvoiceToDelete(null);
-                        }}>Supprimer</Button>
+                        }}>{t('common.delete')}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

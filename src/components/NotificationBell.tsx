@@ -15,8 +15,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useEffect, useRef } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useTranslation } from 'react-i18next';
 
 export default function NotificationBell() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { user, role } = useAuth();
@@ -70,15 +72,15 @@ export default function NotificationBell() {
                             {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}
-                    <span className="sr-only">Notifications</span>
+                    <span className="sr-only">{t('notificationsPage.bellAria')}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
                 <DropdownMenuLabel className="flex items-center justify-between">
-                    <span>Notifications</span>
+                    <span>{t('notificationsPage.title')}</span>
                     {unreadCount > 0 && (
                         <Button variant="ghost" size="sm" onClick={handleMarkAllRead} className="h-6 px-2 text-xs font-normal">
-                            Mark all read
+                            {t('notificationsPage.markAllRead')}
                         </Button>
                     )}
                 </DropdownMenuLabel>
@@ -86,7 +88,7 @@ export default function NotificationBell() {
                 <div className="max-h-[300px] overflow-y-auto">
                     {notifications.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
-                            No notifications
+                            {t('notificationsPage.empty')}
                         </div>
                     ) : (
                         notifications.map((notification) => (
@@ -115,7 +117,7 @@ export default function NotificationBell() {
                                             <button
                                                 onClick={(e) => handleMarkOneRead(notification.id, e)}
                                                 className="p-0.5 rounded hover:bg-muted"
-                                                title="Mark as read"
+                                                title={t('notificationsPage.markReadTooltip')}
                                             >
                                                 <Check className="w-3 h-3 text-muted-foreground" />
                                             </button>
@@ -142,19 +144,19 @@ export default function NotificationBell() {
                                     e.stopPropagation();
                                     if (isSubscribed) {
                                         await unsubscribe();
-                                        toast({ title: 'Notifications push désactivées' });
+                                        toast({ title: t('notificationsPage.pushDisabled') });
                                     } else {
                                         const ok = await subscribe();
                                         if (ok) {
-                                            toast({ title: 'Notifications push activées', description: 'Vous recevrez des alertes même quand l\'app est fermée.' });
+                                            toast({ title: t('notificationsPage.pushEnabled'), description: t('notificationsPage.pushEnabledDesc') });
                                         } else if (permission === 'denied') {
-                                            toast({ title: 'Permission refusée', description: 'Activez les notifications dans les paramètres de votre navigateur.', variant: 'destructive' });
+                                            toast({ title: t('notificationsPage.permissionDenied'), description: t('notificationsPage.permissionDeniedDesc'), variant: 'destructive' });
                                         }
                                     }
                                 }}
                             >
                                 {isSubscribed ? <BellRing className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
-                                {isSubscribed ? 'Push activées' : 'Activer les notifications push'}
+                                {isSubscribed ? t('notificationsPage.pushOn') : t('notificationsPage.pushEnable')}
                             </Button>
                         </div>
                     </>

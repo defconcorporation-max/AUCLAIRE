@@ -1,5 +1,5 @@
-
 import React, { ErrorInfo, ReactNode } from "react";
+import i18n from "@/i18n";
 
 interface Props {
     children?: ReactNode;
@@ -28,7 +28,8 @@ class ErrorBoundary extends React.Component<Props, State> {
         if (this.state.hasError) {
             return (
                 <div style={{ padding: "2rem", color: "red" }}>
-                    <h1>Something went wrong.</h1>
+                    <h1>{i18n.t("errorBoundary.title")}</h1>
+                    <p style={{ fontSize: "0.875rem", marginBottom: "0.5rem" }}>{i18n.t("errorBoundary.stackHint")}</p>
                     <pre>{this.state.error?.message}</pre>
                     <pre>{this.state.error?.stack}</pre>
                 </div>

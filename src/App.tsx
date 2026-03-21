@@ -1,4 +1,5 @@
 import React, { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Force new deployment: v3.9.0 - Lazy Loading + Design Approval + Dynamic Quotes + Time Tracking + Push Notifications
 console.log("App Version: v3.9.0 - 5 Features Drop");
@@ -14,14 +15,17 @@ import { RoleSwitcher } from "./components/debug/RoleSwitcher";
 import { RingProvider } from "./context/RingContext";
 import { useRealtimeSync } from './hooks/useRealtimeSync';
 
-const LazyFallback = () => (
-    <div className="flex h-[50vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-luxury-gold/30 border-t-luxury-gold rounded-full animate-spin" />
-            <span className="text-xs text-muted-foreground uppercase tracking-widest">Chargement...</span>
+function LazyFallback() {
+    const { t } = useTranslation();
+    return (
+        <div className="flex h-[50vh] items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-luxury-gold/30 border-t-luxury-gold rounded-full animate-spin" />
+                <span className="text-xs text-muted-foreground uppercase tracking-widest">{t('app.loadingFallback')}</span>
+            </div>
         </div>
-    </div>
-);
+    );
+}
 
 const Settings = lazy(() => import('./pages/Settings'));
 const ProjectsList = lazy(() => import('./pages/projects/ProjectsList'));
@@ -66,8 +70,9 @@ function RealtimeSync() {
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
   const { user, role, isAdmin, isLoading } = useAuth();
+  const { t } = useTranslation();
 
-  if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  if (isLoading) return <div className="flex h-screen items-center justify-center">{t('app.loading')}</div>;
 
   if (!user && !isAdmin) {
     return <Navigate to="/login" replace />;
@@ -81,7 +86,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 
   // RBAC Check
   if (allowedRoles && role && !allowedRoles.includes(role) && !isAdmin) {
-    return <div className="p-8 text-center text-red-500">Access Denied: You do not have permission to view this page.</div>;
+    return <div className="p-8 text-center text-red-500">{t('app.accessDenied')}</div>;
   }
 
   return <>{children}</>;

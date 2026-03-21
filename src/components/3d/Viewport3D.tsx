@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { Canvas } from "@react-three/fiber"
 import * as THREE from "three"
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
@@ -10,6 +11,7 @@ import type { RingConfig } from "../../context/RingContext"
 
 // --- MAIN VIEWPORT COMPONENT ---
 export default function Viewport3D() {
+    const { t } = useTranslation()
     const { ringConfig, materials } = useRing()
 
     const activeConfig = useMemo((): RingConfig => ({
@@ -50,8 +52,8 @@ export default function Viewport3D() {
 
                 <div className="absolute bottom-0 left-0 right-0 h-8 bg-[#1a1a1a] border-t border-[#333] flex items-center px-4 justify-between text-[10px] text-gray-500 font-mono">
                     <div className="flex gap-4">
-                        <span className="text-white">Perspective</span>
-                        <span>Grid: 0.1mm</span>
+                        <span className="text-white">{t('cadLayout.viewportPerspective')}</span>
+                        <span>{t('cadLayout.viewportGrid')}</span>
                     </div>
                 </div>
             </ErrorBoundary>

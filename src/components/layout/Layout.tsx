@@ -2,13 +2,15 @@ import { Outlet, NavLink } from "react-router-dom"
 import { LayoutDashboard, Users, Gem, Settings, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import DailyReportSheet from "../analytics/DailyReportSheet"
+import { useTranslation } from "react-i18next"
 
 function Sidebar() {
+    const { t } = useTranslation()
     const navItems = [
-        { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-        { icon: Users, label: "CRM & Leads", href: "/leads" },
-        { icon: Gem, label: "Jewel Studio", href: "/studio" },
-        { icon: Settings, label: "Settings", href: "/settings" },
+        { icon: LayoutDashboard, label: t("legacyLayout.navDashboard"), href: "/" },
+        { icon: Users, label: t("legacyLayout.navCrm"), href: "/leads" },
+        { icon: Gem, label: t("legacyLayout.navStudio"), href: "/studio" },
+        { icon: Settings, label: t("legacyLayout.navSettings"), href: "/settings" },
     ]
 
     return (
@@ -43,7 +45,7 @@ function Sidebar() {
             <div className="p-4 border-t border-luxury-gold-dark/20">
                 <button className="flex items-center gap-3 px-4 py-3 w-full rounded-md hover:bg-destructive/10 hover:text-destructive transition-colors text-left text-sm text-muted-foreground">
                     <LogOut className="w-5 h-5" />
-                    <span>Sign Out</span>
+                    <span>{t("pending.signOut")}</span>
                 </button>
             </div>
         </aside>
@@ -51,11 +53,12 @@ function Sidebar() {
 }
 
 function Header() {
+    const { t } = useTranslation()
     return (
         <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ml-64 flex items-center justify-between px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
                 <DailyReportSheet />
-                <h2 className="text-sm font-medium text-muted-foreground">Welcome back, Artisan</h2>
+                <h2 className="text-sm font-medium text-muted-foreground">{t("legacyLayout.welcomeArtisan")}</h2>
             </div>
             <div className="flex items-center gap-4">
                 <div className="w-8 h-8 rounded-full bg-secondary overflow-hidden border border-input">

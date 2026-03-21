@@ -10,6 +10,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Button } from '@/components/ui/button';
 import { financialUtils } from '@/utils/financialUtils';
 import { formatCurrency } from '@/lib/utils';
@@ -17,6 +19,8 @@ import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
 import { apiSettings } from '@/services/apiSettings';
 
 export default function AnalyticsDashboard() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
@@ -26,7 +30,7 @@ export default function AnalyticsDashboard() {
     const { data: activities = [], isLoading: alLoad } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll });
 
     if (pLoad || cLoad || iLoad || uLoad || eLoad || alLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">Loading Power Analytics...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">{t('analyticsPage.loading')}</div>;
     }
 
     // Helpers to prevent string concatenation
@@ -40,15 +44,15 @@ export default function AnalyticsDashboard() {
 
         if (timeframe === 'day') {
             startPrev.setDate(startPrev.getDate() - 1);
-            label = "hier";
+            label = t('analyticsPage.compareYesterday');
         } else if (timeframe === 'week') {
             startPrev.setDate(startPrev.getDate() - 7);
-            label = "semaine dernière";
+            label = t('analyticsPage.compareLastWeek');
         } else if (timeframe === 'month') {
             startPrev.setMonth(startPrev.getMonth() - 1);
-            label = "mois dernier";
+            label = t('analyticsPage.compareLastMonth');
         } else {
-            label = "total";
+            label = t('analyticsPage.compareTotal');
         }
 
         const getStatsForRangeStandard = (start: Date, end: Date) => {
@@ -103,11 +107,15 @@ export default function AnalyticsDashboard() {
     const trendData = getTrendData();
 
     // 2. Monthly Revenue Chart (Paid Invoices)
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentYear = new Date().getFullYear();
-    const monthlyData = months.map(m => ({ month: m, collected: 0, invoiced: 0, expenses: 0 }));
+    const monthlyData = [...Array(12)].map((_, monthIdx) => ({
+        month: new Date(currentYear, monthIdx, 1).toLocaleDateString(localeTag, { month: 'short' }),
+        collected: 0,
+        invoiced: 0,
+        expenses: 0,
+    }));
 
-    months.forEach((_, monthIdx) => {
+    monthlyData.forEach((_, monthIdx) => {
         const start = new Date(currentYear, monthIdx, 1, 0, 0, 0, 0);
         const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59, 999);
         monthlyData[monthIdx].collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
@@ -187,9 +195,9 @@ export default function AnalyticsDashboard() {
     // Calculate Projected Cash Flow for next 3 months
     const currentMonthIdx = new Date().getMonth();
     const next3MonthsData = [
-        { name: 'Ce mois', projected: monthlyData[currentMonthIdx].collected },
-        { name: 'Mois +1', projected: 0 },
-        { name: 'Mois +2', projected: 0 },
+        { name: t('analyticsPage.forecastMonth0'), projected: monthlyData[currentMonthIdx].collected },
+        { name: t('analyticsPage.forecastMonth1'), projected: 0 },
+        { name: t('analyticsPage.forecastMonth2'), projected: 0 },
     ];
 
     projects.forEach(p => {
@@ -290,8 +298,8 @@ export default function AnalyticsDashboard() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">Business Analytics</h1>
-                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Global performance & seller leaderboard.</p>
+                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">{t('analyticsPage.title')}</h1>
+                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">{t('analyticsPage.subtitle')}</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -305,22 +313,22 @@ export default function AnalyticsDashboard() {
                         className="rounded-lg border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10 hover:border-luxury-gold/50 transition-all"
                     >
                         <FileDown className="w-4 h-4 mr-2" />
-                        Exporter Rapport PDF
+                        {t('analyticsPage.exportPdf')}
                     </Button>
                     <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl backdrop-blur-md border border-black/10 dark:border-white/10">
-                        {(['day', 'week', 'month', 'total'] as const).map((t) => (
+                        {(['day', 'week', 'month', 'total'] as const).map((period) => (
                             <Button
-                                key={t}
+                                key={period}
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setTimeframe(t)}
+                                onClick={() => setTimeframe(period)}
                                 className={`rounded-lg px-4 transition-all duration-300 ${
-                                    timeframe === t 
+                                    timeframe === period 
                                     ? 'bg-luxury-gold text-white shadow-lg' 
                                     : 'hover:bg-luxury-gold/10 text-muted-foreground'
                                 }`}
                             >
-                                {t === 'day' ? 'Jour' : t === 'week' ? 'Semaine' : t === 'month' ? 'Mois' : 'Total'}
+                                {period === 'day' ? t('analyticsPage.periodDay') : period === 'week' ? t('analyticsPage.periodWeek') : period === 'month' ? t('analyticsPage.periodMonth') : t('analyticsPage.periodTotal')}
                             </Button>
                         ))}
                     </div>
@@ -331,7 +339,7 @@ export default function AnalyticsDashboard() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Panier Moyen</CardTitle>
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiAvgOrder')}</CardTitle>
                         <Briefcase className="h-4 w-4 text-luxury-gold" />
                     </CardHeader>
                     <CardContent>
@@ -345,7 +353,7 @@ export default function AnalyticsDashboard() {
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Cash Encaissé</CardTitle>
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiCashCollected')}</CardTitle>
                         <Banknote className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
@@ -359,7 +367,7 @@ export default function AnalyticsDashboard() {
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Nouveaux Clients</CardTitle>
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiNewClients')}</CardTitle>
                         <Users className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
@@ -371,7 +379,7 @@ export default function AnalyticsDashboard() {
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden border-l-green-500/50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">Profit Réel</CardTitle>
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiProfit')}</CardTitle>
                         <TrendingUp className="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
@@ -385,7 +393,7 @@ export default function AnalyticsDashboard() {
                 </Card>
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden border-l-red-500/50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">À Récolter</CardTitle>
+                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiOutstanding')}</CardTitle>
                         <Banknote className="h-4 w-4 text-orange-500" />
                     </CardHeader>
                     <CardContent>
@@ -400,14 +408,14 @@ export default function AnalyticsDashboard() {
                 <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/20 relative overflow-hidden ring-1 ring-luxury-gold/20 shadow-lg shadow-luxury-gold/5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium uppercase tracking-widest text-luxury-gold flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4" /> Pipeline Pondéré
+                            <TrendingUp className="w-4 h-4" /> {t('analyticsPage.kpiWeightedPipeline')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-serif text-luxury-gold">
                             {formatCurrency(Math.round(next3MonthsData.reduce((s, m) => s + m.projected, 0)))}
                         </div>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-tighter mt-1">Valeur estimée du pipeline selon probabilité d'étape</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-tighter mt-1">{t('analyticsPage.kpiPipelineHint')}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -418,8 +426,8 @@ export default function AnalyticsDashboard() {
                 {/* Chart */}
                 <Card className="md:col-span-2 border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
                     <CardHeader>
-                        <CardTitle className="font-serif text-xl">Croissance Annuelle ({currentYear})</CardTitle>
-                        <CardDescription>Facturé vs Encaissé vs Dépensé</CardDescription>
+                        <CardTitle className="font-serif text-xl">{t('analyticsPage.chartAnnualTitle', { year: currentYear })}</CardTitle>
+                        <CardDescription>{t('analyticsPage.chartAnnualDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px] w-full mt-4">
@@ -452,9 +460,9 @@ export default function AnalyticsDashboard() {
                                         formatter={(value: number) => [formatCurrency(value), ""]}
                                         contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
                                     />
-                                    <Area type="monotone" name="Facturé ($)" dataKey="invoiced" stroke="#A68A56" fillOpacity={1} fill="url(#colorInvoiced)" />
-                                    <Area type="monotone" name="Encaissé ($)" dataKey="collected" stroke="#22c55e" fillOpacity={1} fill="url(#colorCollected)" />
-                                    <Area type="monotone" name="Dépensé ($)" dataKey="expenses" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpenses)" />
+                                    <Area type="monotone" name={t('analyticsPage.seriesInvoiced')} dataKey="invoiced" stroke="#A68A56" fillOpacity={1} fill="url(#colorInvoiced)" />
+                                    <Area type="monotone" name={t('analyticsPage.seriesCollected')} dataKey="collected" stroke="#22c55e" fillOpacity={1} fill="url(#colorCollected)" />
+                                    <Area type="monotone" name={t('analyticsPage.seriesSpent')} dataKey="expenses" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpenses)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -466,7 +474,7 @@ export default function AnalyticsDashboard() {
                     <CardHeader className="pb-2">
                         <CardTitle className="font-serif text-xl flex items-center gap-2">
                             <Trophy className="w-5 h-5 text-luxury-gold" />
-                            Meilleur Vendeur
+                            {t('analyticsPage.topSeller')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col justify-center h-[300px] mt-4">
@@ -478,13 +486,13 @@ export default function AnalyticsDashboard() {
                                 <div>
                                     <h3 className="text-2xl font-serif text-black dark:text-white">{leaderboard[0].name}</h3>
                                         <p className="text-luxury-gold mt-1 uppercase tracking-widest text-sm font-semibold">
-                                            {formatCurrency(leaderboard[0].volume)} Générés
+                                            {t('analyticsPage.topSellerGenerated', { amount: formatCurrency(leaderboard[0].volume) })}
                                         </p>
-                                    <p className="text-gray-500 text-xs mt-2">{leaderboard[0].projectCount} Projets signés</p>
+                                    <p className="text-gray-500 text-xs mt-2">{t('analyticsPage.topSellerProjects', { count: leaderboard[0].projectCount })}</p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center text-gray-500">Aucun projet attribué.</div>
+                            <div className="text-center text-gray-500">{t('analyticsPage.topSellerEmpty')}</div>
                         )}
                     </CardContent>
                 </Card>
@@ -496,9 +504,9 @@ export default function AnalyticsDashboard() {
                 <CardHeader>
                     <CardTitle className="font-serif text-xl flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-luxury-gold" />
-                        Prévisions de Trésorerie (3 Mois)
+                        {t('analyticsPage.forecastTitle')}
                     </CardTitle>
-                    <CardDescription>Conversion estimée du pipeline actuel</CardDescription>
+                    <CardDescription>{t('analyticsPage.forecastDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="h-[250px] w-full mt-4">
@@ -507,7 +515,7 @@ export default function AnalyticsDashboard() {
                                 <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
                                 <YAxis hide />
                                 <Tooltip 
-                                    formatter={(value: number) => [formatCurrency(value), "CA Prévu"]}
+                                    formatter={(value: number) => [formatCurrency(value), t('analyticsPage.forecastTooltip')]}
                                     contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
                                 />
                                 <Bar dataKey="projected" radius={[4, 4, 0, 0]} barSize={40}>
@@ -519,7 +527,7 @@ export default function AnalyticsDashboard() {
                         </ResponsiveContainer>
                     </div>
                     <p className="text-[10px] text-muted-foreground text-center italic mt-2">
-                        Calcul basé sur la vélocité historique et les probabilités de clôture.
+                        {t('analyticsPage.forecastFootnote')}
                     </p>
                 </CardContent>
             </Card>
@@ -530,20 +538,20 @@ export default function AnalyticsDashboard() {
                     <div>
                         <CardTitle className="font-serif text-2xl tracking-wide flex items-center gap-2">
                             <Briefcase className="w-6 h-6 text-luxury-gold" />
-                            Manufacturer Performance Scorecards
+                            {t('analyticsPage.manufacturerTitle')}
                         </CardTitle>
-                        <CardDescription>Supplier accountability: Tracking speed, quality, and output.</CardDescription>
+                        <CardDescription>{t('analyticsPage.manufacturerDesc')}</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader className="bg-black/5 dark:bg-white/5">
                             <TableRow className="border-black/5 dark:border-white/5">
-                                <TableHead>Manufacturer</TableHead>
-                                <TableHead className="text-center">Projects</TableHead>
-                                <TableHead className="text-center text-blue-500">Avg Speed</TableHead>
-                                <TableHead className="text-center text-green-500">Quality Score</TableHead>
-                                <TableHead className="text-right">Total Volume</TableHead>
+                                <TableHead>{t('analyticsPage.colManufacturer')}</TableHead>
+                                <TableHead className="text-center">{t('analyticsPage.colProjects')}</TableHead>
+                                <TableHead className="text-center text-blue-500">{t('analyticsPage.colAvgSpeed')}</TableHead>
+                                <TableHead className="text-center text-green-500">{t('analyticsPage.colQualityScore')}</TableHead>
+                                <TableHead className="text-right">{t('analyticsPage.colTotalVolume')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -559,16 +567,16 @@ export default function AnalyticsDashboard() {
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <div className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-widest border-luxury-gold/30 text-luxury-gold bg-transparent uppercase">
-                                            {m.projectCount} Projects
+                                            {t('analyticsPage.projectsBadge', { count: m.projectCount })}
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-center font-serif text-lg">
                                         {m.avgSpeed > 0 ? (
                                             <span className={m.avgSpeed < 7 ? 'text-green-500' : m.avgSpeed > 14 ? 'text-red-500' : 'text-amber-500'}>
-                                                {m.avgSpeed} Days
+                                                {t('analyticsPage.days', { count: m.avgSpeed })}
                                             </span>
                                         ) : (
-                                            <span className="text-gray-400 text-xs italic">N/A</span>
+                                            <span className="text-gray-400 text-xs italic">{t('analyticsPage.na')}</span>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-center">
@@ -592,7 +600,7 @@ export default function AnalyticsDashboard() {
                             {manufacturerScorecard.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center py-8 text-gray-500 italic">
-                                        No manufacturer production data found yet.
+                                        {t('analyticsPage.manufacturerEmpty')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -603,19 +611,19 @@ export default function AnalyticsDashboard() {
 
             <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
                 <CardHeader>
-                    <CardTitle className="font-serif text-2xl tracking-wide">Palmarès Admins & Ambassadeurs</CardTitle>
-                    <CardDescription>Classement par volume de projets apportés (Ventes directes).</CardDescription>
+                    <CardTitle className="font-serif text-2xl tracking-wide">{t('analyticsPage.leaderboardTitle')}</CardTitle>
+                    <CardDescription>{t('analyticsPage.leaderboardDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader className="bg-black/5 dark:bg-white/5">
                             <TableRow className="border-black/5 dark:border-white/5">
-                                <TableHead className="w-16 text-center font-bold text-luxury-gold">Rang</TableHead>
-                                <TableHead>Nom du Vendeur</TableHead>
-                                <TableHead className="text-center">Projets</TableHead>
-                                <TableHead className="text-right">Volume Apporté</TableHead>
-                                <TableHead className="text-right text-green-600/70 dark:text-green-500">Cash Récolté</TableHead>
-                                <TableHead className="text-right text-purple-600/70 dark:text-purple-400">Commissions (Est/Payées)</TableHead>
+                                <TableHead className="w-16 text-center font-bold text-luxury-gold">{t('analyticsPage.colRank')}</TableHead>
+                                <TableHead>{t('analyticsPage.colSellerName')}</TableHead>
+                                <TableHead className="text-center">{t('analyticsPage.colProjects')}</TableHead>
+                                <TableHead className="text-right">{t('analyticsPage.colBroughtVolume')}</TableHead>
+                                <TableHead className="text-right text-green-600/70 dark:text-green-500">{t('analyticsPage.colCashRecovered')}</TableHead>
+                                <TableHead className="text-right text-purple-600/70 dark:text-purple-400">{t('analyticsPage.colCommissionsEst')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -632,7 +640,7 @@ export default function AnalyticsDashboard() {
                                                 seller.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20' :
                                                 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                                             }`}>
-                                                {seller.role === 'admin' ? 'Admin' : seller.role === 'ambassador' ? 'Ambassadeur' : 'Vendeur'}
+                                                {seller.role === 'admin' ? t('affiliatesListPage.roleAdmin') : seller.role === 'ambassador' ? t('affiliatesListPage.roleAmbassador') : t('affiliatesListPage.roleSeller')}
                                             </span>
                                             {idx === 0 && <ChevronUp className="inline-block w-4 h-4 text-green-500" />}
                                         </div>
@@ -655,8 +663,8 @@ export default function AnalyticsDashboard() {
                             ))}
                             {leaderboard.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                                        Aucune donnée de vente pour le moment.
+                                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                                        {t('analyticsPage.leaderboardEmpty')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -670,13 +678,13 @@ export default function AnalyticsDashboard() {
                 <CardHeader>
                     <CardTitle className="font-serif text-2xl tracking-wide flex items-center gap-2">
                         <span className="text-luxury-gold">✨</span>
-                        AI Business Insights
+                        {t('analyticsPage.aiInsightsTitle')}
                     </CardTitle>
-                    <CardDescription>Smart analysis generated from your data — updated in real-time.</CardDescription>
+                    <CardDescription>{t('analyticsPage.aiInsightsDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid gap-4 md:grid-cols-2">
-                        {generateInsights(projects, invoices, expenses, monthlyData, leaderboard, clients).map((insight, i) => (
+                        {generateInsights(t, projects, invoices, expenses, monthlyData, leaderboard, clients).map((insight, i) => (
                             <div
                                 key={i}
                                 className={`p-4 rounded-xl border ${
@@ -704,7 +712,7 @@ export default function AnalyticsDashboard() {
                 <CardHeader>
                     <CardTitle className="font-serif text-lg flex items-center gap-2">
                         <Gem className="w-5 h-5 text-luxury-gold" />
-                        Rentabilité par Type de Bijou
+                        {t('analyticsPage.jewelryProfitTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -750,12 +758,12 @@ export default function AnalyticsDashboard() {
                                             <div className="flex items-center justify-between text-sm">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-serif font-medium">{row.name}</span>
-                                                    <span className="text-[10px] text-muted-foreground">({row.count} projets)</span>
+                                                    <span className="text-[10px] text-muted-foreground">{t('analyticsPage.jewelryProjectCount', { count: row.count })}</span>
                                                 </div>
                                                 <div className="flex items-center gap-4 text-xs">
                                                     <span className="text-muted-foreground">{formatCurrency(row.revenue)}</span>
                                                     <span className={`font-bold ${row.marginPct >= 30 ? 'text-green-500' : row.marginPct >= 15 ? 'text-amber-500' : 'text-red-500'}`}>
-                                                        {row.marginPct.toFixed(0)}% marge
+                                                        {t('analyticsPage.jewelryMargin', { pct: row.marginPct.toFixed(0) })}
                                                     </span>
                                                 </div>
                                             </div>
@@ -770,8 +778,8 @@ export default function AnalyticsDashboard() {
                                                 />
                                             </div>
                                             <div className="flex gap-4 text-[10px] text-muted-foreground">
-                                                <span>Coûts: {formatCurrency(row.costs)}</span>
-                                                <span>Marge: {formatCurrency(row.margin)}</span>
+                                                <span>{t('analyticsPage.jewelryCosts', { amount: formatCurrency(row.costs) })}</span>
+                                                <span>{t('analyticsPage.jewelryMarginAmt', { amount: formatCurrency(row.margin) })}</span>
                                             </div>
                                         </div>
                                     ))}
@@ -779,11 +787,11 @@ export default function AnalyticsDashboard() {
                                 <div className="flex items-center gap-6 text-[10px] text-muted-foreground pt-2 border-t border-white/5">
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded bg-luxury-gold/60" />
-                                        <span>Coûts directs</span>
+                                        <span>{t('analyticsPage.legendDirectCosts')}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded bg-green-500/60" />
-                                        <span>Marge brute</span>
+                                        <span>{t('analyticsPage.legendGrossMargin')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -799,18 +807,19 @@ export default function AnalyticsDashboard() {
 
 // UI Component for Growth Trend Badges
 function TrendBadge({ value, label }: { value: number; label: string }) {
+    const { t } = useTranslation();
     if (value === 0) return (
         <div className="flex flex-col items-end">
             <div className="flex items-center gap-1 text-gray-400 text-xs font-medium">
                 <Minus className="w-3 h-3" />
-                <span>0%</span>
+                <span>{t('analyticsPage.trendFlat')}</span>
             </div>
-            <span className="text-[9px] text-gray-400 uppercase tracking-tighter">vs {label}</span>
+            <span className="text-[9px] text-gray-400 uppercase tracking-tighter">{t('analyticsPage.trendVs', { label })}</span>
         </div>
     );
 
     const isPositive = value > 0;
-    
+
     return (
         <div className="flex flex-col items-end">
             <div className={`flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full ${
@@ -821,7 +830,7 @@ function TrendBadge({ value, label }: { value: number; label: string }) {
                 {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                 <span>{Math.abs(value)}%</span>
             </div>
-            <span className="text-[9px] text-muted-foreground uppercase tracking-tighter mt-1 italic">vs {label}</span>
+            <span className="text-[9px] text-muted-foreground uppercase tracking-tighter mt-1 italic">{t('analyticsPage.trendVs', { label })}</span>
         </div>
     );
 }
@@ -835,6 +844,7 @@ interface Insight {
 }
 
 function generateInsights(
+    t: TFunction,
     projects: Project[],
     invoices: Invoice[],
     expenses: Expense[],
@@ -842,6 +852,8 @@ function generateInsights(
     leaderboard: { name: string; projectCount: number; volume: number }[],
     clients: Client[]
 ): Insight[] {
+    const ti = (key: string, opts?: Record<string, string | number>) =>
+        t(`analyticsPage.insights.${key}`, opts as Record<string, unknown>);
     const insights: Insight[] = [];
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -855,11 +867,26 @@ function generateInsights(
     if (totalPrev > 0) {
         const growth = Math.round(((totalRecent - totalPrev) / totalPrev) * 100);
         if (growth > 20) {
-            insights.push({ icon: '📈', title: `Revenue up ${growth}% vs prior quarter`, description: `Strong momentum! Collections grew from ${formatCurrency(totalPrev)} to ${formatCurrency(totalRecent)}.`, type: 'success' });
+            insights.push({
+                icon: '📈',
+                title: ti('revenueUpTitle', { growth }),
+                description: ti('revenueUpDesc', { from: formatCurrency(totalPrev), to: formatCurrency(totalRecent) }),
+                type: 'success',
+            });
         } else if (growth < -10) {
-            insights.push({ icon: '📉', title: `Revenue declined ${Math.abs(growth)}%`, description: `Collections dropped from ${formatCurrency(totalPrev)} to ${formatCurrency(totalRecent)}. Consider running promotions.`, type: 'danger' });
+            insights.push({
+                icon: '📉',
+                title: ti('revenueDownTitle', { growth: Math.abs(growth) }),
+                description: ti('revenueDownDesc', { from: formatCurrency(totalPrev), to: formatCurrency(totalRecent) }),
+                type: 'danger',
+            });
         } else {
-            insights.push({ icon: '📊', title: `Revenue stable (${growth > 0 ? '+' : ''}${growth}%)`, description: `Consistent cash flow of ~${formatCurrency(Math.round(totalRecent / 3))}/month.`, type: 'info' });
+            insights.push({
+                icon: '📊',
+                title: ti('revenueStableTitle', { pct: `${growth > 0 ? '+' : ''}${growth}` }),
+                description: ti('revenueStableDesc', { avg: formatCurrency(Math.round(totalRecent / 3)) }),
+                type: 'info',
+            });
         }
     }
 
@@ -874,11 +901,27 @@ function generateInsights(
     const overdueAmount = overdueInvoices.reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid || 0)), 0);
 
     if (collectionRate >= 80) {
-        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Excellent. ${formatCurrency(totalPaid)} collecté sur ${formatCurrency(totalInvoiced)} facturé.`, type: 'success' });
+        insights.push({
+            icon: '💰',
+            title: ti('collectionExcellentTitle', { rate: collectionRate }),
+            description: ti('collectionExcellentDesc', { paid: formatCurrency(totalPaid), invoiced: formatCurrency(totalInvoiced) }),
+            type: 'success',
+        });
     } else if (collectionRate >= 40) {
-        insights.push({ icon: '💰', title: `Taux de recouvrement: ${collectionRate}%`, description: `Normal avec le modèle dépôt 50%. ${preDeliveryProjects.length} projets attendent la livraison pour le solde.${overdueAmount > 0 ? ` ${formatCurrency(overdueAmount)} en retard sur projets livrés.` : ''}`, type: overdueAmount > 0 ? 'warning' : 'success' });
+        const overduePart = overdueAmount > 0 ? ti('collectionNormalOverdue', { amount: formatCurrency(overdueAmount) }) : '';
+        insights.push({
+            icon: '💰',
+            title: ti('collectionNormalTitle', { rate: collectionRate }),
+            description: ti('collectionNormalDesc', { count: preDeliveryProjects.length, overduePart }),
+            type: overdueAmount > 0 ? 'warning' : 'success',
+        });
     } else if (totalInvoiced > 0) {
-        insights.push({ icon: '⚠️', title: `Taux de recouvrement: ${collectionRate}%`, description: `${formatCurrency(totalInvoiced - totalPaid)} en attente. Le solde restant est attendu à la livraison (modèle dépôt 50%).`, type: 'info' });
+        insights.push({
+            icon: '⚠️',
+            title: ti('collectionLowTitle', { rate: collectionRate }),
+            description: ti('collectionLowDesc', { pending: formatCurrency(totalInvoiced - totalPaid) }),
+            type: 'info',
+        });
     }
 
     // 3. Pipeline Health
@@ -887,9 +930,19 @@ function generateInsights(
     const completed = projects.filter(p => p.status === 'completed').length;
 
     if (designing > inProduction * 2) {
-        insights.push({ icon: '🎨', title: `${designing} designs in progress, only ${inProduction} in production`, description: `The design pipeline is full but production capacity may be a bottleneck. Consider scaling manufacturing.`, type: 'warning' });
+        insights.push({
+            icon: '🎨',
+            title: ti('pipelineBottleneckTitle', { designing, production: inProduction }),
+            description: ti('pipelineBottleneckDesc'),
+            type: 'warning',
+        });
     } else if (inProduction > 0) {
-        insights.push({ icon: '🏭', title: `${inProduction} projects in production, ${designing} designing`, description: `Healthy pipeline balance. ${completed} completed total.`, type: 'success' });
+        insights.push({
+            icon: '🏭',
+            title: ti('pipelineHealthyTitle', { production: inProduction, designing }),
+            description: ti('pipelineHealthyDesc', { completed }),
+            type: 'success',
+        });
     }
 
     // 4. Best Season
@@ -900,16 +953,35 @@ function generateInsights(
 
     if (busyMonths.length >= 2) {
         const topMonth = busyMonths[0];
-        insights.push({ icon: '📅', title: `Peak month: ${topMonth.month}`, description: `${formatCurrency(topMonth.invoiced)} in project volume. Ensure design/production capacity is scaled up ahead of peak periods.`, type: 'info' });
+        insights.push({
+            icon: '📅',
+            title: ti('peakMonthTitle', { month: topMonth.month }),
+            description: ti('peakMonthDesc', { volume: formatCurrency(topMonth.invoiced) }),
+            type: 'info',
+        });
     }
 
     // 5. Top Client Concentration
     if (leaderboard.length >= 2) {
         const topSellerShare = Math.round((leaderboard[0].volume / leaderboard.reduce((s, l) => s + l.volume, 0)) * 100);
         if (topSellerShare > 60) {
-            insights.push({ icon: '👤', title: `${leaderboard[0].name} brings ${topSellerShare}% of volume`, description: `High dependency on one seller. Diversifying the sales force would reduce business risk.`, type: 'warning' });
+            insights.push({
+                icon: '👤',
+                title: ti('sellerConcentratedTitle', { name: leaderboard[0].name, share: topSellerShare }),
+                description: ti('sellerConcentratedDesc'),
+                type: 'warning',
+            });
         } else {
-            insights.push({ icon: '👥', title: `Healthy seller distribution`, description: `Top seller (${leaderboard[0].name}) brings ${topSellerShare}% — well diversified across ${leaderboard.length} active sellers.`, type: 'success' });
+            insights.push({
+                icon: '👥',
+                title: ti('sellerDiversifiedTitle'),
+                description: ti('sellerDiversifiedDesc', {
+                    name: leaderboard[0].name,
+                    share: topSellerShare,
+                    count: leaderboard.length,
+                }),
+                type: 'success',
+            });
         }
     }
 
@@ -919,11 +991,26 @@ function generateInsights(
     if (totalRevenue > 0) {
         const expenseRatio = Math.round((totalExpenses / totalRevenue) * 100);
         if (expenseRatio < 40) {
-            insights.push({ icon: '✅', title: `${expenseRatio}% expense ratio — healthy margins`, description: `Expenses (${formatCurrency(totalExpenses)}) vs revenue (${formatCurrency(totalRevenue)}) show strong profitability.`, type: 'success' });
+            insights.push({
+                icon: '✅',
+                title: ti('expenseHealthyTitle', { ratio: expenseRatio }),
+                description: ti('expenseHealthyDesc', { expenses: formatCurrency(totalExpenses), revenue: formatCurrency(totalRevenue) }),
+                type: 'success',
+            });
         } else if (expenseRatio < 70) {
-            insights.push({ icon: '📋', title: `${expenseRatio}% expense ratio — monitor closely`, description: `Expenses are growing relative to revenue. Review cost categories for optimization.`, type: 'warning' });
+            insights.push({
+                icon: '📋',
+                title: ti('expenseMonitorTitle', { ratio: expenseRatio }),
+                description: ti('expenseMonitorDesc'),
+                type: 'warning',
+            });
         } else {
-            insights.push({ icon: '🔴', title: `${expenseRatio}% expense ratio — margins squeezed`, description: `Expenses nearly match revenue. Urgent cost review recommended.`, type: 'danger' });
+            insights.push({
+                icon: '🔴',
+                title: ti('expenseSqueezedTitle', { ratio: expenseRatio }),
+                description: ti('expenseSqueezedDesc'),
+                type: 'danger',
+            });
         }
     }
 
@@ -932,7 +1019,15 @@ function generateInsights(
         const avgMonthly = totalRecent / Math.min(3, currentMonth + 1);
         const monthsLeft = 12 - currentMonth - 1;
         const predicted = totalRecent + (avgMonthly * monthsLeft);
-        insights.push({ icon: '🔮', title: `Projected annual collections: ${formatCurrency(Math.round(predicted))}`, description: `Based on ${formatCurrency(Math.round(avgMonthly))}/month average over the last 3 months, with ${monthsLeft} months remaining.`, type: 'info' });
+        insights.push({
+            icon: '🔮',
+            title: ti('projectedAnnualTitle', { amount: formatCurrency(Math.round(predicted)) }),
+            description: ti('projectedAnnualDesc', {
+                avg: formatCurrency(Math.round(avgMonthly)),
+                monthsLeft,
+            }),
+            type: 'info',
+        });
     }
 
     // 8. Client Growth
@@ -942,7 +1037,12 @@ function generateInsights(
     }).length;
 
     if (newClientsThisMonth > 0) {
-        insights.push({ icon: '🌟', title: `${newClientsThisMonth} new client${newClientsThisMonth > 1 ? 's' : ''} this month`, description: `Growing client base! Total active clients: ${clients.length}.`, type: 'success' });
+        insights.push({
+            icon: '🌟',
+            title: t('analyticsPage.insights.newClientsTitle', { count: newClientsThisMonth }),
+            description: ti('newClientsDesc', { total: clients.length }),
+            type: 'success',
+        });
     }
 
     return insights;

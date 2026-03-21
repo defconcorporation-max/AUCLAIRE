@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { apiSettings, CompanySettings } from "@/services/apiSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { resetOnboarding } from "@/components/OnboardingTour";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Settings() {
+    const { t } = useTranslation();
     // Initialize with defaults to avoid "Promise" type mismatch errors during initial render
     const [settings, setSettings] = useState<CompanySettings>({
         company_name: '',
@@ -42,41 +44,41 @@ export default function Settings() {
         setTimeout(() => {
             apiSettings.save(settings);
             setIsSaving(false);
-            toast({ title: "Paramètres sauvegardés avec succès!" });
+            toast({ title: t('settings.savedToast') });
         }, 500);
     };
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-serif text-foreground">Company Settings</h1>
+            <h1 className="text-3xl font-serif text-foreground">{t('settings.title')}</h1>
 
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <Building className="w-5 h-5" /> Company Profile
+                        <Building className="w-5 h-5" /> {t('settings.companyProfile')}
                     </CardTitle>
                     <CardDescription>
-                        This information will appear on all your invoices and client communications.
+                        {t('settings.companyProfileDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Company Name</label>
+                            <label className="text-sm font-medium">{t('settings.companyName')}</label>
                             <Input
                                 value={settings.company_name}
                                 onChange={(e) => handleChange('company_name', e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Email</label>
+                            <label className="text-sm font-medium">{t('settings.email')}</label>
                             <Input
                                 value={settings.contact_email}
                                 onChange={(e) => handleChange('contact_email', e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Phone</label>
+                            <label className="text-sm font-medium">{t('settings.phone')}</label>
                             <Input
                                 value={settings.phone}
                                 onChange={(e) => handleChange('phone', e.target.value)}
@@ -85,31 +87,31 @@ export default function Settings() {
                     </div>
 
                     <div className="border-t pt-4">
-                        <h3 className="text-sm font-bold mb-3">Address</h3>
+                        <h3 className="text-sm font-bold mb-3">{t('settings.address')}</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Line 1</label>
+                                <label className="text-sm font-medium">{t('settings.line1')}</label>
                                 <Input
                                     value={settings.address_line1}
                                     onChange={(e) => handleChange('address_line1', e.target.value)}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Line 2</label>
+                                <label className="text-sm font-medium">{t('settings.line2')}</label>
                                 <Input
                                     value={settings.address_line2 || ''}
                                     onChange={(e) => handleChange('address_line2', e.target.value)}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">City</label>
+                                <label className="text-sm font-medium">{t('settings.city')}</label>
                                 <Input
                                     value={settings.city}
                                     onChange={(e) => handleChange('city', e.target.value)}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Country</label>
+                                <label className="text-sm font-medium">{t('settings.country')}</label>
                                 <Input
                                     value={settings.country}
                                     onChange={(e) => handleChange('country', e.target.value)}
@@ -120,14 +122,14 @@ export default function Settings() {
 
                     <div className="border-t pt-4">
                         <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-                            <Building className="w-4 h-4 text-luxury-gold" /> Personnalisation du Moniteur de Santé
+                            <Building className="w-4 h-4 text-luxury-gold" /> {t('settings.healthMonitor')}
                         </h3>
-                        <p className="text-[11px] text-muted-foreground mb-4 font-mono uppercase tracking-tight">Ajustez les seuils d'alerte pour les projets en retard ou à faible marge.</p>
+                        <p className="text-[11px] text-muted-foreground mb-4 font-mono uppercase tracking-tight">{t('settings.healthMonitorDesc')}</p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
-                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">Délais Design (3D)</h4>
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">{t('settings.designDelays')}</h4>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Avertissement (Jours)</label>
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">{t('settings.warningDays')}</label>
                                     <Input 
                                         type="number" 
                                         value={settings.design_warn_days} 
@@ -136,7 +138,7 @@ export default function Settings() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">Danger (Jours)</label>
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">{t('settings.dangerDays')}</label>
                                     <Input 
                                         type="number" 
                                         value={settings.design_danger_days} 
@@ -147,9 +149,9 @@ export default function Settings() {
                             </div>
 
                             <div className="space-y-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
-                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">Délais Production</h4>
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">{t('settings.productionDelays')}</h4>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Avertissement (Jours)</label>
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">{t('settings.warningDays')}</label>
                                     <Input 
                                         type="number" 
                                         value={settings.prod_warn_days} 
@@ -158,7 +160,7 @@ export default function Settings() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">Danger (Jours)</label>
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">{t('settings.dangerDays')}</label>
                                     <Input 
                                         type="number" 
                                         value={settings.prod_danger_days} 
@@ -169,9 +171,9 @@ export default function Settings() {
                             </div>
 
                             <div className="space-y-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
-                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">Seuils de Marge</h4>
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-luxury-gold mb-2">{t('settings.marginThresholds')}</h4>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Marge Faible (%)</label>
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground">{t('settings.lowMargin')}</label>
                                     <Input 
                                         type="number" 
                                         value={settings.margin_warn_percent} 
@@ -180,7 +182,7 @@ export default function Settings() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">Marge Critique (%)</label>
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground text-red-400">{t('settings.criticalMargin')}</label>
                                     <Input 
                                         type="number" 
                                         value={settings.margin_danger_percent} 
@@ -193,12 +195,12 @@ export default function Settings() {
                     </div>
 
                     <div className="border-t pt-4">
-                        <h3 className="text-sm font-bold mb-3">Data Management</h3>
+                        <h3 className="text-sm font-bold mb-3">{t('settings.dataManagement')}</h3>
                         <div className="space-y-4">
                             <div className="flex items-center justify-between p-4 border rounded-md bg-zinc-50 dark:bg-zinc-900">
                                 <div>
-                                    <h4 className="font-medium text-sm">Export Data</h4>
-                                    <p className="text-xs text-muted-foreground">Download all your data as CSV files.</p>
+                                    <h4 className="font-medium text-sm">{t('settings.exportData')}</h4>
+                                    <p className="text-xs text-muted-foreground">{t('settings.exportDesc')}</p>
                                 </div>
                                 <Button
                                     variant="outline"
@@ -211,36 +213,35 @@ export default function Settings() {
                                         a.href = url;
                                         a.download = `auclaire_export_${new Date().toISOString().split('T')[0]}.csv`;
                                         a.click();
-                                        toast({ title: "Export téléchargé avec succès!" });
+                                        toast({ title: t('settings.exportSuccess') });
                                     }}
                                 >
-                                    Download CSV
+                                    {t('settings.downloadCsv')}
                                 </Button>
                             </div>
 
                             <div className="flex items-center justify-between p-4 border rounded-md bg-zinc-50 dark:bg-zinc-900">
                                 <div>
-                                    <h4 className="font-medium text-sm">Guide d'Introduction</h4>
-                                    <p className="text-xs text-muted-foreground">Relancez le tutoriel d'onboarding pour les nouveaux utilisateurs.</p>
+                                    <h4 className="font-medium text-sm">{t('settings.onboardingGuide')}</h4>
+                                    <p className="text-xs text-muted-foreground">{t('settings.onboardingDesc')}</p>
                                 </div>
                                 <Button variant="outline" onClick={resetOnboarding}>
-                                    Relancer le Guide d'Introduction
+                                    {t('settings.restartOnboarding')}
                                 </Button>
                             </div>
 
                             <div className="flex items-center justify-between p-4 border border-amber-200 bg-amber-50 dark:bg-amber-900/10 rounded-md">
                                 <div>
-                                    <h4 className="font-medium text-sm text-amber-900 dark:text-amber-500">Migrate Local to Cloud</h4>
+                                    <h4 className="font-medium text-sm text-amber-900 dark:text-amber-500">{t('settings.migrateTitle')}</h4>
                                     <p className="text-xs text-amber-700/80 dark:text-amber-500/80">
-                                        Upload your local (demo) data to the live database. <br />
-                                        Existing clients will be imported.
+                                        {t('settings.migrateDesc')}
                                     </p>
                                 </div>
                                 <Button
                                     size="sm"
                                     className="bg-amber-600 hover:bg-amber-700 text-white"
                                     onClick={async () => {
-                                        if (!confirm("This will upload your local 'Mock' clients and projects to the Live Database. Continue?")) return;
+                                        if (!confirm(t('settings.migrateConfirm'))) return;
                                         setIsSaving(true);
                                         try {
                                             const { supabase } = await import('@/lib/supabase');
@@ -358,17 +359,17 @@ export default function Settings() {
                                                 if (!error) importedInvoices++;
                                             }
 
-                                            toast({ title: "Migration terminée!", description: `Clients: ${importedClients} | Projets: ${importedProjects} (Ignorés: ${skippedProjects}) | Factures: ${importedInvoices}` });
+                                            toast({ title: t('settings.migrateDone'), description: t('settings.migrateResult', { clients: importedClients, projects: importedProjects, skipped: skippedProjects, invoices: importedInvoices }) });
 
                                         } catch (e) {
                                             console.error(e);
-                                            toast({ title: "Échec de la migration", description: "Voir la console pour les détails.", variant: "destructive" });
+                                            toast({ title: t('settings.migrateFail'), description: t('settings.migrateFailDesc'), variant: "destructive" });
                                         } finally {
                                             setIsSaving(false);
                                         }
                                     }}
                                 >
-                                    Import Local Data
+                                    {t('settings.migrateButton')}
                                 </Button>
                             </div>
                         </div>
@@ -376,7 +377,7 @@ export default function Settings() {
 
                     <div className="pt-4 flex justify-end">
                         <Button onClick={handleSave} disabled={isSaving} className="bg-luxury-gold hover:bg-amber-600 text-black">
-                            {isSaving ? 'Saving...' : <><Save className="w-4 h-4 mr-2" /> Save Settings</>}
+                            {isSaving ? t('settings.saving') : <><Save className="w-4 h-4 mr-2" /> {t('settings.saveSettings')}</>}
                         </Button>
                     </div>
                 </CardContent>

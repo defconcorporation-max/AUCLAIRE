@@ -4,12 +4,15 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Clock, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface DeadlineTrackerProps {
     projects: Project[];
 }
 
 export function DeadlineTracker({ projects }: DeadlineTrackerProps) {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
@@ -32,9 +35,9 @@ export function DeadlineTracker({ projects }: DeadlineTrackerProps) {
     const getDaysText = (deadline: string) => {
         const d = new Date(deadline);
         const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (diff < 0) return `${Math.abs(diff)}j en retard`;
-        if (diff === 0) return "Aujourd'hui";
-        return `${diff}j restants`;
+        if (diff < 0) return t('dashboard.deadlineDaysLate', { n: Math.abs(diff) });
+        if (diff === 0) return t('dashboard.deadlineToday');
+        return t('dashboard.deadlineDaysLeft', { n: diff });
     };
 
     if (overdue.length === 0 && atRisk.length === 0) {
@@ -43,11 +46,11 @@ export function DeadlineTracker({ projects }: DeadlineTrackerProps) {
                 <CardHeader className="py-4">
                     <CardTitle className="text-lg font-serif flex items-center gap-2">
                         <Clock className="w-5 h-5 text-green-500" />
-                        Délais & SLA
+                        {t('dashboard.deadlineTitle')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center py-8 text-center">
-                    <p className="text-xs uppercase tracking-widest text-green-500/70 font-bold">Tous les délais sont respectés</p>
+                    <p className="text-xs uppercase tracking-widest text-green-500/70 font-bold">{t('dashboard.deadlineAllOk')}</p>
                 </CardContent>
             </Card>
         );
@@ -58,10 +61,10 @@ export function DeadlineTracker({ projects }: DeadlineTrackerProps) {
             <CardHeader className="py-4 border-b border-white/5">
                 <CardTitle className="text-lg font-serif flex items-center gap-2 text-amber-500">
                     <AlertTriangle className="w-5 h-5" />
-                    Délais & SLA
+                    {t('dashboard.deadlineTitle')}
                 </CardTitle>
                 <CardDescription className="text-[10px] uppercase tracking-widest text-amber-500/70 font-medium">
-                    {overdue.length} en retard · {atRisk.length} à risque
+                    {t('dashboard.deadlineSummary', { overdue: overdue.length, atRisk: atRisk.length })}
                 </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -75,7 +78,7 @@ export function DeadlineTracker({ projects }: DeadlineTrackerProps) {
                                         {getDaysText(p.deadline!)}
                                     </Badge>
                                     <span className="text-[10px] text-muted-foreground">
-                                        Échéance: {new Date(p.deadline!).toLocaleDateString('fr-CA')}
+                                        {t('dashboard.deadlineDueLabel')} {new Date(p.deadline!).toLocaleDateString(localeTag)}
                                     </span>
                                 </div>
                             </div>
@@ -95,7 +98,7 @@ export function DeadlineTracker({ projects }: DeadlineTrackerProps) {
                                         {getDaysText(p.deadline!)}
                                     </Badge>
                                     <span className="text-[10px] text-muted-foreground">
-                                        Échéance: {new Date(p.deadline!).toLocaleDateString('fr-CA')}
+                                        {t('dashboard.deadlineDueLabel')} {new Date(p.deadline!).toLocaleDateString(localeTag)}
                                     </span>
                                 </div>
                             </div>

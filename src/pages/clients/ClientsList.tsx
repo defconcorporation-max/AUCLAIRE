@@ -1,6 +1,6 @@
 
-
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { apiClients } from '@/services/apiClients'
@@ -29,6 +29,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/components/ui/use-toast'
 
 export default function ClientsList() {
+    const { t } = useTranslation()
     const { data: clients, isLoading } = useQuery({
         queryKey: ['clients'],
         queryFn: apiClients.getAll
@@ -83,7 +84,11 @@ export default function ClientsList() {
             queryClient.invalidateQueries({ queryKey: ['clients'] });
         } catch (e: unknown) {
             console.error(e);
-            toast({ title: "Erreur", description: "Impossible de supprimer le client. " + (e instanceof Error ? e.message : ''), variant: "destructive" });
+            toast({
+                title: t('common.error'),
+                description: `${t('clientsPage.deleteFailed')} ${e instanceof Error ? e.message : ''}`.trim(),
+                variant: "destructive"
+            });
         } finally {
             setDeleteTarget(null);
         }
@@ -103,15 +108,15 @@ export default function ClientsList() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-serif font-bold text-luxury-gold">Clients</h2>
-                    <p className="text-muted-foreground">Gérez vos relations clients.</p>
+                    <h2 className="text-2xl font-serif font-bold text-luxury-gold">{t('clientsPage.title')}</h2>
+                    <p className="text-muted-foreground">{t('clientsPage.subtitle')}</p>
                 </div>
                 <Button
                     className="bg-luxury-gold text-black hover:bg-luxury-gold-dark"
                     onClick={openCreateModal}
                 >
                     <Plus className="w-4 h-4 mr-2" />
-                    Nouveau Client
+                    {t('clientsPage.newClient')}
                 </Button>
             </div>
 
@@ -119,7 +124,7 @@ export default function ClientsList() {
                 <div className="relative w-full">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Rechercher un client..."
+                        placeholder={t('clientsPage.searchPlaceholder')}
                         className="pl-8"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -145,8 +150,8 @@ export default function ClientsList() {
                 ) : filteredClients?.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground">
                         <Users className="w-12 h-12 mb-3 opacity-20" />
-                        <p className="font-serif text-lg">Aucun client trouvé</p>
-                        <p className="text-sm mt-1">Essayez un autre terme de recherche ou ajoutez un client.</p>
+                        <p className="font-serif text-lg">{t('clientsPage.noClientsFound')}</p>
+                        <p className="text-sm mt-1">{t('clientsPage.trySearchOrAdd')}</p>
                     </div>
                 ) : paginatedClients?.map(client => (
                     <Card key={client.id} className="shadow-sm hover:border-luxury-gold transition-colors">
@@ -161,15 +166,15 @@ export default function ClientsList() {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem onClick={() => navigate(`/dashboard/clients/${client.id}`)}>Voir le profil</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => openEditModal(client)}>Modifier</DropdownMenuItem>
+                                    <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => navigate(`/dashboard/clients/${client.id}`)}>{t('clientsPage.viewProfile')}</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openEditModal(client)}>{t('common.edit')}</DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         className="text-red-500"
                                         onClick={() => setDeleteTarget({ id: client.id, name: client.full_name })}
                                     >
-                                        Supprimer
+                                        {t('common.delete')}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -178,11 +183,11 @@ export default function ClientsList() {
                             <div className="space-y-2 text-sm text-gray-400 mt-2">
                                 <div className="flex items-center gap-2">
                                     <Mail className="h-3 w-3" />
-                                    <span>{client.email || 'Aucun email'}</span>
+                                    <span>{client.email || t('common.noEmail')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Phone className="h-3 w-3" />
-                                    <span>{client.phone || 'Aucun téléphone'}</span>
+                                    <span>{client.phone || t('common.noPhone')}</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -193,11 +198,11 @@ export default function ClientsList() {
             {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
                     <p className="text-sm text-muted-foreground">
-                        Page {currentPage} sur {totalPages} ({filteredClients?.length} résultats)
+                        {t('clientsPage.pageOf', { current: currentPage, total: totalPages, count: filteredClients?.length ?? 0 })}
                     </p>
                     <div className="flex items-center gap-1">
                         <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
-                            Précédent
+                            {t('common.previous')}
                         </Button>
                         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                             const page = currentPage <= 3 ? i + 1 : currentPage + i - 2;
@@ -209,7 +214,7 @@ export default function ClientsList() {
                             );
                         })}
                         <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
-                            Suivant
+                            {t('common.next')}
                         </Button>
                     </div>
                 </div>
@@ -219,14 +224,14 @@ export default function ClientsList() {
             <Dialog open={isClientModalOpen} onOpenChange={setIsClientModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{editingClient ? 'Modifier le client' : 'Nouveau client'}</DialogTitle>
+                        <DialogTitle>{editingClient ? t('clientsPage.editClient') : t('clientsPage.newClientDialog')}</DialogTitle>
                         <DialogDescription>
-                            {editingClient ? 'Modifiez les informations du client.' : 'Ajoutez un nouveau client.'}
+                            {editingClient ? t('clientsPage.editClientDesc') : t('clientsPage.newClientDesc')}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Nom complet</Label>
+                            <Label htmlFor="name">{t('clientsPage.fullName')}</Label>
                             <Input
                                 id="name"
                                 value={formData.full_name}
@@ -235,7 +240,7 @@ export default function ClientsList() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email">Courriel</Label>
+                            <Label htmlFor="email">{t('clientsPage.email')}</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -244,7 +249,7 @@ export default function ClientsList() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="phone">Téléphone</Label>
+                            <Label htmlFor="phone">{t('clientsPage.phone')}</Label>
                             <Input
                                 id="phone"
                                 value={formData.phone}
@@ -252,8 +257,8 @@ export default function ClientsList() {
                             />
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsClientModalOpen(false)}>Annuler</Button>
-                            <Button type="submit" className="bg-luxury-gold text-black hover:bg-luxury-gold/90">Enregistrer</Button>
+                            <Button type="button" variant="outline" onClick={() => setIsClientModalOpen(false)}>{t('common.cancel')}</Button>
+                            <Button type="submit" className="bg-luxury-gold text-black hover:bg-luxury-gold/90">{t('common.save')}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -263,14 +268,14 @@ export default function ClientsList() {
             <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Confirmer la suppression</DialogTitle>
+                        <DialogTitle>{t('clientsPage.confirmDeleteTitle')}</DialogTitle>
                         <DialogDescription>
-                            Êtes-vous sûr de vouloir supprimer <span className="font-semibold">{deleteTarget?.name}</span> ? Cette action est irréversible.
+                            {deleteTarget ? t('clientsPage.confirmDeleteDesc', { name: deleteTarget.name }) : ''}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Supprimer</Button>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
+                        <Button variant="destructive" onClick={handleDelete}>{t('common.delete')}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

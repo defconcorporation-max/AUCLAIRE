@@ -1,5 +1,6 @@
 import { UserProfile } from '@/services/apiUsers';
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -13,20 +14,10 @@ import { Plus, LayoutGrid, List as ListIcon, Loader2, Filter, X, Search, Calenda
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { Input } from '@/components/ui/input'
 
-const STATUS_LABELS: Record<string, string> = {
-    designing: 'Design',
-    '3d_model': 'Modèle 3D',
-    design_ready: 'Design prêt',
-    waiting_for_approval: 'Attente approbation',
-    design_modification: 'Modification',
-    approved_for_production: 'Approuvé',
-    production: 'Production',
-    delivery: 'Livraison',
-    completed: 'Complété',
-    cancelled: 'Annulé',
-};
-
 export default function ProjectsList() {
+    const { t, i18n } = useTranslation()
+    const statusLabel = (s: string) =>
+        t(`projectStatus.${s}`, { defaultValue: s.replace(/_/g, ' ') })
     const queryClient = useQueryClient()
     const navigate = useNavigate()
     const { role, profile } = useAuth()
@@ -147,7 +138,10 @@ export default function ProjectsList() {
                 user_id: profile?.id || 'admin',
                 user_name: profile?.full_name || 'Admin',
                 action: 'status_change',
-                details: `Statut changé de ${STATUS_LABELS[projectToUpdate.status] || projectToUpdate.status} à ${STATUS_LABELS[newStatus] || newStatus} via Kanban`
+                details: t('projectsPage.statusChangeViaKanban', {
+                    from: statusLabel(projectToUpdate.status),
+                    to: statusLabel(newStatus),
+                })
             }).then(() => {
                 queryClient.invalidateQueries({ queryKey: ['activities', draggableId] });
             })
@@ -164,14 +158,14 @@ export default function ProjectsList() {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-serif font-bold text-white tracking-wide">Projets</h2>
-                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Gérez votre pipeline de design.</p>
+                    <h2 className="text-3xl font-serif font-bold text-white tracking-wide">{t('projectsPage.title')}</h2>
+                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">{t('projectsPage.subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="relative w-64 md:w-80 group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-luxury-gold transition-colors" />
                         <Input 
-                            placeholder="Rechercher nom ou numéro..." 
+                            placeholder={t('projectsPage.searchPlaceholder')}
                             className="pl-10 bg-white/5 border-white/10 focus:border-luxury-gold/50 transition-all"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -189,7 +183,7 @@ export default function ProjectsList() {
                         <Button
                             variant="ghost"
                             size="sm"
-                            aria-label="Vue Kanban"
+                            aria-label={t('projectsPage.kanbanViewAria')}
                             className={viewMode === 'kanban' ? 'bg-background shadow-sm' : ''}
                             onClick={() => setViewMode('kanban')}
                         >
@@ -198,7 +192,7 @@ export default function ProjectsList() {
                         <Button
                             variant="ghost"
                             size="sm"
-                            aria-label="Vue Liste"
+                            aria-label={t('projectsPage.listViewAria')}
                             className={viewMode === 'list' ? 'bg-background shadow-sm' : ''}
                             onClick={() => setViewMode('list')}
                         >
@@ -210,7 +204,7 @@ export default function ProjectsList() {
                         onClick={() => navigate('/dashboard/projects/new')}
                     >
                         <Plus className="w-4 h-4 mr-2" />
-                        Nouveau Projet
+                        {t('projectsPage.newProject')}
                     </Button>
                 </div>
             </div>
@@ -220,26 +214,26 @@ export default function ProjectsList() {
                     <Filter className="w-4 h-4 text-gray-400 shrink-0" />
                     <div className="flex flex-wrap gap-3 flex-1">
                         <div className="flex items-center gap-2">
-                            <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">Ambassadeur</label>
+                            <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">{t('projectsPage.affiliate')}</label>
                             <select
                                 className="h-7 rounded border border-white/10 bg-black/40 text-xs text-white px-2 min-w-[150px]"
                                 value={filterAffiliate}
                                 onChange={e => setFilterAffiliate(e.target.value)}
                             >
-                                <option value="">Tous</option>
+                                <option value="">{t('projectsPage.all')}</option>
                                 {affiliates.map((a: UserProfile) => (
                                     <option key={a.id} value={a.id}>{a.full_name}</option>
                                 ))}
                             </select>
                         </div>
                         <div className="flex items-center gap-2">
-                            <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">Fabricant</label>
+                            <label className="text-xs text-gray-400 uppercase tracking-wider shrink-0">{t('projectsPage.manufacturer')}</label>
                             <select
                                 className="h-7 rounded border border-white/10 bg-black/40 text-xs text-white px-2 min-w-[150px]"
                                 value={filterManufacturer}
                                 onChange={e => setFilterManufacturer(e.target.value)}
                             >
-                                <option value="">Tous</option>
+                                <option value="">{t('projectsPage.all')}</option>
                                 {manufacturers.map((m: UserProfile) => (
                                     <option key={m.id} value={m.id}>{m.full_name}</option>
                                 ))}
@@ -253,11 +247,11 @@ export default function ProjectsList() {
                             className="text-xs text-gray-400 hover:text-white gap-1 h-7 px-2"
                             onClick={() => { setFilterAffiliate(''); setFilterManufacturer(''); setSearchQuery(''); }}
                         >
-                            <X className="w-3 h-3" /> Effacer
+                            <X className="w-3 h-3" /> {t('projectsPage.clear')}
                         </Button>
                     )}
                     <span className="text-xs text-gray-500 ml-auto">
-                        {projects.length} projet{projects.length !== 1 ? 's' : ''}
+                        {t('projectsPage.countProjects', { count: projects.length })}
                     </span>
                 </div>
             )}
@@ -286,7 +280,7 @@ export default function ProjectsList() {
                                         <div className="flex items-center justify-between px-1 pb-3 border-b border-white/10 mb-4 h-12">
                                             <div>
                                                 <h3 className="font-semibold text-[10px] text-luxury-gold uppercase tracking-[0.2em] mb-1">
-                                                    {STATUS_LABELS[status] || status.replace(/_/g, ' ')}
+                                                    {statusLabel(status)}
                                                 </h3>
                                                 {(role === 'admin' || role === 'secretary') && (
                                                     <p className="text-sm font-serif text-white/90">
@@ -349,11 +343,11 @@ export default function ProjectsList() {
                         <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4">
                             <Search className="w-7 h-7 text-white/20" />
                         </div>
-                        <p className="text-white/60 font-serif text-lg">Aucun projet trouvé</p>
+                        <p className="text-white/60 font-serif text-lg">{t('projectsPage.noProjectsFound')}</p>
                         <p className="text-white/30 text-sm mt-1">
                             {hasActiveFilter
-                                ? 'Essayez de modifier vos filtres ou votre recherche.'
-                                : 'Créez votre premier projet pour commencer.'}
+                                ? t('projectsPage.tryFilters')
+                                : t('projectsPage.createFirst')}
                         </p>
                     </div>
                 ) : (
@@ -426,7 +420,10 @@ export default function ProjectsList() {
 
                                         <span className="shrink-0 hidden lg:flex items-center gap-1 text-[10px] text-white/30">
                                             <Calendar className="w-3 h-3" />
-                                            {new Date(project.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                            {new Date(project.created_at).toLocaleDateString(
+                                                i18n.language.startsWith('en') ? 'en-US' : 'fr-FR',
+                                                { day: 'numeric', month: 'short' }
+                                            )}
                                         </span>
 
                                         <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-luxury-gold/50 transition-colors shrink-0" />

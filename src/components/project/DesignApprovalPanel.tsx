@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,15 +32,17 @@ interface DesignApprovalPanelProps {
     mode: 'admin' | 'client';
 }
 
-const STATUS_CONFIG = {
-    pending: { label: 'En attente', icon: Clock, color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-    approved: { label: 'Approuvé', icon: CheckCircle2, color: 'bg-green-500/20 text-green-400 border-green-500/30' },
-    rejected: { label: 'Modifications', icon: XCircle, color: 'bg-red-500/20 text-red-400 border-red-500/30' },
-};
-
 export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps) {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const queryClient = useQueryClient();
     const { user, profile } = useAuth();
+
+    const statusConfig = useMemo(() => ({
+        pending: { label: t('projectDetailsPage.designApproval.statusPending'), icon: Clock, color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+        approved: { label: t('projectDetailsPage.designApproval.statusApproved'), icon: CheckCircle2, color: 'bg-green-500/20 text-green-400 border-green-500/30' },
+        rejected: { label: t('projectDetailsPage.designApproval.statusRejected'), icon: XCircle, color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+    }), [t, i18n.language]);
     const [saving, setSaving] = useState(false);
     const [clientComment, setClientComment] = useState('');
     const [adminNotes, setAdminNotes] = useState('');
@@ -60,7 +63,7 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
 
     const handleSubmitForApproval = async () => {
         if (designFiles.length === 0) {
-            toast({ title: 'Aucun design', description: 'Ajoutez des fichiers de design avant de soumettre.', variant: 'destructive' });
+            toast({ title: t('projectDetailsPage.designApproval.toastNoDesign'), description: t('projectDetailsPage.designApproval.toastNoDesignDesc'), variant: 'destructive' });
             return;
         }
         setSaving(true);
@@ -79,22 +82,22 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
             });
             await apiProjects.updateStatus(project.id, 'waiting_for_approval', {
                 id: user?.id || 'system',
-                name: profile?.full_name || 'Système',
+                name: profile?.full_name || t('projectDetailsPage.designApproval.fallbackSystem'),
             });
 
             await apiNotifications.create({
                 user_id: project.client_id,
-                title: 'Design prêt pour approbation',
-                message: `Le design pour "${project.title}" est prêt. Veuillez l'examiner et donner votre approbation.`,
+                title: t('projectDetailsPage.designApproval.notifSubmitClientTitle'),
+                message: t('projectDetailsPage.designApproval.notifSubmitClientMsg', { title: project.title }),
                 type: 'info',
                 link: `/dashboard/projects/${project.id}`,
             });
 
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             setAdminNotes('');
-            toast({ title: 'Soumis pour approbation', description: 'Le client a été notifié.' });
+            toast({ title: t('projectDetailsPage.designApproval.toastSubmittedTitle'), description: t('projectDetailsPage.designApproval.toastSubmittedDesc') });
         } catch {
-            toast({ title: 'Erreur', variant: 'destructive' });
+            toast({ title: t('projectDetailsPage.designApproval.toastError'), variant: 'destructive' });
         } finally {
             setSaving(false);
         }
@@ -125,26 +128,29 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
             await apiProjects.updateDetails(project.id, {
                 design_approvals: updatedApprovals,
                 client_approval_status: 'approved',
-                client_notes: clientComment || 'Design approuvé par le client',
+                client_notes: clientComment || t('projectDetailsPage.designApproval.clientNotesApprovedDefault'),
             });
             await apiProjects.updateStatus(project.id, 'approved_for_production', {
                 id: user?.id || 'system',
-                name: profile?.full_name || 'Client',
+                name: profile?.full_name || t('projectDetailsPage.designApproval.fallbackClient'),
             });
 
             await apiNotifications.create({
                 user_id: 'admin',
-                title: 'Design approuvé!',
-                message: `${profile?.full_name || 'Le client'} a approuvé le design pour "${project.title}".`,
+                title: t('projectDetailsPage.designApproval.notifApprovedTitle'),
+                message: t('projectDetailsPage.designApproval.notifApprovedMsg', {
+                    name: profile?.full_name || t('projectDetailsPage.designApproval.notifNameFallback'),
+                    title: project.title,
+                }),
                 type: 'success',
                 link: `/dashboard/projects/${project.id}`,
             });
 
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             setClientComment('');
-            toast({ title: 'Design approuvé!', description: 'Le projet passe en production.' });
+            toast({ title: t('projectDetailsPage.designApproval.toastApprovedTitle'), description: t('projectDetailsPage.designApproval.toastApprovedDesc') });
         } catch {
-            toast({ title: 'Erreur', variant: 'destructive' });
+            toast({ title: t('projectDetailsPage.designApproval.toastError'), variant: 'destructive' });
         } finally {
             setSaving(false);
         }
@@ -152,7 +158,7 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
 
     const handleClientReject = async () => {
         if (!pendingApproval || !clientComment.trim()) {
-            toast({ title: 'Commentaire requis', description: 'Décrivez les modifications souhaitées.', variant: 'destructive' });
+            toast({ title: t('projectDetailsPage.designApproval.toastCommentRequired'), description: t('projectDetailsPage.designApproval.toastCommentRequiredDesc'), variant: 'destructive' });
             return;
         }
         setSaving(true);
@@ -171,22 +177,25 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
             });
             await apiProjects.updateStatus(project.id, 'design_modification', {
                 id: user?.id || 'system',
-                name: profile?.full_name || 'Client',
+                name: profile?.full_name || t('projectDetailsPage.designApproval.fallbackClient'),
             });
 
             await apiNotifications.create({
                 user_id: 'admin',
-                title: 'Modifications demandées',
-                message: `${profile?.full_name || 'Le client'} demande des modifications pour "${project.title}".`,
+                title: t('projectDetailsPage.designApproval.notifModRequestedTitle'),
+                message: t('projectDetailsPage.designApproval.notifModRequestedMsg', {
+                    name: profile?.full_name || t('projectDetailsPage.designApproval.notifNameFallback'),
+                    title: project.title,
+                }),
                 type: 'warning',
                 link: `/dashboard/projects/${project.id}`,
             });
 
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             setClientComment('');
-            toast({ title: 'Demande envoyée', description: "L'équipe sera notifiée." });
+            toast({ title: t('projectDetailsPage.designApproval.toastRequestSentTitle'), description: t('projectDetailsPage.designApproval.toastRequestSentDesc') });
         } catch {
-            toast({ title: 'Erreur', variant: 'destructive' });
+            toast({ title: t('projectDetailsPage.designApproval.toastError'), variant: 'destructive' });
         } finally {
             setSaving(false);
         }
@@ -232,7 +241,7 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
     const handleCopyLink = () => {
         if (publicLink) {
             navigator.clipboard.writeText(publicLink);
-            toast({ title: 'Lien copié', description: 'Le lien public a été copié dans le presse-papier.' });
+            toast({ title: t('projectDetailsPage.designApproval.toastLinkCopied'), description: t('projectDetailsPage.designApproval.toastLinkCopiedDesc') });
         }
     };
 
@@ -241,9 +250,9 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
             <CardHeader className="pb-2 cursor-pointer" onClick={() => setExpanded(!expanded)}>
                 <CardTitle className="text-sm font-serif flex items-center justify-between">
                     <span className="flex items-center gap-2 text-luxury-gold">
-                        <ShieldCheck className="w-4 h-4" /> Approbation
+                        <ShieldCheck className="w-4 h-4" /> {t('projectDetailsPage.designApproval.cardTitle')}
                         {latestApproval && (() => {
-                            const config = STATUS_CONFIG[latestApproval.status];
+                            const config = statusConfig[latestApproval.status];
                             const Icon = config.icon;
                             return (
                                 <Badge className={`${config.color} ml-2 text-[10px]`}>
@@ -276,7 +285,7 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
                         {designFiles.slice(0, 3).map((url, idx) => (
                             <a key={idx} href={url} target="_blank" rel="noopener noreferrer"
                                 className="group relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-luxury-gold/40 transition-all">
-                                <img src={url} alt={`Design ${idx + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                <img src={url} alt={t('projectDetailsPage.designApproval.altDesignPreview', { n: idx + 1 })} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <ExternalLink className="w-4 h-4 text-white" />
                                 </div>
@@ -289,11 +298,11 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
                 {mode === 'admin' && !pendingApproval && (
                     <div className="space-y-2 p-3 rounded-lg border border-luxury-gold/20 bg-luxury-gold/5">
                         <Textarea value={adminNotes} onChange={e => setAdminNotes(e.target.value)}
-                            placeholder="Notes pour le client (optionnel)..." className="min-h-[40px] text-sm" />
+                            placeholder={t('projectDetailsPage.designApproval.adminNotesPlaceholder')} className="min-h-[40px] text-sm" />
                         <Button onClick={handleSubmitForApproval} disabled={saving || designFiles.length === 0}
                             className="bg-luxury-gold hover:bg-yellow-600 text-black w-full h-8 text-xs">
                             {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />}
-                            Soumettre pour approbation
+                            {t('projectDetailsPage.designApproval.submitForApproval')}
                         </Button>
                     </div>
                 )}
@@ -302,7 +311,7 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
                 {mode === 'admin' && pendingApproval && (
                     <div className="p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-center">
                         <Clock className="w-5 h-5 mx-auto mb-1 text-amber-400 animate-pulse" />
-                        <p className="text-xs font-medium text-amber-400">En attente du client</p>
+                        <p className="text-xs font-medium text-amber-400">{t('projectDetailsPage.designApproval.waitingClient')}</p>
                     </div>
                 )}
 
@@ -315,12 +324,12 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
                             </p>
                         )}
                         <Textarea value={clientComment} onChange={e => setClientComment(e.target.value)}
-                            placeholder="Commentaires (requis pour modifications)..." className="min-h-[50px] text-sm" />
+                            placeholder={t('projectDetailsPage.designApproval.clientCommentPlaceholder')} className="min-h-[50px] text-sm" />
                         <div className="space-y-2">
                             <Button variant="ghost" size="sm" onClick={() => setShowSignature(!showSignature)}
                                 className="text-muted-foreground hover:text-luxury-gold text-xs h-7">
                                 <Pen className="w-3 h-3 mr-1" />
-                                {showSignature ? 'Masquer' : 'Signature'}
+                                {showSignature ? t('projectDetailsPage.designApproval.toggleHideSignature') : t('projectDetailsPage.designApproval.toggleShowSignature')}
                             </Button>
                             {showSignature && (
                                 <div className="space-y-1">
@@ -328,18 +337,18 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
                                         className="w-full border border-white/20 rounded bg-white/5 cursor-crosshair"
                                         onMouseDown={startDrawing} onMouseMove={draw}
                                         onMouseUp={() => setIsDrawing(false)} onMouseLeave={() => setIsDrawing(false)} />
-                                    <Button variant="ghost" size="sm" onClick={clearSignature} className="text-[10px] h-6">Effacer</Button>
+                                    <Button variant="ghost" size="sm" onClick={clearSignature} className="text-[10px] h-6">{t('projectDetailsPage.designApproval.clearSignature')}</Button>
                                 </div>
                             )}
                         </div>
                         <div className="flex gap-2">
                             <Button onClick={handleClientApprove} disabled={saving} className="bg-green-600 hover:bg-green-700 text-white flex-1 h-8 text-xs">
                                 {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ThumbsUp className="w-3 h-3 mr-1" />}
-                                Approuver
+                                {t('projectDetailsPage.designApproval.approveButton')}
                             </Button>
                             <Button onClick={handleClientReject} disabled={saving || !clientComment.trim()} variant="outline"
                                 className="border-red-500/30 text-red-400 hover:bg-red-500/10 flex-1 h-8 text-xs">
-                                <ThumbsDown className="w-3 h-3 mr-1" /> Modifier
+                                <ThumbsDown className="w-3 h-3 mr-1" /> {t('projectDetailsPage.designApproval.requestChangesButton')}
                             </Button>
                         </div>
                     </div>
@@ -348,9 +357,11 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
                 {/* Signature display */}
                 {latestApproval?.status === 'approved' && latestApproval.client_signature && (
                     <div className="p-2 rounded-lg border border-green-500/20 bg-green-500/5 flex items-center gap-3">
-                        <img src={latestApproval.client_signature} alt="Signature" className="max-h-12 rounded border border-white/10" />
+                        <img src={latestApproval.client_signature} alt={t('projectDetailsPage.designApproval.altSignature')} className="max-h-12 rounded border border-white/10" />
                         <p className="text-[10px] text-green-400">
-                            Approuvé le {latestApproval.responded_at && new Date(latestApproval.responded_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}
+                            {latestApproval.responded_at && t('projectDetailsPage.designApproval.approvedOn', {
+                                date: new Date(latestApproval.responded_at).toLocaleDateString(localeTag, { day: 'numeric', month: 'short' }),
+                            })}
                         </p>
                     </div>
                 )}
@@ -359,13 +370,13 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
                 {approvals.length > 1 && (
                     <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)}
                         className="text-muted-foreground hover:text-white text-[10px] h-6 w-full">
-                        <History className="w-3 h-3 mr-1" /> Historique ({approvals.length})
+                        <History className="w-3 h-3 mr-1" /> {t('projectDetailsPage.designApproval.history')} ({approvals.length})
                     </Button>
                 )}
                 {showHistory && approvals.length > 0 && (
                     <div className="space-y-1">
                         {[...approvals].reverse().map(approval => {
-                            const config = STATUS_CONFIG[approval.status];
+                            const config = statusConfig[approval.status];
                             const Icon = config.icon;
                             return (
                                 <div key={approval.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 text-xs">
@@ -375,7 +386,7 @@ export function DesignApprovalPanel({ project, mode }: DesignApprovalPanelProps)
                                     }`} />
                                     <span>{config.label}</span>
                                     <span className="text-muted-foreground">
-                                        {new Date(approval.submitted_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}
+                                        {new Date(approval.submitted_at).toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })}
                                     </span>
                                     {approval.client_comment && <span className="text-muted-foreground italic truncate">"{approval.client_comment}"</span>}
                                 </div>

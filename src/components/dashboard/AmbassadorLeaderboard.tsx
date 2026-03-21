@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Trophy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SellerStat {
     id: string;
@@ -14,6 +15,7 @@ interface AmbassadorLeaderboardProps {
 }
 
 export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProps) {
+    const { t } = useTranslation();
     const topThreeColors = [
         "from-amber-400 to-yellow-600 shadow-amber-500/20",
         "from-gray-300 to-gray-500 shadow-gray-400/20",
@@ -25,15 +27,15 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
             <CardHeader className="py-4 border-b border-white/5">
                 <CardTitle className="text-lg font-serif tracking-wide flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-amber-500" />
-                    Classement Ambassadeurs
+                    {t('dashboard.leaderboardTitle')}
                 </CardTitle>
-                <CardDescription className="text-[10px] uppercase tracking-widest">Performance & Rentabilité</CardDescription>
+                <CardDescription className="text-[10px] uppercase tracking-widest">{t('dashboard.leaderboardDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
                 <div className="divide-y divide-white/5">
                     {leaderboard.length === 0 ? (
                         <div className="p-12 text-center text-muted-foreground">
-                            <p className="text-xs uppercase tracking-widest">Aucune vente enregistrée</p>
+                            <p className="text-xs uppercase tracking-widest">{t('dashboard.leaderboardEmpty')}</p>
                         </div>
                     ) : (
                         leaderboard.slice(0, 6).map((seller, idx) => (
@@ -58,7 +60,7 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
                                     <h4 className="font-serif text-sm truncate capitalize group-hover:text-luxury-gold transition-colors">{seller.name}</h4>
                                     <div className="flex items-center gap-2 mt-0.5">
                                         <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">
-                                            {seller.projectCount} Projets
+                                            {t('dashboard.leaderboardProjectCount', { count: seller.projectCount })}
                                         </span>
                                         <span className="w-1 h-1 rounded-full bg-white/10" />
                                         <span className="text-[10px] text-green-500 font-bold tabular-nums">
@@ -75,7 +77,7 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
                                         'bg-red-500/10 text-red-500 border-red-500/20'
                                     }`}>
                                         {Math.round(seller.marginPercent)}%
-                                        <span className="block text-[8px] opacity-70 font-medium uppercase tracking-tighter mt-0.5">Marge</span>
+                                        <span className="block text-[8px] opacity-70 font-medium uppercase tracking-tighter mt-0.5">{t('dashboard.leaderboardMargin')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -84,7 +86,7 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
                 </div>
                 {leaderboard.length > 6 && (
                     <div className="p-3 bg-black/5 dark:bg-black/20 text-center">
-                        <p className="text-[9px] uppercase tracking-widest text-muted-foreground">Et {leaderboard.length - 6} autres ambassadeurs</p>
+                        <p className="text-[9px] uppercase tracking-widest text-muted-foreground">{t('dashboard.leaderboardMoreAmbassadors', { n: leaderboard.length - 6 })}</p>
                     </div>
                 )}
             </CardContent>

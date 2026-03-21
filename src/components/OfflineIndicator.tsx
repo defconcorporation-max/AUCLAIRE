@@ -2,8 +2,10 @@ import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { WifiOff, RefreshCw, Cloud } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export function OfflineIndicator() {
+    const { t } = useTranslation();
     const { isOnline, pendingCount, isSyncing, setIsSyncing, getQueue, clearQueue } = useOfflineStatus();
 
     const syncPending = async () => {
@@ -37,15 +39,15 @@ export function OfflineIndicator() {
 
         if (synced > 0) {
             toast({
-                title: `${synced} action${synced > 1 ? 's' : ''} synchronisée${synced > 1 ? 's' : ''}`,
-                description: failed > 0 ? `${failed} échouée(s)` : undefined,
+                title: t('offline.synced', { count: synced }),
+                description: failed > 0 ? t('offline.failed', { count: failed }) : undefined,
             });
         }
     };
 
     if (isOnline && pendingCount === 0) {
         return (
-            <div className="flex items-center gap-1.5 text-green-500/60" title="En ligne">
+            <div className="flex items-center gap-1.5 text-green-500/60" title={t('offline.onlineTooltip')}>
                 <Cloud className="w-3.5 h-3.5" />
             </div>
         );
@@ -55,7 +57,7 @@ export function OfflineIndicator() {
         return (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
                 <WifiOff className="w-3.5 h-3.5" />
-                <span className="text-xs font-medium">Hors ligne</span>
+                <span className="text-xs font-medium">{t('offline.offline')}</span>
                 {pendingCount > 0 && (
                     <span className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[10px] font-bold">{pendingCount}</span>
                 )}
@@ -66,12 +68,15 @@ export function OfflineIndicator() {
     if (pendingCount > 0) {
         return (
             <button
+                type="button"
                 onClick={syncPending}
                 disabled={isSyncing}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition-colors"
             >
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span className="text-xs font-medium">{isSyncing ? 'Sync...' : `${pendingCount} en attente`}</span>
+                <span className="text-xs font-medium">
+                    {isSyncing ? t('offline.syncing') : t('offline.pending', { count: pendingCount })}
+                </span>
             </button>
         );
     }

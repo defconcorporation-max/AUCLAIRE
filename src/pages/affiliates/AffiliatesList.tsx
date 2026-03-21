@@ -1,5 +1,6 @@
 import { AffiliateProfile } from '@/services/apiAffiliates';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiAffiliates } from '@/services/apiAffiliates';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +21,8 @@ import { Users, AlertCircle, ChevronRight, Search } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
 export default function AffiliatesList() {
+    const { t, i18n } = useTranslation();
+    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
@@ -38,7 +41,7 @@ export default function AffiliatesList() {
 
     if (isLoading) return (
         <div className="space-y-8 max-w-7xl mx-auto p-6">
-            <div><h1 className="text-3xl font-serif text-luxury-gold">Ambassadeurs & Admins</h1></div>
+            <div><h1 className="text-3xl font-serif text-luxury-gold">{t('affiliatesListPage.title')}</h1></div>
             <div className="grid gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
                     <Card key={i} className="animate-pulse"><CardContent className="p-6">
@@ -52,7 +55,7 @@ export default function AffiliatesList() {
         </div>
     );
 
-    const fmt = (n: number) => n.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
+    const fmt = (n: number) => n.toLocaleString(localeTag, { style: 'currency', currency: 'CAD' });
 
     const totalPending = affiliates?.reduce((sum, a) => sum + (a.stats?.commissionPending || 0), 0) || 0;
 
@@ -76,13 +79,13 @@ export default function AffiliatesList() {
                 paymentNotes
             );
 
-            toast({ title: "Succès", description: "Commission versée avec succès." });
+            toast({ title: t('affiliatesListPage.toastPaid') });
             setSelectedAffiliate(null);
             setAmountToPay('');
             setPaymentNotes('');
             queryClient.invalidateQueries({ queryKey: ['affiliates-stats'] });
         } catch {
-            toast({ title: "Erreur", description: "Échec du versement.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('affiliatesListPage.toastPayFailed'), variant: "destructive" });
         }
     };
 
@@ -90,20 +93,20 @@ export default function AffiliatesList() {
         <div className="space-y-8 max-w-7xl mx-auto p-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-serif text-luxury-gold">Ambassadeurs & Admins</h1>
-                    <p className="text-muted-foreground mt-1">Suivez les performances et les commissions des partenaires et administrateurs.</p>
+                    <h1 className="text-3xl font-serif text-luxury-gold">{t('affiliatesListPage.title')}</h1>
+                    <p className="text-muted-foreground mt-1">{t('affiliatesListPage.subtitle')}</p>
                 </div>
                 {totalPending > 0 && (
                     <div className="bg-amber-500/10 text-amber-500 px-4 py-2 rounded-lg border border-amber-500/20 flex items-center gap-2">
                         <AlertCircle size={16} />
-                        <span className="font-bold">Commissions en attente : {fmt(totalPending)}</span>
+                        <span className="font-bold">{t('affiliatesListPage.pendingCommissions', { amount: fmt(totalPending) })}</span>
                     </div>
                 )}
             </div>
 
             <div className="relative max-w-sm">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Rechercher un ambassadeur..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <Input placeholder={t('affiliatesListPage.searchPlaceholder')} className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
 
             <div className="grid gap-4">
@@ -111,7 +114,7 @@ export default function AffiliatesList() {
                     <Card className="bg-zinc-50/50 dark:bg-zinc-900/50 border-dashed">
                         <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
                             <Users size={48} className="mb-4 opacity-20" />
-                            <p>Aucun partenaire ou administrateur trouvé.</p>
+                            <p>{t('affiliatesListPage.empty')}</p>
                         </CardContent>
                     </Card>
                 ) : (
@@ -135,7 +138,7 @@ export default function AffiliatesList() {
                                                     affiliate.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border-luxury-gold/20' :
                                                     'bg-zinc-100 dark:bg-zinc-800'
                                                 }`}>
-                                                    {affiliate.role === 'admin' ? 'Admin' : affiliate.role === 'ambassador' ? 'Ambassadeur' : 'Vendeur'}
+                                                    {affiliate.role === 'admin' ? t('affiliatesListPage.roleAdmin') : affiliate.role === 'ambassador' ? t('affiliatesListPage.roleAmbassador') : t('affiliatesListPage.roleSeller')}
                                                 </Badge>
                                                 <span>• {affiliate.email}</span>
                                             </div>
@@ -144,29 +147,29 @@ export default function AffiliatesList() {
 
                                     <div className="flex items-center gap-8">
                                         <div className="text-right hidden md:block">
-                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Ventes totales</div>
+                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">{t('affiliatesListPage.totalSales')}</div>
                                             <div className="font-bold text-zinc-700 dark:text-zinc-300">
                                                 {fmt(affiliate.stats?.totalSales ?? 0)}
                                             </div>
-                                            <div className="text-[10px] text-muted-foreground mt-0.5">{affiliate.stats?.salesCount ?? 0} ventes</div>
+                                            <div className="text-[10px] text-muted-foreground mt-0.5">{t('affiliatesListPage.salesCount', { count: affiliate.stats?.salesCount ?? 0 })}</div>
                                         </div>
 
                                         <div className="text-right hidden xl:block">
-                                            <div className="text-xs text-green-600/70 uppercase tracking-wider">Encaissé</div>
+                                            <div className="text-xs text-green-600/70 uppercase tracking-wider">{t('affiliatesListPage.collected')}</div>
                                             <div className="font-bold text-green-600 dark:text-green-500">
                                                 {fmt(affiliate.stats?.cashCollected ?? 0)}
                                             </div>
                                         </div>
 
                                         <div className="text-right">
-                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Gagné</div>
+                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">{t('affiliatesListPage.earned')}</div>
                                             <div className="font-bold text-emerald-600 dark:text-emerald-400">
                                                 {fmt(affiliate.stats?.commissionEarned ?? 0)}
                                             </div>
                                         </div>
 
                                         <div className="text-right min-w-[150px]">
-                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">À verser</div>
+                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">{t('affiliatesListPage.toPay')}</div>
                                             <div className={`font-bold text-xl ${(affiliate.stats?.commissionPending ?? 0) > 0 ? 'text-amber-500' : 'text-zinc-400'}`}>
                                                 {fmt(affiliate.stats?.commissionPending ?? 0)}
                                             </div>
@@ -177,7 +180,7 @@ export default function AffiliatesList() {
                                                     className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs"
                                                     onClick={(e) => handleOpenPayment(affiliate, e)}
                                                 >
-                                                    Verser
+                                                    {t('affiliatesListPage.payOut')}
                                                 </Button>
                                             )}
                                         </div>
@@ -195,15 +198,15 @@ export default function AffiliatesList() {
             <Dialog open={!!selectedAffiliate} onOpenChange={(open) => !open && setSelectedAffiliate(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Verser la commission</DialogTitle>
+                        <DialogTitle>{t('affiliatesListPage.dialogTitle')}</DialogTitle>
                         <DialogDescription>
-                            Enregistrer un versement de commission pour {selectedAffiliate?.full_name}.
+                            {t('affiliatesListPage.dialogDesc', { name: selectedAffiliate?.full_name ?? '' })}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Montant ($)</Label>
+                            <Label>{t('affiliatesListPage.amountLabel')}</Label>
                             <Input
                                 type="number"
                                 value={amountToPay}
@@ -211,9 +214,9 @@ export default function AffiliatesList() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Notes (Optionnel)</Label>
+                            <Label>{t('affiliatesListPage.notesLabel')}</Label>
                             <Input
-                                placeholder="ex. Réf. virement bancaire #123"
+                                placeholder={t('affiliatesListPage.notesPlaceholder')}
                                 value={paymentNotes}
                                 onChange={(e) => setPaymentNotes(e.target.value)}
                             />
@@ -221,9 +224,9 @@ export default function AffiliatesList() {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setSelectedAffiliate(null)}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setSelectedAffiliate(null)}>{t('common.cancel')}</Button>
                         <Button onClick={handlePayCommission} className="bg-emerald-600 hover:bg-emerald-700">
-                            Confirmer le versement
+                            {t('affiliatesListPage.confirmPay')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

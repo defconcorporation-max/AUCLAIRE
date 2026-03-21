@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFeedback, FeedbackEntry } from '@/services/apiFeedback';
 import { Card } from '@/components/ui/card';
@@ -6,11 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Calendar, ExternalLink, Trash2, CheckCircle2, Circle, Clock, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 import { toast } from '@/components/ui/use-toast';
 
 export default function BetaFeedback() {
+    const { t, i18n } = useTranslation();
     const queryClient = useQueryClient();
+    const dfLocale = i18n.language.startsWith('fr') ? fr : enUS;
+
     const { data: feedbackItems, isLoading } = useQuery<FeedbackEntry[]>({
         queryKey: ['beta-feedback'],
         queryFn: () => apiFeedback.getAll()
@@ -20,14 +25,17 @@ export default function BetaFeedback() {
     const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
     const [newCommentText, setNewCommentText] = useState<Record<string, string>>({});
 
+    const statusLabel = (s: FeedbackEntry['status']) =>
+        t(`betaFeedback.statusLabel_${s}` as 'betaFeedback.statusLabel_pending');
+
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Voulez-vous vraiment supprimer ce feedback ?')) return;
+        if (!window.confirm(t('betaFeedback.confirmDelete'))) return;
         try {
             await apiFeedback.delete(id);
-            toast({ title: "Supprimé", description: "Le feedback a été retiré." });
+            toast({ title: t('betaFeedback.deletedTitle'), description: t('betaFeedback.deletedDesc') });
             queryClient.invalidateQueries({ queryKey: ['beta-feedback'] });
         } catch {
-            toast({ title: "Erreur", description: "Échec de la suppression.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('betaFeedback.deleteFailDesc'), variant: "destructive" });
         }
     };
 
@@ -36,10 +44,13 @@ export default function BetaFeedback() {
 
         try {
             await apiFeedback.updateStatus(id, newStatus);
-            toast({ title: "Statut mis à jour", description: `Feedback marqué comme ${newStatus}.` });
+            toast({
+                title: t('betaFeedback.statusUpdatedTitle'),
+                description: t('betaFeedback.statusUpdatedDesc', { status: statusLabel(newStatus) }),
+            });
             queryClient.invalidateQueries({ queryKey: ['beta-feedback'] });
         } catch {
-            toast({ title: "Erreur", description: "Échec de la mise à jour du statut.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('betaFeedback.statusUpdateFailDesc'), variant: "destructive" });
         }
     };
 
@@ -53,27 +64,31 @@ export default function BetaFeedback() {
                 text: text.trim(),
                 date: new Date().toISOString()
             }, existingComments || []);
-            
+
             setNewCommentText(prev => ({ ...prev, [id]: '' }));
-            toast({ title: "Commentaire ajouté", description: "Votre message a été enregistré." });
+            toast({ title: t('betaFeedback.commentAddedTitle'), description: t('betaFeedback.commentAddedDesc') });
             queryClient.invalidateQueries({ queryKey: ['beta-feedback'] });
         } catch {
-            toast({ title: "Erreur", description: "Échec de l'ajout du commentaire.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('betaFeedback.commentFailDesc'), variant: "destructive" });
         }
     };
 
-    if (isLoading) return <div className="p-8 text-center text-luxury-gold font-bold">CHARGEMENT DES FEEDBACKS (v3.8.5)...</div>;
+    if (isLoading) return <div className="p-8 text-center text-luxury-gold font-bold">{t('betaFeedback.loading')}</div>;
+
+    const count = feedbackItems?.length ?? 0;
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-serif font-bold text-black dark:text-white">Feedback Beta & Support</h1>
-                    <p className="text-gray-500 mt-1 uppercase text-xs tracking-widest font-bold">Mode Collaboration Activé (v3.8.5)</p>
+                    <h1 className="text-3xl font-serif font-bold text-black dark:text-white">{t('betaFeedback.title')}</h1>
+                    <p className="text-gray-500 mt-1 uppercase text-xs tracking-widest font-bold">{t('betaFeedback.subtitle')}</p>
                 </div>
                 <div className="bg-luxury-gold/10 px-4 py-2 rounded-full border border-luxury-gold/20 flex items-center gap-2">
                     <MessageSquare className="w-4 h-4 text-luxury-gold" />
-                    <span className="text-sm font-medium text-luxury-gold">{feedbackItems?.length || 0} rapports</span>
+                    <span className="text-sm font-medium text-luxury-gold">
+                        {t('betaFeedback.reportsCount', { count })}
+                    </span>
                 </div>
             </div>
 
@@ -81,12 +96,12 @@ export default function BetaFeedback() {
                 <Table>
                     <TableHeader>
                         <TableRow className="hover:bg-transparent border-black/5 dark:border-white/5 bg-zinc-50 dark:bg-zinc-900/50">
-                            <TableHead className="w-[180px]">Date</TableHead>
-                            <TableHead className="w-[150px]">Utilisateur</TableHead>
-                            <TableHead className="w-[200px]">Page</TableHead>
-                            <TableHead>Commentaire</TableHead>
-                            <TableHead className="w-[120px]">Statut</TableHead>
-                            <TableHead className="w-[120px]">Captures</TableHead>
+                            <TableHead className="w-[180px]">{t('betaFeedback.colDate')}</TableHead>
+                            <TableHead className="w-[150px]">{t('betaFeedback.colUser')}</TableHead>
+                            <TableHead className="w-[200px]">{t('betaFeedback.colPage')}</TableHead>
+                            <TableHead>{t('betaFeedback.colComment')}</TableHead>
+                            <TableHead className="w-[120px]">{t('betaFeedback.colStatus')}</TableHead>
+                            <TableHead className="w-[120px]">{t('betaFeedback.colScreenshots')}</TableHead>
                             <TableHead className="w-[60px] text-right"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -94,17 +109,17 @@ export default function BetaFeedback() {
                         {!feedbackItems || feedbackItems.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="text-center py-12 text-gray-500">
-                                    Aucun feedback pour le moment.
+                                    {t('betaFeedback.empty')}
                                 </TableCell>
                             </TableRow>
                         ) : (
                             feedbackItems.map((item) => (
                                 <React.Fragment key={item.id}>
-                                    <TableRow 
+                                    <TableRow
                                         className={`
                                             border-black/5 dark:border-white/5 group transition-colors
-                                            ${item.status === 'in_review' 
-                                                ? 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20' 
+                                            ${item.status === 'in_review'
+                                                ? 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                                                 : item.status === 'done'
                                                     ? 'bg-green-50/30 dark:bg-green-900/5 hover:bg-green-50/50 dark:hover:bg-green-900/10'
                                                     : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'}
@@ -113,7 +128,7 @@ export default function BetaFeedback() {
                                         <TableCell className="font-mono text-xs text-gray-500">
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="w-3 h-3 text-luxury-gold/50" />
-                                                {format(new Date(item.created_at), 'yyyy-MM-dd HH:mm')}
+                                                {format(new Date(item.created_at), 'Pp', { locale: dfLocale })}
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -129,13 +144,13 @@ export default function BetaFeedback() {
                                                 <span className="text-xs truncate text-gray-500" title={item.page_url}>
                                                     {item.page_url ? new URL(item.page_url).pathname : '/'}
                                                 </span>
-                                                <a 
-                                                    href={item.page_url} 
-                                                    target="_blank" 
+                                                <a
+                                                    href={item.page_url}
+                                                    target="_blank"
                                                     rel="noreferrer"
                                                     className="text-[10px] text-luxury-gold hover:underline flex items-center gap-0.5"
                                                 >
-                                                    Ouvrir <ExternalLink className="w-2 h-2" />
+                                                    {t('betaFeedback.open')} <ExternalLink className="w-2 h-2" />
                                                 </a>
                                             </div>
                                         </TableCell>
@@ -161,11 +176,11 @@ export default function BetaFeedback() {
                                                         onClick={() => handleToggleStatus(item.id, item.status)}
                                                     >
                                                         {item.status === 'in_review' ? (
-                                                            <><Clock className="w-3 h-3" /> In Review</>
+                                                            <><Clock className="w-3 h-3" /> {t('betaFeedback.statusInReview')}</>
                                                         ) : item.status === 'done' ? (
-                                                            <><CheckCircle2 className="w-3 h-3" /> Verified</>
+                                                            <><CheckCircle2 className="w-3 h-3" /> {t('betaFeedback.statusDone')}</>
                                                         ) : (
-                                                            <><Circle className="w-3 h-3" /> Todo</>
+                                                            <><Circle className="w-3 h-3" /> {t('betaFeedback.statusTodo')}</>
                                                         )}
                                                     </Button>
                                                     {item.status === 'in_review' && (
@@ -175,11 +190,11 @@ export default function BetaFeedback() {
                                                             className="h-6 px-2 text-[9px] bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
                                                             onClick={() => handleToggleStatus(item.id, item.status, 'done')}
                                                         >
-                                                            Mark Done
+                                                            {t('betaFeedback.markDone')}
                                                         </Button>
                                                     )}
                                                 </div>
-                                                
+
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -187,7 +202,7 @@ export default function BetaFeedback() {
                                                     onClick={() => setExpandedComments(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
                                                 >
                                                     {expandedComments[item.id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                                                    {item.comments?.length || 0} COMM.
+                                                    {t('betaFeedback.commentsCount', { count: item.comments?.length || 0 })}
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -195,12 +210,13 @@ export default function BetaFeedback() {
                                             {item.screenshots && item.screenshots.length > 0 ? (
                                                 <div className="flex flex-wrap gap-1">
                                                     {item.screenshots.map((url, i) => (
-                                                        <button 
-                                                            key={i} 
+                                                        <button
+                                                            key={i}
+                                                            type="button"
                                                             onClick={() => setPreviewImage(url)}
                                                             className="w-10 h-10 rounded border border-black/10 overflow-hidden hover:opacity-80 transition-opacity"
                                                         >
-                                                            <img src={url} alt="Capture" className="w-full h-full object-cover" />
+                                                            <img src={url} alt={t('betaFeedback.screenshotAlt')} className="w-full h-full object-cover" />
                                                         </button>
                                                     ))}
                                                 </div>
@@ -209,9 +225,9 @@ export default function BetaFeedback() {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button 
-                                                variant="destructive" 
-                                                size="sm" 
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
                                                 className="h-8 w-8 rounded-full p-2"
                                                 onClick={() => handleDelete(item.id)}
                                             >
@@ -230,27 +246,27 @@ export default function BetaFeedback() {
                                                                 <div key={idx} className="flex flex-col gap-1 p-3 rounded bg-white dark:bg-zinc-800 border border-black/5 dark:border-white/5 shadow-sm">
                                                                     <div className="flex justify-between items-center text-[10px] text-gray-400">
                                                                         <span className="font-bold text-luxury-gold">{c.user}</span>
-                                                                        <span>{format(new Date(c.date), 'MMM d, h:mm a')}</span>
+                                                                        <span>{format(new Date(c.date), 'Pp', { locale: dfLocale })}</span>
                                                                     </div>
                                                                     <p className="text-sm">{c.text}</p>
                                                                 </div>
                                                             ))
                                                         ) : (
-                                                            <p className="text-center text-xs text-gray-400 py-2">Aucun commentaire. Commencez la discussion !</p>
+                                                            <p className="text-center text-xs text-gray-400 py-2">{t('betaFeedback.noComments')}</p>
                                                         )}
                                                     </div>
-                                                    
+
                                                     <div className="flex gap-2">
-                                                        <input 
+                                                        <input
                                                             type="text"
-                                                            placeholder="Écrire un message..."
+                                                            placeholder={t('betaFeedback.messagePlaceholder')}
                                                             className="flex-1 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-luxury-gold/50 shadow-sm"
                                                             value={newCommentText[item.id] || ''}
                                                             onChange={(e) => setNewCommentText(prev => ({ ...prev, [item.id]: e.target.value }))}
                                                             onKeyDown={(e) => e.key === 'Enter' && handleAddComment(item.id, (item.comments ?? []) as NonNullable<FeedbackEntry['comments']>)}
                                                         />
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             className="bg-luxury-gold text-black hover:bg-luxury-gold/80 h-9 px-3 font-bold"
                                                             onClick={() => handleAddComment(item.id, (item.comments ?? []) as NonNullable<FeedbackEntry['comments']>)}
                                                         >
@@ -268,10 +284,10 @@ export default function BetaFeedback() {
                 </Table>
             </Card>
 
-            <ImagePreviewModal 
-                isOpen={!!previewImage} 
-                onClose={() => setPreviewImage(null)} 
-                imageUrl={previewImage || ''} 
+            <ImagePreviewModal
+                isOpen={!!previewImage}
+                onClose={() => setPreviewImage(null)}
+                imageUrl={previewImage || ''}
             />
         </div>
     );

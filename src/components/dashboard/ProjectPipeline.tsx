@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, AlertCircle, TrendingUp, Package, ChevronRight, HandCoins } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 interface ProjectPipelineProps {
     design: Project[];
@@ -17,18 +18,19 @@ interface ProjectPipelineProps {
 }
 
 export function ProjectPipeline({ design, pending, ongoing, delivery }: ProjectPipelineProps) {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const categories = [
-        { id: 'design', label: 'Design', icon: Clock, data: design, color: 'text-blue-500' },
-        { id: 'pending', label: 'Ready', icon: AlertCircle, data: pending, color: 'text-green-500' },
-        { id: 'ongoing', label: 'Production', icon: TrendingUp, data: ongoing, color: 'text-purple-500' },
-        { id: 'delivery', label: 'Delivery', icon: Package, data: delivery, color: 'text-amber-500' },
+        { id: 'design', label: t('dashboard.pipelineTabDesign'), icon: Clock, data: design, color: 'text-blue-500' },
+        { id: 'pending', label: t('dashboard.pipelineTabReady'), icon: AlertCircle, data: pending, color: 'text-green-500' },
+        { id: 'ongoing', label: t('dashboard.pipelineTabProduction'), icon: TrendingUp, data: ongoing, color: 'text-purple-500' },
+        { id: 'delivery', label: t('dashboard.pipelineTabDelivery'), icon: Package, data: delivery, color: 'text-amber-500' },
     ];
 
     const handleAction = async (id: string, status: ProjectStatus, confirmMsg: string) => {
         if (confirm(confirmMsg)) {
-            const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || 'Utilisateur' } : undefined;
+            const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || t('common.user') } : undefined;
             await apiProjects.updateStatus(id, status, userContext);
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['activities'] });
@@ -39,12 +41,12 @@ export function ProjectPipeline({ design, pending, ongoing, delivery }: ProjectP
         <Card className="glass-card overflow-hidden">
             <CardHeader className="py-4 border-b border-white/5">
                 <CardTitle className="text-lg font-serif tracking-wide flex items-center justify-between">
-                    <span>Flux de Production</span>
+                    <span>{t('dashboard.pipelineTitle')}</span>
                     <Badge variant="outline" className="text-[10px] tracking-widest uppercase border-white/20">
-                        {design.length + pending.length + ongoing.length + delivery.length} Total
+                        {t('dashboard.pipelineTotal', { n: design.length + pending.length + ongoing.length + delivery.length })}
                     </Badge>
                 </CardTitle>
-                <CardDescription className="text-[10px] uppercase tracking-widest">Suivi des étapes de fabrication</CardDescription>
+                <CardDescription className="text-[10px] uppercase tracking-widest">{t('dashboard.pipelineDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
                 <Tabs defaultValue="design" className="w-full">
@@ -67,7 +69,7 @@ export function ProjectPipeline({ design, pending, ongoing, delivery }: ProjectP
                             <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
                                 {cat.data.length === 0 ? (
                                     <div className="p-12 text-center text-muted-foreground">
-                                        <p className="text-xs uppercase tracking-widest">Rien en cours ici</p>
+                                        <p className="text-xs uppercase tracking-widest">{t('dashboard.pipelineEmpty')}</p>
                                     </div>
                                 ) : (
                                     cat.data.map((project, idx) => (
@@ -81,12 +83,12 @@ export function ProjectPipeline({ design, pending, ongoing, delivery }: ProjectP
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <h4 className="font-serif text-sm truncate group-hover:text-luxury-gold transition-colors">{project.title}</h4>
                                                         {project.priority === 'rush' && (
-                                                            <Badge variant="destructive" className="h-4 text-[8px] px-1 uppercase leading-none bg-red-500/80 animate-pulse">RUSH</Badge>
+                                                            <Badge variant="destructive" className="h-4 text-[8px] px-1 uppercase leading-none bg-red-500/80 animate-pulse">{t('dashboard.rushBadge')}</Badge>
                                                         )}
                                                     </div>
                                                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                            <HandCoins className="w-2.5 h-2.5" /> {project.affiliate?.full_name || 'Direct'}
+                                                            <HandCoins className="w-2.5 h-2.5" /> {project.affiliate?.full_name || t('dashboard.affiliateDirect')}
                                                         </span>
                                                         {project.deadline && (
                                                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
@@ -94,7 +96,7 @@ export function ProjectPipeline({ design, pending, ongoing, delivery }: ProjectP
                                                             </span>
                                                         )}
                                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1 uppercase tracking-tighter">
-                                                            {project.manufacturer?.full_name || 'No Factory'}
+                                                            {project.manufacturer?.full_name || t('dashboard.noManufacturer')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -109,9 +111,9 @@ export function ProjectPipeline({ design, pending, ongoing, delivery }: ProjectP
                                                          <Button 
                                                             size="sm" 
                                                             className="h-7 text-[10px] bg-green-600 hover:bg-green-700 text-white"
-                                                            onClick={() => handleAction(project.id, 'production', "Start production for this project?")}
+                                                            onClick={() => handleAction(project.id, 'production', t('dashboard.pipelineConfirmStart'))}
                                                         >
-                                                            Générer Production
+                                                            {t('dashboard.pipelineBtnStartProduction')}
                                                         </Button>
                                                     )}
                                                     
@@ -119,9 +121,9 @@ export function ProjectPipeline({ design, pending, ongoing, delivery }: ProjectP
                                                         <Button 
                                                             size="sm" 
                                                             className="h-7 text-[10px] bg-purple-600 hover:bg-purple-700 text-white"
-                                                            onClick={() => handleAction(project.id, 'delivery', "Production finished? Send to delivery?")}
+                                                            onClick={() => handleAction(project.id, 'delivery', t('dashboard.pipelineConfirmDelivery'))}
                                                         >
-                                                            Prêt pour Livraison
+                                                            {t('dashboard.pipelineBtnReadyDelivery')}
                                                         </Button>
                                                     )}
                                                 </div>

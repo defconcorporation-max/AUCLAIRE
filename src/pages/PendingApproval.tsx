@@ -1,10 +1,12 @@
 
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LogOut, Clock } from "lucide-react";
 
 export default function PendingApproval() {
     const { signOut, user } = useAuth();
+    const { t } = useTranslation();
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black p-4">
@@ -17,23 +19,23 @@ export default function PendingApproval() {
 
                 <div className="p-8 text-center space-y-4">
                     <h1 className="text-2xl font-bold text-zinc-900 dark:text-white font-serif">
-                        Account Pending Approval
+                        {t('pending.title')}
                     </h1>
 
                     <div className="space-y-2 text-zinc-500 dark:text-zinc-400">
                         <p>
-                            We have received your registration request.
+                            {t('pending.subtitle1')}
                         </p>
                         <p className="text-sm border-l-2 border-amber-500 pl-4 py-2 italic bg-zinc-50 dark:bg-zinc-800/50 text-left mx-auto max-w-xs">
-                            "All new accounts must be verified by an administrator before access is granted."
+                            &ldquo;{t('pending.quote')}&rdquo;
                         </p>
                         <p className="text-sm">
-                            Please contact your administrator if you need urgent access.
+                            {t('pending.subtitle2')}
                         </p>
 
                         {user?.email && (
                             <p className="text-xs font-mono bg-zinc-100 dark:bg-zinc-800 py-1 px-2 rounded inline-block mt-2">
-                                ID: {user.email}
+                                {t('pending.idLabel')} {user.email}
                             </p>
                         )}
                     </div>
@@ -45,7 +47,7 @@ export default function PendingApproval() {
                             onClick={() => signOut()}
                         >
                             <LogOut className="w-4 h-4" />
-                            Sign Out
+                            {t('pending.signOut')}
                         </Button>
                     </div>
                 </div>

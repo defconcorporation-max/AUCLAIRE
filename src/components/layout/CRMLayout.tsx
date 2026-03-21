@@ -1,6 +1,5 @@
-
-
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/context/AuthContext'
 import type { LucideIcon } from 'lucide-react'
 import type { Profile } from '@/context/AuthContext'
@@ -38,89 +37,90 @@ import FeedbackWidget from '../FeedbackWidget'
 import { GlobalSearch } from '@/components/GlobalSearch'
 import { OnboardingTour } from '@/components/OnboardingTour'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
-interface NavSection {
-    section: string;
-    items: { label: string; href: string; icon: LucideIcon; roles: string[] }[];
-}
+type NavItemDef = { labelKey: string; href: string; icon: LucideIcon; roles: string[] }
+type NavSectionDef = { sectionKey: string; items: NavItemDef[] }
 
-const navSections: NavSection[] = [
+const NAV_SECTIONS: NavSectionDef[] = [
     {
-        section: '',
+        sectionKey: '',
         items: [
-            { label: 'My Portal', href: '/dashboard/my-portal', icon: Eye, roles: ['client'] },
+            { labelKey: 'nav.items.myPortal', href: '/dashboard/my-portal', icon: Eye, roles: ['client'] },
         ],
     },
     {
-        section: 'Principal',
+        sectionKey: 'nav.sections.main',
         items: [
-            { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-            { label: 'Messages', href: '/dashboard/messages', icon: MessageCircle, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-            { label: 'Projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-            { label: 'Tâches', href: '/dashboard/tasks', icon: CheckSquare, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-            { label: 'Production', href: '/dashboard/production', icon: Calendar, roles: ['admin', 'manufacturer', 'secretary'] },
+            { labelKey: 'nav.items.dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { labelKey: 'nav.items.messages', href: '/dashboard/messages', icon: MessageCircle, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { labelKey: 'nav.items.projects', href: '/dashboard/projects', icon: Briefcase, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { labelKey: 'nav.items.tasks', href: '/dashboard/tasks', icon: CheckSquare, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { labelKey: 'nav.items.production', href: '/dashboard/production', icon: Calendar, roles: ['admin', 'manufacturer', 'secretary'] },
         ],
     },
     {
-        section: 'CRM',
+        sectionKey: 'nav.sections.crm',
         items: [
-            { label: 'Clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate', 'secretary'] },
-            { label: 'Ambassadeurs', href: '/dashboard/affiliates', icon: Users, roles: ['admin', 'secretary'] },
-            { label: 'Fournisseurs', href: '/dashboard/suppliers', icon: Truck, roles: ['admin', 'secretary'] },
+            { labelKey: 'nav.items.clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate', 'secretary'] },
+            { labelKey: 'nav.items.affiliates', href: '/dashboard/affiliates', icon: Users, roles: ['admin', 'secretary'] },
+            { labelKey: 'nav.items.suppliers', href: '/dashboard/suppliers', icon: Truck, roles: ['admin', 'secretary'] },
         ],
     },
     {
-        section: 'Finance',
+        sectionKey: 'nav.sections.finance',
         items: [
-            { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'secretary'] },
-            { label: 'Trésorerie', href: '/dashboard/cash-flow', icon: TrendingUp, roles: ['admin', 'secretary'] },
-            { label: 'Factures', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate', 'secretary'] },
-            { label: 'Dépenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin', 'secretary'] },
+            { labelKey: 'nav.items.analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'secretary'] },
+            { labelKey: 'nav.items.cashFlow', href: '/dashboard/cash-flow', icon: TrendingUp, roles: ['admin', 'secretary'] },
+            { labelKey: 'nav.items.invoices', href: '/dashboard/invoices', icon: FileText, roles: ['admin', 'affiliate', 'secretary'] },
+            { labelKey: 'nav.items.expenses', href: '/dashboard/finance/expenses', icon: Banknote, roles: ['admin', 'secretary'] },
         ],
     },
     {
-        section: 'Outils',
+        sectionKey: 'nav.sections.tools',
         items: [
-            { label: 'Design Studio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-            { label: 'Ressources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
-            { label: 'QCM Academy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
+            { labelKey: 'nav.items.designStudio', href: '/dashboard/studio', icon: Gem, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { labelKey: 'nav.items.resources', href: '/dashboard/resources', icon: BookOpen, roles: ['admin', 'manufacturer', 'affiliate', 'secretary'] },
+            { labelKey: 'nav.items.qcmAcademy', href: '/dashboard/qcm', icon: GraduationCap, roles: ['admin'] },
         ],
     },
     {
-        section: 'Admin',
+        sectionKey: 'nav.sections.admin',
         items: [
-            { label: 'Utilisateurs', href: '/dashboard/users', icon: Users, roles: ['admin', 'secretary'] },
-            { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'secretary'] },
-            { label: 'Beta Feedback', href: '/dashboard/feedback', icon: MessageSquarePlus, roles: ['admin'] },
+            { labelKey: 'nav.items.users', href: '/dashboard/users', icon: Users, roles: ['admin', 'secretary'] },
+            { labelKey: 'nav.items.settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'secretary'] },
+            { labelKey: 'nav.items.betaFeedback', href: '/dashboard/feedback', icon: MessageSquarePlus, roles: ['admin'] },
         ],
     },
 ]
 
-const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, onToggleCollapse }: {
+function Sidebar({ role, profile, signOut, setIsMobileOpen, collapsed = false, onToggleCollapse }: {
     role: string, profile: Profile | null, signOut: () => void, setIsMobileOpen: (v: boolean) => void,
     collapsed?: boolean, onToggleCollapse?: () => void
-}) => (
+}) {
+    const { t } = useTranslation()
+    return (
     <div className="flex flex-col h-full bg-white/80 dark:bg-black/40 backdrop-blur-xl border-r border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300">
         <div className={collapsed ? 'p-4 flex justify-center' : 'p-8'}>
             {collapsed ? (
                 <span className="text-xl font-serif text-luxury-gold tracking-widest">A</span>
             ) : (
                 <>
-                    <h1 className="text-2xl font-serif text-luxury-gold tracking-widest drop-shadow-sm">AUCLAIRE</h1>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] mt-2">Management</p>
+                    <h1 className="text-2xl font-serif text-luxury-gold tracking-widest drop-shadow-sm">{t('layout.brand')}</h1>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] mt-2">{t('layout.managementTagline')}</p>
                 </>
             )}
         </div>
 
         <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-4'} py-4 overflow-y-auto space-y-4`}>
-            {navSections.map((section) => {
+            {NAV_SECTIONS.map((section) => {
                 const visibleItems = section.items.filter(item => !item.roles || (role && item.roles.includes(role)));
                 if (visibleItems.length === 0) return null;
                 return (
-                    <div key={section.section || '_client'}>
-                        {section.section && !collapsed && (
+                    <div key={section.sectionKey || '_client'}>
+                        {section.sectionKey && !collapsed && (
                             <p className="text-[9px] uppercase tracking-[0.25em] text-gray-400 dark:text-gray-600 font-bold px-4 mb-1.5">
-                                {section.section}
+                                {t(section.sectionKey)}
                             </p>
                         )}
                         <div className="space-y-0.5">
@@ -128,7 +128,7 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, o
                                 <NavLink
                                     key={item.href}
                                     to={item.href}
-                                    title={collapsed ? item.label : undefined}
+                                    title={collapsed ? t(item.labelKey) : undefined}
                                     className={({ isActive }) => `
                                         group relative flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg transition-all duration-300 text-sm font-medium
                                         ${isActive
@@ -138,7 +138,7 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, o
                                     onClick={() => setIsMobileOpen(false)}
                                 >
                                     <item.icon className="w-4 h-4 shrink-0 transition-transform duration-300 group-hover:scale-110" />
-                                    {!collapsed && <span className="truncate">{item.label}</span>}
+                                    {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
                                     {item.href === '/dashboard/messages' && (
                                         collapsed
                                             ? <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -159,7 +159,7 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, o
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-luxury-gold/30 to-luxury-gold/10 border border-luxury-gold/20 flex items-center justify-center text-luxury-gold font-serif text-lg shadow-sm">
                         {profile?.full_name?.[0] || 'U'}
                     </div>
-                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400 hover:bg-red-500/10" onClick={() => signOut()} title="Sign Out">
+                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400 hover:bg-red-500/10" onClick={() => signOut()} title={t('layout.signOutTitle')}>
                         <LogOut className="w-4 h-4" />
                     </Button>
                 </div>
@@ -170,7 +170,7 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, o
                             {profile?.full_name?.[0] || 'U'}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-black dark:text-white truncate">{profile?.full_name || 'User'}</p>
+                            <p className="text-sm font-medium text-black dark:text-white truncate">{profile?.full_name || t('common.user')}</p>
                             <p className="text-xs text-luxury-gold/70 capitalize">{profile?.role}</p>
                         </div>
                     </div>
@@ -180,7 +180,7 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, o
                         onClick={() => signOut()}
                     >
                         <LogOut className="w-4 h-4 mr-3" />
-                        Sign Out
+                        {t('layout.signOut')}
                     </Button>
                 </>
             )}
@@ -194,10 +194,12 @@ const Sidebar = ({ role, profile, signOut, setIsMobileOpen, collapsed = false, o
             )}
         </div>
     </div>
-)
+    )
+}
 
 export default function CRMLayout({ children }: { children?: React.ReactNode }) {
     const { signOut, profile, role } = useAuth()
+    const { t } = useTranslation()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const { theme, setTheme, accent, setAccent } = useTheme()
@@ -213,6 +215,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
                 <span className="font-serif text-xl tracking-widest text-luxury-gold drop-shadow-sm">AUCLAIRE</span>
                 <div className="flex items-center gap-2">
                     <OfflineIndicator />
+                    <LanguageSwitcher className="h-9 w-9 p-0 border-black/10 dark:border-white/10" />
                     <GlobalSearch />
                     <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5">
                         {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -244,6 +247,7 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
 
                     <header className="hidden lg:flex items-center justify-end px-8 py-4 z-30 gap-3">
                         <DailyReportSheet />
+                        <LanguageSwitcher />
                         <GlobalSearch />
                         <OfflineIndicator />
                         <Button variant="outline" size="icon" onClick={toggleTheme} className="bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white rounded-full">
@@ -251,13 +255,13 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
                         </Button>
                         <div className="flex items-center gap-1 bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 rounded-full px-2 py-1">
                             {([
-                                { key: 'gold', color: '#D2B57B', label: 'Or' },
-                                { key: 'silver', color: '#A8B5C0', label: 'Argent' },
-                                { key: 'rose-gold', color: '#C9958A', label: 'Rose' },
+                                { key: 'gold', color: '#D2B57B', labelKey: 'common.accentGold' as const },
+                                { key: 'silver', color: '#A8B5C0', labelKey: 'common.accentSilver' as const },
+                                { key: 'rose-gold', color: '#C9958A', labelKey: 'common.accentRose' as const },
                             ] as const).map(opt => (
                                 <button
                                     key={opt.key}
-                                    title={opt.label}
+                                    title={t(opt.labelKey)}
                                     onClick={() => setAccent(opt.key)}
                                     className={`w-5 h-5 rounded-full border-2 transition-all ${accent === opt.key ? 'border-foreground scale-110' : 'border-transparent opacity-60 hover:opacity-100'}`}
                                     style={{ backgroundColor: opt.color }}

@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Map, GraduationCap, Tag, Calculator } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function ResourcesHub() {
     const navigate = useNavigate();
     const { role } = useAuth();
+    const { t } = useTranslation();
     const canAccessFlashQuote = role !== 'manufacturer';
 
     return (
@@ -14,10 +16,10 @@ export default function ResourcesHub() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-luxury-gold/5 rounded-full blur-[60px] -z-10" />
                 <h1 className="text-4xl md:text-5xl font-serif text-white tracking-wide mb-4 flex items-center justify-center gap-4">
                     <BookOpen className="w-8 h-8 text-luxury-gold" />
-                    Centre de Ressources
+                    {t('resourcesHub.title')}
                 </h1>
                 <p className="text-gray-400 font-serif italic max-w-2xl mx-auto">
-                    Centralisation des processus, de la formation et de l'accompagnement pour offrir une expérience d'élite cohérente.
+                    {t('resourcesHub.subtitle')}
                 </p>
             </header>
 
@@ -34,15 +36,15 @@ export default function ResourcesHub() {
                     </div>
 
                     <h2 className="text-2xl font-serif text-black dark:text-white mb-3 group-hover:text-luxury-gold transition-colors">
-                        Processus de Vente A-Z
+                        {t('resourcesHub.salesProcess')}
                     </h2>
 
                     <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6">
-                        Le flow complet étape par étape de Maison Auclaire. De l'entrée du lead à la livraison finale, découvrez le rôle et le stade CRM correspondant à chaque action. Idéal pour se repérer dans le cycle de vie client.
+                        {t('resourcesHub.salesProcessBody')}
                     </p>
 
                     <div className="flex items-center text-luxury-gold text-sm font-medium">
-                        Consulter le guide <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
+                        {t('resourcesHub.openGuide')} <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
                     </div>
                 </button>
 
@@ -58,15 +60,15 @@ export default function ResourcesHub() {
                     </div>
 
                     <h2 className="text-2xl font-serif text-black dark:text-white mb-3 group-hover:text-luxury-gold transition-colors">
-                        Auclaire Academy
+                        {t('resourcesHub.academy')}
                     </h2>
 
                     <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6">
-                        L'école de formation exclusive pour les Closers Experts. Découvrez les techniques d'accompagnement, validez vos connaissances via les QCM et maîtrisez l'expertise diamantaire.
+                        {t('resourcesHub.academyBody')}
                     </p>
 
                     <div className="flex items-center text-luxury-gold text-sm font-medium">
-                        Accéder à l'Académie <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
+                        {t('resourcesHub.openAcademy')} <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
                     </div>
                 </button>
 
@@ -83,15 +85,15 @@ export default function ResourcesHub() {
                     </div>
 
                     <h2 className="text-2xl font-serif text-black dark:text-white mb-3 group-hover:text-luxury-gold transition-colors">
-                        Flash Quote (Calculateur)
+                        {t('resourcesHub.flashQuote')}
                     </h2>
 
                     <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6">
-                        Estimez un projet en quelques secondes. Idéal en rendez-vous client pour donner une fourchette de prix précise basée sur le catalogue.
+                        {t('resourcesHub.flashQuoteBody')}
                     </p>
 
                     <div className="flex items-center text-luxury-gold text-sm font-medium">
-                        Lancer le calculateur <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
+                        {t('resourcesHub.openCalculator')} <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
                     </div>
                 </button>
                 )}
@@ -108,15 +110,15 @@ export default function ResourcesHub() {
                     </div>
 
                     <h2 className="text-2xl font-serif text-black dark:text-white mb-3 group-hover:text-luxury-gold transition-colors">
-                        Catalogue & Estimations
+                        {t('resourcesHub.catalog')}
                     </h2>
 
                     <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6">
-                        Explorez le catalogue des modèles Auclaire et estimez les prix pour vos clients. Ajoutez de nouveaux modèles au fur et à mesure pour enrichir la base de connaissances.
+                        {t('resourcesHub.catalogBody')}
                     </p>
 
                     <div className="flex items-center text-luxury-gold text-sm font-medium">
-                        Ouvrir le Catalogue <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
+                        {t('resourcesHub.openCatalog')} <span className="ml-2 transition-transform group-hover:translate-x-2">→</span>
                     </div>
                 </button>
             </div>

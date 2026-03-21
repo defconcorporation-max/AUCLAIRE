@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { apiInvoices } from '@/services/apiInvoices';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -18,6 +19,7 @@ function getDefaultDueDate(): string {
 }
 
 export default function CreateInvoice() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -46,7 +48,10 @@ export default function CreateInvoice() {
             user_id: user?.id || 'admin',
             user_name: user?.user_metadata?.full_name || 'Admin',
             action: 'invoice',
-            details: `Created invoice of $${amount} for "${selectedProject?.title || 'Unknown'}"`,
+            details: t('createInvoicePage.activityDetails', {
+                amount,
+                title: selectedProject?.title || t('invoicesPage.unknownProject'),
+            }),
         });
         setLoading(false);
         navigate(-1);
@@ -59,27 +64,27 @@ export default function CreateInvoice() {
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-serif font-bold text-luxury-gold">New Invoice</h1>
-                    <p className="text-sm text-muted-foreground">Generate billing for a project</p>
+                    <h1 className="text-2xl font-serif font-bold text-luxury-gold">{t('createInvoicePage.title')}</h1>
+                    <p className="text-sm text-muted-foreground">{t('createInvoicePage.subtitle')}</p>
                 </div>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Invoice Details</CardTitle>
-                    <CardDescription>Select a project and enter amount.</CardDescription>
+                    <CardTitle>{t('createInvoicePage.cardTitle')}</CardTitle>
+                    <CardDescription>{t('createInvoicePage.cardDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleCreate} className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Project</label>
+                            <label className="text-sm font-medium">{t('createInvoicePage.project')}</label>
                             <select
                                 className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                                 value={projectId}
                                 onChange={(e) => setProjectId(e.target.value)}
                                 required
                             >
-                                <option value="">Select Project...</option>
+                                <option value="">{t('createInvoicePage.selectProject')}</option>
                                 {projects?.map(p => (
                                     <option key={p.id} value={p.id}>{p.title} - {p.client?.full_name}</option>
                                 ))}
@@ -87,7 +92,7 @@ export default function CreateInvoice() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Amount ($)</label>
+                            <label className="text-sm font-medium">{t('createInvoicePage.amount')}</label>
                             <div className="relative">
                                 <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -102,13 +107,16 @@ export default function CreateInvoice() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Payment Link (Stripe) <span className="text-muted-foreground font-normal">(Optional)</span></label>
+                            <label className="text-sm font-medium">
+                                {t('createInvoicePage.paymentLink')}{' '}
+                                <span className="text-muted-foreground font-normal">{t('createInvoicePage.optional')}</span>
+                            </label>
                             <div className="relative">
                                 <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     className="pl-9"
                                     type="url"
-                                    placeholder="https://buy.stripe.com/..."
+                                    placeholder={t('createInvoicePage.paymentLinkPlaceholder')}
                                     value={paymentLink}
                                     onChange={(e) => setPaymentLink(e.target.value)}
                                 />
@@ -116,7 +124,7 @@ export default function CreateInvoice() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Due Date</label>
+                            <label className="text-sm font-medium">{t('createInvoicePage.dueDate')}</label>
                             <div className="relative">
                                 <CalendarIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -130,7 +138,7 @@ export default function CreateInvoice() {
                         </div>
 
                         <Button type="submit" className="w-full bg-luxury-gold text-black hover:bg-luxury-gold-dark" disabled={loading}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Create Invoice'}
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('createInvoicePage.submit')}
                         </Button>
                     </form>
                 </CardContent>

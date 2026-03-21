@@ -1,20 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiActivities } from "@/services/apiActivities";
-
-const actionLabels: Record<string, string> = {
-    status_change: 'changed status',
-    update: 'updated details',
-    create: 'created',
-    delete: 'deleted',
-    comment: 'commented',
-    approval: 'approved',
-    financial: 'updated financials',
-    invoice: 'invoice action',
-    expense: 'expense action',
-    notification: 'sent notification',
-};
+import { useTranslation } from "react-i18next";
 
 export function RecentActivityList() {
+    const { t } = useTranslation();
     const { data: activities = [] } = useQuery({
         queryKey: ['activities_all'],
         queryFn: apiActivities.getAll,
@@ -27,7 +16,7 @@ export function RecentActivityList() {
     return (
         <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
             {recent.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No recent activity.</p>
+                <p className="text-sm text-muted-foreground">{t('recentActivity.empty')}</p>
             ) : (
                 recent.map(activity => (
                     <div key={activity.id} className="group flex gap-3 text-sm border-b border-white/5 pb-3 last:border-0 last:pb-0 pt-2 first:pt-0 hover:bg-white/[0.02] transition-colors -mx-4 px-4 rounded-lg">
@@ -35,7 +24,7 @@ export function RecentActivityList() {
                             <p className="font-serif text-[13px] text-gray-300">
                                 <span className="font-bold text-white group-hover:text-luxury-gold transition-colors">{activity.user_name}</span>
                                 <span className="text-gray-400 ml-1.5 italic">
-                                    {actionLabels[activity.action] || activity.action}
+                                    {t(`recentActivity.action_${activity.action}`, { defaultValue: activity.action })}
                                 </span>
                             </p>
                             <p className="text-gray-300 text-xs line-clamp-2 leading-relaxed">{activity.details}</p>
