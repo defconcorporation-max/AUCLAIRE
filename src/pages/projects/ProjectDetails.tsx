@@ -100,7 +100,7 @@ export default function ProjectDetails() {
         if (!project) return;
         setIsGeneratingContract(true);
         try {
-            const { data, error } = await supabase.functions.invoke('generate-pandadoc-contract', {
+            const { error } = await supabase.functions.invoke('generate-pandadoc-contract', {
                 body: { projectId: project.id }
             });
             if (error) throw error;
