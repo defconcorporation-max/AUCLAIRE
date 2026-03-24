@@ -3,13 +3,17 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LogOut, Clock } from "lucide-react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function PendingApproval() {
     const { signOut, user } = useAuth();
     const { t } = useTranslation();
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black p-4">
+        <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black p-4 relative">
+            <div className="fixed top-4 right-4 z-50">
+                <LanguageSwitcher />
+            </div>
             <div className="max-w-md w-full bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                 <div className="bg-amber-500/10 p-6 flex justify-center">
                     <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-amber-600 dark:text-amber-500">

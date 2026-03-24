@@ -22,8 +22,8 @@ export function LanguageSwitcher({ className }: { className?: string }) {
                     className={className ?? 'gap-2 border-luxury-gold/30 hover:bg-luxury-gold/10 text-luxury-gold'}
                     title={t('language.label')}
                 >
-                    <Languages className="w-4 h-4 shrink-0" />
-                    <span className="hidden sm:inline font-mono text-xs">{code}</span>
+                    <Languages className="w-4 h-4 shrink-0" aria-hidden />
+                    <span className="font-mono text-xs tabular-nums">{code}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

@@ -94,6 +94,25 @@ export default function ProjectDetails() {
     const [qualityType, setQualityType] = useState<'rework' | 'repair' | 'return' | 'defect'>('rework');
     const [qualityDesc, setQualityDesc] = useState('');
     const [activeTab, setActiveTab] = useState<'overview' | 'finance' | 'timeline' | 'chat'>('overview');
+    const [isGeneratingContract, setIsGeneratingContract] = useState(false);
+
+    const handleGenerateContract = async () => {
+        if (!project) return;
+        setIsGeneratingContract(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('generate-pandadoc-contract', {
+                body: { projectId: project.id }
+            });
+            if (error) throw error;
+            toast({ title: "Succès", description: "Le contrat a bien été envoyé via PandaDoc !" });
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        } catch (err: any) {
+            console.error("Contract Error", err);
+            toast({ title: "Erreur", description: err.message || "Échec de la génération du contrat.", variant: "destructive" });
+        } finally {
+            setIsGeneratingContract(false);
+        }
+    };
 
     const handleSendClientAccessLink = async () => {
         setIsSharing(true);
@@ -601,6 +620,18 @@ export default function ProjectDetails() {
                             >
                                 <FileText className="w-4 h-4" />
                                 {t('projectDetailsPage.quoteButton')}
+                            </Button>
+                        )}
+                        {(role === 'admin' || role === 'affiliate' || role === 'secretary') && (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleGenerateContract}
+                                disabled={isGeneratingContract}
+                                className="gap-2 bg-blue-600/10 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors border border-blue-600/50"
+                            >
+                                <FileText className="w-4 h-4" />
+                                {isGeneratingContract ? t('common.loading', 'Chargement...') : "Générer le contrat"}
                             </Button>
                         )}
                         <h1 className="text-3xl font-serif font-bold text-black dark:text-white tracking-wide ml-2">

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 export default function Login() {
     const { t } = useTranslation()
@@ -77,7 +78,10 @@ export default function Login() {
 
 
     return (
-        <div className="min-h-screen grid lg:grid-cols-2">
+        <div className="min-h-screen grid lg:grid-cols-2 relative">
+            <div className="fixed top-4 right-4 z-50">
+                <LanguageSwitcher />
+            </div>
             <div className="hidden lg:flex flex-col justify-center items-center bg-black text-white p-12 relative overflow-hidden">
                 <div className="absolute inset-0 z-0 opacity-40">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/20 to-black" />

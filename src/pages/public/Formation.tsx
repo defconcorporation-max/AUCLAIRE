@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { X, ChevronDown, ChevronRight, CheckCircle2, Search, BrainCircuit, Target, Diamond, BookOpen, GraduationCap, ArrowRight, FileText, TrendingUp, Handshake, Euro, Users, AlertCircle, ShieldCheck, Scale, Award, Gem, Heart, type LucideIcon } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -173,6 +174,9 @@ function FormationContent() {
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-[#e5e5e5] font-sans selection:bg-[#D2B57B] selection:text-black pb-20 overflow-x-hidden relative">
+            <div className="fixed top-4 left-4 z-40">
+                <LanguageSwitcher className="border-white/20 hover:bg-white/10 bg-black/50 backdrop-blur-md text-[#D2B57B]" />
+            </div>
             {/* Image Modal */}
             {selectedImage && (
                 <div

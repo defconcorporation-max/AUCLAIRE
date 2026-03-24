@@ -110,6 +110,8 @@ export interface Project {
     updated_at?: string;
     reference_number?: string;
     share_token?: string;
+    pandadoc_contract_id?: string;
+    pandadoc_contract_status?: string;
     client?: { full_name: string; email?: string };
     sales_agent_id?: string;
     stage_details?: StageDetails;
