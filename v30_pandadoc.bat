@@ -1,13 +1,20 @@
 @echo off
-echo Deploying PandaDoc Integration - Maison Auclaire
+echo ===========================================
+echo [1/3] COMMITTING PANDADOC INTEGRATION
+echo ===========================================
 git add .
-git commit -m "feat: PandaDoc contract generation directly from HTML (v3.8.6)"
-echo Pushing to GitHub...
-git push origin main
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: Git push failed!
-    exit /b %ERRORLEVEL%
-)
+git commit -m "feat: PandaDoc contract generation directly from HTML"
 echo.
-echo Deployment successful! PandaDoc integration pushed.
+echo ===========================================
+echo [2/3] SYNCING WITH GITHUB
+echo ===========================================
+git pull origin main --rebase
+echo.
+echo ===========================================
+echo [3/3] FORCE PUSHING TO PRODUCTION
+echo ===========================================
+git push origin HEAD:main --force
+echo.
+echo ===========================================
+echo ALL DONE! REFRESH VERCEL IN 1 MINUTE
+echo ===========================================
