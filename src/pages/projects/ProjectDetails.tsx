@@ -127,9 +127,16 @@ export default function ProjectDetails() {
                 attempts++;
                 await new Promise(r => setTimeout(r, 5000));
                 
-                const { data: statusData } = await supabase.functions.invoke('get-pandadoc-status', {
+                const { data: statusData, error: statusInvokeError } = await supabase.functions.invoke('get-pandadoc-status', {
                     body: { documentId }
                 });
+                
+                if (statusInvokeError || statusData?.error) {
+                    const errMsg = statusInvokeError?.message || statusData?.error;
+                    console.error("Polling error:", errMsg);
+                    // Don't throw immediately, maybe it's a transient 500
+                    if (attempts > 5) throw new Error(`Erreur de statut PandaDoc: ${errMsg}`);
+                }
                 
                 if (statusData?.status === "document.draft") {
                     isReady = true;
