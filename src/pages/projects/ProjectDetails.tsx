@@ -115,7 +115,7 @@ export default function ProjectDetails() {
                 throw new Error(errorMessage);
             }
 
-            toast({ title: "Succès", description: "Le contrat a été généré et envoyé par courriel !" });
+            toast({ title: "Contrat en cours...", description: "Le document est en cours de préparation. L'email sera envoyé automatiquement d'ici 1 minute." });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         } catch (err: any) {
             console.error("Contract Error", err);
