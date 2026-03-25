@@ -102,20 +102,69 @@ export default function ProjectDetails() {
         setIsGeneratingContract(true);
         setIsContractPreviewOpen(false);
         try {
-            const { error } = await supabase.functions.invoke('generate-pandadoc-contract', {
+            // STEP 1: GENERATE
+            const { data: genData, error: genError } = await supabase.functions.invoke('generate-pandadoc-contract', {
                 body: { projectId: project.id }
             });
             
-            if (error) {
-                let errorMessage = error.message;
+            if (genError) {
+                let errorMessage = genError.message;
                 try {
-                    const errorResponse = await error.context?.json();
+                    const errorResponse = await genError.context?.json();
                     if (errorResponse?.error) errorMessage = errorResponse.error;
                 } catch (e) { }
                 throw new Error(errorMessage);
             }
 
-            toast({ title: "Contrat en cours...", description: "Le document est en cours de préparation. L'email sera envoyé automatiquement d'ici 1 minute." });
+            const documentId = genData.documentId;
+            
+            // STEP 2: POLL (Max 24 attempts * 5s = 2 minutes)
+            let isReady = false;
+            let attempts = 0;
+            toast({ title: "Préparation du contrat...", description: "PandaDoc génère le PDF. Veuillez patienter environ 30 secondes." });
+
+            while (!isReady && attempts < 24) {
+                attempts++;
+                await new Promise(r => setTimeout(r, 5000));
+                
+                const { data: statusData } = await supabase.functions.invoke('get-pandadoc-status', {
+                    body: { documentId }
+                });
+                
+                if (statusData?.status === "document.draft") {
+                    isReady = true;
+                    break;
+                }
+                console.log(`Polling PandaDoc status for ${documentId}: ${statusData?.status} (Attempt ${attempts}/24)`);
+            }
+            
+            if (!isReady) throw new Error("PandaDoc est trop lent. L'email n'a pas pu être envoyé automatiquement. Veuillez réessayer dans quelques minutes.");
+
+            // STEP 3: SEND
+            toast({ title: "Envoi en cours...", description: "Le document est prêt. Envoi de l'email au client..." });
+            const { error: sendError } = await supabase.functions.invoke('send-pandadoc-contract', {
+                body: { 
+                    documentId, 
+                    projectId: project.id, 
+                    projectTitle: project.title || "Projet Maison Auclaire" 
+                }
+            });
+            
+            if (sendError) {
+                let sendErrorMessage = sendError.message;
+                try {
+                    const errorResponse = await sendError.context?.json();
+                    if (errorResponse?.error) sendErrorMessage = errorResponse.error;
+                } catch (e) { }
+                throw new Error(sendErrorMessage);
+            }
+
+            toast({ 
+                title: "Contrat envoyé !", 
+                description: `Le contrat a été envoyé avec succès à ${project.client?.email || 'le client'}.`, 
+                variant: "default" 
+            });
+            
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         } catch (err: any) {
             console.error("Contract Error", err);
