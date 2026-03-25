@@ -95,32 +95,31 @@ export default function ProjectDetails() {
     const [qualityDesc, setQualityDesc] = useState('');
     const [activeTab, setActiveTab] = useState<'overview' | 'finance' | 'timeline' | 'chat'>('overview');
     const [isGeneratingContract, setIsGeneratingContract] = useState(false);
+    const [isContractPreviewOpen, setIsContractPreviewOpen] = useState(false);
 
-    const handleGenerateContract = async () => {
+    const handleConfirmSendContract = async () => {
         if (!project) return;
         setIsGeneratingContract(true);
+        setIsContractPreviewOpen(false);
         try {
             const { error } = await supabase.functions.invoke('generate-pandadoc-contract', {
                 body: { projectId: project.id }
             });
             
             if (error) {
-                // Try to get specific error message from function body if available
                 let errorMessage = error.message;
                 try {
                     const errorResponse = await error.context?.json();
                     if (errorResponse?.error) errorMessage = errorResponse.error;
-                } catch (e) {
-                    // Fallback to default message
-                }
+                } catch (e) { }
                 throw new Error(errorMessage);
             }
 
-            toast({ title: "Succès", description: "Le contrat a bien été envoyé via PandaDoc !" });
+            toast({ title: "Succès", description: "Le contrat a été généré et envoyé par courriel !" });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         } catch (err: any) {
             console.error("Contract Error", err);
-            toast({ title: "Erreur", description: err.message || "Échec de la génération du contrat.", variant: "destructive" });
+            toast({ title: "Erreur", description: err.message || "Échec de l'envoi du contrat.", variant: "destructive" });
         } finally {
             setIsGeneratingContract(false);
         }
@@ -638,7 +637,7 @@ export default function ProjectDetails() {
                             <Button
                                 variant="secondary"
                                 size="sm"
-                                onClick={handleGenerateContract}
+                                onClick={() => setIsContractPreviewOpen(true)}
                                 disabled={isGeneratingContract}
                                 className="gap-2 bg-blue-600/10 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors border border-blue-600/50"
                             >
@@ -2631,6 +2630,69 @@ export default function ProjectDetails() {
                             disabled={!modNotes.trim()}
                         >
                             {editingModVersion ? t('common.save') : t('projectDetailsPage.modDialogSubmitRequest')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isContractPreviewOpen} onOpenChange={setIsContractPreviewOpen}>
+                <DialogContent className="sm:max-w-lg bg-white dark:bg-zinc-950 border border-blue-600/20 shadow-2xl overflow-hidden">
+                    <DialogHeader className="border-b pb-4 mb-4">
+                        <DialogTitle className="text-2xl font-serif text-blue-600 flex items-center gap-2">
+                            <FileText className="w-6 h-6" />
+                            Aperçu du contrat PandaDoc
+                        </DialogTitle>
+                        <DialogDescription>
+                            Vérifiez les informations avant d'envoyer le contrat au client.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-6">
+                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                            <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-3">Informations de livraison</h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p className="text-muted-foreground mb-1">Client</p>
+                                    <p className="font-medium">{project.client?.full_name}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground mb-1">Email de réception</p>
+                                    <p className="font-medium text-blue-600 underline">{project.client?.email || "Aucun email configuré"}</p>
+                                </div>
+                                <div className="col-span-2">
+                                    <p className="text-muted-foreground mb-1">Projet</p>
+                                    <p className="font-medium">{project.title}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border rounded-lg p-5 bg-neutral-50 dark:bg-zinc-900/50 space-y-3">
+                            <h4 className="text-sm font-bold border-b pb-2 mb-3">Résumé du contrat HTML</h4>
+                            <div className="text-xs space-y-2 font-mono text-muted-foreground max-h-40 overflow-y-auto pr-2">
+                                <p>• Header: Maison Auclaire - Contrat de Création</p>
+                                <p>• Description du projet: {project.title}</p>
+                                <p>• Prix total convenu: <span className="text-black dark:text-white font-bold">{formatCurrency(project.financials?.selling_price || 0)}</span></p>
+                                <p>• Clause d'acceptation et de modification après signature.</p>
+                                <p>• Champs de signature dynamic pour PandaDoc.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/10 rounded border border-amber-200 dark:border-amber-900/30 text-xs text-amber-700 dark:text-amber-400">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                            <p>L'envoi est définitif. Le client recevra un lien sécurisé pour signer le document numériquement.</p>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="mt-6 pt-4 border-t flex gap-2">
+                        <Button variant="ghost" onClick={() => setIsContractPreviewOpen(false)} className="flex-1">
+                            Annuler
+                        </Button>
+                        <Button 
+                            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 transition-all font-bold"
+                            onClick={handleConfirmSendContract}
+                            disabled={!project.client?.email}
+                        >
+                            Confirmer et Envoyer
                         </Button>
                     </DialogFooter>
                 </DialogContent>
