@@ -100,10 +100,22 @@ export default function ProjectDetails() {
         if (!project) return;
         setIsGeneratingContract(true);
         try {
-            const { error } = await supabase.functions.invoke('generate-pandadoc-contract', {
+            const { data, error } = await supabase.functions.invoke('generate-pandadoc-contract', {
                 body: { projectId: project.id }
             });
-            if (error) throw error;
+            
+            if (error) {
+                // Try to get specific error message from function body if available
+                let errorMessage = error.message;
+                try {
+                    const errorResponse = await error.context?.json();
+                    if (errorResponse?.error) errorMessage = errorResponse.error;
+                } catch (e) {
+                    // Fallback to default message
+                }
+                throw new Error(errorMessage);
+            }
+
             toast({ title: "Succès", description: "Le contrat a bien été envoyé via PandaDoc !" });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         } catch (err: any) {
