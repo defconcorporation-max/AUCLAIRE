@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { apiProjects } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
-import { Loader2, AlertCircle, MessageCircle, PenTool, ThumbsUp, Hammer, Truck, Sparkles, CreditCard, Gem, Ruler, Info, Clock } from 'lucide-react';
+import { Loader2, AlertCircle, MessageCircle, PenTool, ThumbsUp, Hammer, Sparkles, CreditCard, Gem, Ruler, Info, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 import type { StageDetails } from '@/services/apiProjects';
@@ -127,7 +127,7 @@ export default function SharedProjectView() {
                                         {index === 1 && <PenTool className="w-4 h-4" />}
                                         {index === 2 && <ThumbsUp className="w-4 h-4" />}
                                         {index === 3 && <Hammer className="w-4 h-4" />}
-                                        {index === 4 && <Truck className="w-4 h-4" />}
+                                        {index === 4 && <Gem className="w-4 h-4" />}
                                     </div>
                                     <span
                                         className={`text-[10px] font-medium uppercase tracking-wider text-center max-w-[80px] ${
