@@ -46,7 +46,9 @@ import {
     Handshake,
     Link as LinkIcon,
     MessageSquare,
-    RotateCcw
+    RotateCcw,
+    Copy,
+    Check
 } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { uploadImage } from '@/utils/storage';
@@ -96,6 +98,21 @@ export default function ProjectDetails() {
     const [activeTab, setActiveTab] = useState<'overview' | 'finance' | 'timeline' | 'chat'>('overview');
     const [isGeneratingContract, setIsGeneratingContract] = useState(false);
     const [isContractPreviewOpen, setIsContractPreviewOpen] = useState(false);
+    const [isPortalLinkDialogOpen, setIsPortalLinkDialogOpen] = useState(false);
+    const [portalLink, setPortalLink] = useState("");
+    const [hasCopied, setHasCopied] = useState(false);
+
+    const handleCopyLink = () => {
+        if (!portalLink) return;
+        navigator.clipboard.writeText(portalLink);
+        setHasCopied(true);
+        setTimeout(() => setHasCopied(false), 2000);
+        toast({ 
+            title: t('projectDetailsPage.portalLinkCopyToast'), 
+            description: t('projectDetailsPage.portalLinkCopyToastDesc') 
+        });
+    };
+
 
     const handleConfirmSendContract = async () => {
         if (!project) return;
@@ -184,31 +201,38 @@ export default function ProjectDetails() {
     const handleSendClientAccessLink = async () => {
         setIsSharing(true);
         try {
-            // If they have an email, send the magic link
-            if (project?.client?.email) {
-                const { error } = await supabase.auth.signInWithOtp({
-                    email: project.client.email,
-                    options: {
-                        emailRedirectTo: `${window.location.origin}/dashboard`
-                    }
-                });
-                if (error) throw error;
-                alert(t('projectDetailsPage.shareSentEmail', { email: project.client.email }));
-            } else {
-                // If they DON'T have an email, copy the anonymous share link to clipboard
-                const token = project.share_token;
-                if (!token) {
-                    alert(t('projectDetailsPage.shareNoToken'));
-                    return;
-                }
-                const shareUrl = `${window.location.origin}/shared/${token}`;
-                await navigator.clipboard.writeText(shareUrl);
-                alert(t('projectDetailsPage.shareNoEmailCopied'));
+            if (!project) return;
+
+            // 1. Ensure share_token exists
+            let token = project.share_token;
+            if (!token) {
+                token = crypto.randomUUID();
+                const { error: updateError } = await supabase
+                    .from('projects')
+                    .update({ share_token: token })
+                    .eq('id', project.id);
+                if (updateError) throw updateError;
+                // Update local project object to avoid re-generating
+                project.share_token = token;
             }
-        } catch (err) {
-            console.error(err);
-            const message = err instanceof Error ? err.message : String(err);
-            alert(t('projectDetailsPage.shareFailed', { message }));
+
+            const sharedUrl = `${window.location.origin}/shared/${token}`;
+            setPortalLink(sharedUrl);
+
+            // 2. Automatically copy to clipboard as requested
+            try {
+                await navigator.clipboard.writeText(sharedUrl);
+                toast({ title: t('projectDetailsPage.portalLinkCopyToast'), description: t('projectDetailsPage.portalLinkCopyToastDesc') });
+            } catch (err) {
+                console.error("Auto-copy failed", err);
+            }
+
+            // 3. Open the dialog as well for visual confirmation
+            setIsPortalLinkDialogOpen(true);
+
+        } catch (err: any) {
+            console.error("Sharing Error", err);
+            toast({ title: "Erreur", description: err.message || "Échec de la génération du lien.", variant: "destructive" });
         } finally {
             setIsSharing(false);
         }
@@ -2753,6 +2777,52 @@ export default function ProjectDetails() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <Dialog open={isPortalLinkDialogOpen} onOpenChange={setIsPortalLinkDialogOpen}>
+                <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border-luxury-gold/20">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-luxury-gold">
+                            <LinkIcon className="w-5 h-5" />
+                            {t('projectDetailsPage.portalLinkTitle')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {project.client?.email 
+                                ? t('projectDetailsPage.portalLinkDescWithEmail')
+                                : t('projectDetailsPage.portalLinkDescNoEmail')}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-6 space-y-4">
+                        <div className="flex items-center gap-2 p-3 bg-neutral-50 dark:bg-zinc-900 border rounded-lg group">
+                            <code className="text-xs flex-1 break-all text-muted-foreground select-all">
+                                {portalLink}
+                            </code>
+                            <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                onClick={handleCopyLink}
+                                className="h-8 w-8 text-luxury-gold hover:text-luxury-gold hover:bg-luxury-gold/10"
+                            >
+                                {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 bg-luxury-gold/5 rounded border border-luxury-gold/10 text-[11px] text-luxury-gold/80 italic">
+                            <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                            <p>{t('projectDetailsPage.portalLinkDirectAccess')}</p>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button 
+                            className="w-full bg-luxury-gold text-white hover:bg-luxury-gold-dark font-bold py-6"
+                            onClick={() => setIsPortalLinkDialogOpen(false)}
+                        >
+                            {t('projectDetailsPage.portalLinkFinish')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
+
     );
 }

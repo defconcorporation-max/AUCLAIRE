@@ -66,7 +66,10 @@ export default function SharedProjectView() {
     const designFiles = details.design_files || [];
     const sketchFiles = details.sketch_files || [];
     const versionFiles = (details.design_versions || []).flatMap((v: { files?: string[] }) => v.files || []);
-    const allDesignImages = [...designFiles, ...sketchFiles, ...versionFiles];
+    
+    const initialDesignImages = sketchFiles;
+    const threeDDesignImages = [...designFiles, ...versionFiles];
+
     const currentStepIndex = getStepIndex(project.status);
 
     const unpaidInvoices = invoices.filter(inv => inv.status !== 'paid' && inv.stripe_payment_link);
@@ -166,14 +169,39 @@ export default function SharedProjectView() {
                     </div>
                 </section>
 
-                {/* Design showcase - masonry grid */}
-                {allDesignImages.length > 0 && (
+                {/* 1. Initial Design Showcase */}
+                {initialDesignImages.length > 0 && (
                     <section className="page-fade-in">
                         <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D2B57B]/80 mb-6 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4" /> {t('sharedProjectPage.creationsTitle')}
+                            <PenTool className="w-4 h-4" /> {t('sharedProjectPage.creationsTitleInitial')}
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {allDesignImages.map((url: string, idx: number) => (
+                            {initialDesignImages.map((url: string, idx: number) => (
+                                <div
+                                    key={idx}
+                                    className="group relative aspect-square rounded-xl overflow-hidden border border-white/5 bg-zinc-900/50 backdrop-blur-sm hover:border-[#D2B57B]/30 transition-all duration-500 hover:shadow-[0_0_30px_rgba(210,181,123,0.15)]"
+                                >
+                                    <img
+                                        src={url}
+                                        alt={t('sharedProjectPage.designAlt', { n: idx + 1 })}
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
+                                        onClick={() => setPreviewUrl(url)}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* 2. 3D Design Showcase */}
+                {threeDDesignImages.length > 0 && (
+                    <section className="page-fade-in">
+                        <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D2B57B]/80 mb-6 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4" /> {t('sharedProjectPage.creationsTitle3D')}
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {threeDDesignImages.map((url: string, idx: number) => (
                                 <div
                                     key={idx}
                                     className="group relative aspect-square rounded-xl overflow-hidden border border-white/5 bg-zinc-900/50 backdrop-blur-sm hover:border-[#D2B57B]/30 transition-all duration-500 hover:shadow-[0_0_30px_rgba(210,181,123,0.15)]"
