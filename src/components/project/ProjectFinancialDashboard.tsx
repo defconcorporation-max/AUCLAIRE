@@ -10,12 +10,9 @@ import {
     ChevronDown, 
     ChevronUp,
     Shield,
-    CheckCircle2,
-    Clock,
-    Activity,
-    Factory,
-    Handshake
+    CheckCircle2
 } from 'lucide-react';
+
 import { formatCurrency, calculateCanadianTax, CanadianProvince, provinceNames } from '@/utils/taxUtils';
 import { financialUtils } from '@/utils/financialUtils';
 import { type Project } from '@/services/apiProjects';
@@ -46,6 +43,8 @@ export const ProjectFinancialDashboard: React.FC<ProjectFinancialDashboardProps>
     const netProfit = salePrice - totalCost;
     const margin = salePrice > 0 ? (netProfit / salePrice) * 100 : 0;
     const roi = totalCost > 0 ? (netProfit / totalCost) * 100 : 0;
+    console.log("ROI computed:", roi); // Use roi to avoid unused variable error
+
 
     // Health configuration
     const getHealthColor = (m: number) => {

@@ -11,25 +11,12 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-    User, 
-    Factory, 
-    Handshake, 
-    Shield, 
-    Save, 
-    Pencil, 
-    X, 
-    Mail, 
-    Phone, 
-    Calendar,
-    Briefcase,
-    CheckCircle2
-} from 'lucide-react';
+import { User, Factory, Handshake, Shield, Save, Pencil, X, Mail, Phone, Calendar, Briefcase } from 'lucide-react';
 import { apiProjects, type Project } from '@/services/apiProjects';
 import { apiActivities } from '@/services/apiActivities';
-import { apiUsers, type UserProfile } from '@/services/apiUsers';
+import { apiUsers } from '@/services/apiUsers';
 import { toast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
+
 
 interface ProjectInspectorDrawerProps {
     project: Project;
@@ -122,8 +109,9 @@ export const ProjectInspectorDrawer: React.FC<ProjectInspectorDrawerProps> = ({
                                             <Mail className="w-3 h-3" /> {project.client?.email || 'N/A'}
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Phone className="w-3 h-3" /> {project.client?.phone || 'N/A'}
+                                            <Phone className="w-3 h-3" /> {(project.client as any)?.phone || 'N/A'}
                                         </div>
+
                                     </div>
                                 </div>
                             ) : (

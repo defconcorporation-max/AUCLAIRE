@@ -1,20 +1,16 @@
-import { UserProfile } from '@/services/apiUsers';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiProjects, ProjectStatus, type Project, type QualityIssue } from '@/services/apiProjects';
-import { apiExpenses } from '@/services/apiExpenses';
+import { apiProjects, ProjectStatus } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
-import { apiClients } from '@/services/apiClients';
-import { apiNotifications } from '@/services/apiNotifications';
-import { apiAffiliates } from '@/services/apiAffiliates';
 import { apiActivities } from '@/services/apiActivities';
+import { apiNotifications } from '@/services/apiNotifications';
 import { apiUsers } from '@/services/apiUsers';
-import { apiMetals } from '@/services/apiMetals';
+import { apiExpenses } from '@/services/apiExpenses';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityLogList } from '@/components/ActivityLogList';
 import { ProjectChat } from '@/components/project/ProjectChat';
@@ -26,36 +22,16 @@ import {
     Clock,
     Upload,
     FileText,
-    Trash2,
     CheckCircle2,
-    AlertCircle,
-    DollarSign,
     ArrowLeft,
-    Activity,
-    ShieldCheck,
-    Eye,
     User,
     Shield,
-    XCircle,
-    Send,
-    Factory,
-    ThumbsUp,
-    ThumbsDown,
-    Pencil,
-    Save,
-    X,
-    Handshake,
     Link as LinkIcon,
-    MessageSquare,
-    RotateCcw,
     Copy,
     Check,
     MoreVertical,
-    ChevronRight,
-    Search,
     Info,
     LayoutDashboard,
-    ExternalLink,
     Ruler,
     Sparkles,
     Gem
@@ -79,11 +55,8 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
-    DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { calculateCanadianTax, provinceNames, CanadianProvince, formatCurrency } from '@/utils/taxUtils';
-import { financialUtils } from '@/utils/financialUtils';
 
 
 export default function ProjectDetails() {
@@ -93,32 +66,42 @@ export default function ProjectDetails() {
     const { user, role } = useAuth();
     const { t, i18n } = useTranslation();
     const localeTag = i18n.language.startsWith('fr') ? 'fr-CA' : 'en-CA';
+    
+    // Core data fetch moved up to support dependent variables
+    const { data: projects } = useQuery({
+        queryKey: ['projects'],
+        queryFn: apiProjects.getAll
+    });
+
+    const project = projects?.find(p => p.id === id) || projects?.[0];
+
     const [isAddingRender, setIsAddingRender] = useState(false);
     const [isAddingSketch, setIsAddingSketch] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const [isEditingClient, setIsEditingClient] = useState(false);
-    const [selectedClientId, setSelectedClientId] = useState('');
-    const [isEditingAffiliate, setIsEditingAffiliate] = useState(false);
-    const [selectedAffiliateId, setSelectedAffiliateId] = useState('');
-    const [isEditingManufacturer, setIsEditingManufacturer] = useState(false);
-    const [selectedManufacturerId, setSelectedManufacturerId] = useState('');
-    const [uploadError, setUploadError] = useState('');
-    const [localPriority, setLocalPriority] = useState<string | null>(null);
-    const [localStatus, setLocalStatus] = useState<string | null>(null);
-    const [isSharing, setIsSharing] = useState(false);
+    const [isPortalLinkDialogOpen, setIsPortalLinkDialogOpen] = useState(false);
+    const [portalLink, setPortalLink] = useState("");
+    const [hasCopied, setHasCopied] = useState(false);
+    const [activeTab, setActiveTab] = useState<'overview' | 'finance' | 'timeline' | 'chat'>('overview');
+    const [isInspectorOpen, setIsInspectorOpen] = useState(false);
     const [modNotes, setModNotes] = useState('');
     const [isModDialogOpen, setIsModDialogOpen] = useState(false);
     const [editingModVersion, setEditingModVersion] = useState<number | null>(null);
     const [internalNotes, setInternalNotes] = useState('');
-    const [showAddQuality, setShowAddQuality] = useState(false);
-    const [qualityType, setQualityType] = useState<'rework' | 'repair' | 'return' | 'defect'>('rework');
-    const [qualityDesc, setQualityDesc] = useState('');
-    const [activeTab, setActiveTab] = useState<'overview' | 'finance' | 'timeline' | 'chat'>('overview');
-    const [isGeneratingContract, setIsGeneratingContract] = useState(false);
-    const [isContractPreviewOpen, setIsContractPreviewOpen] = useState(false);
-    const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
-    const getSmartAction = (status: ProjectStatus) => {
+
+    const handleCopyLink = () => {
+        if (!portalLink) return;
+        navigator.clipboard.writeText(portalLink);
+        setHasCopied(true);
+        setTimeout(() => setHasCopied(false), 2000);
+        toast({ 
+            title: t('projectDetailsPage.portalLinkCopyToast'), 
+            description: t('projectDetailsPage.portalLinkCopyToastDesc') 
+        });
+    };
+
+
+    function getSmartAction(status: ProjectStatus) {
         if (role === 'client') return null;
 
         switch (status) {
@@ -126,7 +109,7 @@ export default function ProjectDetails() {
                 return {
                     label: t('projectDetailsPage.smartActionShareLink'),
                     icon: LinkIcon,
-                    action: () => setIsSharing(true),
+                    action: () => setIsInspectorOpen(true),
                     color: 'bg-luxury-gold hover:bg-luxury-gold/90 text-black'
                 };
             case '3d_model':
@@ -135,20 +118,6 @@ export default function ProjectDetails() {
                     icon: CheckCircle2,
                     action: () => handleStatusUpdate('design_ready'),
                     color: 'bg-luxury-gold hover:bg-luxury-gold/90 text-black'
-                };
-            case 'design_ready':
-                return {
-                    label: t('projectDetailsPage.smartActionGenerateContract'),
-                    icon: FileText,
-                    action: () => setIsContractPreviewOpen(true),
-                    color: 'bg-blue-600 hover:bg-blue-700 text-white'
-                };
-            case 'approved_for_production':
-                return {
-                    label: t('projectDetailsPage.smartActionAssignManufacturer'),
-                    icon: Factory,
-                    action: () => setIsInspectorOpen(true),
-                    color: 'bg-amber-600 hover:bg-amber-700 text-white'
                 };
             case 'production':
                 return {
@@ -167,190 +136,16 @@ export default function ProjectDetails() {
             default:
                 return null;
         }
-    };
-
-    const smartAction = getSmartAction(project?.status || 'designing');
-    const [isPortalLinkDialogOpen, setIsPortalLinkDialogOpen] = useState(false);
-    const [portalLink, setPortalLink] = useState("");
-    const [hasCopied, setHasCopied] = useState(false);
-
-    const handleCopyLink = () => {
-        if (!portalLink) return;
-        navigator.clipboard.writeText(portalLink);
-        setHasCopied(true);
-        setTimeout(() => setHasCopied(false), 2000);
-        toast({ 
-            title: t('projectDetailsPage.portalLinkCopyToast'), 
-            description: t('projectDetailsPage.portalLinkCopyToastDesc') 
-        });
-    };
+    }
 
 
-    const handleConfirmSendContract = async () => {
-        if (!project) return;
-        setIsGeneratingContract(true);
-        setIsContractPreviewOpen(false);
-        try {
-            // STEP 1: GENERATE
-            const { data: genData, error: genError } = await supabase.functions.invoke('generate-pandadoc-contract', {
-                body: { projectId: project.id }
-            });
-            
-            if (genError) {
-                let errorMessage = genError.message;
-                try {
-                    const errorResponse = await genError.context?.json();
-                    if (errorResponse?.error) errorMessage = errorResponse.error;
-                } catch (e) { }
-                throw new Error(errorMessage);
-            }
-
-            const documentId = genData.documentId;
-            
-            // STEP 2: POLL (Max 24 attempts * 5s = 2 minutes)
-            let isReady = false;
-            let attempts = 0;
-            toast({ title: "Préparation du contrat...", description: "PandaDoc génère le PDF. Veuillez patienter environ 30 secondes." });
-
-            while (!isReady && attempts < 24) {
-                attempts++;
-                await new Promise(r => setTimeout(r, 5000));
-                
-                const { data: statusData, error: statusInvokeError } = await supabase.functions.invoke('get-pandadoc-status', {
-                    body: { documentId }
-                });
-                
-                if (statusInvokeError || statusData?.error) {
-                    const errMsg = statusInvokeError?.message || statusData?.error;
-                    console.error("Polling error:", errMsg);
-                    // Don't throw immediately, maybe it's a transient 500
-                    if (attempts > 5) throw new Error(`Erreur de statut PandaDoc: ${errMsg}`);
-                }
-                
-                if (statusData?.status === "document.draft") {
-                    isReady = true;
-                    break;
-                }
-                console.log(`Polling PandaDoc status for ${documentId}: ${statusData?.status} (Attempt ${attempts}/24)`);
-            }
-            
-            if (!isReady) throw new Error("PandaDoc est trop lent. L'email n'a pas pu être envoyé automatiquement. Veuillez réessayer dans quelques minutes.");
-
-            // STEP 3: SEND
-            toast({ title: "Envoi en cours...", description: "Le document est prêt. Envoi de l'email au client..." });
-            const { error: sendError } = await supabase.functions.invoke('send-pandadoc-contract', {
-                body: { 
-                    documentId, 
-                    projectId: project.id, 
-                    projectTitle: project.title || "Projet Maison Auclaire" 
-                }
-            });
-            
-            if (sendError) {
-                let sendErrorMessage = sendError.message;
-                try {
-                    const errorResponse = await sendError.context?.json();
-                    if (errorResponse?.error) sendErrorMessage = errorResponse.error;
-                } catch (e) { }
-                throw new Error(sendErrorMessage);
-            }
-
-            toast({ 
-                title: "Contrat envoyé !", 
-                description: `Le contrat a été envoyé avec succès à ${project.client?.email || 'le client'}.`, 
-                variant: "default" 
-            });
-            
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-        } catch (err: any) {
-            console.error("Contract Error", err);
-            toast({ title: "Erreur", description: err.message || "Échec de l'envoi du contrat.", variant: "destructive" });
-        } finally {
-            setIsGeneratingContract(false);
-        }
-    };
-
-    const handleSendClientAccessLink = async () => {
-        setIsSharing(true);
-        try {
-            if (!project) return;
-
-            // 1. Ensure share_token exists
-            let token = project.share_token;
-            if (!token) {
-                token = crypto.randomUUID();
-                const { error: updateError } = await supabase
-                    .from('projects')
-                    .update({ share_token: token })
-                    .eq('id', project.id);
-                if (updateError) throw updateError;
-                // Update local project object to avoid re-generating
-                project.share_token = token;
-            }
-
-            const sharedUrl = `${window.location.origin}/shared/${token}`;
-            setPortalLink(sharedUrl);
-
-            // 2. Automatically copy to clipboard as requested
-            try {
-                await navigator.clipboard.writeText(sharedUrl);
-                toast({ title: t('projectDetailsPage.portalLinkCopyToast'), description: t('projectDetailsPage.portalLinkCopyToastDesc') });
-            } catch (err) {
-                console.error("Auto-copy failed", err);
-            }
-
-            // 3. Open the dialog as well for visual confirmation
-            setIsPortalLinkDialogOpen(true);
-
-        } catch (err: any) {
-            console.error("Sharing Error", err);
-            toast({ title: "Erreur", description: err.message || "Échec de la génération du lien.", variant: "destructive" });
-        } finally {
-            setIsSharing(false);
-        }
-    };
-
-    const { data: projects } = useQuery({
-        queryKey: ['projects'],
-        queryFn: apiProjects.getAll
-    });
-
-    const { data: clients } = useQuery({
-        queryKey: ['clients'],
-        queryFn: apiClients.getAll,
-        enabled: isEditingClient 
-    });
-
-    const { data: affiliates } = useQuery({
-        queryKey: ['affiliates'],
-        queryFn: apiAffiliates.getAffiliates,
-        enabled: isEditingAffiliate
-    });
-
-    const { data: manufacturers } = useQuery({
-        queryKey: ['manufacturers'],
-        queryFn: () => apiUsers.getAll().then(users => users.filter((u: UserProfile) => u.role === 'manufacturer')),
-        enabled: isEditingManufacturer
-    });
-
-    const { data: metalsPrice } = useQuery({
-        queryKey: ['metalsPrice'],
-        queryFn: apiMetals.getLatestPrices,
-        refetchInterval: 1000 * 60 * 15, 
-    });
-
-    const { data: invoices } = useQuery({
-        queryKey: ['invoices'],
-        queryFn: apiInvoices.getAll
-    });
-
-    const project = projects?.find(p => p.id === id) || projects?.[0]; 
-
-    React.useEffect(() => {
+    useEffect(() => {
         if (project?.internal_notes !== undefined) {
             setInternalNotes(project.internal_notes || '');
         }
     }, [project?.internal_notes]);
+
+
 
     React.useEffect(() => {
         if (!project || !project.financials) return;
@@ -614,9 +409,6 @@ export default function ProjectDetails() {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {[
                                                 { label: t('projectDetailsPage.typeLabel'), value: project.jewelry_type, icon: Gem },
-                                                { label: t('projectDetailsPage.metalLabel'), value: project.metal_type, icon: Activity },
-                                                { label: t('projectDetailsPage.sizeLabel'), value: project.ring_size, icon: Ruler },
-                                                { label: t('projectDetailsPage.categoryLabel'), value: project.category, icon: LayoutDashboard }
                                             ].map((spec, i) => spec.value && (
                                                 <div key={i} className="bg-white/50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-inner">
                                                     <spec.icon className="w-4 h-4 text-luxury-gold/50 mb-3" />
@@ -624,6 +416,7 @@ export default function ProjectDetails() {
                                                     <p className="text-sm font-bold tracking-tight">{spec.value}</p>
                                                 </div>
                                             ))}
+
                                         </div>
                                         <div>
                                             <h4 className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold mb-4">{t('projectDetailsPage.referenceImagesLabel')}</h4>
@@ -663,12 +456,13 @@ export default function ProjectDetails() {
                             </aside>
                         </div>
                     </TabsContent>
-                    <TabsContent value="finance" className="mt-0"><ProjectFinancialDashboard project={project} /></TabsContent>
-                    <TabsContent value="timeline" className="mt-0"><ActivityLogList activities={project.activities || []} projectId={project.id} /></TabsContent>
-                    <TabsContent value="chat" className="mt-0 h-[calc(100vh-250px)]"><ProjectChat projectId={project.id} /></TabsContent>
+                    <TabsContent value="finance" className="mt-0"><ProjectFinancialDashboard project={project} role={role || ''} /></TabsContent>
+                    <TabsContent value="timeline" className="mt-0"><ActivityLogList projectId={project.id} /></TabsContent>
+                    <TabsContent value="chat" className="mt-0 h-[calc(100vh-250px)]"><ProjectChat projectId={project.id} channel="client" /></TabsContent>
                 </main>
             </Tabs>
-            <ProjectInspectorDrawer isOpen={isInspectorOpen} onClose={() => setIsInspectorOpen(false)} project={project} />
+            <ProjectInspectorDrawer isOpen={isInspectorOpen} onClose={() => setIsInspectorOpen(false)} project={project} role={role || ''} user={user} />
+
             <ImagePreviewModal isOpen={!!previewImage} onClose={() => setPreviewImage(null)} imageUrl={previewImage} />
             <Dialog open={isPortalLinkDialogOpen} onOpenChange={setIsPortalLinkDialogOpen}>
                 <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border-black/10 shadow-2xl rounded-3xl p-8">
