@@ -3,11 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiProjects, ProjectStatus } from '@/services/apiProjects';
-import { apiInvoices } from '@/services/apiInvoices';
-import { apiActivities } from '@/services/apiActivities';
 import { apiNotifications } from '@/services/apiNotifications';
-import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,8 +29,6 @@ import {
     Check,
     MoreVertical,
     Info,
-    LayoutDashboard,
-    Ruler,
     Sparkles,
     Gem
 } from "lucide-react";
@@ -46,7 +42,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/AuthContext';
 import { uploadImage } from '@/utils/storage';
-import { supabase } from '@/lib/supabase';
 import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal';
 import { toast } from '@/components/ui/use-toast';
 import {
@@ -58,7 +53,6 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
-
 export default function ProjectDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -67,7 +61,7 @@ export default function ProjectDetails() {
     const { t, i18n } = useTranslation();
     const localeTag = i18n.language.startsWith('fr') ? 'fr-CA' : 'en-CA';
     
-    // Core data fetch moved up to support dependent variables
+    // Core data fetch
     const { data: projects } = useQuery({
         queryKey: ['projects'],
         queryFn: apiProjects.getAll
@@ -75,7 +69,7 @@ export default function ProjectDetails() {
 
     const project = projects?.find(p => p.id === id) || projects?.[0];
 
-    const [isAddingRender, setIsAddingRender] = useState(false);
+    // UI States
     const [isAddingSketch, setIsAddingSketch] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [isPortalLinkDialogOpen, setIsPortalLinkDialogOpen] = useState(false);
@@ -83,11 +77,17 @@ export default function ProjectDetails() {
     const [hasCopied, setHasCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'finance' | 'timeline' | 'chat'>('overview');
     const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+    
+    // Modification Dialog States
     const [modNotes, setModNotes] = useState('');
     const [isModDialogOpen, setIsModDialogOpen] = useState(false);
-    const [editingModVersion, setEditingModVersion] = useState<number | null>(null);
-    const [internalNotes, setInternalNotes] = useState('');
 
+    useEffect(() => {
+        if (project) {
+            const sharedUrl = `${window.location.origin}/shared/${project.share_token}`;
+            setPortalLink(sharedUrl);
+        }
+    }, [project]);
 
     const handleCopyLink = () => {
         if (!portalLink) return;
@@ -100,6 +100,78 @@ export default function ProjectDetails() {
         });
     };
 
+    const handleStatusUpdate = (status: ProjectStatus) => {
+        if (!project) return;
+        const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || t('common.user') } : undefined;
+        apiProjects.updateStatus(project.id, status, userContext)
+            .then(async () => {
+                queryClient.invalidateQueries({ queryKey: ['projects'] });
+
+                if (status === 'design_ready' && project.client_id) {
+                    apiNotifications.create({
+                        user_id: project.client_id,
+                        title: t('projectDetailsPage.notif_designReady_client_title'),
+                        message: t('projectDetailsPage.notif_designReady_client_msg', { title: project.title }),
+                        type: 'info',
+                        link: `/dashboard/projects/${project.id}`
+                    });
+                }
+            });
+    };
+
+    const handleSubmitModification = async () => {
+        if (!project || !modNotes.trim()) return;
+        const currentVersions = project.stage_details?.design_versions || [];
+        try {
+            const newVersion = {
+                version_number: currentVersions.length + 1,
+                created_at: new Date().toISOString(),
+                notes: project.stage_details?.model_notes || '',
+                files: project.stage_details?.design_files || [],
+                model_link: project.stage_details?.model_link || '',
+                status: 'rejected' as const,
+                feedback: modNotes
+            };
+            await apiProjects.updateDetails(project.id, {
+                design_versions: [...currentVersions, newVersion],
+                client_notes: role === 'client' ? modNotes : project.stage_details?.client_notes
+            });
+            await handleStatusUpdate('design_modification');
+            setIsModDialogOpen(false);
+            setModNotes('');
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        } catch { }
+    };
+
+    const handleUnlockFinancials = async () => {
+        if (!project || (role !== 'admin' && role !== 'secretary')) return;
+        if (window.confirm(t('projectDetailsPage.unlockCostsConfirm'))) {
+            try {
+                await apiExpenses.deleteByProjectAndCategory(project.id, 'material');
+                await apiProjects.updateFinancials(project.id, { exported_to_expenses: false });
+                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                queryClient.invalidateQueries({ queryKey: ['expenses'] });
+            } catch (err: any) { }
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'sketch' | 'render') => {
+        if (!project) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const imageUrl = await uploadImage(file, type === 'sketch' ? 'sketches' : 'designs');
+            if (type === 'sketch') {
+                const current = project.stage_details?.sketch_files || [];
+                await apiProjects.updateDetails(project.id, { sketch_files: [...current, imageUrl] });
+                setIsAddingSketch(false);
+            } else {
+                const current = project.stage_details?.design_files || [];
+                await apiProjects.updateDetails(project.id, { design_files: [...current, imageUrl] });
+            }
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        } catch (error) { }
+    };
 
     function getSmartAction(status: ProjectStatus) {
         if (role === 'client') return null;
@@ -138,184 +210,8 @@ export default function ProjectDetails() {
         }
     }
 
-
-    useEffect(() => {
-        if (project?.internal_notes !== undefined) {
-            setInternalNotes(project.internal_notes || '');
-        }
-    }, [project?.internal_notes]);
-
-
-
-    React.useEffect(() => {
-        if (!project || !project.financials) return;
-
-        const hasLegacyMfg = (project.financials.supplier_cost || 0) > 0;
-        const hasLegacyAdd = (project.financials.additional_expense || 0) > 0;
-
-        if (hasLegacyMfg || hasLegacyAdd) {
-            const newItems = [...(project.financials.cost_items || [])];
-            let changed = false;
-
-            if (hasLegacyMfg) {
-                newItems.push({ id: crypto.randomUUID(), detail: t('projectDetailsPage.legacyDetail_manufacturingCost'), amount: project.financials.supplier_cost! });
-                changed = true;
-            }
-            if (hasLegacyAdd) {
-                newItems.push({ id: crypto.randomUUID(), detail: t('projectDetailsPage.legacyDetail_additionalExpense'), amount: project.financials.additional_expense! });
-                changed = true;
-            }
-
-            if (changed) {
-                apiProjects.updateFinancials(project.id, {
-                    cost_items: newItems,
-                    supplier_cost: 0,
-                    additional_expense: 0
-                }).then(() => {
-                    queryClient.invalidateQueries({ queryKey: ['projects'] });
-                    apiActivities.log({
-                        project_id: project.id,
-                        user_id: user?.id || 'admin',
-                        user_name: user?.user_metadata?.full_name || 'System',
-                        action: 'update',
-                        details: t('projectDetailsPage.activity_autoMigratedLegacyCosts')
-                    });
-                });
-            }
-        }
-    }, [project, queryClient, user, t]);
-
     if (!project) return <div className="p-8 text-center">{t('projectDetailsPage.notFound')}</div>;
-
-    const handleStatusUpdate = (status: ProjectStatus) => {
-        const userContext = user ? { id: user.id, name: user.user_metadata?.full_name || t('common.user') } : undefined;
-        apiProjects.updateStatus(project.id, status, userContext)
-            .then(async () => {
-                queryClient.invalidateQueries({ queryKey: ['projects'] });
-
-                if (status === 'design_ready') {
-                    if (project.client_id) {
-                        apiNotifications.create({
-                            user_id: project.client_id,
-                            title: t('projectDetailsPage.notif_designReady_client_title'),
-                            message: t('projectDetailsPage.notif_designReady_client_msg', { title: project.title }),
-                            type: 'info',
-                            link: `/dashboard/projects/${project.id}`
-                        });
-                    }
-
-                    try {
-                        const allUsers = await apiUsers.getAll();
-                        const notifiedUsers = allUsers.filter(u => u.role === 'secretary' || u.role === 'admin');
-                        for (const userToNotify of notifiedUsers) {
-                            await apiNotifications.create({
-                                user_id: userToNotify.id,
-                                title: t('projectDetailsPage.notif_designReady_staff_title'),
-                                message: t('projectDetailsPage.notif_designReady_staff_msg', { title: project.title }),
-                                type: 'info',
-                                link: `/dashboard/projects/${project.id}`
-                            });
-                        }
-                    } catch (err) { }
-
-                } else if (status === 'production') {
-                    if (project.client_id) {
-                        apiNotifications.create({
-                            user_id: project.client_id,
-                            title: t('projectDetailsPage.notif_production_client_title'),
-                            message: t('projectDetailsPage.notif_production_client_msg', { title: project.title }),
-                            type: 'success',
-                            link: `/dashboard/projects/${project.id}`
-                        });
-                    }
-                }
-            });
-    };
-
-    const handleSubmitModification = async () => {
-        if (!modNotes.trim()) return;
-        const currentVersions = project.stage_details?.design_versions || [];
-        try {
-            if (editingModVersion !== null) {
-                const newVersions = currentVersions.map(v => 
-                    v.version_number === editingModVersion 
-                        ? { ...v, feedback: modNotes } 
-                        : v
-                );
-                await apiProjects.updateDetails(project.id, {
-                    design_versions: newVersions,
-                    client_notes: role === 'client' ? modNotes : project.stage_details?.client_notes
-                });
-            } else {
-                const newVersion = {
-                    version_number: currentVersions.length + 1,
-                    created_at: new Date().toISOString(),
-                    notes: project.stage_details?.model_notes || '',
-                    files: project.stage_details?.design_files || [],
-                    model_link: project.stage_details?.model_link || '',
-                    status: 'rejected' as const,
-                    feedback: modNotes
-                };
-                await apiProjects.updateDetails(project.id, {
-                    design_versions: [...currentVersions, newVersion],
-                    client_notes: role === 'client' ? modNotes : project.stage_details?.client_notes
-                });
-                await handleStatusUpdate('design_modification');
-            }
-            setIsModDialogOpen(false);
-            setModNotes('');
-            setEditingModVersion(null);
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-        } catch { }
-    };
-
-    const handleUnlockFinancials = async () => {
-        if (!project || (role !== 'admin' && role !== 'secretary')) return;
-        if (confirm(t('projectDetailsPage.unlockCostsConfirm'))) {
-            try {
-                await apiExpenses.deleteByProjectAndCategory(project.id, 'material');
-                await apiProjects.updateFinancials(project.id, { exported_to_expenses: false });
-                queryClient.invalidateQueries({ queryKey: ['projects'] });
-                queryClient.invalidateQueries({ queryKey: ['expenses'] });
-            } catch (err: any) { }
-        }
-    };
-
-    const handleDeleteMod = async (verNumber: number) => {
-        if (!confirm(t('projectDetailsPage.confirmDeleteIteration'))) return;
-        try {
-            const currentVersions = project.stage_details?.design_versions || [];
-            const newVersions = currentVersions.filter(v => v.version_number !== verNumber);
-            await apiProjects.updateDetails(project.id, { design_versions: newVersions });
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-        } catch { }
-    };
-
-    const isStepActive = (stepStatus: string) => {
-        const statuses = ['designing', '3d_model', 'design_ready', 'waiting_for_approval', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed'];
-        const currentIndex = statuses.indexOf(project.status);
-        const stepIndex = statuses.indexOf(stepStatus);
-        return currentIndex >= stepIndex;
-    };
-
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'sketch' | 'render') => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        try {
-            if (type === 'sketch') {
-                const imageUrl = await uploadImage(file, 'sketches');
-                const current = project.stage_details?.sketch_files || [];
-                await apiProjects.updateDetails(project.id, { sketch_files: [...current, imageUrl] });
-                setIsAddingSketch(false);
-            } else {
-                const imageUrl = await uploadImage(file, 'designs');
-                const current = project.stage_details?.design_files || [];
-                await apiProjects.updateDetails(project.id, { design_files: [...current, imageUrl] });
-                setIsAddingRender(false);
-            }
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-        } catch (error) { }
-    };
+    const smartAction = getSmartAction(project.status);
 
     return (
         <div className="min-h-screen bg-[#FDFCFB] dark:bg-[#050505] text-[#1A1A1A] dark:text-[#F5F5F7] font-sans selection:bg-luxury-gold/30">
@@ -347,10 +243,10 @@ export default function ProjectDetails() {
 
                         <div className="flex items-center gap-3">
                             <TabsList className="bg-black/5 dark:bg-white/5 rounded-full p-1 h-auto hidden lg:flex">
-                                <TabsTrigger value="overview" className="rounded-full px-6 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm text-xs font-bold transition-all">{t('projectDetailsPage.tab_overview')}</TabsTrigger>
-                                <TabsTrigger value="finance" className="rounded-full px-6 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm text-xs font-bold transition-all">{t('projectDetailsPage.tab_finance')}</TabsTrigger>
-                                <TabsTrigger value="timeline" className="rounded-full px-6 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm text-xs font-bold transition-all">{t('projectDetailsPage.tab_timeline')}</TabsTrigger>
-                                <TabsTrigger value="chat" className="rounded-full px-6 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm text-xs font-bold transition-all">{t('projectDetailsPage.tab_chat')}</TabsTrigger>
+                                <TabsTrigger value="overview" className="rounded-full px-6 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 text-xs font-bold transition-all">{t('projectDetailsPage.tab_overview')}</TabsTrigger>
+                                <TabsTrigger value="finance" className="rounded-full px-6 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 text-xs font-bold transition-all">{t('projectDetailsPage.tab_finance')}</TabsTrigger>
+                                <TabsTrigger value="timeline" className="rounded-full px-6 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 text-xs font-bold transition-all">{t('projectDetailsPage.tab_timeline')}</TabsTrigger>
+                                <TabsTrigger value="chat" className="rounded-full px-6 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 text-xs font-bold transition-all">{t('projectDetailsPage.tab_chat')}</TabsTrigger>
                             </TabsList>
 
                             {smartAction && (
@@ -416,7 +312,6 @@ export default function ProjectDetails() {
                                                     <p className="text-sm font-bold tracking-tight">{spec.value}</p>
                                                 </div>
                                             ))}
-
                                         </div>
                                         <div>
                                             <h4 className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold mb-4">{t('projectDetailsPage.referenceImagesLabel')}</h4>
@@ -430,6 +325,9 @@ export default function ProjectDetails() {
                                                 <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer group" onClick={() => setIsAddingSketch(true)}>
                                                     <Upload className="w-5 h-5 text-muted-foreground group-hover:text-luxury-gold transition-colors" />
                                                     <span className="text-[10px] font-bold text-muted-foreground">{t('common.add')}</span>
+                                                    {isAddingSketch && (
+                                                        <input type="file" className="hidden" autoFocus onChange={(e) => handleImageUpload(e, 'sketch')} />
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -446,13 +344,16 @@ export default function ProjectDetails() {
                                         </div>
                                     </CardHeader>
                                     <CardContent className="pt-4">
-                                        <Textarea className="text-xs bg-transparent border-none focus-visible:ring-0 p-0 min-h-[150px] resize-none no-scrollbar placeholder:text-luxury-gold/20 font-medium leading-relaxed" placeholder={t('projectDetailsPage.typeInternalNotes')} defaultValue={project.internal_notes} onBlur={(e) => {
+                                        <Textarea className="text-xs bg-transparent border-none focus-visible:ring-0 p-0 min-h-[150px] resize-none no-scrollbar placeholder:text-luxury-gold/20 font-medium leading-relaxed" placeholder={t('projectDetailsPage.typeInternalNotes')} defaultValue={project.internal_notes || ''} onBlur={(e) => {
                                             if (e.target.value !== project.internal_notes) {
                                                 apiProjects.update(project.id, { internal_notes: e.target.value }).then(() => toast({ title: t('projectDetailsPage.notesSaved') }));
                                             }
                                         }} />
                                     </CardContent>
                                 </Card>
+                                {role !== 'client' && (
+                                    <Button variant="ghost" size="sm" className="w-full text-[10px] opacity-20 hover:opacity-100" onClick={handleUnlockFinancials}>{t('projectDetailsPage.unlockFinancials')}</Button>
+                                )}
                             </aside>
                         </div>
                     </TabsContent>
@@ -464,6 +365,7 @@ export default function ProjectDetails() {
             <ProjectInspectorDrawer isOpen={isInspectorOpen} onClose={() => setIsInspectorOpen(false)} project={project} role={role || ''} user={user} />
 
             <ImagePreviewModal isOpen={!!previewImage} onClose={() => setPreviewImage(null)} imageUrl={previewImage} />
+            
             <Dialog open={isPortalLinkDialogOpen} onOpenChange={setIsPortalLinkDialogOpen}>
                 <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border-black/10 shadow-2xl rounded-3xl p-8">
                     <DialogHeader className="mb-6">
@@ -479,6 +381,25 @@ export default function ProjectDetails() {
                             </Button>
                         </div>
                         <Button className="w-full h-14 bg-black dark:bg-white text-white dark:text-black font-bold text-sm uppercase tracking-widest rounded-2xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all shadow-xl" onClick={() => setIsPortalLinkDialogOpen(false)}>{t('common.close')}</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isModDialogOpen} onOpenChange={setIsModDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('projectDetailsPage.modificationRequestTitle')}</DialogTitle>
+                        <DialogDescription>{t('projectDetailsPage.modificationRequestDesc')}</DialogDescription>
+                    </DialogHeader>
+                    <Textarea 
+                        value={modNotes}
+                        onChange={(e) => setModNotes(e.target.value)}
+                        placeholder={t('projectDetailsPage.modificationPlaceholder')}
+                        className="min-h-[150px]"
+                    />
+                    <div className="flex justify-end gap-2 p-4">
+                        <Button variant="outline" onClick={() => setIsModDialogOpen(false)}>{t('common.cancel')}</Button>
+                        <Button onClick={handleSubmitModification} className="bg-luxury-gold text-black">{t('common.submit')}</Button>
                     </div>
                 </DialogContent>
             </Dialog>

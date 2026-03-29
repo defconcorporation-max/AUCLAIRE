@@ -23,9 +23,9 @@ interface ProjectFinancialDashboardProps {
 }
 
 export const ProjectFinancialDashboard: React.FC<ProjectFinancialDashboardProps> = ({ 
-    project,
-    role
+    project
 }) => {
+
     const { t } = useTranslation();
     const [showTechnical, setShowTechnical] = useState(false);
 
