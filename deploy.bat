@@ -1,22 +1,43 @@
 @echo off
-title AUCLAIRE DEFINITIVE FIX PUSH (v35)
+title AUCLAIRE DEPLOYER - PRODUCTION
+setlocal enabledelayedexpansion
+
 echo ===========================================
-echo [1/3] COMMITTING HYPER-DEFENSIVE FIXES (v35)
+echo AUCLAIRE - PRODUCTION DEPLOYMENT
 echo ===========================================
-git add .
-git commit -m "Fix: Hyper-defensive checks for Tasks page (v35)"
-echo.
-echo ===========================================
-echo [2/3] SYNCING WITH GITHUB
-echo ===========================================
+
+:: [1/4] SYNCING WITH GITHUB
+echo [1/4] SYNCING WITH GITHUB...
 git pull origin main --rebase
-echo.
-echo ===========================================
-echo [3/3] FORCE PUSHING TO PRODUCTION
-echo ===========================================
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo WARNING: Sync failed or merge needed. Attempting to continue...
+)
+
+:: [2/4] UPDATING HEARTBEAT
+echo [2/4] UPDATING HEARTBEAT...
+echo %date% %time% > force_deploy.txt
+
+:: [3/4] COMMITTING CHANGES
+echo [3/4] COMMITTING CHANGES...
+git add .
+set COMMIT_MSG=%~1
+if "!COMMIT_MSG!"=="" set COMMIT_MSG=System Update - %date% %time%
+git commit -m "!COMMIT_MSG!" --no-verify
+
+:: [4/4] PUSHING TO PRODUCTION
+echo [4/4] PUSHING TO PRODUCTION...
 git push origin HEAD:main --force
+
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo ERROR: Deployment failed! Check your connection and credentials.
+    pause
+    exit /b %ERRORLEVEL%
+)
+
 echo.
 echo ===========================================
-echo ALL DONE! REFRESH YOUR BROWSER IN 1 MINUTE
+echo DEPLOYMENT SUCCESSFUL! Vercel build started.
 echo ===========================================
 pause

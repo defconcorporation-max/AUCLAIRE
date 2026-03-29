@@ -127,7 +127,8 @@ export default function SharedProjectView() {
                                         {index === 1 && <PenTool className="w-4 h-4" />}
                                         {index === 2 && <ThumbsUp className="w-4 h-4" />}
                                         {index === 3 && <Hammer className="w-4 h-4" />}
-                                        {index === 4 && <Gem className="w-4 h-4" />}
+                                        {index === 4 && <Sparkles className="w-4 h-4" />}
+
                                     </div>
                                     <span
                                         className={`text-[10px] font-medium uppercase tracking-wider text-center max-w-[80px] ${
