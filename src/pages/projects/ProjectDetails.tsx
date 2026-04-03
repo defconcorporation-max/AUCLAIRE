@@ -91,7 +91,6 @@ export default function ProjectDetails() {
     const [modNotes, setModNotes] = useState('');
     const [isModDialogOpen, setIsModDialogOpen] = useState(false);
     const [editingModVersion, setEditingModVersion] = useState<number | null>(null);
-    const [internalNotes, setInternalNotes] = useState('');
     const [showAddQuality, setShowAddQuality] = useState(false);
     const [qualityType, setQualityType] = useState<'rework' | 'repair' | 'return' | 'defect'>('rework');
     const [qualityDesc, setQualityDesc] = useState('');
@@ -275,11 +274,7 @@ export default function ProjectDetails() {
 
     const project = projects?.find(p => p.id === id) || projects?.[0]; // Fallback for demo
 
-    React.useEffect(() => {
-        if (project?.internal_notes !== undefined) {
-            setInternalNotes(project.internal_notes || '');
-        }
-    }, [project?.internal_notes]);
+
 
     // Auto-migrate legacy costs to cost_items (must be before any conditional return)
     React.useEffect(() => {
