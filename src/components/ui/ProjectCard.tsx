@@ -104,37 +104,33 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                         )}
                     </div>
 
-                    {/* Sub row: client name */}
-                    <p className="text-[10px] text-white/30 uppercase tracking-widest truncate -mt-0.5">
-                        {project.client?.full_name || '—'}
-                    </p>
-
-                    {/* Meta row: tags */}
-                    {(role === 'admin' || role === 'secretary') && (project.affiliate?.full_name || project.manufacturer?.full_name || hasNoMfgCost) && (
-                        <div className="flex flex-wrap gap-1 mt-0.5">
-                            {hasNoMfgCost && (
-                                <span className="inline-flex items-center gap-0.5 text-[8px] font-bold uppercase tracking-tighter text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
-                                    <AlertTriangle className="w-2 h-2" /> NO COST
-                                </span>
-                            )}
-                            {project.affiliate?.full_name && (
-                                <span className="inline-flex items-center gap-0.5 text-[8px] font-semibold uppercase tracking-tighter text-purple-300 bg-purple-500/10 border border-purple-500/10 px-1.5 py-0.5 rounded max-w-[80px] truncate">
-                                    <Handshake className="w-2 h-2 shrink-0" />
-                                    <span className="truncate">{project.affiliate.full_name.split(' ')[0]}</span>
-                                </span>
-                            )}
-                            {project.manufacturer?.full_name && (
-                                <span className="inline-flex items-center gap-0.5 text-[8px] font-semibold uppercase tracking-tighter text-sky-300 bg-sky-500/10 border border-sky-500/10 px-1.5 py-0.5 rounded max-w-[90px] truncate">
-                                    <Factory className="w-2 h-2 shrink-0" />
-                                    <span className="truncate">{project.manufacturer.full_name.split(' ')[0]}</span>
-                                </span>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Footer: Date with deadline if exists */}
-                    <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-white/5 mt-1">
-                        <div className="flex items-center gap-3 text-[9px] text-white/20 whitespace-nowrap">
+                    {/* Meta row: tags & Date combined */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        {/* Tags */}
+                        {(role === 'admin' || role === 'secretary') && (
+                            <>
+                                {hasNoMfgCost && (
+                                    <span className="inline-flex items-center gap-0.5 text-[8px] font-bold uppercase tracking-tighter text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                                        <AlertTriangle className="w-2 h-2" /> NO COST
+                                    </span>
+                                )}
+                                {project.affiliate?.full_name && (
+                                    <span className="inline-flex items-center gap-0.5 text-[8px] font-semibold uppercase tracking-tighter text-purple-300 bg-purple-500/10 border border-purple-500/10 px-1.5 py-0.5 rounded max-w-[80px] truncate">
+                                        <Handshake className="w-2 h-2 shrink-0" />
+                                        <span className="truncate">{project.affiliate.full_name.split(' ')[0]}</span>
+                                    </span>
+                                )}
+                                {project.manufacturer?.full_name && (
+                                    <span className="inline-flex items-center gap-0.5 text-[8px] font-semibold uppercase tracking-tighter text-sky-300 bg-sky-500/10 border border-sky-500/10 px-1.5 py-0.5 rounded max-w-[90px] truncate">
+                                        <Factory className="w-2 h-2 shrink-0" />
+                                        <span className="truncate">{project.manufacturer.full_name.split(' ')[0]}</span>
+                                    </span>
+                                )}
+                            </>
+                        )}
+                        
+                        {/* Date - Integrated into tags row */}
+                        <div className="flex items-center gap-1.5 text-[9px] text-white/20 whitespace-nowrap ml-auto">
                             <span className="flex items-center gap-1">
                                 <Calendar className="w-2.5 h-2.5" />
                                 {new Date(project.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
