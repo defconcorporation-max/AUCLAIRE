@@ -1986,151 +1986,6 @@ export default function ProjectDetails() {
                 )}
 
                 {activeTab === 'overview' && (<>
-                {/* VERSION HISTORY - Prominent Section Requested by User */}
-                {project.stage_details?.design_versions && project.stage_details.design_versions.length > 0 && (
-                    <Card className="md:col-span-3 glass-card gold-glow-hover border-none shadow-xl transition-all">
-                        <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02] flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide flex items-center gap-2">
-                                    <Clock className="w-5 h-5" /> {t('projectDetailsPage.designHistoryTitle')}
-                                </CardTitle>
-                                <CardDescription className="text-xs uppercase tracking-widest text-gray-500">{t('projectDetailsPage.designHistoryDesc')}</CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {([...(project.stage_details?.design_versions || [])]).reverse().map((ver, idx) => (
-                                    <div key={idx} className="p-4 rounded-xl bg-white/5 dark:bg-zinc-900/50 border border-black/5 dark:border-white/10 hover:border-luxury-gold/30 transition-all flex flex-col justify-between group/ver">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30">
-                                                        v{ver.version_number}
-                                                    </span>
-                                                    <span className="text-[10px] text-zinc-500 uppercase tracking-tight">
-                                                        {new Date(ver.created_at).toLocaleDateString(localeTag)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex gap-1 items-center">
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-tighter font-bold ${ver.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-500'}`}>
-                                                        {ver.status === 'approved'
-                                                            ? t('projectDetailsPage.versionStatus_approved')
-                                                            : ver.status === 'rejected'
-                                                                ? t('projectDetailsPage.versionStatus_rejected')
-                                                                : ver.status === 'submitted'
-                                                                    ? t('projectDetailsPage.versionStatus_submitted')
-                                                                    : ver.status}
-                                                    </span>
-                                                    {(role === 'admin' || role === 'secretary' || (role === 'client' && ver.status === 'rejected')) && (
-                                                        <div className="flex gap-0.5 opacity-0 group-hover/ver:opacity-100 transition-opacity">
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="icon" 
-                                                                className="h-6 w-6 text-gray-400 hover:text-luxury-gold"
-                                                                onClick={() => {
-                                                                    setModNotes(ver.feedback || '');
-                                                                    setEditingModVersion(ver.version_number);
-                                                                    setIsModDialogOpen(true);
-                                                                }}
-                                                            >
-                                                                <Pencil className="w-3 h-3" />
-                                                            </Button>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="icon" 
-                                                                className="h-6 w-6 text-gray-400 hover:text-red-500"
-                                                                onClick={() => handleDeleteMod(ver.version_number)}
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </Button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="space-y-2">
-                                                {ver.notes && <p className="text-xs text-foreground/80 italic leading-relaxed line-clamp-2">"{ver.notes}"</p>}
-                                                
-                                                {ver.model_link && (
-                                                    <a href={ver.model_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 transition-colors text-xs">
-                                                        <LinkIcon className="w-3 h-3" /> <span className="underline">{t('projectDetailsPage.model3dCadLink')}</span>
-                                                    </a>
-                                                )}
-
-                                                {ver.files && ver.files.length > 0 && (
-                                                    <div className="flex gap-2 mt-2">
-                                                        {ver.files.slice(0, 3).map((f: string, i: number) => (
-                                                            <img 
-                                                                key={i} 
-                                                                src={f} 
-                                                                className="w-10 h-10 object-cover rounded border border-black/5 dark:border-white/10 cursor-pointer hover:scale-105 transition-transform" 
-                                                                onClick={() => setPreviewImage(f)}
-                                                            />
-                                                        ))}
-                                                        {ver.files.length > 3 && (
-                                                            <div className="w-10 h-10 rounded border border-black/5 dark:border-white/10 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold">
-                                                                +{ver.files.length - 3}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                                {ver.feedback && (
-                                                    <div className="mt-2 pt-2 border-t border-black/5 dark:border-white/5 flex items-start gap-2">
-                                                        <AlertCircle className="w-3 h-3 text-red-500 mt-0.5" />
-                                                        <div className="text-red-500/80 text-[10px] italic font-medium line-clamp-2">{t('projectDetailsPage.rejectionPrefix')} {ver.feedback}</div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Internal Notes - Admin/Secretary Only */}
-                {(role === 'admin' || role === 'secretary') && (
-                    <Card className="md:col-span-3 glass-card">
-                        <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
-                            <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide flex items-center gap-2">
-                                <Shield className="w-5 h-5" />
-                                {t('projectDetailsPage.internalNotesTitle')}
-                            </CardTitle>
-                            <CardDescription className="text-xs text-muted-foreground">{t('projectDetailsPage.internalNotesDesc')}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-4">
-                            <Textarea
-                                value={internalNotes}
-                                onChange={(e) => setInternalNotes(e.target.value)}
-                                placeholder={t('projectDetailsPage.internalNotesPlaceholder')}
-                                className="min-h-[120px] bg-white/50 dark:bg-black/30 border-black/10 dark:border-white/10 resize-y"
-                            />
-                            <div className="flex justify-end mt-3">
-                                <Button
-                                    size="sm"
-                                    className="bg-luxury-gold text-black hover:bg-luxury-gold/90"
-                                    onClick={async () => {
-                                        const { error } = await supabase
-                                            .from('projects')
-                                            .update({ internal_notes: internalNotes })
-                                            .eq('id', project.id);
-                                        if (error) {
-                                            toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
-                                        } else {
-                                            toast({ title: t('projectDetailsPage.notesSavedToast') });
-                                            queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                        }
-                                    }}
-                                >
-                                    <Save className="w-4 h-4 mr-2" />
-                                    {t('common.save')}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
 
                 {/* Stage Specific Data Form */}
                 <Card className="md:col-span-3 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-black/5 dark:border-white/5 shadow-xl group">
@@ -2670,6 +2525,109 @@ export default function ProjectDetails() {
                         </div>
                     </CardContent>
                 </Card>
+                {/* Design History Section - Moved below design details */}
+                {project.stage_details?.design_versions && project.stage_details.design_versions.length > 0 && (
+                    <Card className="md:col-span-3 glass-card gold-glow-hover border-none shadow-xl transition-all">
+                        <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4 bg-white/50 dark:bg-white/[0.02] flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide flex items-center gap-2">
+                                    <Clock className="w-5 h-5" /> {t('projectDetailsPage.designHistoryTitle')}
+                                </CardTitle>
+                                <CardDescription className="text-xs uppercase tracking-widest text-gray-500">{t('projectDetailsPage.designHistoryDesc')}</CardDescription>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {([...(project.stage_details?.design_versions || [])]).reverse().map((ver, idx) => (
+                                    <div key={idx} className="p-4 rounded-xl bg-white/5 dark:bg-zinc-900/50 border border-black/5 dark:border-white/10 hover:border-luxury-gold/30 transition-all flex flex-col justify-between group/ver">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-luxury-gold/20 text-luxury-gold border border-luxury-gold/30">
+                                                        v{ver.version_number}
+                                                    </span>
+                                                    <span className="text-[10px] text-zinc-500 uppercase tracking-tight">
+                                                        {new Date(ver.created_at).toLocaleDateString(localeTag)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-1 items-center">
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-tighter font-bold ${ver.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-500'}`}>
+                                                        {ver.status === 'approved'
+                                                            ? t('projectDetailsPage.versionStatus_approved')
+                                                            : ver.status === 'rejected'
+                                                                ? t('projectDetailsPage.versionStatus_rejected')
+                                                                : ver.status === 'submitted'
+                                                                    ? t('projectDetailsPage.versionStatus_submitted')
+                                                                    : ver.status}
+                                                    </span>
+                                                    {(role === 'admin' || role === 'secretary' || (role === 'client' && ver.status === 'rejected')) && (
+                                                        <div className="flex gap-0.5 opacity-0 group-hover/ver:opacity-100 transition-opacity">
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-6 w-6 text-gray-400 hover:text-luxury-gold"
+                                                                onClick={() => {
+                                                                    setModNotes(ver.feedback || '');
+                                                                    setEditingModVersion(ver.version_number);
+                                                                    setIsModDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <Pencil className="w-3 h-3" />
+                                                            </Button>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-6 w-6 text-gray-400 hover:text-red-500"
+                                                                onClick={() => handleDeleteMod(ver.version_number)}
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                                {ver.notes && <p className="text-xs text-foreground/80 italic leading-relaxed line-clamp-2">"{ver.notes}"</p>}
+                                                
+                                                {ver.model_link && (
+                                                    <a href={ver.model_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 transition-colors text-xs">
+                                                        <LinkIcon className="w-3 h-3" /> <span className="underline">{t('projectDetailsPage.model3dCadLink')}</span>
+                                                    </a>
+                                                )}
+
+                                                {ver.files && ver.files.length > 0 && (
+                                                    <div className="flex gap-2 mt-2">
+                                                        {ver.files.slice(0, 3).map((f: string, i: number) => (
+                                                            <img 
+                                                                key={i} 
+                                                                src={f} 
+                                                                className="w-10 h-10 object-cover rounded border border-black/5 dark:border-white/10 cursor-pointer hover:scale-105 transition-transform" 
+                                                                onClick={() => setPreviewImage(f)}
+                                                            />
+                                                        ))}
+                                                        {ver.files.length > 3 && (
+                                                            <div className="w-10 h-10 rounded border border-black/5 dark:border-white/10 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold">
+                                                                +{ver.files.length - 3}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {ver.feedback && (
+                                                    <div className="mt-2 pt-2 border-t border-black/5 dark:border-white/5 flex items-start gap-2">
+                                                        <AlertCircle className="w-3 h-3 text-red-500 mt-0.5" />
+                                                        <div className="text-red-500/80 text-[10px] italic font-medium line-clamp-2">{t('projectDetailsPage.rejectionPrefix')} {ver.feedback}</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
                 </>)}
             </div>
 
