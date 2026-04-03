@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase' // Use directly for Auth
 import { Button } from '@/components/ui/button'
@@ -11,28 +11,25 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 export default function Login() {
     const { t } = useTranslation()
+    const location = useLocation()
+    
+    // Check if we arrived here via a password reset redirect
+    const queryParams = new URLSearchParams(location.search)
+    const initialMode = queryParams.get('mode') === 'update-password' ? 'update-password' : 'login'
+
     // Mode: 'login' | 'register' | 'forgot' | 'magic-link' | 'update-password'
-    const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'magic-link' | 'update-password'>('login')
+    const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'magic-link' | 'update-password'>(initialMode)
 
     // Form State
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
     const [loading, setLoading] = useState(false)
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(
+        initialMode === 'update-password' ? { type: 'success', text: t('auth.enterNewPassword', 'Veuillez entrer votre nouveau mot de passe.') } : null
+    )
 
     const navigate = useNavigate()
-
-    // Detect Password Recovery Event
-    useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-            if (event === 'PASSWORD_RECOVERY') {
-                setMode('update-password')
-                setMessage({ type: 'success', text: t('auth.enterNewPassword', 'Veuillez entrer votre nouveau mot de passe.') })
-            }
-        })
-        return () => subscription.unsubscribe()
-    }, [t])
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault()
