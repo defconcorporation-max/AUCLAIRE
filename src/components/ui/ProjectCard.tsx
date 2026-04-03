@@ -40,16 +40,12 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         >
             {/* Rush accent bar */}
             {isRush && (
-                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-red-500 via-red-400 to-red-500" />
+                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-red-500 via-red-400 to-red-500 z-20" />
             )}
-            {/* Hover gold accent bar */}
-            {!isRush && (
-                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-luxury-gold/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            )}
-
+            
             <CardContent className="p-0">
-                {/* Thumbnail */}
-                <div className="relative w-full h-28 overflow-hidden rounded-t-xl bg-white/5 border-b border-white/5">
+                {/* Thumbnail Area with Overlays */}
+                <div className="relative w-full h-24 overflow-hidden rounded-t-xl bg-white/5 border-b border-white/5">
                     {thumbnail ? (
                         <img
                             src={thumbnail}
@@ -58,85 +54,99 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-white/20">
-                            <ImageIcon className="w-10 h-10" />
+                            <ImageIcon className="w-8 h-8" />
                         </div>
+                    )}
+                    
+                    {/* OVERLAYS */}
+                    <div className="absolute inset-0 p-2 flex flex-col justify-between pointer-events-none z-10">
+                        <div className="flex justify-between items-start">
+                            {project.reference_number && (
+                                <span className="bg-black/60 backdrop-blur-md text-[9px] font-mono text-luxury-gold px-1.5 py-0.5 rounded border border-luxury-gold/20 tracking-wider">
+                                    {project.reference_number}
+                                </span>
+                            )}
+                            {isRush && (
+                                <span className="bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-lg animate-pulse uppercase tracking-tighter">
+                                    ⚡ Rush
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex justify-end">
+                            <div className="scale-90 origin-bottom-right">
+                                <StatusBadge status={project.status} />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Hover gold accent bar */}
+                    {!isRush && (
+                        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-luxury-gold/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
                     )}
                 </div>
 
-                <div className="p-4 space-y-3">
-                {/* Top row: ref + title + badges */}
-                <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                        {project.reference_number && (
-                            <span className="text-[10px] font-mono text-luxury-gold/60 tracking-wider">
-                                {project.reference_number}
-                            </span>
+                <div className="p-3 space-y-1.5">
+                    {/* Top row: title + price */}
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                            <h3 className={`font-serif text-[14px] font-semibold leading-tight truncate
+                                ${isRush ? 'text-red-400' : 'text-white group-hover:text-luxury-gold transition-colors duration-200'}
+                            `}>
+                                {project.title}
+                            </h3>
+                        </div>
+                        
+                        {/* Price badge */}
+                        {(project.financials?.selling_price || project.budget) && role !== 'manufacturer' && role !== 'client' && (
+                            <div className="shrink-0 font-mono text-[11px] font-bold text-luxury-gold bg-luxury-gold/5 border border-luxury-gold/20 px-1.5 py-0.5 rounded">
+                                ${Number(project.financials?.selling_price || project.budget).toLocaleString()}
+                            </div>
                         )}
-                        <h3 className={`font-serif text-[15px] font-semibold leading-tight truncate mt-0.5
-                            ${isRush ? 'text-red-400' : 'text-white group-hover:text-luxury-gold transition-colors duration-200'}
-                        `}>
-                            {project.title}
-                        </h3>
-                        <p className="text-[11px] text-white/40 uppercase tracking-widest mt-0.5 truncate">
-                            {project.client?.full_name || '—'}
-                        </p>
                     </div>
 
-                    {/* Right side: price */}
-                    {project.budget && role !== 'manufacturer' && role !== 'client' && (
-                        <div className="shrink-0 font-mono text-sm font-semibold text-luxury-gold/90 bg-luxury-gold/8 border border-luxury-gold/15 px-2.5 py-1 rounded-lg">
-                            ${Number(project.financials?.selling_price || project.budget).toLocaleString()}
+                    {/* Sub row: client name */}
+                    <p className="text-[10px] text-white/30 uppercase tracking-widest truncate -mt-0.5">
+                        {project.client?.full_name || '—'}
+                    </p>
+
+                    {/* Meta row: tags */}
+                    {(role === 'admin' || role === 'secretary') && (project.affiliate?.full_name || project.manufacturer?.full_name || hasNoMfgCost) && (
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                            {hasNoMfgCost && (
+                                <span className="inline-flex items-center gap-0.5 text-[8px] font-bold uppercase tracking-tighter text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                                    <AlertTriangle className="w-2 h-2" /> NO COST
+                                </span>
+                            )}
+                            {project.affiliate?.full_name && (
+                                <span className="inline-flex items-center gap-0.5 text-[8px] font-semibold uppercase tracking-tighter text-purple-300 bg-purple-500/10 border border-purple-500/10 px-1.5 py-0.5 rounded max-w-[80px] truncate">
+                                    <Handshake className="w-2 h-2 shrink-0" />
+                                    <span className="truncate">{project.affiliate.full_name.split(' ')[0]}</span>
+                                </span>
+                            )}
+                            {project.manufacturer?.full_name && (
+                                <span className="inline-flex items-center gap-0.5 text-[8px] font-semibold uppercase tracking-tighter text-sky-300 bg-sky-500/10 border border-sky-500/10 px-1.5 py-0.5 rounded max-w-[90px] truncate">
+                                    <Factory className="w-2 h-2 shrink-0" />
+                                    <span className="truncate">{project.manufacturer.full_name.split(' ')[0]}</span>
+                                </span>
+                            )}
                         </div>
                     )}
-                </div>
 
-                {/* Status */}
-                <StatusBadge status={project.status} />
-
-                {/* Admin tags row */}
-                {(role === 'admin' || role === 'secretary') && (project.affiliate?.full_name || project.manufacturer?.full_name || isRush || hasNoMfgCost) && (
-                    <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        {isRush && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-white bg-red-600 px-2 py-0.5 rounded-full">
-                                ⚡ Rush
+                    {/* Footer: Date with deadline if exists */}
+                    <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-white/5 mt-1">
+                        <div className="flex items-center gap-3 text-[9px] text-white/20 whitespace-nowrap">
+                            <span className="flex items-center gap-1">
+                                <Calendar className="w-2.5 h-2.5" />
+                                {new Date(project.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
                             </span>
-                        )}
-                        {hasNoMfgCost && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 rounded-full">
-                                <AlertTriangle className="w-2.5 h-2.5" /> No Cost
-                            </span>
-                        )}
-                        {project.affiliate?.full_name && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-purple-300 bg-purple-500/15 border border-purple-500/20 px-2 py-0.5 rounded-full max-w-[100px] truncate">
-                                <Handshake className="w-2.5 h-2.5 shrink-0" />
-                                <span className="truncate">{project.affiliate.full_name.split(' ')[0]}</span>
-                            </span>
-                        )}
-                        {project.manufacturer?.full_name && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-sky-300 bg-sky-500/15 border border-sky-500/20 px-2 py-0.5 rounded-full max-w-[110px] truncate">
-                                <Factory className="w-2.5 h-2.5 shrink-0" />
-                                <span className="truncate">{project.manufacturer.full_name.split(' ')[0]}</span>
-                            </span>
-                        )}
+                            {project.deadline && (
+                                <span className="flex items-center gap-1 text-luxury-gold/30">
+                                    <Calendar className="w-2.5 h-2.5" />
+                                    {new Date(project.deadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                                </span>
+                            )}
+                        </div>
                     </div>
-                )}
-
-                {/* Footer: dates */}
-                <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">
-                    <div className="flex items-center gap-3 text-[10px] text-white/30">
-                        <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(project.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                        </span>
-                        {project.deadline && (
-                            <span className="flex items-center gap-1 text-luxury-gold/40">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(project.deadline).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                            </span>
-                        )}
-                    </div>
-                </div>
-
                 </div>
             </CardContent>
         </Card>
