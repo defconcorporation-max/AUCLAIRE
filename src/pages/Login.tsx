@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase' // Use directly for Auth
@@ -11,8 +11,8 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 export default function Login() {
     const { t } = useTranslation()
-    // Mode: 'login' | 'register' | 'forgot' | 'magic-link'
-    const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'magic-link'>('login')
+    // Mode: 'login' | 'register' | 'forgot' | 'magic-link' | 'update-password'
+    const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'magic-link' | 'update-password'>('login')
 
     // Form State
     const [email, setEmail] = useState('')
@@ -23,13 +23,29 @@ export default function Login() {
 
     const navigate = useNavigate()
 
+    // Detect Password Recovery Event
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                setMode('update-password')
+                setMessage({ type: 'success', text: t('auth.enterNewPassword', 'Veuillez entrer votre nouveau mot de passe.') })
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [t])
+
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
         setMessage(null)
 
         try {
-            if (mode === 'forgot') {
+            if (mode === 'update-password') {
+                const { error } = await supabase.auth.updateUser({ password })
+                if (error) throw error
+                setMessage({ type: 'success', text: t('auth.passwordUpdated', 'Mot de passe mis à jour avec succès.') })
+                setTimeout(() => navigate('/dashboard'), 2000)
+            } else if (mode === 'forgot') {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
                     redirectTo: `${window.location.origin}/login`
                 })
@@ -75,8 +91,6 @@ export default function Login() {
         }
     }
 
-
-
     return (
         <div className="min-h-screen grid lg:grid-cols-2 relative">
             <div className="fixed top-4 right-4 z-50">
@@ -121,26 +135,29 @@ export default function Login() {
                                     required
                                 />
                             )}
-                            <Input
-                                type="email"
-                                placeholder={t('auth.email')}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                            {(mode === 'login' || mode === 'register') && (
+                            {mode !== 'update-password' && (
+                                <Input
+                                    type="email"
+                                    placeholder={t('auth.email')}
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            )}
+                            {(mode === 'login' || mode === 'register' || mode === 'update-password') && (
                                 <Input
                                     type="password"
-                                    placeholder={t('auth.password')}
+                                    placeholder={mode === 'update-password' ? t('auth.newPassword', 'Nouveau mot de passe') : t('auth.password')}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
+                                    minLength={6}
                                 />
                             )}
 
                             <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black" disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {mode === 'login' ? t('auth.signIn') : mode === 'register' ? t('auth.createAccount') : mode === 'magic-link' ? t('auth.sendAccessLink') : t('auth.sendResetLink')}
+                                {mode === 'login' ? t('auth.signIn') : mode === 'register' ? t('auth.createAccount') : mode === 'magic-link' ? t('auth.sendAccessLink') : mode === 'update-password' ? t('auth.updatePassword', 'Mettre à jour') : t('auth.sendResetLink')}
                             </Button>
 
                             {mode === 'login' && (
