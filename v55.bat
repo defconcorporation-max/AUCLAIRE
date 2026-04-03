@@ -1,7 +1,7 @@
 @echo off
 title AUCLAIRE DEPLOYER v55
 echo ===========================================
-echo AUCLAIRE - VERCEL DEPLOYMENT v3.17.0 (Project UI Refactor)
+echo AUCLAIRE - VERCEL DEPLOYMENT v3.17.1 (Pipeline Compaction & UI Fixes)
 echo ===========================================
 
 echo [1/4] SYNCING WITH GITHUB...
@@ -12,7 +12,7 @@ echo %date% %time% > force_deploy.txt
 
 echo [3/4] COMMITTING CHANGES...
 git add .
-git commit -m "v3.17.0: Project Details UI refactor (removed internal notes, moved history) - %date% %time%"
+git commit -m "v3.17.1: Project Card Compaction + build fix project status + notes removal - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin HEAD:main --force
@@ -26,6 +26,6 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo ===========================================
-echo DEPLOYMENT SUCCESSFUL! Version 3.17.0 is live.
+echo DEPLOYMENT SUCCESSFUL! Version 3.17.1 is live.
 echo ===========================================
 pause
