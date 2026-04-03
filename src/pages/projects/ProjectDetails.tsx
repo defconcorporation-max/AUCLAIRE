@@ -475,6 +475,48 @@ export default function ProjectDetails() {
             });
     };
 
+    const notifyStaffAboutNewModel = async () => {
+        try {
+            const allUsers = await apiUsers.getAll();
+            const notifiedUsers = allUsers.filter(u => u.role === 'secretary' || u.role === 'admin');
+            const projectUrl = `${window.location.origin}/dashboard/projects/${project.id}`;
+
+            for (const userToNotify of notifiedUsers) {
+                // 1. In-App Notification
+                apiNotifications.create({
+                    user_id: userToNotify.id,
+                    title: t('projectDetailsPage.notif_newModel_staff_title'),
+                    message: t('projectDetailsPage.notif_newModel_staff_msg', { title: project.title }),
+                    type: 'info',
+                    link: `/dashboard/projects/${project.id}`
+                }).catch(err => console.error(`[Notifications] In-app FAILED for ${userToNotify.full_name}:`, err));
+
+                // 2. Email Notification
+                if (userToNotify.email) {
+                    supabase.functions.invoke('send-email', {
+                        body: {
+                            to: userToNotify.email,
+                            subject: t('projectDetailsPage.emailSubject_newModelAdded', { title: project.title }),
+                            html: `
+                                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                                    <h2 style="color: #6a5100; border-bottom: 2px solid #6a5100; padding-bottom: 10px;">${t('projectDetailsPage.emailHtml_newModel_h2')}</h2>
+                                    <p>${t('projectDetailsPage.emailHtml_hello', { name: userToNotify.full_name })}</p>
+                                    <p>${t('projectDetailsPage.emailHtml_newModel_p1', { title: project.title })}</p>
+                                    <div style="margin-top: 30px; text-align: center;">
+                                        <a href="${projectUrl}" style="background-color: #6a5100; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">${t('projectDetailsPage.emailHtml_viewProject')}</a>
+                                    </div>
+                                    <p style="margin-top: 30px; font-size: 12px; color: #666; border-top: 1px solid #eee; pt-10px;">Maison Auclaire Administration</p>
+                                </div>
+                            `
+                        }
+                    }).catch(err => console.error(`[Notifications] Email FAILED for ${userToNotify.email}:`, err));
+                }
+            }
+        } catch (err) {
+            console.error("[Notifications] Failed to notify staff about new model", err);
+        }
+    };
+
     const handleSubmitModification = async () => {
         if (!modNotes.trim()) return;
 
@@ -630,19 +672,14 @@ export default function ProjectDetails() {
                     action: 'update',
                     details: t('projectDetailsPage.activity_renderUploaded')
                 });
-                // Notify Client if Renders are uploaded (optional, but good)
+                
+                // Notify Staff about the new render
+                notifyStaffAboutNewModel();
+
+                // Notify Client only if Design is already Ready
                 if (project.client_id && project.status === 'design_ready') {
                     apiNotifications.create({
                         user_id: project.client_id,
-                        title: t('projectDetailsPage.notif_renderUploaded_title'),
-                        message: t('projectDetailsPage.notif_renderUploaded_msg', { title: project.title }),
-                        type: 'info',
-                        link: `/dashboard/projects/${project.id}`
-                    });
-                }
-                if (project.client_id) {
-                    apiNotifications.create({
-                        user_id: 'admin',
                         title: t('projectDetailsPage.notif_renderUploaded_title'),
                         message: t('projectDetailsPage.notif_renderUploaded_msg', { title: project.title }),
                         type: 'info',
@@ -1970,6 +2007,7 @@ export default function ProjectDetails() {
                                                             action: 'update',
                                                             details: `Updated CAD Model Link`
                                                         });
+                                                        notifyStaffAboutNewModel();
                                                         queryClient.invalidateQueries({ queryKey: ['activities', project.id] });
                                                     });
                                                 }
