@@ -1,7 +1,7 @@
 @echo off
 title AUCLAIRE DEPLOYER v55
 echo ===========================================
-echo AUCLAIRE - VERCEL DEPLOYMENT v3.17.2 (Extreme UI Compaction)
+echo AUCLAIRE - VERCEL DEPLOYMENT v3.18.0 (Finance UI optimization)
 echo ===========================================
 
 echo [1/4] SYNCING WITH GITHUB...
@@ -12,7 +12,7 @@ echo %date% %time% > force_deploy.txt
 
 echo [3/4] COMMITTING CHANGES...
 git add .
-git commit -m "v3.17.2: Final Project Card compaction (removed client line, integrated date) - %date% %time%"
+git commit -m "v3.18.0: Cleaned up Finance tab (removed Metals, Description, Vault) for zero-scroll density - %date% %time%"
 
 echo [4/4] PUSHING TO PRODUCTION...
 git push origin HEAD:main --force
@@ -26,6 +26,6 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo ===========================================
-echo DEPLOYMENT SUCCESSFUL! Version 3.17.2 is live.
+echo DEPLOYMENT SUCCESSFUL! Version 3.18.0 is live.
 echo ===========================================
 pause

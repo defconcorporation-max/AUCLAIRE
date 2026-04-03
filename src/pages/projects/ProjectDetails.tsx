@@ -11,7 +11,6 @@ import { apiNotifications } from '@/services/apiNotifications';
 import { apiAffiliates } from '@/services/apiAffiliates';
 import { apiActivities } from '@/services/apiActivities';
 import { apiUsers } from '@/services/apiUsers';
-import { apiMetals } from '@/services/apiMetals';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,14 +22,12 @@ import { TimeTracker } from '@/components/project/TimeTracker';
 import { DesignApprovalPanel } from '@/components/project/DesignApprovalPanel';
 import {
     Clock,
-    Upload,
     FileText,
     Trash2,
     CheckCircle2,
     AlertCircle,
     DollarSign,
     ArrowLeft,
-    Activity,
     ShieldCheck,
     Eye,
     User,
@@ -261,11 +258,6 @@ export default function ProjectDetails() {
         enabled: isEditingManufacturer
     });
 
-    const { data: metalsPrice } = useQuery({
-        queryKey: ['metalsPrice'],
-        queryFn: apiMetals.getLatestPrices,
-        refetchInterval: 1000 * 60 * 15, // 15 mins
-    });
 
     const { data: invoices } = useQuery({
         queryKey: ['invoices'],
@@ -1673,33 +1665,6 @@ export default function ProjectDetails() {
                             <span className="font-medium">{project.deadline ? new Date(project.deadline).toLocaleDateString(localeTag) : t('projectDetailsPage.noneOption')}</span>
                         </div>
 
-                        {/* Precious Metals Market Price */}
-                        {(role === 'admin' || role === 'secretary') && metalsPrice && (
-                            <div className="bg-gradient-to-r from-amber-500/10 to-amber-900/10 border border-amber-500/20 p-3 rounded-md space-y-2 mt-4 mb-4">
-                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-500 flex items-center gap-1 mb-2">
-                                    <Activity className="w-3 h-3" /> {t('projectDetailsPage.liveMetalsTitle')}
-                                </h4>
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-mono">
-                                    <div className="flex flex-col">
-                                        <span className="text-muted-foreground text-[9px]">{t('projectDetailsPage.metalSilver925')}</span>
-                                        <span className="font-bold text-gray-700 dark:text-gray-300">${metalsPrice.silver925.toFixed(2)}/g</span>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-muted-foreground text-[9px]">{t('projectDetailsPage.metalGold10k')}</span>
-                                        <span className="font-bold text-amber-600 dark:text-amber-400">${metalsPrice.gold10k.toFixed(2)}/g</span>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-muted-foreground text-[9px]">{t('projectDetailsPage.metalGold14k')}</span>
-                                        <span className="font-bold text-luxury-gold">${metalsPrice.gold14k.toFixed(2)}/g</span>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-muted-foreground text-[9px]">{t('projectDetailsPage.metalGold18k')}</span>
-                                        <span className="font-bold text-amber-500">${metalsPrice.gold18k.toFixed(2)}/g</span>
-                                    </div>
-                                </div>
-                                <div className="text-[9px] text-right text-muted-foreground mt-1 opacity-60">{t('projectDetailsPage.xauUsdIndex', { price: `$${metalsPrice.xauOunce.toFixed(2)}` })}</div>
-                            </div>
-                        )}
 
                         {/* Admin Financials - Strictly for Admin */}
                         {(role === 'admin' || role === 'secretary') && (
@@ -1860,112 +1825,6 @@ export default function ProjectDetails() {
                             </div>
                         )}
 
-                        <div className="pt-4">
-                            <h4 className="text-sm font-medium mb-2">{t('projectDetailsPage.descriptionSection')}</h4>
-                            <p className="text-xs text-muted-foreground">
-                                {project.description || t('projectDetailsPage.noDescriptionFallback')}
-                            </p>
-                        </div>
-
-                        {/* THE VAULT - CONCIERGE DOCUMENT STORAGE */}
-                        {(role === 'admin' || role === 'secretary' || (role === 'client' && project.stage_details?.vault_files?.length)) && (
-                            <div className="mt-8 pt-8 border-t border-luxury-gold/20">
-                                <Card className="glass-card gold-glow-hover border-none bg-white/5 dark:bg-black/20 p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-serif text-luxury-gold flex items-center gap-2">
-                                            <ShieldCheck className="w-5 h-5" /> {t('projectDetailsPage.theVaultTitle')}
-                                        </h3>
-                                        <p className="text-[10px] uppercase tracking-widest text-luxury-gold/60">{t('projectDetailsPage.conciergeStorage')}</p>
-                                    </div>
-                                    {(role === 'admin' || role === 'secretary') && (
-                                        <label className="cursor-pointer">
-                                            <input
-                                                type="file"
-                                                className="hidden"
-                                                multiple
-                                                onChange={async (e) => {
-                                                    const files = Array.from(e.target.files || []);
-                                                    if (files.length === 0) return;
-
-                                                    const uploadedUrls: string[] = [];
-                                                    for (const file of files) {
-                                                        const path = `vault/${project.id}/${Date.now()}_${file.name}`;
-                                                        const { error } = await supabase.storage.from('project-files').upload(path, file);
-                                                        if (!error) {
-                                                            const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(path);
-                                                            uploadedUrls.push(publicUrl);
-                                                        }
-                                                    }
-
-                                                    const currentVault = project.stage_details?.vault_files || [];
-                                                    await apiProjects.updateDetails(project.id, {
-                                                        vault_files: [...currentVault, ...uploadedUrls]
-                                                    });
-                                                    queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                    toast({ title: t('projectDetailsPage.vaultDocumentsSecured') });
-                                                }}
-                                            />
-                                            <Button size="sm" variant="outline" className="h-8 border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-all">
-                                                <Upload className="w-3 h-3 mr-2" /> {t('projectDetailsPage.secureDocButton')}
-                                            </Button>
-                                        </label>
-                                    )}
-                                </div>
-
-                                {(!project.stage_details?.vault_files || project.stage_details.vault_files.length === 0) ? (
-                                    <div className="text-center py-8 bg-zinc-900/20 rounded-lg border border-dashed border-luxury-gold/10 text-muted-foreground text-xs italic">
-                                        {t('projectDetailsPage.vaultEmpty')}
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {project.stage_details.vault_files.map((fileUrl: string, idx: number) => {
-                                            const fileName = decodeURIComponent(fileUrl.split('/').pop() || 'document').replace(/^\d+_/, '');
-                                            return (
-                                                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 hover:border-luxury-gold/30 transition-all group">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded bg-luxury-gold/10 text-luxury-gold">
-                                                            <FileText className="w-4 h-4" />
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="text-sm font-medium text-white/90 truncate max-w-[150px]">{fileName}</p>
-                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('projectDetailsPage.securedDocumentLabel')}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 text-luxury-gold hover:text-luxury-gold hover:bg-luxury-gold/10"
-                                                            onClick={() => window.open(fileUrl, '_blank')}
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                        </Button>
-                                                        {(role === 'admin' || role === 'secretary') && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                onClick={async () => {
-                                                                    if (confirm(t('projectDetailsPage.removeVaultDocConfirm'))) {
-                                                                        const newVault = project.stage_details?.vault_files?.filter((_file: string, i: number) => i !== idx);
-                                                                        await apiProjects.updateDetails(project.id, { vault_files: newVault });
-                                                                        queryClient.invalidateQueries({ queryKey: ['projects'] });
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                                </Card>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
                 )}
