@@ -60,6 +60,13 @@ const ClientPortal = lazy(() => import('./pages/clients/ClientPortal'));
 const BetaFeedback = lazy(() => import('./pages/BetaFeedback'));
 const ClientQuote = lazy(() => import('./pages/resources/ClientQuote'));
 const Tasks = lazy(() => import('./pages/crm/Tasks'));
+const MarketingHub = lazy(() => import('./pages/marketing/MarketingHub'));
+const CreativeSpace = lazy(() => import('./pages/marketing/CreativeSpace'));
+const CollaborationsHub = lazy(() => import('./pages/marketing/CollaborationsHub'));
+const MarketingRoadmap = lazy(() => import('./pages/marketing/MarketingRoadmap'));
+const WebsiteAudit = lazy(() => import('./pages/marketing/WebsiteAudit'));
+const AccountsDirectory = lazy(() => import('./pages/marketing/AccountsDirectory'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 
 // Realtime sync component — must be inside Router + QueryClientProvider
 function RealtimeSync() {
@@ -145,6 +152,13 @@ function App() {
               <Route path="affiliates/:id" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AffiliateDetails /></ProtectedRoute>} />
               <Route path="debug" element={<ProtectedRoute allowedRoles={['admin']}><DebugPage /></ProtectedRoute>} />
               <Route path="tasks" element={<ProtectedRoute allowedRoles={['admin', 'manufacturer', 'affiliate', 'secretary']}><Tasks /></ProtectedRoute>} />
+              <Route path="marketing" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><MarketingHub /></ProtectedRoute>} />
+              <Route path="marketing/creative" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><CreativeSpace /></ProtectedRoute>} />
+              <Route path="marketing/collaborations" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><CollaborationsHub /></ProtectedRoute>} />
+              <Route path="marketing/roadmap" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><MarketingRoadmap /></ProtectedRoute>} />
+              <Route path="marketing/website" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><WebsiteAudit /></ProtectedRoute>} />
+              <Route path="marketing/accounts" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AccountsDirectory /></ProtectedRoute>} />
+              <Route path="admin-panel" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="feedback" element={<ProtectedRoute allowedRoles={['admin']}><BetaFeedback /></ProtectedRoute>} />
             </Route>
 

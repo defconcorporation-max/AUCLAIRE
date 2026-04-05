@@ -24,7 +24,9 @@ import {
     TrendingUp,
     ChevronLeft,
     ChevronRight,
-    CheckSquare
+    CheckSquare,
+    Megaphone,
+    Zap
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -85,8 +87,15 @@ const NAV_SECTIONS: NavSectionDef[] = [
         ],
     },
     {
+        sectionKey: 'nav.sections.marketing',
+        items: [
+            { labelKey: 'nav.items.marketingHub', href: '/dashboard/marketing', icon: Megaphone, roles: ['admin', 'secretary'] },
+        ],
+    },
+    {
         sectionKey: 'nav.sections.admin',
         items: [
+            { labelKey: 'nav.items.adminPanel', href: '/dashboard/admin-panel', icon: Zap, roles: ['admin'] },
             { labelKey: 'nav.items.users', href: '/dashboard/users', icon: Users, roles: ['admin', 'secretary'] },
             { labelKey: 'nav.items.settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'secretary'] },
             { labelKey: 'nav.items.betaFeedback', href: '/dashboard/feedback', icon: MessageSquarePlus, roles: ['admin'] },

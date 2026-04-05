@@ -1,0 +1,9 @@
+@echo off
+echo Adding changes...
+git add .
+echo Committing...
+git commit -m "feat(marketing,admin): complete implementation of marketing hub and admin dashboard"
+echo Pushing...
+git push
+echo Done.
+pause
