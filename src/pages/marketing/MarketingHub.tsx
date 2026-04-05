@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiMarketing } from '@/services/apiMarketing';
+import QuickActionModal from '@/components/marketing/QuickActionModal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,6 +52,7 @@ export default function MarketingHub() {
     const { t, i18n } = useTranslation();
     const dfLocale = i18n.language.startsWith('en') ? enUS : fr;
     const navigate = useNavigate();
+    const [quickActionOpen, setQuickActionOpen] = useState(false);
 
     const { data: ideas = [], isLoading: ideasLoading } = useQuery({
         queryKey: ['marketing-ideas'], queryFn: apiMarketing.getIdeas,
@@ -403,6 +406,16 @@ export default function MarketingHub() {
                     </Card>
                 </div>
             </div>
+
+            {/* Quick Action FAB */}
+            <Button
+                onClick={() => setQuickActionOpen(true)}
+                className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gradient-to-r from-luxury-gold to-luxury-gold/80 hover:from-luxury-gold/90 hover:to-luxury-gold text-black shadow-2xl shadow-luxury-gold/20 flex items-center justify-center p-0 transition-transform hover:scale-110 active:scale-95 z-50 group"
+            >
+                <Plus className="w-6 h-6 transition-transform group-hover:rotate-90 duration-300" />
+            </Button>
+
+            <QuickActionModal open={quickActionOpen} onOpenChange={setQuickActionOpen} />
         </div>
     );
 }

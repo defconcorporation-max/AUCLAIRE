@@ -2372,6 +2372,17 @@
       "noWebTasksYet": "Aucune tâche web",
       "noAccountsYet": "Aucun compte enregistré"
     },
+    "quickAction": {
+      "addItem": "Ajouter un élément",
+      "selectionTitle": "Action Rapide",
+      "selectionDesc": "Que voulez-vous créer maintenant ?",
+      "formTitle": "Création Rapide",
+      "create_idea": "Nouvelle idée de contenu",
+      "create_collab": "Nouveau partenaire",
+      "create_campaign": "Nouvelle campagne roadmap",
+      "create_webtask": "Nouvelle tâche site web",
+      "create_account": "Nouveau compte réseaux sociaux"
+    },
     "creative": {
       "title": "Espace Créatif",
       "subtitle": "Vos idées de contenu, scripts et inspirations",

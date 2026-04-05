@@ -2372,6 +2372,17 @@
       "noWebTasksYet": "No web tasks",
       "noAccountsYet": "No accounts registered"
     },
+    "quickAction": {
+      "addItem": "Add item",
+      "selectionTitle": "Quick Action",
+      "selectionDesc": "What do you want to create now?",
+      "formTitle": "Quick Creation",
+      "create_idea": "New content idea",
+      "create_collab": "New partner",
+      "create_campaign": "New roadmap campaign",
+      "create_webtask": "New website task",
+      "create_account": "New social media account"
+    },
     "creative": {
       "title": "Creative Space",
       "subtitle": "Your content ideas, scripts and inspirations",
