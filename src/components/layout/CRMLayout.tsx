@@ -207,7 +207,8 @@ function Sidebar({ role, profile, signOut, setIsMobileOpen, collapsed = false, o
 }
 
 export default function CRMLayout({ children }: { children?: React.ReactNode }) {
-    const { signOut, profile, role } = useAuth()
+    const { signOut, profile, role, isAdmin } = useAuth()
+    console.log("CRMLayout: Role check", { role, isAdmin });
     const { t } = useTranslation()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)

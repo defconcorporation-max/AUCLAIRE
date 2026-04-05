@@ -1,8 +1,8 @@
 import React, { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// Force new deployment: v3.9.0 - Lazy Loading + Design Approval + Dynamic Quotes + Time Tracking + Push Notifications
-console.log("App Version: v3.9.0 - 5 Features Drop");
+// Force new deployment: v4.0.0 - Auclaire Empire Hub (Marketing & Admin Dashboard)
+console.log("App Version: v4.0.0 - Auclaire Empire Hub (Marketing & Admin Dashboard)");
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useAuth } from './context/AuthContext';
