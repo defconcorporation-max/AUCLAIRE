@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formation Malorie — AUCLAIRE EMPIRE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --gold: #d4af37;
+            --gold-light: #f1d592;
+            --gold-dark: #b8962e;
+            --black: #050505;
+            --zinc-950: #09090b;
+            --zinc-900: #18181b;
+            --zinc-800: #27272a;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(212, 175, 55, 0.15);
+            --success: #22c55e;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--black);
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
+        }
+
+        h1, h2, h3, .serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .outfit {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Progress Bar Fixed */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            z-index: 1001;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold-light));
+            box-shadow: 0 0 15px var(--gold);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Sidebar */
+        aside {
+            width: 300px;
+            background: var(--zinc-950);
+            border-right: 1px solid var(--border);
+            padding: 2.5rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            display: block;
+        }
+
+        nav a {
+            color: var(--zinc-400);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.8rem 1.2rem;
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--gold);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            margin-left: 300px;
+            padding: 4rem 6rem;
+            max-width: 1400px;
+        }
+
+        .badge {
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+            color: var(--black);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            line-height: 1;
+            margin-bottom: 5rem;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: var(--zinc-950);
+            border-bottom: 1px solid var(--border);
+            z-index: 999;
+            padding: 0 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--gold);
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            aside {
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+                padding-top: 5rem;
+            }
+
+            aside.open {
+                transform: translateX(0);
+            }
+
+            main {
+                margin-left: 0;
+                padding: 6rem 1.5rem 2rem;
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+                margin-bottom: 3rem;
+            }
+
+            .section-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .routine-billboard {
+                padding: 2rem;
+                border-radius: 24px;
+            }
+
+            .card {
+                padding: 1.5rem;
+                border-radius: 20px;
+            }
+
+            .routine-billboard h2 {
+                font-size: 2rem !important;
+            }
+
+            .quest-list {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .quest-item {
+                padding: 1.2rem;
+            }
+
+            #stats {
+                text-align: left !important;
+                align-items: flex-start !important;
+                margin-top: 1rem;
+            }
+
+            .progress-container {
+                top: 60px;
+            }
+        }
+
+        /* Cards */
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+            gap: 3rem;
+        }
+
+        .card {
+            background: var(--zinc-950);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 3rem;
+            border-radius: 32px;
+            position: relative;
+            transition: 0.5s;
+        }
+
+        .card:hover {
+            border-color: var(--gold);
+            transform: translateY(-5px);
+        }
+
+        .tech-guide {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .tech-guide::before {
+            content: 'INFO APPLI';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: var(--info);
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 800;
+        }
+
+        .tech-step {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .step-num {
+            background: var(--info);
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Routine Billboard */
+        .routine-billboard {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, var(--zinc-900) 0%, var(--black) 100%);
+            border: 1px solid var(--gold);
+            padding: 4rem;
+            border-radius: 40px;
+            margin-bottom: 4rem;
+        }
+
+        .quest-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .quest-item {
+            background: rgba(255,255,255,0.03);
+            padding: 2rem;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .quest-item.completed {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.05);
+            opacity: 0.7;
+        }
+
+        .checkbox-custom {
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--zinc-800);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+
+        .quest-item.completed .checkbox-custom {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        /* Tooltip style Action App */
+        .action-app {
+            color: var(--info);
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .hotkey {
+            background: var(--zinc-800);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            border-bottom: 2px solid var(--zinc-950);
+        }
+
+        .jump-btn {
+            margin-left: auto;
+            color: var(--zinc-600);
+            padding: 8px;
+            border-radius: 8px;
+            transition: 0.3s;
+            opacity: 0;
+        }
+
+        .quest-item:hover .jump-btn {
+            opacity: 1;
+            color: var(--gold);
+        }
+
+        .reset-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--zinc-400);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .reset-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 2000;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-header">
+        <div class="logo-container" style="margin: 0; text-align: left;">
+            <span class="logo" style="font-size: 1.2rem; letter-spacing: 2px;">Auclaire</span>
+        </div>
+        <button class="menu-toggle" onclick="toggleMenu()">
+            <i data-lucide="menu" id="menuIcon"></i>
+        </button>
+    </div>
+
+    <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+
+    <aside id="mainSidebar">
+        <div class="logo-container">
+            <span class="logo">Auclaire</span>
+            <span style="font-size: 0.6rem; letter-spacing: 3px; color: var(--gold); text-transform: uppercase;">Empire Hub</span>
+        </div>
+        <nav id="sidebar">
+            <ul>
+                <li><a href="#routine" class="active"><i data-lucide="zap"></i> <span>Missions Quotidiennes</span></a></li>
+                <li><a href="#projets"><i data-lucide="layout"></i> <span>Dossiers Projets</span></a></li>
+                <li><a href="#finance"><i data-lucide="banknote"></i> <span>Invoicing & Pay</span></a></li>
+                <li><a href="#soumissions"><i data-lucide="shopping-cart"></i> <span>Soumissions</span></a></li>
+                <li><a href="#hebdo"><i data-lucide="calendar"></i> <span>Boss Hebdo</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <div class="header-section">
+            <span class="badge">Guide Technique App</span>
+            <h1 class="serif">L'Art de Gérer<br><span style="color: var(--gold); font-style: italic;">L'Empire Auclaire</span></h1>
+        </div>
+
+        <!-- MISSIONS QUOTIDIENNES -->
+        <section id="routine" class="routine-billboard">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem;">
+                <div>
+                    <h2 class="serif" style="font-size: 3rem;">Routine : Quêtes du Jour</h2>
+                    <p style="color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem;">À valider chaque matin avant 10h</p>
+                </div>
+                <div id="stats" style="text-align: right; font-family: 'Outfit'; display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                    <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                        <span id="completedCount" style="font-size: 3rem; color: var(--gold); font-weight: 700; line-height: 1;">0</span>
+                        <span id="totalCountDisplay" style="color: var(--zinc-400); font-weight: 600;">/ 7 COMPLÉTÉES</span>
+                    </div>
+                    <button class="reset-btn" onclick="resetQuests()">Réinitialiser pour demain</button>
+                </div>
+            </div>
+
+            <div class="quest-list">
+                <div class="quest-item" data-quest="payments" onclick="toggleTask(this)">
+                    <div class="checkbox-custom"><i data-lucide="check" style="width: 16px; color: white;"></i></div>
+                    <div class="quest-text"><strong>Paiements Reçus</strong><p>Vérifier Stripe/Banque et entrer les paiements</p></div>
+                    <a href="#finance" class="jump-btn" onclick="event.stopPropagation()"><i data-lucide="arrow-right-circle"></i></a>
+                </div>
+                <div class="quest-item" data-quest="invoices" onclick="toggleTask(this)">
+                    <div class="checkbox-custom"><i data-lucide="check" style="width: 16px; color: white;"></i></div>
+                    <div class="quest-text"><strong>Nouvelles Factures</strong><p>Créer les factures depuis la page Projet</p></div>
+                    <a href="#finance" class="jump-btn" onclick="event.stopPropagation()"><i data-lucide="arrow-right-circle"></i></a>
+                </div>
+                <div class="quest-item" data-quest="followup_3d" onclick="toggleTask(this)">
+                    <div class="checkbox-custom"><i data-lucide="check" style="width: 16px; color: white;"></i></div>
+                    <div class="quest-text"><strong>Rappels 3D Model</strong><p>Relancer les modèles en retard (statut Design)</p></div>
+                    <a href="#projets" class="jump-btn" onclick="event.stopPropagation()"><i data-lucide="arrow-right-circle"></i></a>
+                </div>
+                <div class="quest-item" data-quest="validate_designs" onclick="toggleTask(this)">
+                    <div class="checkbox-custom"><i data-lucide="check" style="width: 16px; color: white;"></i></div>
+                    <div class="quest-text"><strong>Validation Designs</strong><p>Envoyer les rendus reçus aux clients</p></div>
+                    <a href="#projets" class="jump-btn" onclick="event.stopPropagation()"><i data-lucide="arrow-right-circle"></i></a>
+                </div>
+                <div class="quest-item" data-quest="deadlines" onclick="toggleTask(this)">
+                    <div class="checkbox-custom"><i data-lucide="check" style="width: 16px; color: white;"></i></div>
+                    <div class="quest-text"><strong>Scan des Retards</strong><p>Vérifier toutes les dates limites (Deadlines)</p></div>
+                    <a href="#projets" class="jump-btn" onclick="event.stopPropagation()"><i data-lucide="arrow-right-circle"></i></a>
+                </div>
+                <div class="quest-item" data-quest="crm_clean" onclick="toggleTask(this)">
+                    <div class="checkbox-custom"><i data-lucide="check" style="width: 16px; color: white;"></i></div>
+                    <div class="quest-text"><strong>Nettoyage CRM</strong><p>Clôturer les tâches obsolètes dans CRM > Tasks</p></div>
+                    <a href="#hebdo" class="jump-btn" onclick="event.stopPropagation()"><i data-lucide="arrow-right-circle"></i></a>
+                </div>
+                <div class="quest-item" data-quest="daily_report" onclick="toggleTask(this)">
+                    <div class="checkbox-custom"><i data-lucide="check" style="width: 16px; color: white;"></i></div>
+                    <div class="quest-text"><strong>Rapport du Jour</strong><p>Extraire les metrics (Top Bar > Activity)</p></div>
+                    <a href="#hebdo" class="jump-btn" onclick="event.stopPropagation()"><i data-lucide="arrow-right-circle"></i></a>
+                </div>
+            </div>
+        </section>
+
+        <div class="section-grid">
+            <!-- DOSSIERS PROJETS -->
+            <div id="projets" class="card">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="color: var(--gold);"><i data-lucide="folder-plus" style="width: 32px; height: 32px;"></i></div>
+                    <h3 class="serif" style="font-size: 2rem;">Gestion des Dossiers</h3>
+                </div>
+                <p style="color: var(--zinc-400); margin-bottom: 1.5rem;">C'est ici que tout commence. Un dossier bien monté = une production sans stress.</p>
+                <div class="tech-guide">
+                    <div class="tech-step"><div class="step-num">1</div><span>Va dans <span class="action-app">Projets</span> → <span class="action-app">+ Nouveau Projet</span>.</span></div>
+                    <div class="tech-step"><div class="step-num">2</div><span>Sélectionne le client (ou crée-le s'il est nouveau).</span></div>
+                    <div class="tech-step"><div class="step-num">3</div><span>Remplis : <strong>Titre</strong>, <strong>Deadline</strong> et <strong>Priorité</strong>.</span></div>
+                    <div class="tech-step"><div class="step-num">4</div><span>Dans le projet : Upload les <span class="action-app">fichiers design</span> et <span class="action-app">notes</span>.</span></div>
+                </div>
+            </div>
+
+            <!-- FINANCE -->
+            <div id="finance" class="card">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="color: var(--gold);"><i data-lucide="dollar-sign" style="width: 32px; height: 32px;"></i></div>
+                    <h3 class="serif" style="font-size: 2rem;">Factures & Paiements</h3>
+                </div>
+                <p style="color: var(--zinc-400); margin-bottom: 1.5rem;">L'argent est le nerf de la guerre. Sois implacable sur les suivis.</p>
+                <div class="tech-guide" style="background: rgba(34, 197, 94, 0.05); border-color: rgba(34, 197, 94, 0.1);">
+                    <div class="tech-step" style="color: var(--success);"><i data-lucide="plus-circle" style="width: 14px;"></i> <strong>Créer une Facture (Méthode Rapide) :</strong></div>
+                    <div class="tech-step"><div class="step-num">1</div><span>Ouvre le <span class="action-app">Détail du Projet</span> choisi.</span></div>
+                    <div class="tech-step"><div class="step-num">2</div><span>Va dans l'onglet <span class="action-app">Finance</span> ou cherche en bas à droite la zone "Admin".</span></div>
+                    <div class="tech-step"><div class="step-num">3</div><span>Clique sur <span class="action-app">Créer la facture</span>. Elle se remplira toute seule avec le budget !</span></div>
+                    
+                    <div class="tech-step" style="color: var(--success); margin-top: 15px;"><i data-lucide="check-square" style="width: 14px;"></i> <strong>Enregistrer un Paiement :</strong></div>
+                    <div class="tech-step"><div class="step-num">1</div><span>Dans le menu latéral global : <span class="action-app">Finance</span> → <span class="action-app">Factures</span>.</span></div>
+                    <div class="tech-step"><div class="step-num">2</div><span>Ouvre la facture → Section <span class="action-app">Payments</span> (à droite) → Montant/Date → Save.</span></div>
+                </div>
+            </div>
+
+            <!-- SOUMISSIONS -->
+            <div id="soumissions" class="card">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="color: var(--gold);"><i data-lucide="calculator" style="width: 32px; height: 32px;"></i></div>
+                    <h3 class="serif" style="font-size: 2rem;">Soumissions Rapides</h3>
+                </div>
+                <p style="color: var(--zinc-400); margin-bottom: 1.5rem;">Savoir combien ça coûte AVANT que le client ne le demande.</p>
+                <div class="tech-guide">
+                    <div class="tech-step"><i data-lucide="book-open" style="width: 14px; color: var(--info);"></i> <strong>Le Catalogue :</strong> Ressources → Catalogue.</div>
+                    <div class="tech-step"><i data-lucide="zap" style="width: 14px; color: var(--gold);"></i> <strong>Flash Quote :</strong> Ressources → Calculateur.</div>
+                    <div class="tech-step" style="font-size: 0.75rem; color: var(--zinc-500); border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                        Note : Convertis toujours les prix fournisseur en <strong>$ CAD</strong> avant de doubler pour la vente.
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUIVI 3D & APPROBATION -->
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="color: var(--gold);"><i data-lucide="box" style="width: 32px; height: 32px;"></i></div>
+                    <h3 class="serif" style="font-size: 2rem;">Suivi 3D & Design</h3>
+                </div>
+                <p style="color: var(--zinc-400); margin-bottom: 1.5rem;">C'est ici que Malorie devient la "Boss" du fournisseur.</p>
+                <div class="tech-guide">
+                    <div class="tech-step"><div class="step-num">1</div><span>Ouvre le <span class="action-app">Détail du Projet</span>.</span></div>
+                    <div class="tech-step"><div class="step-num">2</div><span>Change le statut en <span class="action-app">Waiting for Approval</span> quand le rendu est prêt.</span></div>
+                    <div class="tech-step"><div class="step-num">3</div><span>Relance par SMS/Chat si pas de réponse client sous 24h.</span></div>
+                </div>
+            </div>
+
+            <!-- GESTION DES COÛTS & PROD -->
+            <div class="card" style="grid-column: 1 / -1; border-color: var(--gold-dark);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="color: var(--gold);"><i data-lucide="coins" style="width: 32px; height: 32px;"></i></div>
+                    <h3 class="serif" style="font-size: 2rem;">Gestion des Coûts Fournisseurs (USD → CAD)</h3>
+                </div>
+                <p style="color: var(--zinc-400); margin-bottom: 1.5rem;">Dès qu'un projet passe en <strong>Production</strong>, Malorie doit sécuriser les chiffres.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div class="tech-guide" style="background: rgba(212, 175, 55, 0.05);">
+                        <div class="tech-step" style="color: var(--gold-light); font-weight: 700;">Étape 1 : Conversion & Titrage</div>
+                        <div class="tech-step"><div class="step-num">1</div><span>Trouve le coût entré par le fournisseur (souvent en USD).</span></div>
+                        <div class="tech-step"><div class="step-num">2</div><span>Convertis le montant en <strong>$ CAD</strong> (taux du jour).</span></div>
+                        <div class="tech-step"><div class="step-num">3</div><span>Modifie le titre du coût : ajoute l'USD entre parenthèses.</span></div>
+                        <div class="tech-step" style="padding-left: 28px; font-size: 0.75rem; font-style: italic;">Ex: "Fabrication (120 USD)"</div>
+                        <div class="tech-step"><div class="step-num">4</div><span>Remplace le montant par le prix converti en <strong>CAD</strong>.</span></div>
+                    </div>
+
+                    <div class="tech-guide" style="background: rgba(59, 130, 246, 0.05);">
+                        <div class="tech-step" style="color: var(--info); font-weight: 700;">Étape 2 : Export & Vérification</div>
+                        <div class="tech-step"><div class="step-num">1</div><span>Vérifie que le <strong>Vendeur</strong> (Manufacturer) est bien assigné au projet.</span></div>
+                        <div class="tech-step"><div class="step-num">2</div><span>Vérifie la <strong>Commission</strong> (Affilié) : le montant semble-t-il juste ?</span></div>
+                        <div class="tech-step"><div class="step-num">3</div><span>Dans la zone "Admin Financials", clique sur <span class="action-app">🚀 Envoyer aux dépenses</span>.</span></div>
+                        <div class="tech-step" style="padding-left: 28px; font-size: 0.75rem; color: var(--zinc-500);">Cela crée automatiquement une entrée dans la comptabilité globale.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MISSIONS SPÉCIALES -->
+        <h2 class="serif" style="font-size: 3rem; margin: 4rem 0 2rem; color: var(--gold);">Missions Spéciales</h2>
+        
+        <div class="routine-grid" style="margin-bottom: 4rem;">
+            <!-- CRM & AFFILIÉS -->
+            <div class="card" style="border-color: var(--info);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="color: var(--info);"><i data-lucide="users" style="width: 32px; height: 32px;"></i></div>
+                    <h3 class="serif" style="font-size: 2rem;">CRM & Affiliés</h3>
+                </div>
+                <p style="color: var(--zinc-400); margin-bottom: 1.5rem;">Gérer la croissance de l'Empire en gardant le CRM propre.</p>
+                <div class="tech-guide" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.1);">
+                    <div class="tech-step" style="color: var(--info);"><strong>Nettoyage des Tâches :</strong></div>
+                    <div class="tech-step"><div class="step-num">1</div><span>Va dans <span class="action-app">CRM > Tasks</span>.</span></div>
+                    <div class="tech-step"><div class="step-num">2</div><span>Filtre sur <span class="action-app">Pending</span>.</span></div>
+                    <div class="tech-step"><div class="step-num">3</div><span>Relance les agents pour les tâches en retard ou clôture celles qui sont finies.</span></div>
+                    
+                    <div class="tech-step" style="color: var(--info); margin-top: 15px;"><strong>Onboarding Affiliés :</strong></div>
+                    <div class="tech-step"><div class="step-num">1</div><span>Va dans <span class="action-app">Marketing > Collaborations</span>.</span></div>
+                    <div class="tech-step"><div class="step-num">2</div><span>Clique sur <span class="action-app">+ Add Collaboration</span>.</span></div>
+                    <div class="tech-step"><div class="step-num">3</div><span>Remplis le profil et envoie-leur leur lien de portail partenaire.</span></div>
+                </div>
+            </div>
+
+            <!-- LOGISTIQUE & REPORTING -->
+            <div class="card" style="border-color: var(--success);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="color: var(--success);"><i data-lucide="truck" style="width: 32px; height: 32px;"></i></div>
+                    <h3 class="serif" style="font-size: 2rem;">Logistique & Reporting</h3>
+                </div>
+                <p style="color: var(--zinc-400); margin-bottom: 1.5rem;">S'assurer que tout arrive à bon port et informer le Boss.</p>
+                <div class="tech-guide" style="background: rgba(34, 197, 94, 0.05); border-color: rgba(34, 197, 94, 0.1);">
+                    <div class="tech-step" style="color: var(--success);"><strong>Suivi des Colis (Tracking) :</strong></div>
+                    <div class="tech-step"><div class="step-num">1</div><span>Ouvre le <span class="action-app">Projet</span> et cherche le champ <span class="action-app">Tracking</span>.</span></div>
+                    <div class="tech-step"><div class="step-num">2</div><span>Si "Livré", passe le projet en statut <span class="action-app">Completed</span>.</span></div>
+                    
+                    <div class="tech-step" style="color: var(--success); margin-top: 15px;"><strong>Rapport de Fin de Journée :</strong></div>
+                    <div class="tech-step"><div class="step-num">1</div><span>Clique sur le bouton <span class="action-app">Activity</span> (Top Bar, à gauche).</span></div>
+                    <div class="tech-step"><div class="step-num">2</div><span>Sélectionne <span class="action-app">Day</span>. Note : Invoiced, Collected et Spent.</span></div>
+                    <div class="tech-step"><div class="step-num">3</div><span>Envoie le résumé par Chat : "X facturé, Y encaissé, Z dépensé."</span></div>
+                </div>
+            </div>
+        </div>
+
+        <section id="hebdo" class="routine-billboard" style="border-color: var(--info); margin-top: 4rem;">
+            <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem;">
+                <div style="color: var(--info);"><i data-lucide="shield-alert" style="width: 60px; height: 60px;"></i></div>
+                <h2 class="serif" style="font-size: 3rem;">Le Boss du Lundi : Les Dépenses</h2>
+            </div>
+            <div class="tech-guide" style="background: rgba(255, 255, 255, 0.02); padding: 2rem;">
+                <p style="margin-bottom: 1rem; font-weight: 700;">Chaque lundi matin, entre les données financières de la semaine passée :</p>
+                <div class="tech-step"><span class="step-num">1</span><span>Va dans <span class="action-app">Finance</span> → <span class="action-app">Dépenses</span> → <span class="action-app">+ Ajouter une dépense</span>.</span></div>
+                <div class="tech-step"><span class="step-num">2</span><span><strong>Facebook Ads :</strong> Catégorie <span class="action-app">Marketing</span>.</span></div>
+                <div class="tech-step"><span class="step-num">3</span><span><strong>Frais Stripe :</strong> Catégorie <span class="action-app">Operational</span>.</span></div>
+                <div class="tech-step"><span class="step-num">4</span><span><strong>Abonnements (Logiciels) :</strong> Catégorie <span class="action-app">Software</span>.</span></div>
+            </div>
+        </section>
+
+        <section style="margin-top: 8rem; text-align: center; opacity: 0.8;">
+            <span class="mono" style="font-size: 0.7rem; letter-spacing: 5px;">DEFCON ENTERPRISE INTELLIGENCE</span>
+            <p style="color: var(--zinc-600); margin-top: 10px;">Système optimisé pour une efficacité maximale.</p>
+        </section>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // Load progress on start
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = JSON.parse(localStorage.getItem('malorie_quests') || '{}');
+            document.querySelectorAll('.quest-item').forEach(item => {
+                const questId = item.dataset.quest;
+                if (saved[questId]) {
+                    item.classList.add('completed');
+                }
+            });
+            updateProgress(false); // No celebrate on initial load
+        });
+
+        function updateProgress(canCelebrate = true) {
+            const all = document.querySelectorAll('.quest-item');
+            const done = document.querySelectorAll('.quest-item.completed');
+            const percent = (done.length / all.length) * 100;
+            
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('completedCount').innerText = done.length;
+            document.getElementById('totalCountDisplay').innerText = `/ ${all.length} COMPLÉTÉES`;
+            
+            // Save each time
+            const state = {};
+            all.forEach(item => {
+                state[item.dataset.quest] = item.classList.contains('completed');
+            });
+            localStorage.setItem('malorie_quests', JSON.stringify(state));
+
+            if (percent === 100) {
+                if (canCelebrate) celebrate();
+            } else {
+                document.querySelector('.routine-billboard').style.boxShadow = 'none';
+                document.getElementById('stats').style.color = 'inherit';
+            }
+        }
+
+        function toggleTask(el) {
+            el.classList.toggle('completed');
+            updateProgress(true);
+        }
+
+        function resetQuests() {
+            if (confirm("Réinitialiser toutes les quêtes pour une nouvelle journée ?")) {
+                document.querySelectorAll('.quest-item').forEach(item => {
+                    item.classList.remove('completed');
+                });
+                updateProgress(false);
+            }
+        }
+
+        function celebrate() {
+            document.querySelector('.routine-billboard').style.boxShadow = '0 0 80px rgba(212, 175, 55, 0.2)';
+            document.getElementById('stats').style.color = 'var(--gold)';
+            
+            // Confetti effect
+            for (let i = 0; i < 50; i++) {
+                createConfetti();
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#d4af37', '#f1d592', '#ffffff', '#22c55e', '#3b82f6'];
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.top = '-10px';
+            confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+            
+            const animationDuration = Math.random() * 2 + 1;
+            confetti.style.animation = `confetti-fall ${animationDuration}s linear forwards`;
+            
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), animationDuration * 1000);
+        }
+
+        // Observer for Active Navigation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const id = entry.target.getAttribute('id');
+                const link = document.querySelector(`nav a[href="#${id}"]`);
+                if (entry.isIntersecting && link) {
+                    document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('section, h2.serif').forEach(s => observer.observe(s));
+
+        // Mobile Menu Logic
+        function toggleMenu() {
+            const sidebar = document.getElementById('mainSidebar');
+            const icon = document.getElementById('menuIcon');
+            sidebar.classList.toggle('open');
+            
+            const isOpen = sidebar.classList.contains('open');
+            icon.setAttribute('data-lucide', isOpen ? 'x' : 'menu');
+            lucide.createIcons();
+            
+            // Close menu if clicking outside
+            if (isOpen) {
+                const backdrop = document.createElement('div');
+                backdrop.id = 'menuBackdrop';
+                backdrop.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:90;';
+                backdrop.onclick = toggleMenu;
+                document.body.appendChild(backdrop);
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.getElementById('menuBackdrop')?.remove();
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Close menu on link click
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) toggleMenu();
+            });
+        });
+    </script>
+</body>
+</html>
