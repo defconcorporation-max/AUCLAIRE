@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { apiClients, Client } from '@/services/apiClients';
+import { apiClients } from '@/services/apiClients';
 import { apiInvoices, Invoice } from '@/services/apiInvoices';
 import { apiProjects, Project } from '@/services/apiProjects';
 import { apiUsers } from '@/services/apiUsers';
@@ -336,7 +336,6 @@ export function useAnalyticsData(timeframe: Timeframe, selectedSellerId?: string
             approved_for_production: 0.9, production: 1.0, delivery: 1.0, completed: 1.0,
         };
 
-        const currentMonthIdx = new Date().getMonth();
         const forecast: ForecastPoint[] = [
             { name: t('analyticsPage.forecastMonth0'), projected: 0 },
             { name: t('analyticsPage.forecastMonth1'), projected: 0 },
@@ -485,7 +484,7 @@ export function useAnalyticsData(timeframe: Timeframe, selectedSellerId?: string
 
         // ─── AI Insights ────────────────────────────────────────
 
-        const insights = generateInsights(t, filteredProjects, filteredInvoices, filteredExpenses, chartData, leaderboard, clients);
+        const insights = generateInsights(t, filteredProjects, filteredInvoices, filteredExpenses, chartData);
 
         // ─── Pipeline Totals ────────────────────────────────────
 
@@ -526,15 +525,11 @@ function generateInsights(
     projects: Project[],
     invoices: Invoice[],
     expenses: Expense[],
-    chartData: ChartDataPoint[],
-    leaderboard: SellerStat[],
-    clients: Client[]
+    chartData: ChartDataPoint[]
 ): Insight[] {
     const ti = (key: string, opts?: Record<string, string | number>) =>
         t(`analyticsPage.insights.${key}`, opts as Record<string, unknown>);
     const insights: Insight[] = [];
-    const now = new Date();
-    const currentMonth = now.getMonth();
 
     // 1. Revenue Trend (based on chartData buckets)
     if (chartData.length >= 2) {
