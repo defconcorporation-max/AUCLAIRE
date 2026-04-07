@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiClients, Client } from '@/services/apiClients';
 import { apiInvoices, Invoice } from '@/services/apiInvoices';
 import { apiProjects, Project } from '@/services/apiProjects';
-import { apiUsers, UserProfile } from '@/services/apiUsers';
+import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses, Expense } from '@/services/apiExpenses';
 import { apiActivities, ActivityLog } from '@/services/apiActivities';
 import { financialUtils } from '@/utils/financialUtils';
