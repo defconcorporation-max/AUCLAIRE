@@ -1,14 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem } from 'lucide-react';
+import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem, Target, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
 import { apiSettings } from '@/services/apiSettings';
-import { useAnalyticsData, type Timeframe, type Insight, type JewelryRow, type ManufacturerStat, type SellerStat, type TrendData, type MonthlyDataPoint, type ForecastPoint } from '@/hooks/useAnalyticsData';
+import { useAnalyticsData, type Timeframe, type Insight, type JewelryRow, type ManufacturerStat, type SellerStat, type TrendData, type ChartDataPoint, type ForecastPoint } from '@/hooks/useAnalyticsData';
 
 // ═══════════════════════════════════════════════════════════════
 //  ANALYTICS DASHBOARD — Modular, Hook-Driven
@@ -17,7 +18,10 @@ import { useAnalyticsData, type Timeframe, type Insight, type JewelryRow, type M
 export default function AnalyticsDashboard() {
     const { t } = useTranslation();
     const [timeframe, setTimeframe] = useState<Timeframe>('month');
-    const data = useAnalyticsData(timeframe);
+    const [selectedSellerId, setSelectedSellerId] = useState<string | null>(null);
+    
+    // Hook handles all computation and filtering
+    const data = useAnalyticsData(timeframe, selectedSellerId);
 
     if (data.isLoading) {
         return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">{t('analyticsPage.loading')}</div>;
@@ -25,12 +29,16 @@ export default function AnalyticsDashboard() {
 
     if (!data.trendData) return null;
 
+    const selectedSeller = selectedSellerId ? data.users.find(u => u.id === selectedSellerId) : null;
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
             {/* Header + Timeframe Selector */}
             <DashboardHeader
                 timeframe={timeframe}
                 setTimeframe={setTimeframe}
+                selectedSellerName={selectedSeller?.full_name}
+                onClearSeller={() => setSelectedSellerId(null)}
                 onExport={async () => {
                     const settings = await apiSettings.get();
                     generateMonthlyReportPDF({ invoices: data.invoices, expenses: data.expenses, projects: data.projects, month: new Date(), settings });
@@ -38,25 +46,38 @@ export default function AnalyticsDashboard() {
             />
 
             {/* Top KPI Cards */}
-            <KpiGrid trendData={data.trendData} timeframe={timeframe} weightedPipeline={data.weightedPipeline!} />
+            <KpiGrid 
+                trendData={data.trendData} 
+                timeframe={timeframe} 
+                weightedPipeline={data.weightedPipeline!} 
+                conversionRate={data.conversionRate!}
+            />
 
             {/* Revenue Chart + Top Seller */}
             <div className="grid gap-6 md:grid-cols-3">
                 <RevenueChart
-                    monthlyData={data.monthlyData!}
+                    chartData={data.chartData!}
                     currentYear={data.currentYear!}
+                    timeframe={timeframe}
                 />
-                <TopSellerCard leaderboard={data.leaderboard!} />
+                <TopSellerCard 
+                    leaderboard={data.leaderboard!} 
+                    onSelectSeller={setSelectedSellerId}
+                />
             </div>
 
             {/* Forecast */}
             <ForecastChart forecast={data.forecast!} />
 
-            {/* Manufacturer Scorecards */}
-            <ManufacturerTable scorecards={data.manufacturerScorecard!} />
+            {/* Manufacturer Scorecards (Only show if no specific seller is filtered for clarity) */}
+            {!selectedSellerId && <ManufacturerTable scorecards={data.manufacturerScorecard!} />}
 
             {/* Seller Leaderboard */}
-            <SellerLeaderboard leaderboard={data.leaderboard!} />
+            <SellerLeaderboard 
+                leaderboard={data.leaderboard!} 
+                selectedSellerId={selectedSellerId}
+                onSelectSeller={setSelectedSellerId}
+            />
 
             {/* AI Insights */}
             <InsightsPanel insights={data.insights!} />
@@ -71,7 +92,19 @@ export default function AnalyticsDashboard() {
 //  SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════
 
-function DashboardHeader({ timeframe, setTimeframe, onExport }: { timeframe: Timeframe; setTimeframe: (t: Timeframe) => void; onExport: () => void }) {
+function DashboardHeader({ 
+    timeframe, 
+    setTimeframe, 
+    onExport, 
+    selectedSellerName, 
+    onClearSeller 
+}: { 
+    timeframe: Timeframe; 
+    setTimeframe: (t: Timeframe) => void; 
+    onExport: () => void;
+    selectedSellerName?: string;
+    onClearSeller: () => void;
+}) {
     const { t } = useTranslation();
     const labels: Record<Timeframe, string> = {
         day: t('analyticsPage.periodDay'),
@@ -83,8 +116,20 @@ function DashboardHeader({ timeframe, setTimeframe, onExport }: { timeframe: Tim
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">{t('analyticsPage.title')}</h1>
-                <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">{t('analyticsPage.subtitle')}</p>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">{t('analyticsPage.title')}</h1>
+                    {selectedSellerName && (
+                        <Badge variant="outline" className="h-8 pl-3 pr-1 gap-2 bg-luxury-gold/10 border-luxury-gold text-luxury-gold rounded-full font-sans uppercase tracking-widest text-[10px]">
+                            {selectedSellerName}
+                            <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full hover:bg-luxury-gold/20 p-0" onClick={onClearSeller}>
+                                <X className="h-3 w-3" />
+                            </Button>
+                        </Badge>
+                    )}
+                </div>
+                <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">
+                    {selectedSellerName ? t('analyticsPage.viewingStatsFor', { name: selectedSellerName }) : t('analyticsPage.subtitle')}
+                </p>
             </div>
             <div className="flex items-center gap-3">
                 <Button
@@ -118,14 +163,21 @@ function DashboardHeader({ timeframe, setTimeframe, onExport }: { timeframe: Tim
     );
 }
 
-function KpiGrid({ trendData, timeframe, weightedPipeline }: { trendData: TrendData; timeframe: Timeframe; weightedPipeline: number }) {
+function KpiGrid({ trendData, timeframe, weightedPipeline, conversionRate }: { trendData: TrendData; timeframe: Timeframe; weightedPipeline: number; conversionRate: number }) {
     const { t } = useTranslation();
     const showTrend = timeframe !== 'total';
 
     const kpis = [
         { label: t('analyticsPage.kpiAvgOrder'), value: formatCurrency(trendData.current.avgOrder), growth: trendData.growth.avgOrder, icon: <Briefcase className="h-4 w-4 text-luxury-gold" />, border: '' },
         { label: t('analyticsPage.kpiCashCollected'), value: formatCurrency(trendData.current.collected), growth: trendData.growth.collected, icon: <Banknote className="h-4 w-4 text-green-500" />, border: '' },
-        { label: t('analyticsPage.kpiNewClients'), value: String(trendData.current.clients), growth: trendData.growth.clients, icon: <Users className="h-4 w-4 text-blue-500" />, border: '' },
+        { 
+            label: t('analyticsPage.conversionRate', 'Taux de Conversion'), 
+            value: `${conversionRate}%`, 
+            growth: 0, 
+            icon: <Target className="h-4 w-4 text-purple-500" />, 
+            border: '',
+            hideTrend: true
+        },
         { label: t('analyticsPage.kpiProfit'), value: formatCurrency(trendData.current.profit), growth: trendData.growth.profit, icon: <TrendingUp className="h-4 w-4 text-green-600" />, border: 'border-l-green-500/50', valueClass: trendData.current.profit >= 0 ? '' : 'text-red-500' },
         { label: t('analyticsPage.kpiOutstanding'), value: formatCurrency(trendData.current.outstanding), growth: trendData.growth.outstanding, icon: <Banknote className="h-4 w-4 text-orange-500" />, border: 'border-l-red-500/50' },
     ];
@@ -141,7 +193,7 @@ function KpiGrid({ trendData, timeframe, weightedPipeline }: { trendData: TrendD
                     <CardContent>
                         <div className="flex items-baseline justify-between">
                             <div className={`text-3xl font-serif text-black dark:text-white ${kpi.valueClass || ''}`}>{kpi.value}</div>
-                            {showTrend && <TrendBadge value={kpi.growth} label={trendData.label} />}
+                            {showTrend && !kpi.hideTrend && <TrendBadge value={kpi.growth} label={trendData.label} />}
                         </div>
                     </CardContent>
                 </Card>
@@ -162,18 +214,23 @@ function KpiGrid({ trendData, timeframe, weightedPipeline }: { trendData: TrendD
     );
 }
 
-function RevenueChart({ monthlyData, currentYear }: { monthlyData: MonthlyDataPoint[]; currentYear: number }) {
+function RevenueChart({ chartData, currentYear, timeframe }: { chartData: ChartDataPoint[]; currentYear: number; timeframe: Timeframe }) {
     const { t } = useTranslation();
+    
+    let chartTitle = t('analyticsPage.chartAnnualTitle', { year: currentYear });
+    if (timeframe === 'day') chartTitle = t('analyticsPage.chartDailyTitle', 'Activité des dernières 24h');
+    if (timeframe === 'week') chartTitle = t('analyticsPage.chartWeeklyTitle', 'Activité des 7 derniers jours');
+
     return (
         <Card className="md:col-span-2 border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
             <CardHeader>
-                <CardTitle className="font-serif text-xl">{t('analyticsPage.chartAnnualTitle', { year: currentYear })}</CardTitle>
+                <CardTitle className="font-serif text-xl">{chartTitle}</CardTitle>
                 <CardDescription>{t('analyticsPage.chartAnnualDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="h-[300px] w-full mt-4">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorInvoiced" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#A68A56" stopOpacity={0.3} />
@@ -188,8 +245,8 @@ function RevenueChart({ monthlyData, currentYear }: { monthlyData: MonthlyDataPo
                                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
+                            <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
                             <Tooltip
                                 formatter={(value: number) => [formatCurrency(value), ""]}
@@ -206,7 +263,7 @@ function RevenueChart({ monthlyData, currentYear }: { monthlyData: MonthlyDataPo
     );
 }
 
-function TopSellerCard({ leaderboard }: { leaderboard: SellerStat[] }) {
+function TopSellerCard({ leaderboard, onSelectSeller }: { leaderboard: SellerStat[]; onSelectSeller: (id: string) => void }) {
     const { t } = useTranslation();
     return (
         <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
@@ -218,12 +275,15 @@ function TopSellerCard({ leaderboard }: { leaderboard: SellerStat[] }) {
             </CardHeader>
             <CardContent className="flex flex-col justify-center h-[300px] mt-4">
                 {leaderboard.length > 0 ? (
-                    <div className="text-center space-y-6">
-                        <div className="inline-flex items-center justify-center p-6 bg-luxury-gold/10 rounded-full ring-2 ring-luxury-gold/30">
+                    <div 
+                        className="text-center space-y-6 cursor-pointer group"
+                        onClick={() => onSelectSeller(leaderboard[0].id)}
+                    >
+                        <div className="inline-flex items-center justify-center p-6 bg-luxury-gold/10 rounded-full ring-2 ring-luxury-gold/30 group-hover:scale-110 transition-transform">
                             <Trophy className="w-12 h-12 text-luxury-gold" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-serif text-black dark:text-white">{leaderboard[0].name}</h3>
+                            <h3 className="text-2xl font-serif text-black dark:text-white group-hover:text-luxury-gold transition-colors">{leaderboard[0].name}</h3>
                             <p className="text-luxury-gold mt-1 uppercase tracking-widest text-sm font-semibold">
                                 {t('analyticsPage.topSellerGenerated', { amount: formatCurrency(leaderboard[0].volume) })}
                             </p>
@@ -356,7 +416,15 @@ function ManufacturerTable({ scorecards }: { scorecards: ManufacturerStat[] }) {
     );
 }
 
-function SellerLeaderboard({ leaderboard }: { leaderboard: SellerStat[] }) {
+function SellerLeaderboard({ 
+    leaderboard, 
+    selectedSellerId, 
+    onSelectSeller 
+}: { 
+    leaderboard: SellerStat[]; 
+    selectedSellerId?: string | null;
+    onSelectSeller: (id: string) => void;
+}) {
     const { t } = useTranslation();
     return (
         <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
@@ -378,7 +446,11 @@ function SellerLeaderboard({ leaderboard }: { leaderboard: SellerStat[] }) {
                     </TableHeader>
                     <TableBody>
                         {leaderboard.map((seller, idx) => (
-                            <TableRow key={seller.id} className="border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <TableRow 
+                                key={seller.id} 
+                                className={`border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer ${selectedSellerId === seller.id ? 'bg-luxury-gold/10' : ''}`}
+                                onClick={() => onSelectSeller(seller.id)}
+                            >
                                 <TableCell className="text-center font-serif text-lg text-gray-500">
                                     {idx === 0 ? <span className="text-luxury-gold">1</span> : idx + 1}
                                 </TableCell>

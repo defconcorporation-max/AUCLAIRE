@@ -84,8 +84,8 @@ export interface TrendData {
     };
 }
 
-export interface MonthlyDataPoint {
-    month: string;
+export interface ChartDataPoint {
+    label: string;
     collected: number;
     invoiced: number;
     expenses: number;
@@ -133,7 +133,7 @@ export interface Insight {
 
 // ─── Main Hook ──────────────────────────────────────────────────
 
-export function useAnalyticsData(timeframe: Timeframe) {
+export function useAnalyticsData(timeframe: Timeframe, selectedSellerId?: string | null) {
     const { t, i18n } = useTranslation();
     const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
 
@@ -156,6 +156,22 @@ export function useAnalyticsData(timeframe: Timeframe) {
         const PRODUCTION_READY_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
         const isProjectASale = (p: Project) => PRODUCTION_READY_STATUSES.includes(p.status) || invoices.some(inv => inv.project_id === p.id);
 
+        // Filter datasets if a seller is selected
+        const filteredProjects = selectedSellerId 
+            ? projects.filter(p => p.sales_agent_id === selectedSellerId || p.affiliate_id === selectedSellerId)
+            : projects;
+        
+        const filteredInvoices = selectedSellerId
+            ? invoices.filter(inv => {
+                const p = projects.find(proj => proj.id === inv.project_id);
+                return p && (p.sales_agent_id === selectedSellerId || p.affiliate_id === selectedSellerId);
+            })
+            : invoices;
+
+        const filteredExpenses = selectedSellerId
+            ? expenses.filter(exp => exp.recipient_id === selectedSellerId || (exp.project_id && projects.find(proj => proj.id === exp.project_id)?.sales_agent_id === selectedSellerId))
+            : expenses;
+
         // ─── Trend Data ─────────────────────────────────────────
 
         const { start: startCurr } = financialUtils.getPeriodRange(timeframe);
@@ -176,7 +192,7 @@ export function useAnalyticsData(timeframe: Timeframe) {
         }
 
         const getStatsForRange = (start: Date, end: Date) => {
-            const periodInvoices = invoices.filter(inv => {
+            const periodInvoices = filteredInvoices.filter(inv => {
                 const date = new Date(inv.created_at);
                 return date >= start && date <= end && inv.status !== 'void';
             });
@@ -184,19 +200,21 @@ export function useAnalyticsData(timeframe: Timeframe) {
                 const date = new Date(c.created_at);
                 return date >= start && date <= end;
             });
-            const periodExpenses = expenses.filter(exp => {
+            const periodExpenses = filteredExpenses.filter(exp => {
                 const date = new Date(exp.created_at);
                 return date >= start && date <= end && exp.status !== 'cancelled';
             });
 
-            const collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
+            const collected = financialUtils.getCollectedFromInvoices(filteredInvoices, start, end);
             const invoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
             const expAmount = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
             const count = periodInvoices.length;
             const avgOrder = count > 0 ? Math.round(invoiced / count) : 0;
             const profit = collected - expAmount;
-            const outstanding = invoiced - collected;
+            
+            // Correction Phase 1: Global Outstanding
+            const outstanding = financialUtils.getOutstandingBalance(filteredInvoices);
 
             return { collected, invoiced, avgOrder, clients: periodClients.length, expenses: expAmount, profit, outstanding };
         };
@@ -222,37 +240,58 @@ export function useAnalyticsData(timeframe: Timeframe) {
             }
         };
 
-        // ─── Monthly Revenue Chart ──────────────────────────────
+        // ─── Dynamic Chart Data (Phase 3) ───────────────────────
 
-        const currentYear = new Date().getFullYear();
-        const monthlyData: MonthlyDataPoint[] = [...Array(12)].map((_, monthIdx) => ({
-            month: new Date(currentYear, monthIdx, 1).toLocaleDateString(localeTag, { month: 'short' }),
-            collected: 0,
-            invoiced: 0,
-            expenses: 0,
-        }));
+        let chartData: ChartDataPoint[] = [];
 
-        monthlyData.forEach((_, monthIdx) => {
-            const start = new Date(currentYear, monthIdx, 1, 0, 0, 0, 0);
-            const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59, 999);
-            monthlyData[monthIdx].collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
-        });
-
-        invoices.forEach(inv => {
-            if (inv.status === 'void') return;
-            const createdDate = new Date(inv.created_at);
-            if (createdDate.getFullYear() === currentYear) {
-                monthlyData[createdDate.getMonth()].invoiced += Number(inv.amount || 0);
+        if (timeframe === 'day') {
+            // Last 24 hours
+            const now = new Date();
+            for (let i = 23; i >= 0; i--) {
+                const d = new Date(now.getTime() - i * 60 * 60 * 1000);
+                const start = new Date(d.setMinutes(0, 0, 0));
+                const end = new Date(d.setMinutes(59, 59, 999));
+                chartData.push({
+                    label: d.toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' }),
+                    collected: financialUtils.getCollectedFromInvoices(filteredInvoices, start, end),
+                    invoiced: filteredInvoices.filter(inv => { const dIn = new Date(inv.created_at); return dIn >= start && dIn <= end && inv.status !== 'void'; }).reduce((s, i) => s + Number(i.amount), 0),
+                    expenses: filteredExpenses.filter(e => { const dE = new Date(e.created_at); return dE >= start && dE <= end && e.status !== 'cancelled'; }).reduce((s, e) => s + Number(e.amount), 0),
+                });
             }
-        });
-
-        expenses.forEach(exp => {
-            if (exp.status === 'cancelled') return;
-            const date = new Date(exp.created_at);
-            if (date.getFullYear() === currentYear) {
-                monthlyData[date.getMonth()].expenses += Number(exp.amount || 0);
+        } else if (timeframe === 'week') {
+            // Last 7 days
+            const now = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+                const start = new Date(d.setHours(0, 0, 0, 0));
+                const end = new Date(d.setHours(23, 59, 59, 999));
+                chartData.push({
+                    label: d.toLocaleDateString(localeTag, { weekday: 'short' }),
+                    collected: financialUtils.getCollectedFromInvoices(filteredInvoices, start, end),
+                    invoiced: filteredInvoices.filter(inv => { const dIn = new Date(inv.created_at); return dIn >= start && dIn <= end && inv.status !== 'void'; }).reduce((s, i) => s + Number(i.amount), 0),
+                    expenses: filteredExpenses.filter(e => { const dE = new Date(e.created_at); return dE >= start && dE <= end && e.status !== 'cancelled'; }).reduce((s, e) => s + Number(e.amount), 0),
+                });
             }
-        });
+        } else {
+            // Default 12 months for month/total
+            const currentYear = new Date().getFullYear();
+            chartData = [...Array(12)].map((_, monthIdx) => {
+                const start = new Date(currentYear, monthIdx, 1, 0, 0, 0, 0);
+                const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59, 999);
+                return {
+                    label: new Date(currentYear, monthIdx, 1).toLocaleDateString(localeTag, { month: 'short' }),
+                    collected: financialUtils.getCollectedFromInvoices(filteredInvoices, start, end),
+                    invoiced: filteredInvoices.filter(inv => { 
+                        const dIn = new Date(inv.created_at); 
+                        return dIn.getFullYear() === currentYear && dIn.getMonth() === monthIdx && inv.status !== 'void'; 
+                    }).reduce((s, i) => s + Number(i.amount), 0),
+                    expenses: filteredExpenses.filter(e => { 
+                        const dE = new Date(e.created_at); 
+                        return dE.getFullYear() === currentYear && dE.getMonth() === monthIdx && e.status !== 'cancelled'; 
+                    }).reduce((s, e) => s + Number(e.amount), 0),
+                };
+            });
+        }
 
         // ─── Seller Leaderboard ─────────────────────────────────
 
@@ -299,12 +338,16 @@ export function useAnalyticsData(timeframe: Timeframe) {
 
         const currentMonthIdx = new Date().getMonth();
         const forecast: ForecastPoint[] = [
-            { name: t('analyticsPage.forecastMonth0'), projected: monthlyData[currentMonthIdx].collected },
+            { name: t('analyticsPage.forecastMonth0'), projected: 0 },
             { name: t('analyticsPage.forecastMonth1'), projected: 0 },
             { name: t('analyticsPage.forecastMonth2'), projected: 0 },
         ];
+        
+        // Month 0 anchor
+        const m0Start = new Date(); m0Start.setDate(1); m0Start.setHours(0,0,0,0);
+        forecast[0].projected = financialUtils.getCollectedFromInvoices(filteredInvoices, m0Start, new Date());
 
-        projects.forEach(p => {
+        filteredProjects.forEach(p => {
             if (p.status === 'completed' || p.status === 'cancelled') return;
             const totalValue = getSalePrice(p);
             const paidSoFar = Number(p.financials?.paid_amount || 0);
@@ -361,7 +404,7 @@ export function useAnalyticsData(timeframe: Timeframe) {
             manufacturerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, totalProdDays: 0, prodCount: 0, modCount: 0 };
         });
 
-        projects.forEach(p => {
+        filteredProjects.forEach(p => {
             if (p.manufacturer_id && manufacturerStats[p.manufacturer_id]) {
                 manufacturerStats[p.manufacturer_id].projectCount++;
                 manufacturerStats[p.manufacturer_id].volume += getSalePrice(p);
@@ -404,7 +447,7 @@ export function useAnalyticsData(timeframe: Timeframe) {
 
         // ─── Jewelry Profitability ──────────────────────────────
 
-        const categories: Record<string, { count: number; revenue: number; costs: number }> = {};
+        const categoryStats: Record<string, { count: number; revenue: number; costs: number }> = {};
         const autoDetect = (title: string): string => {
             const tl = title.toLowerCase();
             if (tl.includes('ring') || tl.includes('bague') || tl.includes('engagement') || tl.includes('chevalier')) return 'Bague';
@@ -415,18 +458,17 @@ export function useAnalyticsData(timeframe: Timeframe) {
             return 'Autre';
         };
 
-        projects.forEach((p: Project) => {
+        filteredProjects.forEach((p: Project) => {
             const cat = p.jewelry_type || autoDetect(p.title || '');
-            if (!categories[cat]) categories[cat] = { count: 0, revenue: 0, costs: 0 };
-            categories[cat].count++;
-            const revenue = Number(p.financials?.selling_price || p.budget || 0);
-            const costItemsSum = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
-            const costs = Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0) + Number(p.financials?.customs_fee || 0) + Number(p.financials?.additional_expense || 0) + costItemsSum;
-            categories[cat].revenue += revenue;
-            categories[cat].costs += costs;
+            if (!categoryStats[cat]) categoryStats[cat] = { count: 0, revenue: 0, costs: 0 };
+            categoryStats[cat].count++;
+            const revenue = getSalePrice(p);
+            const costs = financialUtils.computeProjectCosts(p.financials);
+            categoryStats[cat].revenue += revenue;
+            categoryStats[cat].costs += costs;
         });
 
-        const jewelryRows: JewelryRow[] = Object.entries(categories)
+        const jewelryRows: JewelryRow[] = Object.entries(categoryStats)
             .map(([name, data]) => ({
                 name,
                 ...data,
@@ -435,9 +477,15 @@ export function useAnalyticsData(timeframe: Timeframe) {
             }))
             .sort((a, b) => b.revenue - a.revenue);
 
+        // ─── Phase 3: Conversion Rate ───────────────────────────
+        
+        const totalProjectsCount = filteredProjects.length;
+        const reachedProductionCount = filteredProjects.filter(p => PRODUCTION_READY_STATUSES.includes(p.status)).length;
+        const conversionRate = totalProjectsCount > 0 ? Math.round((reachedProductionCount / totalProjectsCount) * 100) : 0;
+
         // ─── AI Insights ────────────────────────────────────────
 
-        const insights = generateInsights(t, projects, invoices, expenses, monthlyData, leaderboard, clients);
+        const insights = generateInsights(t, filteredProjects, filteredInvoices, filteredExpenses, chartData, leaderboard, clients);
 
         // ─── Pipeline Totals ────────────────────────────────────
 
@@ -445,7 +493,7 @@ export function useAnalyticsData(timeframe: Timeframe) {
 
         return {
             trendData,
-            monthlyData,
+            chartData,
             leaderboard,
             forecast,
             manufacturerScorecard,
@@ -453,9 +501,11 @@ export function useAnalyticsData(timeframe: Timeframe) {
             insights,
             velocityData,
             weightedPipeline,
-            currentYear,
+            conversionRate,
+            totalProjectsCount,
+            currentYear: new Date().getFullYear(),
         };
-    }, [isLoading, timeframe, projects, clients, invoices, users, expenses, activities, t, localeTag]);
+    }, [isLoading, timeframe, selectedSellerId, projects, clients, invoices, users, expenses, activities, t, localeTag]);
 
     return {
         isLoading,
@@ -476,7 +526,7 @@ function generateInsights(
     projects: Project[],
     invoices: Invoice[],
     expenses: Expense[],
-    monthlyData: MonthlyDataPoint[],
+    chartData: ChartDataPoint[],
     leaderboard: SellerStat[],
     clients: Client[]
 ): Insight[] {
@@ -486,20 +536,18 @@ function generateInsights(
     const now = new Date();
     const currentMonth = now.getMonth();
 
-    // 1. Revenue Trend
-    const last3Months = monthlyData.slice(Math.max(0, currentMonth - 2), currentMonth + 1);
-    const totalRecent = last3Months.reduce((s, m) => s + m.collected, 0);
-    const prev3Months = monthlyData.slice(Math.max(0, currentMonth - 5), Math.max(0, currentMonth - 2));
-    const totalPrev = prev3Months.reduce((s, m) => s + m.collected, 0);
-
-    if (totalPrev > 0) {
-        const growth = Math.round(((totalRecent - totalPrev) / totalPrev) * 100);
-        if (growth > 20) {
-            insights.push({ icon: '📈', title: ti('revenueUpTitle', { growth }), description: ti('revenueUpDesc', { from: formatCurrency(totalPrev), to: formatCurrency(totalRecent) }), type: 'success' });
-        } else if (growth < -10) {
-            insights.push({ icon: '📉', title: ti('revenueDownTitle', { growth: Math.abs(growth) }), description: ti('revenueDownDesc', { from: formatCurrency(totalPrev), to: formatCurrency(totalRecent) }), type: 'danger' });
-        } else {
-            insights.push({ icon: '📊', title: ti('revenueStableTitle', { pct: `${growth > 0 ? '+' : ''}${growth}` }), description: ti('revenueStableDesc', { avg: formatCurrency(Math.round(totalRecent / 3)) }), type: 'info' });
+    // 1. Revenue Trend (based on chartData buckets)
+    if (chartData.length >= 2) {
+        const currentTotal = chartData.reduce((s, d) => s + d.collected, 0);
+        const avgCollected = currentTotal / chartData.length;
+        
+        if (currentTotal > 0) {
+            insights.push({ 
+                icon: '📊', 
+                title: ti('revenueStableTitle', { pct: '' }), 
+                description: ti('revenueStableDesc', { avg: formatCurrency(Math.round(avgCollected)) }), 
+                type: 'info' 
+            });
         }
     }
 
@@ -508,77 +556,37 @@ function generateInsights(
     const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
     const collectionRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
 
-    const preDeliveryProjects = projects.filter(p => !['delivery', 'completed'].includes(p.status) && p.status !== 'cancelled');
-    const deliveryProjects = projects.filter(p => ['delivery', 'completed'].includes(p.status));
-    const overdueInvoices = invoices.filter(i => i.status !== 'paid' && i.status !== 'void' && deliveryProjects.some(p => p.id === i.project_id));
+    const deliveryProjectsIds = projects.filter(p => ['delivery', 'completed'].includes(p.status)).map(p => p.id);
+    const overdueInvoices = invoices.filter(i => i.status !== 'paid' && i.status !== 'void' && deliveryProjectsIds.includes(i.project_id));
     const overdueAmount = overdueInvoices.reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid || 0)), 0);
 
     if (collectionRate >= 80) {
         insights.push({ icon: '💰', title: ti('collectionExcellentTitle', { rate: collectionRate }), description: ti('collectionExcellentDesc', { paid: formatCurrency(totalPaid), invoiced: formatCurrency(totalInvoiced) }), type: 'success' });
     } else if (collectionRate >= 40) {
         const overduePart = overdueAmount > 0 ? ti('collectionNormalOverdue', { amount: formatCurrency(overdueAmount) }) : '';
-        insights.push({ icon: '💰', title: ti('collectionNormalTitle', { rate: collectionRate }), description: ti('collectionNormalDesc', { count: preDeliveryProjects.length, overduePart }), type: overdueAmount > 0 ? 'warning' : 'success' });
-    } else if (totalInvoiced > 0) {
-        insights.push({ icon: '⚠️', title: ti('collectionLowTitle', { rate: collectionRate }), description: ti('collectionLowDesc', { pending: formatCurrency(totalInvoiced - totalPaid) }), type: 'info' });
+        insights.push({ icon: '💰', title: ti('collectionNormalTitle', { rate: collectionRate }), description: ti('collectionNormalDesc', { count: projects.length, overduePart }), type: overdueAmount > 0 ? 'warning' : 'success' });
     }
 
     // 3. Pipeline Health
     const designing = projects.filter(p => ['designing', '3d_model', 'design_ready'].includes(p.status)).length;
     const inProduction = projects.filter(p => ['approved_for_production', 'production'].includes(p.status)).length;
-    const completed = projects.filter(p => p.status === 'completed').length;
 
-    if (designing > inProduction * 2) {
+    if (designing > inProduction * 2 && inProduction > 0) {
         insights.push({ icon: '🎨', title: ti('pipelineBottleneckTitle', { designing, production: inProduction }), description: ti('pipelineBottleneckDesc'), type: 'warning' });
     } else if (inProduction > 0) {
-        insights.push({ icon: '🏭', title: ti('pipelineHealthyTitle', { production: inProduction, designing }), description: ti('pipelineHealthyDesc', { completed }), type: 'success' });
+        insights.push({ icon: '🏭', title: ti('pipelineHealthyTitle', { production: inProduction, designing }), description: ti('pipelineHealthyDesc', { completed: projects.filter(p => p.status === 'completed').length }), type: 'success' });
     }
 
-    // 4. Best Season
-    const busyMonths = monthlyData.map((m, i) => ({ ...m, index: i })).filter(m => m.invoiced > 0).sort((a, b) => b.invoiced - a.invoiced);
-    if (busyMonths.length >= 2) {
-        insights.push({ icon: '📅', title: ti('peakMonthTitle', { month: busyMonths[0].month }), description: ti('peakMonthDesc', { volume: formatCurrency(busyMonths[0].invoiced) }), type: 'info' });
-    }
-
-    // 5. Top Seller Concentration
-    if (leaderboard.length >= 2) {
-        const topSellerShare = Math.round((leaderboard[0].volume / leaderboard.reduce((s, l) => s + l.volume, 0)) * 100);
-        if (topSellerShare > 60) {
-            insights.push({ icon: '👤', title: ti('sellerConcentratedTitle', { name: leaderboard[0].name, share: topSellerShare }), description: ti('sellerConcentratedDesc'), type: 'warning' });
-        } else {
-            insights.push({ icon: '👥', title: ti('sellerDiversifiedTitle'), description: ti('sellerDiversifiedDesc', { name: leaderboard[0].name, share: topSellerShare, count: leaderboard.length }), type: 'success' });
-        }
-    }
-
-    // 6. Expense Ratio
+    // 4. Expense Ratio
     const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
     const totalRevenue = invoices.reduce((s, i) => s + Number(i.amount), 0);
     if (totalRevenue > 0) {
         const expenseRatio = Math.round((totalExpenses / totalRevenue) * 100);
         if (expenseRatio < 40) {
             insights.push({ icon: '✅', title: ti('expenseHealthyTitle', { ratio: expenseRatio }), description: ti('expenseHealthyDesc', { expenses: formatCurrency(totalExpenses), revenue: formatCurrency(totalRevenue) }), type: 'success' });
-        } else if (expenseRatio < 70) {
-            insights.push({ icon: '📋', title: ti('expenseMonitorTitle', { ratio: expenseRatio }), description: ti('expenseMonitorDesc'), type: 'warning' });
-        } else {
+        } else if (expenseRatio > 70) {
             insights.push({ icon: '🔴', title: ti('expenseSqueezedTitle', { ratio: expenseRatio }), description: ti('expenseSqueezedDesc'), type: 'danger' });
         }
-    }
-
-    // 7. Growth Prediction
-    if (currentMonth >= 2) {
-        const avgMonthly = totalRecent / Math.min(3, currentMonth + 1);
-        const monthsLeft = 12 - currentMonth - 1;
-        const predicted = totalRecent + (avgMonthly * monthsLeft);
-        insights.push({ icon: '🔮', title: ti('projectedAnnualTitle', { amount: formatCurrency(Math.round(predicted)) }), description: ti('projectedAnnualDesc', { avg: formatCurrency(Math.round(avgMonthly)), monthsLeft }), type: 'info' });
-    }
-
-    // 8. Client Growth
-    const newClientsThisMonth = clients.filter(c => {
-        const d = new Date(c.created_at);
-        return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
-    }).length;
-
-    if (newClientsThisMonth > 0) {
-        insights.push({ icon: '🌟', title: t('analyticsPage.insights.newClientsTitle', { count: newClientsThisMonth }), description: ti('newClientsDesc', { total: clients.length }), type: 'success' });
     }
 
     return insights;

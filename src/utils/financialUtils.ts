@@ -96,7 +96,6 @@ export const financialUtils = {
         invoices: {
             paid_at?: string;
             created_at: string;
-            updated_at?: string;
             amount_paid?: number;
             amount?: number;
             status: string;
@@ -106,18 +105,36 @@ export const financialUtils = {
     ): number {
         if (!invoices?.length) return 0;
         return invoices.reduce((sum, inv) => {
-            const paidAt =
-                inv.paid_at ||
-                (inv.status === "paid" ? inv.created_at : null) ||
-                (Number(inv.amount_paid) > 0 ? inv.updated_at ?? inv.created_at : null);
+            // Priority: Explicit paid_at Date
+            // Fallback: created_at ONLY if status is 'paid' (legacy data)
+            // Partial payments without paid_at are excluded from period-specific collected unless logs are used
+            const paidAt = inv.paid_at || (inv.status === "paid" ? inv.created_at : null);
+            
             if (!paidAt || !financialUtils.isInRange(paidAt, start, end)) return sum;
-            const paidValue =
-                Number(inv.amount_paid) > 0
-                    ? Number(inv.amount_paid)
-                    : inv.status === "paid"
-                        ? Number(inv.amount || 0)
-                        : 0;
+            
+            const paidValue = Number(inv.amount_paid || 0) > 0 
+                ? Number(inv.amount_paid) 
+                : (inv.status === "paid" ? Number(inv.amount || 0) : 0);
+                
             return sum + paidValue;
+        }, 0);
+    },
+
+    /**
+     * Source of truth for total accounts receivable (Outstanding).
+     * Includes all sent or partial invoices that are not void or fully paid.
+     */
+    getOutstandingBalance(
+        invoices: {
+            amount: number;
+            amount_paid?: number;
+            status: string;
+        }[]
+    ): number {
+        return (invoices || []).reduce((sum, inv) => {
+            if (inv.status === "void" || inv.status === "paid" || inv.status === "draft") return sum;
+            const balance = Number(inv.amount || 0) - Number(inv.amount_paid || 0);
+            return sum + Math.max(0, balance);
         }, 0);
     },
 
