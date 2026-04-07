@@ -159,9 +159,10 @@ export default function AnalyticsDashboard() {
             sellerStats[responsibleId].volume += getSalePrice(p);
             
             // Add accurate Cash Collected metrics corresponding to this project
-            const pInvoices = invoices.filter(inv => inv.project_id === p.id);
+            const pInvoices = invoices.filter(inv => inv.project_id === p.id && inv.status !== 'void');
             pInvoices.forEach(inv => {
-                const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
+                const amountPaid = Number(inv.amount_paid || 0);
+                const paidValue = amountPaid > 0 ? amountPaid : (inv.status === 'paid' ? Number(inv.amount || 0) : 0);
                 sellerStats[responsibleId].cashCollected += paidValue;
             });
         }
@@ -228,6 +229,51 @@ export default function AnalyticsDashboard() {
         'production': { totalDays: 0, count: 0 },
     };
 
+    // Parse the target status from bilingual log messages:
+    // FR: "Statut mis à jour: production", "Statut changé de X à Production via Kanban", "Statut : X → Production"
+    // EN: "Status changed from X to Production via Kanban", "Status: X → Production"
+    const STATUS_NAMES: Record<string, string> = {
+        'designing': 'designing', 'design': 'designing', 'conception': 'designing',
+        '3d_model': '3d_model', '3d model': '3d_model', 'design 3d': '3d_model', 'modèle 3d': '3d_model', 'modele 3d': '3d_model',
+        'design_ready': 'design_ready', 'design ready': 'design_ready', 'design prêt': 'design_ready', 'design pret': 'design_ready',
+        'waiting_for_approval': 'waiting_for_approval', 'waiting for approval': 'waiting_for_approval', 'en attente': 'waiting_for_approval', "en attente d'approbation": 'waiting_for_approval',
+        'design_modification': 'design_modification', 'design modification': 'design_modification', 'modification': 'design_modification', 'modification du design': 'design_modification',
+        'approved_for_production': 'approved_for_production', 'approved for production': 'approved_for_production', 'approuvé pour production': 'approved_for_production', 'approuve pour production': 'approved_for_production',
+        'production': 'production',
+        'delivery': 'delivery', 'livraison': 'delivery',
+        'completed': 'completed', 'terminé': 'completed', 'termine': 'completed', 'complété': 'completed', 'complete': 'completed',
+        'cancelled': 'cancelled', 'annulé': 'cancelled', 'annule': 'cancelled',
+    };
+
+    const parseTargetStatus = (details: string): string | null => {
+        const d = details.toLowerCase().trim();
+        // Format 1: "Statut mis à jour: production" or "Statut mis à jour: approved for production"
+        const colonMatch = d.match(/(?:statut mis à jour|status updated)[:\s]+(.+)$/i);
+        if (colonMatch) {
+            const raw = colonMatch[1].replace(/_/g, ' ').trim();
+            return STATUS_NAMES[raw] || null;
+        }
+        // Format 2: "→ Production" or "→ Livraison"
+        const arrowMatch = d.match(/→\s*(.+?)\s*$/i);
+        if (arrowMatch) {
+            const raw = arrowMatch[1].replace(/_/g, ' ').trim().toLowerCase();
+            return STATUS_NAMES[raw] || null;
+        }
+        // Format 3 FR: "de X à Production via Kanban"
+        const frMatch = d.match(/à\s+(.+?)\s*(?:via|$)/i);
+        if (frMatch) {
+            const raw = frMatch[1].replace(/_/g, ' ').trim().toLowerCase();
+            return STATUS_NAMES[raw] || null;
+        }
+        // Format 4 EN: "from X to Production via Kanban"
+        const enMatch = d.match(/to\s+(.+?)\s*(?:via|$)/i);
+        if (enMatch) {
+            const raw = enMatch[1].replace(/_/g, ' ').trim().toLowerCase();
+            return STATUS_NAMES[raw] || null;
+        }
+        return null;
+    };
+
     const logsByProject: Record<string, ActivityLog[]> = {};
     statusLogs.forEach(log => {
         if (log.project_id) {
@@ -242,10 +288,10 @@ export default function AnalyticsDashboard() {
             const start = new Date(sorted[i].created_at);
             const end = new Date(sorted[i+1].created_at);
             const days = Math.max(0.1, (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-            const prevStatusMsg = sorted[i].details.toLowerCase().split('to ')[1];
-            if (prevStatusMsg && velocityData[prevStatusMsg]) {
-                velocityData[prevStatusMsg].totalDays += days;
-                velocityData[prevStatusMsg].count++;
+            const targetStatus = parseTargetStatus(sorted[i].details);
+            if (targetStatus && velocityData[targetStatus]) {
+                velocityData[targetStatus].totalDays += days;
+                velocityData[targetStatus].count++;
             }
         }
     });
@@ -262,23 +308,27 @@ export default function AnalyticsDashboard() {
             manufacturerStats[p.manufacturer_id].projectCount++;
             manufacturerStats[p.manufacturer_id].volume += getSalePrice(p);
             
-            // Speed Calculation
+            // Speed Calculation — uses bilingual status parser
             const pLogs = logsByProject[p.id] || [];
             const sorted = pLogs.sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
             
             let prodStart: Date | null = null;
+            let hasReachedProduction = false;
             sorted.forEach(log => {
-                const details = log.details.toLowerCase();
-                if (details.includes('to production') || details.includes('to approved_for_production')) {
+                const targetStatus = parseTargetStatus(log.details);
+                if (targetStatus === 'production' || targetStatus === 'approved_for_production') {
                     prodStart = new Date(log.created_at);
+                    hasReachedProduction = true;
                 }
-                if (details.includes('to completed') && prodStart) {
+                if (targetStatus === 'completed' && prodStart) {
                     const days = (new Date(log.created_at).getTime() - prodStart.getTime()) / (1000 * 60 * 60 * 24);
                     manufacturerStats[p.manufacturer_id!].totalProdDays += days;
                     manufacturerStats[p.manufacturer_id!].prodCount++;
-                    prodStart = null; // Reset for next potential cycle
+                    prodStart = null;
                 }
-                if (details.includes('to design_modification')) {
+                // Only count design_modification AFTER the project has entered production
+                // (these are rework requests, not normal design iterations)
+                if (targetStatus === 'design_modification' && hasReachedProduction) {
                     manufacturerStats[p.manufacturer_id!].modCount++;
                 }
             });
@@ -290,7 +340,7 @@ export default function AnalyticsDashboard() {
         .map(s => ({
             ...s,
             avgSpeed: s.prodCount > 0 ? Math.round(s.totalProdDays / s.prodCount) : 0,
-            qualityRate: Math.max(0, 100 - (s.modCount / s.projectCount * 100))
+            qualityRate: Math.max(0, 100 - (s.modCount / Math.max(1, s.prodCount) * 100))
         }))
         .sort((a, b) => b.qualityRate - a.qualityRate);
 
