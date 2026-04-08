@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/components/ui/use-toast';
 import { apiNotifications } from '@/services/apiNotifications';
+import { generateQuotePDF } from '@/services/pdfService';
+import { apiSettings } from '@/services/apiSettings';
 
 interface QuoteLineItem {
     id: string;
@@ -52,7 +54,23 @@ export default function ClientQuote() {
     const projectInvoices = invoices.filter(inv => inv.project_id === projectId);
     const totalPaid = projectInvoices.reduce((s, inv) => s + Number(inv.amount_paid || 0), 0);
 
-    const handlePrint = () => window.print();
+    const { data: settings } = useQuery({
+        queryKey: ['settings'],
+        queryFn: apiSettings.get,
+    });
+
+    const handlePrint = async () => {
+        if (!project || !settings) return;
+        
+        // Prepare items for PDF
+        const itemsToPrint = displayItems.map(i => ({
+            title: i.title,
+            description: i.description,
+            price: i.price
+        }));
+
+        await generateQuotePDF(project, settings, itemsToPrint, discount);
+    };
 
     const handleSendToClient = async () => {
         if (!project || !client) return;
