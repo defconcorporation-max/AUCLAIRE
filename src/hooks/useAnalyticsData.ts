@@ -38,7 +38,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         // 2. Calculer la croissance basée UNIQUEMENT sur les mois terminés (excluant avril)
         let totalGrowth = 0;
         let growthCounts = 0;
-        // On s'arrête à currentMonthIndex - 1 (Mars si on est en Avril)
         for (let i = 1; i < currentMonthIndex; i++) {
             const prev = fullHistory[i-1].invoiced;
             if (prev > 0) {
@@ -50,8 +49,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
 
         // 3. Construire le tunnel de prévision (Target) sur toute l'année
         const yearlyExtrapolation: ExtrapolationMonth[] = [];
-        
-        // Base de départ pour les targets : Premier mois ou moyenne
         let currentTarget = fullHistory[0].invoiced || 10000; 
 
         for (let i = 0; i < 12; i++) {
@@ -70,19 +67,15 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
                 isCurrent: isCurrent
             });
 
-            // Incrémenter le target pour le mois suivant
             currentTarget = currentTarget * (1 + avgMonthlyGrowth);
         }
 
-        // Calcul additionnel pour le header
         const currentMonthTarget = yearlyExtrapolation[currentMonthIndex].target;
         const currentMonthReal = yearlyExtrapolation[currentMonthIndex].invoiced;
         const performanceDelta = currentMonthTarget > 0 ? Math.round(((currentMonthReal - currentMonthTarget) / currentMonthTarget) * 100) : 0;
 
         const { start, end } = financialUtils.getPeriodRange(timeframe);
-        const { start: pStart, end: pEnd } = financialUtils.getPreviousPeriodRange(timeframe);
         const current = financialUtils.calculateMetrics(invoices, expenses, start, end);
-        const previous = financialUtils.calculateMetrics(invoices, expenses, pStart, pEnd);
 
         return {
             trendData: {

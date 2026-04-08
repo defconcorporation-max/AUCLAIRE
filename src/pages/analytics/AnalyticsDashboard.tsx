@@ -5,7 +5,7 @@ import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target, MousePointer2 } from 'lucide-react';
+import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ export default function AnalyticsDashboard() {
     const { isLoading: cLoad } = useQuery({ queryKey: ['clients_dummy'], queryFn: () => [] }); 
 
     if (pLoad || iLoad || uLoad || eLoad || engineLoading || cLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Synchronisation des données stratégiques...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Alignement des objectifs...</div>;
     }
 
     const totalYearlyProjected = yearlyExtrapolation.reduce((sum, m) => sum + (m.isProjected ? m.target : m.invoiced), 0);
