@@ -1,5 +1,5 @@
 import { apiInvoices, Invoice } from '@/services/apiInvoices';
-import { apiProjects } from '@/services/apiProjects';
+import { apiProjects, Project } from '@/services/apiProjects';
 import { useQuery } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, ComposedChart, Line, Bar, Cell } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, Bar, Cell, ComposedChart } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
 import { apiSettings } from '@/services/apiSettings';
@@ -21,14 +21,14 @@ export default function AnalyticsDashboard() {
     
     const { isLoading: engineLoading, trendData, yearlyExtrapolation, avgMonthlyGrowth, performanceDelta } = useAnalyticsData(timeframe);
 
-    const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
-    const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
+    const { data: projects = [] as Project[], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
+    const { data: invoices = [] as Invoice[], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
     const { data: users = [], isLoading: uLoad } = useQuery({ queryKey: ['users'], queryFn: apiUsers.getAll });
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
     const { isLoading: cLoad } = useQuery({ queryKey: ['clients_dummy'], queryFn: () => [] }); 
 
     if (pLoad || iLoad || uLoad || eLoad || engineLoading || cLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Alignement des objectifs...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Synchronisation des données stratégiques...</div>;
     }
 
     const totalYearlyProjected = yearlyExtrapolation.reduce((sum, m) => sum + (m.isProjected ? m.target : m.invoiced), 0);
@@ -97,7 +97,7 @@ export default function AnalyticsDashboard() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <KPICard title="Cash Encaissé (Mois)" value={trendData.collected.value} trend={performanceDelta} label="Objectif" />
                 <KPICard title="Performance Facturation" value={yearlyExtrapolation.find(m => m.isCurrent)?.invoiced || 0} trend={performanceDelta} label="vs Objectif" />
-                <KPICard title="Nouveaux Clients" value={projects.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length} trend={0} label="ce mois" isCurrency={false} />
+                <KPICard title="Nouveaux Projets" value={projects.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length} trend={0} label="ce mois" isCurrency={false} />
                 <Card className="bg-black text-white dark:bg-zinc-800 dark:text-white shadow-2xl overflow-hidden relative group border-none">
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Target className="w-20 h-20" /></div>
                     <CardHeader className="pb-2"><CardTitle className="text-[10px] uppercase tracking-widest opacity-60">Estimation Fin d'Année</CardTitle></CardHeader>
@@ -149,9 +149,7 @@ export default function AnalyticsDashboard() {
                                     return null;
                                 }} />
                                 <Legend verticalAlign="top" height={36}/>
-                                {/* Barre d'Objectif (toujours présente en arrière-plan) */}
                                 <Bar name="Objectif" dataKey="target" fill="#E5E7EB" radius={[4, 4, 0, 0]} barSize={40} opacity={0.3} />
-                                {/* Barre Réelle (devant) */}
                                 <Bar name="Réel Facturé" dataKey="invoiced" radius={[4, 4, 0, 0]} barSize={25}>
                                     {yearlyExtrapolation.map((entry, index) => (
                                         <Cell 
@@ -239,7 +237,7 @@ function KPICard({ title, value, trend, label, isCurrency = true }: { title: str
                         {Math.abs(trend)}% <span className="text-[9px] text-zinc-400 font-normal uppercase italic tracking-tighter">vs {label}</span>
                     </div>
                 ) : (
-                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Sur l'Objectif</span>
+                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Cible atteinte</span>
                 )}
             </CardContent>
         </Card>
