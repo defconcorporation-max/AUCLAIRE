@@ -1,5 +1,7 @@
 import { ActivityLog } from "@/services/apiActivities";
 import type { Financials, Project } from "@/services/apiProjects";
+import type { Invoice } from "@/services/apiInvoices";
+import type { Expense } from "@/services/apiExpenses";
 
 // Shared, robust parsing and financial helpers for all analytics
 
@@ -218,5 +220,32 @@ export const financialUtils = {
      */
     computeGlobalProfit(collected: number, expenses: number): number {
         return Number(collected || 0) - Number(expenses || 0);
+    },
+
+    /**
+     * Calculates core metrics (invoiced, collected, expenses) for a specific range.
+     */
+    calculateMetrics(invoices: Invoice[], expenses: Expense[], start: Date, end?: Date) {
+        const _end = end || new Date();
+        
+        const invoicedTotal = invoices.reduce((sum, inv) => {
+            const date = financialUtils.toLocalDate(inv.created_at);
+            if (date >= start && date <= _end) {
+                return sum + Number(inv.amount || 0);
+            }
+            return sum;
+        }, 0);
+
+        const cashCollected = financialUtils.getCollectedFromInvoices(invoices, start, _end);
+        
+        const expensesTotal = expenses.reduce((sum, exp) => {
+            const date = financialUtils.toLocalDate(exp.date || exp.created_at);
+            if (date >= start && date <= _end) {
+                return sum + Number(exp.amount || 0);
+            }
+            return sum;
+        }, 0);
+
+        return { invoicedTotal, cashCollected, expensesTotal };
     },
 };

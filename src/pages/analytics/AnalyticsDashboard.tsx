@@ -6,7 +6,6 @@ import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses, Expense } from '@/services/apiExpenses';
 import { apiActivities, ActivityLog } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem } from 'lucide-react';
 import { useState } from 'react';
@@ -14,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button } from '@/components/ui/button';
 import { financialUtils } from '@/utils/financialUtils';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
 import { apiSettings } from '@/services/apiSettings';
@@ -22,6 +23,11 @@ export default function AnalyticsDashboard() {
     const { t, i18n } = useTranslation();
     const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
+    
+    // Engine Hook
+    const { isLoading: engineLoading, forecast, trendData, weightedPipeline } = useAnalyticsData(timeframe);
+
+    // Standard Queries (needed for table sections)
     const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
@@ -29,13 +35,18 @@ export default function AnalyticsDashboard() {
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
     const { data: activities = [], isLoading: alLoad } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll });
 
+<<<<<<< Updated upstream
     if (pLoad || cLoad || iLoad || uLoad || eLoad || alLoad) {
         return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">{t('analyticsPage.loading')}</div>;
+=======
+    if (pLoad || cLoad || iLoad || uLoad || eLoad || alLoad || engineLoading) {
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">Loading Power Analytics...</div>;
+>>>>>>> Stashed changes
     }
 
-    // Helpers to prevent string concatenation
     const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
 
+<<<<<<< Updated upstream
     // Calculate Trend Data
     const getTrendData = () => {
         const { start: startCurr } = financialUtils.getPeriodRange(timeframe);
@@ -107,6 +118,10 @@ export default function AnalyticsDashboard() {
     const trendData = getTrendData();
 
     // 2. Monthly Revenue Chart (Paid Invoices)
+=======
+    // 2. Monthly Revenue Chart (Current Year)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+>>>>>>> Stashed changes
     const currentYear = new Date().getFullYear();
     const monthlyData = [...Array(12)].map((_, monthIdx) => ({
         month: new Date(currentYear, monthIdx, 1).toLocaleDateString(localeTag, { month: 'short' }),
@@ -121,7 +136,6 @@ export default function AnalyticsDashboard() {
         monthlyData[monthIdx].collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
     });
 
-    // Handle invoiced and expenses as before but ensure year check
     invoices.forEach(inv => {
         if (inv.status === 'void') return;
         const createdDate = new Date(inv.created_at);
@@ -130,10 +144,9 @@ export default function AnalyticsDashboard() {
         }
     });
 
-    // Aggregate expenses by month
     expenses.forEach(exp => {
         if (exp.status === 'cancelled') return;
-        const date = new Date(exp.created_at);
+        const date = new Date(exp.date || exp.created_at);
         if (date.getFullYear() === currentYear) {
             monthlyData[date.getMonth()].expenses += Number(exp.amount || 0);
         }
@@ -142,43 +155,35 @@ export default function AnalyticsDashboard() {
     const PRODUCTION_READY_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
     const isProjectASale = (p: Project) => PRODUCTION_READY_STATUSES.includes(p.status) || invoices.some(inv => inv.project_id === p.id);
 
-    // 3. Seller/Affiliate Leaderboard
-    // Commission totals come from expense rows (same source of truth as apiAffiliates.getStats)
+    // 3. Seller Leaderboard
     const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, commissions: number, cashCollected: number }> = {};
-
-    users.filter(u => (u.role as string) === 'affiliate' || (u.role as string) === 'admin' || (u.role as string) === 'ambassador').forEach(u => {
+    users.filter(u => ['affiliate', 'admin', 'ambassador'].includes(u.role as string)).forEach(u => {
         sellerStats[u.id] = { id: u.id, name: u.full_name, role: u.role as string, projectCount: 0, volume: 0, commissions: 0, cashCollected: 0 };
     });
 
-    // Volume and project count from projects - Strictly Production Ready or Invoiced
     projects.forEach(p => {
         if (!isProjectASale(p)) return;
         const responsibleId = p.sales_agent_id || p.affiliate_id;
         if (responsibleId && sellerStats[responsibleId]) {
             sellerStats[responsibleId].projectCount++;
             sellerStats[responsibleId].volume += getSalePrice(p);
-            
-            // Add accurate Cash Collected metrics corresponding to this project
-            const pInvoices = invoices.filter(inv => inv.project_id === p.id);
-            pInvoices.forEach(inv => {
+            invoices.filter(inv => inv.project_id === p.id).forEach(inv => {
                 const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
                 sellerStats[responsibleId].cashCollected += paidValue;
             });
         }
     });
 
-    // Commissions come from expense rows (pending + paid), matching apiAffiliates.getStats
-    (expenses as { category: string; status: string; amount?: number; recipient_id?: string; description?: string }[]).filter(e => e.category === 'commission' && e.status !== 'cancelled' && !e.description?.includes('Commission Payout')).forEach(e => {
+    expenses.filter(e => e.category === 'commission' && e.status !== 'cancelled' && !e.description?.includes('Commission Payout')).forEach(e => {
         const recipientId = e.recipient_id;
         if (recipientId && sellerStats[recipientId]) {
             sellerStats[recipientId].commissions += Number(e.amount || 0);
         }
     });
 
-    const leaderboard = Object.values(sellerStats)
-        .filter(s => s.projectCount > 0)
-        .sort((a, b) => b.volume - a.volume);
+    const leaderboard = Object.values(sellerStats).filter(s => s.projectCount > 0).sort((a, b) => b.volume - a.volume);
 
+<<<<<<< Updated upstream
     // 4. POWER ANALYTICS: Revenue Forecasting & Projections
     const PROBABILITY_MAP: Record<string, number> = {
         designing: 0.1,
@@ -220,14 +225,10 @@ export default function AnalyticsDashboard() {
     });
 
     // 5. POWER ANALYTICS: Operational Velocity (Days in Status)
+=======
+    // 4. Operational Velocity
+>>>>>>> Stashed changes
     const statusLogs = activities.filter(a => a.action === 'status_change');
-    const velocityData: Record<string, { totalDays: number, count: number }> = {
-        'designing': { totalDays: 0, count: 0 },
-        '3d_model': { totalDays: 0, count: 0 },
-        'approved_for_production': { totalDays: 0, count: 0 },
-        'production': { totalDays: 0, count: 0 },
-    };
-
     const logsByProject: Record<string, ActivityLog[]> = {};
     statusLogs.forEach(log => {
         if (log.project_id) {
@@ -236,23 +237,8 @@ export default function AnalyticsDashboard() {
         }
     });
 
-    Object.values(logsByProject).forEach(logs => {
-        const sorted = logs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        for (let i = 0; i < sorted.length - 1; i++) {
-            const start = new Date(sorted[i].created_at);
-            const end = new Date(sorted[i+1].created_at);
-            const days = Math.max(0.1, (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-            const prevStatusMsg = sorted[i].details.toLowerCase().split('to ')[1];
-            if (prevStatusMsg && velocityData[prevStatusMsg]) {
-                velocityData[prevStatusMsg].totalDays += days;
-                velocityData[prevStatusMsg].count++;
-            }
-        }
-    });
-
-    // 6. POWER ANALYTICS: Manufacturer Performance Scorecards
+    // 5. Manufacturer Scorecards
     const manufacturerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, totalProdDays: number, prodCount: number, modCount: number }> = {};
-    
     users.filter(u => u.role === 'manufacturer').forEach(u => {
         manufacturerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, totalProdDays: 0, prodCount: 0, modCount: 0 };
     });
@@ -261,38 +247,27 @@ export default function AnalyticsDashboard() {
         if (p.manufacturer_id && manufacturerStats[p.manufacturer_id]) {
             manufacturerStats[p.manufacturer_id].projectCount++;
             manufacturerStats[p.manufacturer_id].volume += getSalePrice(p);
-            
-            // Speed Calculation
             const pLogs = logsByProject[p.id] || [];
             const sorted = pLogs.sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-            
             let prodStart: Date | null = null;
             sorted.forEach(log => {
                 const details = log.details.toLowerCase();
-                if (details.includes('to production') || details.includes('to approved_for_production')) {
-                    prodStart = new Date(log.created_at);
-                }
+                if (details.includes('to production') || details.includes('to approved_for_production')) prodStart = new Date(log.created_at);
                 if (details.includes('to completed') && prodStart) {
-                    const days = (new Date(log.created_at).getTime() - prodStart.getTime()) / (1000 * 60 * 60 * 24);
-                    manufacturerStats[p.manufacturer_id!].totalProdDays += days;
+                    manufacturerStats[p.manufacturer_id!].totalProdDays += (new Date(log.created_at).getTime() - prodStart.getTime()) / (1000 * 60 * 60 * 24);
                     manufacturerStats[p.manufacturer_id!].prodCount++;
-                    prodStart = null; // Reset for next potential cycle
+                    prodStart = null;
                 }
-                if (details.includes('to design_modification')) {
-                    manufacturerStats[p.manufacturer_id!].modCount++;
-                }
+                if (details.includes('to design_modification')) manufacturerStats[p.manufacturer_id!].modCount++;
             });
         }
     });
 
-    const manufacturerScorecard = Object.values(manufacturerStats)
-        .filter(s => s.projectCount > 0)
-        .map(s => ({
-            ...s,
-            avgSpeed: s.prodCount > 0 ? Math.round(s.totalProdDays / s.prodCount) : 0,
-            qualityRate: Math.max(0, 100 - (s.modCount / s.projectCount * 100))
-        }))
-        .sort((a, b) => b.qualityRate - a.qualityRate);
+    const manufacturerScorecard = Object.values(manufacturerStats).filter(s => s.projectCount > 0).map(s => ({
+        ...s,
+        avgSpeed: s.prodCount > 0 ? Math.round(s.totalProdDays / s.prodCount) : 0,
+        qualityRate: Math.max(0, 100 - (s.modCount / s.projectCount * 100))
+    })).sort((a, b) => b.qualityRate - a.qualityRate);
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
@@ -336,6 +311,7 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Top KPIs */}
+<<<<<<< Updated upstream
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -402,32 +378,86 @@ export default function AnalyticsDashboard() {
                                 {formatCurrency(trendData.current.outstanding)}
                             </div>
                             {timeframe !== 'total' && <TrendBadge value={trendData.growth.outstanding} label={trendData.label} />}
+=======
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Cash Encaissé</CardTitle>
+                            <Banknote className="w-4 h-4 text-emerald-500 opacity-50" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-serif text-black dark:text-white">{formatCurrency(trendData.collected.value)}</div>
+                        <TrendBadge value={trendData.collected.trend} label={trendData.collected.label} />
+                    </CardContent>
+                </Card>
+
+                <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Facturé</CardTitle>
+                            <TrendingUp className="w-4 h-4 text-blue-500 opacity-50" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-serif text-black dark:text-white">{formatCurrency(trendData.invoiced.value)}</div>
+                        <TrendBadge value={trendData.invoiced.trend} label={trendData.invoiced.label} />
+                    </CardContent>
+                </Card>
+
+                <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Nouveaux Clients</CardTitle>
+                            <Users className="w-4 h-4 text-luxury-gold opacity-50" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-baseline justify-between">
+                            <div className="text-3xl font-serif text-black dark:text-white">{trendData.clients.value}</div>
+                            {timeframe !== 'total' && <TrendBadge value={trendData.clients.trend} label={trendData.clients.label} />}
+>>>>>>> Stashed changes
                         </div>
                     </CardContent>
                 </Card>
+
                 <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/20 relative overflow-hidden ring-1 ring-luxury-gold/20 shadow-lg shadow-luxury-gold/5">
+<<<<<<< Updated upstream
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium uppercase tracking-widest text-luxury-gold flex items-center gap-2">
                             <TrendingUp className="w-4 h-4" /> {t('analyticsPage.kpiWeightedPipeline')}
+=======
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-luxury-gold flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4" /> Pipeline Pondéré
+>>>>>>> Stashed changes
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-serif text-luxury-gold">
-                            {formatCurrency(Math.round(next3MonthsData.reduce((s, m) => s + m.projected, 0)))}
+                            {formatCurrency(weightedPipeline)}
                         </div>
+<<<<<<< Updated upstream
                         <p className="text-[10px] text-zinc-500 uppercase tracking-tighter mt-1">{t('analyticsPage.kpiPipelineHint')}</p>
+=======
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-tighter mt-1 italic">Valeur estimée vs probabilité d'étape</p>
+>>>>>>> Stashed changes
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Double Chart Layout */}
-            <div className="grid gap-6 md:grid-cols-3">
-
-                {/* Chart */}
-                <Card className="md:col-span-2 border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
+            {/* Charts Section */}
+            <div className="grid gap-6 lg:grid-cols-2">
+                <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
                     <CardHeader>
+<<<<<<< Updated upstream
                         <CardTitle className="font-serif text-xl">{t('analyticsPage.chartAnnualTitle', { year: currentYear })}</CardTitle>
                         <CardDescription>{t('analyticsPage.chartAnnualDesc')}</CardDescription>
+=======
+                        <CardTitle className="font-serif text-xl">Croissance Annuelle ({currentYear})</CardTitle>
+                        <CardDescription>Performance globale sur 12 mois</CardDescription>
+>>>>>>> Stashed changes
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px] w-full mt-4">
@@ -442,11 +472,8 @@ export default function AnalyticsDashboard() {
                                             <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
                                             <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                                         </linearGradient>
-                                        <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                                        </linearGradient>
                                     </defs>
+<<<<<<< Updated upstream
                                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis
                                         stroke="#888888"
@@ -463,20 +490,34 @@ export default function AnalyticsDashboard() {
                                     <Area type="monotone" name={t('analyticsPage.seriesInvoiced')} dataKey="invoiced" stroke="#A68A56" fillOpacity={1} fill="url(#colorInvoiced)" />
                                     <Area type="monotone" name={t('analyticsPage.seriesCollected')} dataKey="collected" stroke="#22c55e" fillOpacity={1} fill="url(#colorCollected)" />
                                     <Area type="monotone" name={t('analyticsPage.seriesSpent')} dataKey="expenses" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpenses)" />
+=======
+                                    <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000}k`} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                    <Tooltip formatter={(value: number) => [formatCurrency(value), ""]} contentStyle={{ backgroundColor: 'rgba(10,10,10,0.95)', borderColor: 'rgba(210,181,123,0.3)', borderRadius: '12px' }} />
+                                    <Area type="monotone" name="Facturé" dataKey="invoiced" stroke="#A68A56" fillOpacity={1} fill="url(#colorInvoiced)" strokeWidth={2} />
+                                    <Area type="monotone" name="Encaissé" dataKey="collected" stroke="#22c55e" fillOpacity={1} fill="url(#colorCollected)" strokeWidth={2} />
+>>>>>>> Stashed changes
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Mini Top Seller */}
                 <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
-                    <CardHeader className="pb-2">
+                    <CardHeader>
                         <CardTitle className="font-serif text-xl flex items-center gap-2">
+<<<<<<< Updated upstream
                             <Trophy className="w-5 h-5 text-luxury-gold" />
                             {t('analyticsPage.topSeller')}
+=======
+                            <TrendingUp className="w-5 h-5 text-luxury-gold" />
+                            Prévisions Trésorerie (3 Mois)
+>>>>>>> Stashed changes
                         </CardTitle>
+                        <CardDescription>Projection basée sur le pipeline actuel</CardDescription>
                     </CardHeader>
+<<<<<<< Updated upstream
                     <CardContent className="flex flex-col justify-center h-[300px] mt-4">
                         {leaderboard.length > 0 ? (
                             <div className="text-center space-y-6">
@@ -494,11 +535,32 @@ export default function AnalyticsDashboard() {
                         ) : (
                             <div className="text-center text-gray-500">{t('analyticsPage.topSellerEmpty')}</div>
                         )}
+=======
+                    <CardContent>
+                        <div className="h-[300px] w-full mt-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={forecast} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                    <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000}k`} />
+                                    <Tooltip 
+                                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                                        contentStyle={{ backgroundColor: 'rgba(10,10,10,0.95)', borderColor: 'rgba(210,181,123,0.3)', borderRadius: '12px' }}
+                                        formatter={(value: number) => [formatCurrency(value), ""]}
+                                    />
+                                    <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
+                                    <Bar name="Facturé (Potentiel)" dataKey="invoiced" fill="#d2b57b" radius={[4, 4, 0, 0]} barSize={25} />
+                                    <Bar name="Encaissé (Trésorerie)" dataKey="collected" fill="#10B981" radius={[4, 4, 0, 0]} barSize={25} />
+                                    <Bar name="Dépenses (Est.)" dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={25} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+>>>>>>> Stashed changes
                     </CardContent>
                 </Card>
-
             </div>
 
+<<<<<<< Updated upstream
             {/* Velocity Section */}
             <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
                 <CardHeader>
@@ -552,10 +614,27 @@ export default function AnalyticsDashboard() {
                                 <TableHead className="text-center text-blue-500">{t('analyticsPage.colAvgSpeed')}</TableHead>
                                 <TableHead className="text-center text-green-500">{t('analyticsPage.colQualityScore')}</TableHead>
                                 <TableHead className="text-right">{t('analyticsPage.colTotalVolume')}</TableHead>
+=======
+            {/* Scorecard Sections (Original Tables Simplified) */}
+            <div className="grid gap-8">
+                <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="font-serif text-xl">Manufacturer Performance</CardTitle>
+                    </CardHeader>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Manufacturer</TableHead>
+                                <TableHead className="text-center">Projects</TableHead>
+                                <TableHead className="text-center">Avg Speed</TableHead>
+                                <TableHead className="text-center">Quality Score</TableHead>
+                                <TableHead className="text-right">Total Volume</TableHead>
+>>>>>>> Stashed changes
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {manufacturerScorecard.map((m) => (
+<<<<<<< Updated upstream
                                 <TableRow key={m.id} className="border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                     <TableCell className="font-medium text-black dark:text-white">
                                         <div className="flex items-center gap-2">
@@ -604,11 +683,21 @@ export default function AnalyticsDashboard() {
                                     </TableCell>
                                 </TableRow>
                             )}
+=======
+                                <TableRow key={m.id}>
+                                    <TableCell className="font-medium text-black dark:text-white">{m.name}</TableCell>
+                                    <TableCell className="text-center">{m.projectCount}</TableCell>
+                                    <TableCell className="text-center">{m.avgSpeed} Days</TableCell>
+                                    <TableCell className="text-center">{Math.round(m.qualityRate)}%</TableCell>
+                                    <TableCell className="text-right font-serif">{formatCurrency(m.volume)}</TableCell>
+                                </TableRow>
+                            ))}
+>>>>>>> Stashed changes
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                </Card>
 
+<<<<<<< Updated upstream
             <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
                 <CardHeader>
                     <CardTitle className="font-serif text-2xl tracking-wide">{t('analyticsPage.leaderboardTitle')}</CardTitle>
@@ -624,10 +713,28 @@ export default function AnalyticsDashboard() {
                                 <TableHead className="text-right">{t('analyticsPage.colBroughtVolume')}</TableHead>
                                 <TableHead className="text-right text-green-600/70 dark:text-green-500">{t('analyticsPage.colCashRecovered')}</TableHead>
                                 <TableHead className="text-right text-purple-600/70 dark:text-purple-400">{t('analyticsPage.colCommissionsEst')}</TableHead>
+=======
+                <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="font-serif text-xl flex items-center gap-2">
+                            <Trophy className="w-5 h-5 text-luxury-gold" />
+                            Classement Ventes (Admins & Ambassadeurs)
+                        </CardTitle>
+                    </CardHeader>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-16 text-center">Rang</TableHead>
+                                <TableHead>Vendeur</TableHead>
+                                <TableHead className="text-center">Projets</TableHead>
+                                <TableHead className="text-right">Volume</TableHead>
+                                <TableHead className="text-right">Cash Récolté</TableHead>
+>>>>>>> Stashed changes
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {leaderboard.map((seller, idx) => (
+<<<<<<< Updated upstream
                                 <TableRow key={seller.id} className="border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                     <TableCell className="text-center font-serif text-lg text-gray-500">
                                         {idx === 0 ? <span className="text-luxury-gold">1</span> : idx + 1}
@@ -668,18 +775,29 @@ export default function AnalyticsDashboard() {
                                     </TableCell>
                                 </TableRow>
                             )}
+=======
+                                <TableRow key={seller.id}>
+                                    <TableCell className="text-center font-serif">{idx + 1}</TableCell>
+                                    <TableCell className="font-medium">{seller.name}</TableCell>
+                                    <TableCell className="text-center">{seller.projectCount}</TableCell>
+                                    <TableCell className="text-right font-serif">{formatCurrency(seller.volume)}</TableCell>
+                                    <TableCell className="text-right font-serif text-green-600">{formatCurrency(seller.cashCollected)}</TableCell>
+                                </TableRow>
+                            ))}
+>>>>>>> Stashed changes
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                </Card>
+            </div>
 
-            {/* ====== AI INSIGHTS SECTION ====== */}
+            {/* AI Insights Section */}
             <Card className="border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent backdrop-blur-md shadow-xl mt-8">
                 <CardHeader>
                     <CardTitle className="font-serif text-2xl tracking-wide flex items-center gap-2">
                         <span className="text-luxury-gold">✨</span>
                         {t('analyticsPage.aiInsightsTitle')}
                     </CardTitle>
+<<<<<<< Updated upstream
                     <CardDescription>{t('analyticsPage.aiInsightsDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -694,6 +812,17 @@ export default function AnalyticsDashboard() {
                                     'border-blue-500/20 bg-blue-500/5'
                                 }`}
                             >
+=======
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {generateInsights(projects, invoices, expenses, monthlyData, leaderboard, clients).map((insight, i) => (
+                            <div key={i} className={`p-4 rounded-xl border ${
+                                insight.type === 'success' ? 'border-green-500/20 bg-green-500/5' :
+                                insight.type === 'warning' ? 'border-amber-500/20 bg-amber-500/5' :
+                                'border-blue-500/20 bg-blue-500/5'
+                            }`}>
+>>>>>>> Stashed changes
                                 <div className="flex items-start gap-3">
                                     <span className="text-xl">{insight.icon}</span>
                                     <div>
@@ -706,6 +835,7 @@ export default function AnalyticsDashboard() {
                     </div>
                 </CardContent>
             </Card>
+<<<<<<< Updated upstream
 
             {/* Profitability by Jewelry Type */}
             <Card className="glass-card">
@@ -800,13 +930,15 @@ export default function AnalyticsDashboard() {
                 </CardContent>
             </Card>
 
+=======
+>>>>>>> Stashed changes
         </div>
     );
 }
 
-
-// UI Component for Growth Trend Badges
+// UI Components
 function TrendBadge({ value, label }: { value: number; label: string }) {
+<<<<<<< Updated upstream
     const { t } = useTranslation();
     if (value === 0) return (
         <div className="flex flex-col items-end">
@@ -831,10 +963,20 @@ function TrendBadge({ value, label }: { value: number; label: string }) {
                 <span>{Math.abs(value)}%</span>
             </div>
             <span className="text-[9px] text-muted-foreground uppercase tracking-tighter mt-1 italic">{t('analyticsPage.trendVs', { label })}</span>
+=======
+    if (value === 0) return <span className="text-[10px] text-gray-400">Stable vs {label}</span>;
+    const isPositive = value > 0;
+    return (
+        <div className={`flex items-center gap-0.5 text-xs font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            <span>{Math.abs(value)}%</span>
+            <span className="text-[9px] text-muted-foreground ml-1">vs {label}</span>
+>>>>>>> Stashed changes
         </div>
     );
 }
 
+<<<<<<< Updated upstream
 // AI Insights Engine — generates smart observations from raw data
 interface Insight {
     icon: string;
@@ -854,10 +996,16 @@ function generateInsights(
 ): Insight[] {
     const ti = (key: string, opts?: Record<string, string | number>) =>
         t(`analyticsPage.insights.${key}`, opts as Record<string, unknown>);
+=======
+// AI Insights Logic
+interface Insight { icon: string; title: string; description: string; type: 'success' | 'warning' | 'danger' | 'info'; }
+function generateInsights(projects: Project[], invoices: Invoice[], expenses: Expense[], monthlyData: any[], leaderboard: any[], clients: Client[]): Insight[] {
+>>>>>>> Stashed changes
     const insights: Insight[] = [];
     const now = new Date();
     const currentMonth = now.getMonth();
 
+<<<<<<< Updated upstream
     // 1. Revenue Trend
     const last3Months = monthlyData.slice(Math.max(0, currentMonth - 2), currentMonth + 1);
     const totalRecent = last3Months.reduce((s, m) => s + m.collected, 0);
@@ -891,15 +1039,16 @@ function generateInsights(
     }
 
     // 2. Collection Rate (adjusted for deposit model: 50% deposit upfront, rest at delivery)
+=======
+>>>>>>> Stashed changes
     const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
     const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
     const collectionRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
 
-    const preDeliveryProjects = projects.filter(p => !['delivery', 'completed'].includes(p.status) && p.status !== 'cancelled');
-    const deliveryProjects = projects.filter(p => ['delivery', 'completed'].includes(p.status));
-    const overdueInvoices = invoices.filter(i => i.status !== 'paid' && i.status !== 'void' && deliveryProjects.some(p => p.id === i.project_id));
-    const overdueAmount = overdueInvoices.reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid || 0)), 0);
+    if (collectionRate >= 70) insights.push({ icon: '💰', title: `Excellent Recouvrement (${collectionRate}%)`, description: `Bravo! La majorité du CA facturé est déjà encaissée.`, type: 'success' });
+    else insights.push({ icon: '⚠️', title: `Suivi Trésorerie (${collectionRate}%)`, description: `Attention aux paiements en attente sur les projets livrés.`, type: 'warning' });
 
+<<<<<<< Updated upstream
     if (collectionRate >= 80) {
         insights.push({
             icon: '💰',
@@ -923,12 +1072,14 @@ function generateInsights(
             type: 'info',
         });
     }
+=======
+    const inProd = projects.filter(p => p.status === 'production').length;
+    if (inProd > 5) insights.push({ icon: '🏭', title: 'Forte Productivité', description: `${inProd} projets en atelier. Surveillez les délais de livraison.`, type: 'success' });
+>>>>>>> Stashed changes
 
-    // 3. Pipeline Health
-    const designing = projects.filter(p => ['designing', '3d_model', 'design_ready'].includes(p.status)).length;
-    const inProduction = projects.filter(p => ['approved_for_production', 'production'].includes(p.status)).length;
-    const completed = projects.filter(p => p.status === 'completed').length;
+    if (leaderboard.length > 0) insights.push({ icon: '🏆', title: `Top Seller: ${leaderboard[0].name}`, description: `Meneur en volume avec ${formatCurrency(leaderboard[0].volume)} apportés.`, type: 'success' });
 
+<<<<<<< Updated upstream
     if (designing > inProduction * 2) {
         insights.push({
             icon: '🎨',
@@ -1044,6 +1195,10 @@ function generateInsights(
             type: 'success',
         });
     }
+=======
+    const newClients = clients.filter(c => new Date(c.created_at).getMonth() === currentMonth).length;
+    if (newClients > 0) insights.push({ icon: '🌟', title: `${newClients} Nouveaux Clients`, description: `Belle croissance ce mois-ci!`, type: 'success' });
+>>>>>>> Stashed changes
 
     return insights;
 }
