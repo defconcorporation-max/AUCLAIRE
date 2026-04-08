@@ -1,8 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiInvoices } from '@/services/apiInvoices';
 import { apiExpenses } from '@/services/apiExpenses';
-import { apiProjects } from '@/services/apiProjects';
-import { apiClients } from '@/services/apiClients';
 import { financialUtils } from '@/utils/financialUtils';
 import { useMemo } from 'react';
 
@@ -19,8 +17,6 @@ export interface ExtrapolationMonth {
 export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' = 'month') {
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
-    const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
-    const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
 
     const analytics = useMemo(() => {
         const now = new Date();
@@ -42,13 +38,10 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const multiplier = daysInMonth / currentDay;
         const estimatedCurrentMonth = currentMonthInvoiced * multiplier;
 
-        // --- CALCUL DE LA TENDANCE LINÉAIRE (STATU QUO) ---
-        // On calcule la progression moyenne en DOLLARS pour éviter l'explosion exponentielle
         const firstMonthVal = fullHistory[0].invoiced;
         const totalIncrease = lastCompletedMonthVal - firstMonthVal;
         const avgMonthlyIncrease = currentMonthIndex > 0 ? totalIncrease / currentMonthIndex : 0;
 
-        // Point de départ futur pour Evo 20
         const startingPointForFutureEvo20 = Math.max(lastCompletedMonthVal * 1.20, estimatedCurrentMonth);
 
         const yearlyExtrapolation: ExtrapolationMonth[] = [];
@@ -60,13 +53,10 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             const isFuture = i > currentMonthIndex;
             const isPast = i < currentMonthIndex;
 
-            // Statu Quo : Progression Linéaire (Last + (écart * avgIncrease))
-            // C'est prévisible et ça ne casse pas l'échelle du graphique
             const statusQuoVal = isPast 
                 ? fullHistory[i].invoiced 
                 : Math.round(lastCompletedMonthVal + ((i - (currentMonthIndex - 1)) * avgMonthlyIncrease));
 
-            // Target 20 : Progression Exponentielle (Ambition)
             let target20Val = 0;
             if (isPast) {
                 target20Val = fullHistory[i].invoiced;
@@ -95,11 +85,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const perfVsSQ = currentSQ > 0 ? Math.round(((estimatedCurrentMonth - currentSQ) / currentSQ) * 100) : 0;
 
         return {
-            trendData: {
-                collected: { value: 0, trend: perfVsSQ, label: 'vs Statu Quo' },
-                invoiced: { value: 0, trend: 0, label: timeframe },
-                clients: { value: 0, trend: 0, label: 'total' }
-            },
             performanceDelta: perfVsSQ,
             yearlyExtrapolation,
             estimatedCurrentMonth,
@@ -109,7 +94,7 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
     }, [invoices, expenses, timeframe]);
 
     return {
-        isLoading: iLoad || eLoad || pLoad || cLoad,
+        isLoading: iLoad || eLoad,
         ...analytics
     };
 }
