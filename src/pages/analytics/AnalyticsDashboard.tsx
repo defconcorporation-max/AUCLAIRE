@@ -1,9 +1,8 @@
-import { apiInvoices, Invoice } from '@/services/apiInvoices';
-import { apiProjects, Project } from '@/services/apiProjects';
+import { apiInvoices } from '@/services/apiInvoices';
+import { apiProjects } from '@/services/apiProjects';
 import { useQuery } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
-import { apiActivities } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target, MousePointer2 } from 'lucide-react';
@@ -28,10 +27,9 @@ export default function AnalyticsDashboard() {
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
     const { data: users = [], isLoading: uLoad } = useQuery({ queryKey: ['users'], queryFn: apiUsers.getAll });
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
-    const { data: activities = [], isLoading: alLoad } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll });
-    const { isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: () => [] }); 
+    const { isLoading: cLoad } = useQuery({ queryKey: ['clients_dummy'], queryFn: () => [] }); 
 
-    if (pLoad || iLoad || uLoad || eLoad || alLoad || engineLoading || cLoad) {
+    if (pLoad || iLoad || uLoad || eLoad || engineLoading || cLoad) {
         return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Calcul des tendances...</div>;
     }
 
@@ -93,7 +91,7 @@ export default function AnalyticsDashboard() {
                                 onClick={() => setTimeframe(period)}
                                 className={`rounded-full px-6 transition-all duration-300 ${timeframe === period ? 'bg-luxury-gold text-white shadow-lg scale-105' : 'text-muted-foreground hover:text-black dark:hover:text-white'}`}
                             >
-                                {period === 'day' ? 'Jour' : period === 'week' ? 'Semaine' : period === 'month' ? 'Mois' : 'V3'}
+                                {period === 'day' ? 'Jour' : period === 'week' ? 'Semaine' : period === 'month' ? 'Mois' : 'Total'}
                             </Button>
                         ))}
                     </div>
@@ -128,7 +126,7 @@ export default function AnalyticsDashboard() {
                             <Target className="w-6 h-6 text-luxury-gold" />
                             Prévisionnel Annuel & Objectifs de Croissance
                         </CardTitle>
-                        <CardDescription>Analyse extrapolée basées sur les moyennes mensuelles actuelles</CardDescription>
+                        <CardDescription>Analyse extrapolée basée sur les moyennes mensuelles actuelles</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-4">
                         <div className="bg-black/5 dark:bg-white/5 p-3 rounded-2xl border border-black/5 dark:border-white/5">
