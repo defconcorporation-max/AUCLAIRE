@@ -26,8 +26,8 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total') 
     };
 
     const trendData = {
-        collected: { value: currentMetrics.collected, trend: calcTrend(currentMetrics.collected, previousMetrics.collected), label: timeframe },
-        invoiced: { value: currentMetrics.invoiced, trend: calcTrend(currentMetrics.invoiced, previousMetrics.invoiced), label: timeframe },
+        collected: { value: currentMetrics.cashCollected, trend: calcTrend(currentMetrics.cashCollected, previousMetrics.cashCollected), label: timeframe },
+        invoiced: { value: currentMetrics.invoicedTotal, trend: calcTrend(currentMetrics.invoicedTotal, previousMetrics.invoicedTotal), label: timeframe },
         clients: { 
             value: clients.filter(c => {
                 const d = new Date(c.created_at);
@@ -72,7 +72,7 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total') 
         let mCollected = 0;
 
         projects.forEach(p => {
-            const matrix = distributionMatrix[p.status as keyof typeof distributionMatrix] || [0.3, 0.4, 0.3];
+            const matrix = (distributionMatrix as any)[p.status] || [0.3, 0.4, 0.3];
             const val = Number(p.financials?.selling_price || p.budget || 0);
             mInvoiced += val * matrix[m];
             mCollected += (val * matrix[m]) * 0.85; // Est. collection rate
@@ -83,21 +83,20 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total') 
 
     // 4. Yearly Growth & Extrapolation Engine
     const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth(); // 0-indexed
+    const currentMonth = new Date().getMonth();
     const monthlyHistory = Array.from({ length: currentMonth + 1 }, (_, i) => {
         const start = new Date(currentYear, i, 1);
         const end = new Date(currentYear, i + 1, 0, 23, 59, 59);
         const metrics = financialUtils.calculateMetrics(invoices, expenses, start, end);
-        return { month: i, ...metrics };
+        return { month: i, invoiced: metrics.invoicedTotal, collected: metrics.cashCollected, expenses: metrics.expensesTotal };
     });
 
-    // Calculate Monthly Average Growth Rate (Safe CAGR approach)
     let avgGrowthRate = 0;
     if (monthlyHistory.length > 1) {
         let totalGrowth = 0;
         let growthPoints = 0;
         for (let i = 1; i < monthlyHistory.length; i++) {
-            const prev = monthlyHistory[i-1].invoiced || 1; // avoid div by zero
+            const prev = monthlyHistory[i-1].invoiced || 1;
             const curr = monthlyHistory[i].invoiced;
             totalGrowth += (curr - prev) / prev;
             growthPoints++;
@@ -105,7 +104,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total') 
         avgGrowthRate = totalGrowth / growthPoints;
     }
 
-    // Limit growth to a realistic range (-20% to +50% per month for projections)
     const safeGrowthRate = Math.max(-0.2, Math.min(0.5, avgGrowthRate));
 
     const yearlyExtrapolation = Array.from({ length: 12 }, (_, i) => {
@@ -113,11 +111,9 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total') 
         const name = date.toLocaleDateString('fr-FR', { month: 'short' });
         
         if (i <= currentMonth) {
-            // Real Data
             const hist = monthlyHistory[i];
             return { name, invoiced: hist.invoiced, collected: hist.collected, expenses: hist.expenses, isProjected: false };
         } else {
-            // Projected Data based on growth
             const monthsForward = i - currentMonth;
             const lastRealInvoiced = monthlyHistory[currentMonth].invoiced;
             const projectedInvoiced = lastRealInvoiced * Math.pow(1 + safeGrowthRate, monthsForward);
@@ -125,8 +121,8 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total') 
             return { 
                 name, 
                 invoiced: Math.round(projectedInvoiced), 
-                collected: Math.round(projectedInvoiced * 0.8), // 80% collection efficiency
-                expenses: Math.round(projectedInvoiced * 0.35), // 35% margin est
+                collected: Math.round(projectedInvoiced * 0.8),
+                expenses: Math.round(projectedInvoiced * 0.35),
                 isProjected: true 
             };
         }

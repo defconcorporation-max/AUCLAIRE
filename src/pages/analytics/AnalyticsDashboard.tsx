@@ -6,13 +6,12 @@ import { apiExpenses } from '@/services/apiExpenses';
 import { apiActivities } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Briefcase, Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target, MousePointer2 } from 'lucide-react';
+import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target, MousePointer2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { financialUtils } from '@/utils/financialUtils';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, ReferenceLine, ComposedChart, Line } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, ComposedChart, Line, Bar } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
 import { apiSettings } from '@/services/apiSettings';
@@ -22,7 +21,7 @@ export default function AnalyticsDashboard() {
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     
     // Engine Hook with New Growth Extrapolation
-    const { isLoading: engineLoading, forecast, trendData, weightedPipeline, yearlyExtrapolation, avgMonthlyGrowth } = useAnalyticsData(timeframe);
+    const { isLoading: engineLoading, trendData, yearlyExtrapolation, avgMonthlyGrowth } = useAnalyticsData(timeframe);
 
     // Queries
     const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
@@ -30,17 +29,16 @@ export default function AnalyticsDashboard() {
     const { data: users = [], isLoading: uLoad } = useQuery({ queryKey: ['users'], queryFn: apiUsers.getAll });
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
     const { data: activities = [], isLoading: alLoad } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll });
-    const { isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: () => [] }); // Dummy to maintain signature consistency
+    const { isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: () => [] }); 
 
     if (pLoad || iLoad || uLoad || eLoad || alLoad || engineLoading || cLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Initialisation des algorithmes de croissance...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Calcul des tendances...</div>;
     }
 
-    const currentYear = new Date().getFullYear();
     const totalYearlyProjected = yearlyExtrapolation.reduce((sum, m) => sum + m.invoiced, 0);
     const realYearlyToDate = yearlyExtrapolation.filter(m => !m.isProjected).reduce((sum, m) => sum + m.invoiced, 0);
 
-    // Logic for Seller Leaderboard
+    // Seller Leaderboard
     const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, cashCollected: number }> = {};
     users.filter(u => ['affiliate', 'admin', 'ambassador'].includes(u.role as string)).forEach(u => {
         sellerStats[u.id] = { id: u.id, name: u.full_name, role: u.role as string, projectCount: 0, volume: 0, cashCollected: 0 };
@@ -61,38 +59,6 @@ export default function AnalyticsDashboard() {
     });
 
     const leaderboard = Object.values(sellerStats).filter(s => s.projectCount > 0).sort((a, b) => b.volume - a.volume);
-
-    // Logic for Manufacturers
-    const manufacturerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, totalProdDays: number, prodCount: number, modCount: number }> = {};
-    users.filter(u => u.role === 'manufacturer').forEach(u => {
-        manufacturerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, totalProdDays: 0, prodCount: 0, modCount: 0 };
-    });
-
-    const statusLogs = activities.filter(a => a.action === 'status_change');
-    projects.forEach(p => {
-        if (p.manufacturer_id && manufacturerStats[p.manufacturer_id]) {
-            manufacturerStats[p.manufacturer_id].projectCount++;
-            manufacturerStats[p.manufacturer_id].volume += Number(p.financials?.selling_price || p.budget || 0);
-            const pLogs = statusLogs.filter(log => log.project_id === p.id).sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-            let prodStart: Date | null = null;
-            pLogs.forEach(log => {
-                const det = (log.details || '').toLowerCase();
-                if (det.includes('to production')) prodStart = new Date(log.created_at);
-                if (det.includes('to completed') && prodStart) {
-                    manufacturerStats[p.manufacturer_id!].totalProdDays += (new Date(log.created_at).getTime() - prodStart.getTime()) / (1000 * 3600 * 24);
-                    manufacturerStats[p.manufacturer_id!].prodCount++;
-                    prodStart = null;
-                }
-                if (det.includes('to design_modification')) manufacturerStats[p.manufacturer_id!].modCount++;
-            });
-        }
-    });
-
-    const manufacturerScorecard = Object.values(manufacturerStats).filter(s => s.projectCount > 0).map(s => ({
-        ...s,
-        avgSpeed: s.prodCount > 0 ? Math.round(s.totalProdDays / s.prodCount) : 0,
-        qualityRate: Math.max(0, 100 - (s.modCount / s.projectCount * 100))
-    })).sort((a, b) => b.qualityRate - a.qualityRate);
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-16 px-4">
@@ -134,12 +100,11 @@ export default function AnalyticsDashboard() {
                 </div>
             </div>
 
-            {/* Main Stats Summary */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <KPICard title="Cash Encaissé" value={trendData.collected.value} trend={trendData.collected.trend} label={trendData.collected.label} />
                 <KPICard title="Total Facturé" value={trendData.invoiced.value} trend={trendData.invoiced.trend} label={trendData.invoiced.label} />
                 <KPICard title="Nouveaux Clients" value={trendData.clients.value} trend={trendData.clients.trend} label={trendData.clients.label} isCurrency={false} />
-                <Card className="bg-black text-white dark:bg-white dark:text-black shadow-2xl overflow-hidden relative group">
+                <Card className="bg-black text-white dark:bg-zinc-800 dark:text-white shadow-2xl overflow-hidden relative group border-none">
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Target className="w-20 h-20" />
                     </div>
@@ -151,13 +116,11 @@ export default function AnalyticsDashboard() {
                         <div className="flex items-center gap-2 mt-2">
                             <ArrowUpRight className="w-4 h-4 text-luxury-gold" />
                             <span className="text-xs font-bold text-luxury-gold">+{avgMonthlyGrowth}% / mois</span>
-                            <span className="text-[10px] opacity-40 uppercase">extrapolation</span>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Strategic Extension: Yearly Objectives & Growth Extrapolation */}
             <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-black overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-black/5 dark:border-white/5 pb-8">
                     <div>
@@ -165,7 +128,7 @@ export default function AnalyticsDashboard() {
                             <Target className="w-6 h-6 text-luxury-gold" />
                             Prévisionnel Annuel & Objectifs de Croissance
                         </CardTitle>
-                        <CardDescription>Analyse de la tendance actuelle extrapolée jusqu'au 31 décembre {currentYear}</CardDescription>
+                        <CardDescription>Analyse extrapolée basées sur les moyennes mensuelles actuelles</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-4">
                         <div className="bg-black/5 dark:bg-white/5 p-3 rounded-2xl border border-black/5 dark:border-white/5">
@@ -183,8 +146,8 @@ export default function AnalyticsDashboard() {
                         <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart data={yearlyExtrapolation} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
-                                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} tick={{fill: 'currentColor', opacity: 0.5}} />
-                                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `$${v/1000}k`} tick={{fill: 'currentColor', opacity: 0.5}} />
+                                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} />
+                                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `$${v/1000}k`} />
                                 <Tooltip 
                                     content={({ active, payload }) => {
                                         if (active && payload && payload.length) {
@@ -204,10 +167,9 @@ export default function AnalyticsDashboard() {
                                     }}
                                 />
                                 <Legend verticalAlign="top" height={36}/>
-                                <Bar name="Réel (Facturation)" dataKey={(d) => d.isProjected ? 0 : d.invoiced} fill="#000000" radius={[4, 4, 0, 0]} barSize={30} dark:fill="#ffffff" />
-                                <Bar name="Projeté (Objectif)" dataKey={(d) => d.isProjected ? d.invoiced : 0} fill="#A68A56" radius={[4, 4, 0, 0]} barSize={30} opacity={0.6} />
-                                <Line name="Trend Trésorerie" type="monotone" dataKey="collected" stroke="#10B981" strokeWidth={3} dot={{ r: 4 }} strokeDasharray={(d) => d.isProjected ? "5 5" : ""} />
-                                <ReferenceLine x={yearlyExtrapolation.findIndex(m => m.isProjected) - 0.5} stroke="#A68A56" label={{ value: 'TENDANCE', position: 'top', fill: '#A68A56', fontSize: 10, fontWeight: 'bold' }} strokeDasharray="3 3"/>
+                                <Bar name="Facturé" dataKey="invoiced" fill="#A68A56" radius={[4, 4, 0, 0]} barSize={30} />
+                                <Line name="Trend Trésorerie" type="monotone" dataKey="collected" stroke="#10B981" strokeWidth={3} dot={{ r: 4 }} />
+                                <ReferenceLine x={yearlyExtrapolation.findIndex(m => m.isProjected) - 0.5} stroke="#A68A56" label={{ value: 'PROJECTION', position: 'top', fill: '#A68A56', fontSize: 10, fontWeight: 'bold' }} strokeDasharray="3 3"/>
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
@@ -289,11 +251,11 @@ export default function AnalyticsDashboard() {
             <div className="grid gap-8 lg:grid-cols-2">
                 <Card className="border-none bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-zinc-900 shadow-xl ring-1 ring-emerald-500/10">
                     <CardHeader>
-                        <CardTitle className="font-serif text-xl flex items-center gap-2">⚡ Insights Stratégiques IA</CardTitle>
+                        <CardTitle className="font-serif text-xl flex items-center gap-2">⚡ Insights Stratégiques</CardTitle>
                     </CardHeader>
                     <CardContent className="grid gap-3">
                         {generateInsights(projects, invoices, leaderboard).map((insight, i) => (
-                            <div key={i} className={`p-4 rounded-3xl border flex gap-4 items-center transition-all hover:scale-[1.02] cursor-default bg-white/50 dark:bg-black/20 ${
+                            <div key={i} className={`p-4 rounded-3xl border flex gap-4 items-center bg-white/50 dark:bg-black/20 ${
                                 insight.type === 'success' ? 'border-emerald-500/10 shadow-emerald-500/5' : 'border-amber-500/10'
                             }`}>
                                 <div className="p-3 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm text-2xl">{insight.icon}</div>
@@ -315,11 +277,11 @@ export default function AnalyticsDashboard() {
                     <CardContent className="space-y-4">
                         <div className="p-4 bg-black/5 rounded-2xl border border-dashed border-black/10 flex items-center justify-between">
                             <span className="text-xs font-medium">Relancer factures impayées ({invoices.filter(i => i.status === 'sent').length})</span>
-                            <Button size="xs" variant="ghost" className="text-luxury-gold text-[10px] font-bold">ACTIONS</Button>
+                            <Button size="sm" variant="ghost" className="text-luxury-gold text-[10px] font-bold">ACTIONS</Button>
                         </div>
                         <div className="p-4 bg-black/5 rounded-2xl border border-dashed border-black/10 flex items-center justify-between">
                             <span className="text-xs font-medium">Valider projets en attente ({projects.filter(p => p.status === 'waiting_for_approval').length})</span>
-                            <Button size="xs" variant="ghost" className="text-luxury-gold text-[10px] font-bold">REVUE</Button>
+                            <Button size="sm" variant="ghost" className="text-luxury-gold text-[10px] font-bold">REVUE</Button>
                         </div>
                     </CardContent>
                 </Card>
