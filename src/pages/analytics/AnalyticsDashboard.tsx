@@ -59,7 +59,7 @@ export default function AnalyticsDashboard() {
     });
 
     // Seller Leaderboard Calculations
-    const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, cashCollected: number }> = {};
+    const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, cashCollected: number }> = {};
     users.filter(u => ['affiliate', 'admin', 'ambassador'].includes(u.role as string)).forEach(u => {
         sellerStats[u.id] = { id: u.id, name: u.full_name, role: u.role as string, projectCount: 0, volume: 0, cashCollected: 0 };
     });
