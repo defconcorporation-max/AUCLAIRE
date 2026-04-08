@@ -121,9 +121,9 @@ export function generateMonthlyReportPDF(params: MonthlyReportParams): void {
 
     // --- Invoices Paid This Month ---
     const paidInvoices = invoices.filter((inv: InvoiceWithMeta) => {
-        const paidAt = inv.paid_at || (inv.status === 'paid' ? inv.created_at : null) || (Number(inv.amount_paid) > 0 ? inv.updated_at ?? inv.created_at : null);
+        const paidAt = inv.paid_at || (inv.status === 'paid' ? inv.created_at : null) || (Number(inv.amount_paid) > 0 ? (inv as any).updated_at ?? inv.created_at : null);
         if (!paidAt) return false;
-        const d = financialUtils.toLocalDate(paidAt);
+        const d = new Date(paidAt);
         return d >= start && d <= end;
     }).map((inv: InvoiceWithMeta) => {
         const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : inv.status === 'paid' ? Number(inv.amount || 0) : 0;
@@ -190,9 +190,9 @@ export function generateMonthlyReportPDF(params: MonthlyReportParams): void {
     // --- Top 5 Clients by Revenue ---
     const clientRevenueMap: Record<string, number> = {};
     invoices.forEach((inv: InvoiceWithMeta) => {
-        const paidAt = inv.paid_at || (inv.status === 'paid' ? inv.created_at : null) || (Number(inv.amount_paid) > 0 ? inv.updated_at ?? inv.created_at : null);
-        if (!paidAt) return;
-        const d = financialUtils.toLocalDate(paidAt);
+        const paidAt = inv.paid_at || (inv.status === 'paid' ? inv.created_at : null) || (Number(inv.amount_paid) > 0 ? (inv as any).updated_at ?? inv.created_at : null);
+        if (!paidAt) return false;
+        const d = new Date(paidAt);
         if (d < start || d > end) return;
         const clientName = (inv.project as { client?: { full_name?: string } })?.client?.full_name || 'Client inconnu';
         const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : inv.status === 'paid' ? Number(inv.amount || 0) : 0;

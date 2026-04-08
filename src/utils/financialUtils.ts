@@ -3,8 +3,9 @@ import { Expense } from '@/services/apiExpenses';
 import { Project } from '@/services/apiProjects';
 import { ActivityLog } from '@/services/apiActivities';
 
+type TimeFrame = 'day' | 'week' | 'month' | 'year' | 'total' | 'today' | 'all-time';
+
 export const financialUtils = {
-    // Basic Parsing & Helpers
     parsePaymentAmount(details: string): number {
         const matches = details.match(/[\d.]+/g);
         if (matches && matches.length > 0) return parseFloat(matches[matches.length - 1]);
@@ -21,11 +22,11 @@ export const financialUtils = {
         return d >= start && d <= end;
     },
 
-    toLocalDate(date: string | Date, locale: string = 'fr-FR'): string {
+    toLocalDate(date: string | Date | undefined, locale: string = 'fr-FR'): string {
+        if (!date) return '-';
         return new Date(date).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
     },
 
-    // Price & Cost Computations
     getSalePrice(p: Project): number {
         return Number(p.financials?.selling_price || p.budget || 0);
     },
@@ -43,50 +44,55 @@ export const financialUtils = {
     computeCommissionAmount(p: Project, preferredRole?: string): number {
         const price = this.getSalePrice(p);
         const role = preferredRole || (p.affiliate_id ? 'affiliate' : 'sales_agent');
-        const rate = (role === 'affiliate' ? p.affiliate_rate : p.sales_agent_rate) || 0;
+        
+        // Use the specific rate from the project object
+        const rate = (role === 'affiliate' ? p.affiliate_commission_rate : (p as any).sales_agent_commission_rate) || 0;
+        const type = (role === 'affiliate' ? p.affiliate_commission_type : (p as any).sales_agent_commission_type) || 'percent';
+        
+        if (type === 'fixed') return Number(rate);
         return (price * (Number(rate) / 100));
     },
 
-    computeProjectMargin(p: Project): number {
+    computeProjectMargin(p: Project) {
         const price = this.getSalePrice(p);
-        if (price === 0) return 0;
         const costs = this.computeProjectCosts(p.financials);
         const comm = this.computeCommissionAmount(p);
-        return (price - costs - comm) / price;
+        const marginAmount = price - costs - comm;
+        const marginPercent = price > 0 ? (marginAmount / price) * 100 : 0;
+        return { marginAmount, marginPercent };
     },
 
-    // Range Selection
-    getPeriodRange(type: 'day' | 'week' | 'month' | 'total'): { start: Date; end: Date } {
+    getPeriodRange(type: TimeFrame): { start: Date; end: Date } {
         const now = new Date();
         const start = new Date();
-        if (type === 'day') start.setHours(0,0,0,0);
+        if (type === 'day' || type === 'today') start.setHours(0,0,0,0);
         else if (type === 'week') start.setDate(now.getDate() - 7);
         else if (type === 'month') start.setMonth(now.getMonth() - 1);
+        else if (type === 'year') start.setFullYear(now.getFullYear(), 0, 1);
         else start.setFullYear(2000);
         return { start, end: now };
     },
 
-    getPreviousPeriodRange(type: 'day' | 'week' | 'month' | 'total' | 'today'): { start: Date; end: Date } {
-        // Handle 'today' as 'day' for compatibility
-        const actualType = type === 'today' ? 'day' : type;
-        const { start: currentStart } = this.getPeriodRange(actualType as any);
+    getPreviousPeriodRange(type: TimeFrame): { start: Date; end: Date } {
+        let { start: currentStart } = this.getPeriodRange(type);
         const end = new Date(currentStart);
         const start = new Date(currentStart);
         
-        if (actualType === 'day') start.setDate(start.getDate() - 1);
-        else if (actualType === 'week') start.setDate(start.getDate() - 7);
-        else if (actualType === 'month') start.setMonth(start.getMonth() - 1);
+        if (type === 'day' || type === 'today') start.setDate(start.getDate() - 1);
+        else if (type === 'week') start.setDate(start.getDate() - 7);
+        else if (type === 'month') start.setMonth(start.getMonth() - 1);
+        else if (type === 'year') start.setFullYear(start.getFullYear() - 1);
         else start.setFullYear(start.getFullYear() - 1);
         
         return { start, end };
     },
 
-    // Metrics & Aggregations
     getCollectedFromInvoices(invoices: Invoice[], start: Date, end: Date): number {
         return invoices.reduce((sum, inv) => {
             if (inv.status === 'void') return sum;
-            const paidAt = inv.paid_at ? new Date(inv.paid_at) : (inv.status === 'paid' ? new Date(inv.updated_at || inv.created_at) : null);
-            if (paidAt && paidAt >= start && paidAt <= end) {
+            const dateToUse = inv.paid_at || (inv as any).updated_at || inv.created_at;
+            const paidAt = new Date(dateToUse);
+            if (paidAt >= start && paidAt <= end) {
                 return sum + (Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : Number(inv.amount));
             }
             return sum;
