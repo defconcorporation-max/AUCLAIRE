@@ -5,12 +5,12 @@ import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target } from 'lucide-react';
+import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, Bar, Cell, ComposedChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, Bar, Cell, ComposedChart, Area } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
 import { apiSettings } from '@/services/apiSettings';
@@ -19,7 +19,7 @@ export default function AnalyticsDashboard() {
     const { t } = useTranslation();
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     
-    const { isLoading: engineLoading, trendData, yearlyExtrapolation, avgMonthlyGrowth, performanceDelta } = useAnalyticsData(timeframe);
+    const { isLoading: engineLoading, trendData, yearlyExtrapolation, performanceDelta, estimatedCurrentMonth } = useAnalyticsData(timeframe);
 
     const { data: projects = [] as Project[], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: invoices = [] as Invoice[], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
@@ -28,10 +28,8 @@ export default function AnalyticsDashboard() {
     const { isLoading: cLoad } = useQuery({ queryKey: ['clients_dummy'], queryFn: () => [] }); 
 
     if (pLoad || iLoad || uLoad || eLoad || engineLoading || cLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Alignement des objectifs...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Calcul des trajectoires...</div>;
     }
-
-    const totalYearlyProjected = yearlyExtrapolation.reduce((sum, m) => sum + (m.isProjected ? m.target : m.invoiced), 0);
 
     const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, cashCollected: number }> = {};
     users.filter(u => ['affiliate', 'admin', 'ambassador'].includes(u.role as string)).forEach(u => {
@@ -61,7 +59,7 @@ export default function AnalyticsDashboard() {
                     <h1 className="text-4xl font-serif text-black dark:text-white tracking-tighter">{t('analyticsPage.title')}</h1>
                     <div className="flex items-center gap-2 mt-2">
                         <span className="h-1 w-12 bg-luxury-gold rounded-full" />
-                        <p className="text-muted-foreground text-sm uppercase tracking-[0.2em] font-medium">{t('analyticsPage.subtitle')}</p>
+                        <p className="text-muted-foreground text-sm uppercase tracking-[0.2em] font-medium">Scénarios Stratégiques & Expansion</p>
                     </div>
                 </div>
                 
@@ -78,7 +76,7 @@ export default function AnalyticsDashboard() {
                         <FileDown className="w-4 h-4 mr-2" />
                         Exporter Rapport
                     </Button>
-                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full backdrop-blur-xl border border-black/10 dark:border-white/10 shadow-inner">
+                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full backdrop-blur-xl border border-black/10 dark:border-white/10">
                         {(['day', 'week', 'month', 'total'] as const).map((period) => (
                             <Button
                                 key={period}
@@ -95,15 +93,15 @@ export default function AnalyticsDashboard() {
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <KPICard title="Cash Encaissé (Mois)" value={trendData.collected.value} trend={performanceDelta} label="Objectif" />
-                <KPICard title="Performance Facturation" value={yearlyExtrapolation.find(m => m.isCurrent)?.invoiced || 0} trend={performanceDelta} label="vs Objectif" />
-                <KPICard title="Nouveaux Projets" value={projects.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length} trend={0} label="ce mois" isCurrency={false} />
-                <Card className="bg-black text-white dark:bg-zinc-800 dark:text-white shadow-2xl overflow-hidden relative group border-none">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Target className="w-20 h-20" /></div>
-                    <CardHeader className="pb-2"><CardTitle className="text-[10px] uppercase tracking-widest opacity-60">Estimation Fin d'Année</CardTitle></CardHeader>
+                <KPICard title="Estimation Fin de Mois" value={estimatedCurrentMonth} trend={performanceDelta} label="vs Statu Quo" />
+                <KPICard title="CA Réel (Avril)" value={yearlyExtrapolation.find(m => m.isCurrent)?.actual || 0} trend={0} label="ce mois" />
+                <KPICard title="Cash Encaissé" value={trendData.collected.value} trend={0} label="ce mois" />
+                <Card className="bg-emerald-600 text-white shadow-2xl overflow-hidden relative group border-none">
+                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity"><TrendingUp className="w-20 h-20" /></div>
+                    <CardHeader className="pb-2"><CardTitle className="text-[10px] uppercase tracking-widest opacity-80">Objectif Expansion (Evo 20)</CardTitle></CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif">{formatCurrency(totalYearlyProjected)}</div>
-                        <div className="flex items-center gap-2 mt-2"><ArrowUpRight className="w-4 h-4 text-luxury-gold" /><span className="text-xs font-bold text-luxury-gold">Trend: +{avgMonthlyGrowth}%</span></div>
+                        <div className="text-3xl font-serif">{formatCurrency(yearlyExtrapolation[yearlyExtrapolation.length-1].target20)}</div>
+                        <div className="flex items-center gap-2 mt-2"><ArrowUpRight className="w-4 h-4 text-white" /><span className="text-xs font-bold text-white">Target Décembre (+20%/m)</span></div>
                     </CardContent>
                 </Card>
             </div>
@@ -111,18 +109,12 @@ export default function AnalyticsDashboard() {
             <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-black overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-black/5 dark:border-white/5 pb-8">
                     <div>
-                        <CardTitle className="text-2xl font-serif flex items-center gap-2"><Target className="w-6 h-6 text-luxury-gold" />Pilotage par Objectifs : Réel vs Target</CardTitle>
-                        <CardDescription>Objectifs calculés sur la performance des mois passés pleins</CardDescription>
+                        <CardTitle className="text-2xl font-serif flex items-center gap-2"><TrendingUp className="w-6 h-6 text-luxury-gold" />Comparaison des Scénarios de Croissance</CardTitle>
+                        <CardDescription>Visualisez vos performances réelles face à vos objectifs de croissance (+20%/m)</CardDescription>
                     </div>
-                    {performanceDelta !== 0 && (
-                        <div className={`px-4 py-2 rounded-2xl flex items-center gap-2 ${performanceDelta > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                            {performanceDelta > 0 ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
-                            <span className="text-sm font-bold">{Math.abs(performanceDelta)}% {performanceDelta > 0 ? 'd\'avance' : 'de retard'} sur l\'objectif mensuel</span>
-                        </div>
-                    )}
                 </CardHeader>
                 <CardContent className="p-0 sm:p-6">
-                    <div className="h-[400px] w-full mt-6">
+                    <div className="h-[450px] w-full mt-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart data={yearlyExtrapolation} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
@@ -132,34 +124,38 @@ export default function AnalyticsDashboard() {
                                     if (active && payload && payload.length) {
                                         const data = payload[0].payload;
                                         return (
-                                            <div className="bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 p-4 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                            <div className="bg-white/90 dark:bg-zinc-900/90 border border-black/10 dark:border-white/10 p-4 rounded-2xl shadow-2xl backdrop-blur-xl">
                                                 <p className="text-xs font-bold uppercase tracking-widest mb-2 border-b pb-1 opacity-50">{data.name}</p>
-                                                <div className="space-y-1.5">
-                                                    <p className="flex justify-between gap-8 text-sm"><span className="opacity-60">Réel Facturé:</span> <strong>{formatCurrency(data.invoiced)}</strong></p>
-                                                    <p className="flex justify-between gap-8 text-sm text-luxury-gold"><span className="opacity-60">Objectif (Target):</span> <strong>{formatCurrency(data.target)}</strong></p>
-                                                    {!data.isProjected && !data.isCurrent && (
-                                                        <p className={`text-[10px] font-bold ${data.invoiced >= data.target ? 'text-emerald-500' : 'text-red-500'}`}>
-                                                            {data.invoiced >= data.target ? 'OBJECTIF ATTEINT ✅' : 'SOUS L\'OBJECTIF ⚠️'}
-                                                        </p>
+                                                <div className="space-y-1.5 min-w-[180px]">
+                                                    <p className="flex justify-between gap-4 text-sm text-luxury-gold"><span className="opacity-60 italic">Revenu Réel:</span> <strong>{formatCurrency(data.actual)}</strong></p>
+                                                    {data.isCurrent && (
+                                                        <p className="flex justify-between gap-4 text-sm text-blue-500 font-bold"><span className="opacity-60 italic">Estimation Fin de Mois:</span> <strong>{formatCurrency(data.estimated)}</strong></p>
                                                     )}
+                                                    <p className="flex justify-between gap-4 text-sm text-zinc-500"><span className="opacity-60 italic">Si on continue (Statu Quo):</span> <strong>{formatCurrency(data.statusQuo)}</strong></p>
+                                                    <p className="flex justify-between gap-4 text-sm text-emerald-500 font-bold"><span className="opacity-60 italic">Objectif Evo 20:</span> <strong>{formatCurrency(data.target20)}</strong></p>
                                                 </div>
                                             </div>
                                         );
                                     }
                                     return null;
                                 }} />
-                                <Legend verticalAlign="top" height={36}/>
-                                <Bar name="Objectif" dataKey="target" fill="#E5E7EB" radius={[4, 4, 0, 0]} barSize={40} opacity={0.3} />
-                                <Bar name="Réel Facturé" dataKey="invoiced" radius={[4, 4, 0, 0]} barSize={25}>
+                                <Legend verticalAlign="top" height={36} iconType="circle"/>
+                                
+                                {/* Zone d'ombre pour l'ambition (Evo 20) */}
+                                <Area type="monotone" dataKey="target20" fill="rgba(16, 185, 129, 0.05)" stroke="none" />
+                                
+                                <Bar name="Revenu Réel" dataKey="actual" fill="#A68A56" radius={[4, 4, 0, 0]} barSize={35}>
                                     {yearlyExtrapolation.map((entry, index) => (
-                                        <Cell 
-                                            key={`cell-${index}`} 
-                                            fill={entry.isCurrent ? '#A68A56' : (entry.invoiced >= entry.target ? '#10B981' : '#F59E0B')} 
-                                            opacity={entry.isProjected ? 0 : 1}
-                                        />
+                                        <Cell key={`cell-${index}`} fill={entry.isCurrent ? '#3b82f6' : '#A68A56'} />
                                     ))}
                                 </Bar>
-                                <Line name="Trajectoire Trend" type="monotone" dataKey="target" stroke="#A68A56" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+
+                                {yearlyExtrapolation.some(m => m.isCurrent) && (
+                                    <Bar name="Estimation Avril" dataKey="estimated" fill="rgba(59, 130, 246, 0.2)" radius={[4, 4, 0, 0]} barSize={35} />
+                                )}
+
+                                <Line name="Si on continue comme ça" type="monotone" dataKey="statusQuo" stroke="#71717a" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                                <Line name="Evo 20 (Objectif)" type="monotone" dataKey="target20" stroke="#10b981" strokeWidth={3} dot={{ stroke: '#10b981', strokeWidth: 2, r: 4, fill: '#fff' }} />
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
@@ -237,7 +233,7 @@ function KPICard({ title, value, trend, label, isCurrency = true }: { title: str
                         {Math.abs(trend)}% <span className="text-[9px] text-zinc-400 font-normal uppercase italic tracking-tighter">vs {label}</span>
                     </div>
                 ) : (
-                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Cible atteinte</span>
+                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Sur l'Objectif</span>
                 )}
             </CardContent>
         </Card>

@@ -8,9 +8,10 @@ import { useMemo } from 'react';
 
 export interface ExtrapolationMonth {
     name: string;
-    invoiced: number;    // Réel
-    target: number;      // Objectif calculé
-    collected: number;
+    actual: number;      // Réel jusque là
+    estimated: number | null; // Estimation fin de mois (uniquement pour le mois en cours)
+    statusQuo: number;   // Courbe "Si on continue comme ça"
+    target20: number;    // Courbe "+20% par mois"
     isProjected: boolean;
     isCurrent: boolean;
 }
@@ -24,9 +25,11 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
     const analytics = useMemo(() => {
         const now = new Date();
         const currentMonthIndex = now.getMonth();
+        const currentDay = now.getDate();
+        const daysInMonth = new Date(now.getFullYear(), currentMonthIndex + 1, 0).getDate();
         const monthNames = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juill.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
-        // 1. Calculer les données réelles pour TOUS les mois jusqu'à aujourd'hui
+        // 1. Données réelles mensuelles
         const fullHistory: { invoiced: number, collected: number }[] = [];
         for (let i = 0; i <= currentMonthIndex; i++) {
             const monthStart = new Date(now.getFullYear(), i, 1);
@@ -35,7 +38,8 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             fullHistory.push({ invoiced: invoicedTotal, collected: cashCollected });
         }
 
-        // 2. Calculer la croissance basée UNIQUEMENT sur les mois terminés (excluant avril)
+        // 2. Calcul des croissances
+        // Croissance moyenne des mois TERMINÉS (Janvier -> Mars)
         let totalGrowth = 0;
         let growthCounts = 0;
         for (let i = 1; i < currentMonthIndex; i++) {
@@ -45,47 +49,58 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
                 growthCounts++;
             }
         }
-        const avgMonthlyGrowth = growthCounts > 0 ? (totalGrowth / growthCounts) : 0.15;
+        const avgGrowth = growthCounts > 0 ? (totalGrowth / growthCounts) : 0.10;
+        const lastCompletedMonthVal = fullHistory[currentMonthIndex - 1]?.invoiced || 10000;
 
-        // 3. Construire le tunnel de prévision (Target) sur toute l'année
+        // 3. Construction des trajectoires
         const yearlyExtrapolation: ExtrapolationMonth[] = [];
-        let currentTarget = fullHistory[0].invoiced || 10000; 
+        let statusQuoRunner = fullHistory[0].invoiced;
+        let target20Runner = fullHistory[0].invoiced;
 
         for (let i = 0; i < 12; i++) {
-            const isPast = i < currentMonthIndex;
             const isCurrent = i === currentMonthIndex;
             const isFuture = i > currentMonthIndex;
+            const isPast = i < currentMonthIndex;
 
-            const realData = isPast || isCurrent ? fullHistory[i] : null;
+            // Estimation pour le mois en cours (x4 environ si on est le 8)
+            const multiplier = daysInMonth / currentDay;
+            const estimatedVal = isCurrent ? fullHistory[i].invoiced * multiplier : null;
 
             yearlyExtrapolation.push({
                 name: monthNames[i],
-                invoiced: realData?.invoiced || 0,
-                collected: realData?.collected || 0,
-                target: Math.round(currentTarget),
+                actual: (isPast || isCurrent) ? fullHistory[i].invoiced : 0,
+                estimated: estimatedVal,
+                statusQuo: Math.round(statusQuoRunner),
+                target20: Math.round(target20Runner),
                 isProjected: isFuture,
                 isCurrent: isCurrent
             });
 
-            currentTarget = currentTarget * (1 + avgMonthlyGrowth);
+            // Calcul des points suivants (on continue à partir du mois actuel)
+            // Status Quo continue avec la moyenne calculée
+            statusQuoRunner = statusQuoRunner * (1 + avgGrowth);
+            // Target 20 continue avec +20% fixe
+            target20Runner = target20Runner * 1.20;
         }
 
-        const currentMonthTarget = yearlyExtrapolation[currentMonthIndex].target;
-        const currentMonthReal = yearlyExtrapolation[currentMonthIndex].invoiced;
-        const performanceDelta = currentMonthTarget > 0 ? Math.round(((currentMonthReal - currentMonthTarget) / currentMonthTarget) * 100) : 0;
+        // Metrics de performance pour le mois en cours
+        const currentEstim = yearlyExtrapolation[currentMonthIndex].estimated || 0;
+        const currentSQ = yearlyExtrapolation[currentMonthIndex].statusQuo;
+        const perfVsSQ = currentSQ > 0 ? Math.round(((currentEstim - currentSQ) / currentSQ) * 100) : 0;
 
         const { start, end } = financialUtils.getPeriodRange(timeframe);
         const current = financialUtils.calculateMetrics(invoices, expenses, start, end);
 
         return {
             trendData: {
-                collected: { value: current.cashCollected, trend: performanceDelta, label: 'Objectif Mois' },
+                collected: { value: current.cashCollected, trend: perfVsSQ, label: 'vs Statu Quo' },
                 invoiced: { value: current.invoicedTotal, trend: 0, label: timeframe },
                 clients: { value: clients.length, trend: 0, label: 'total' }
             },
-            performanceDelta,
+            performanceDelta: perfVsSQ,
             yearlyExtrapolation,
-            avgMonthlyGrowth: Math.round(avgMonthlyGrowth * 100)
+            avgMonthlyGrowth: Math.round(avgGrowth * 100),
+            estimatedCurrentMonth: currentEstim
         };
     }, [invoices, expenses, projects, clients, timeframe]);
 
