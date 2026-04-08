@@ -42,25 +42,15 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const multiplier = daysInMonth / currentDay;
         const estimatedCurrentMonth = currentMonthInvoiced * multiplier;
 
-        // 1. Calcul de l'évolution moyenne réelle (Historique)
-        let totalGrowth = 0;
-        let growthCounts = 0;
-        for (let i = 1; i < currentMonthIndex; i++) {
-            const prev = fullHistory[i - 1].invoiced;
-            if (prev > 0) {
-                const g = (fullHistory[i].invoiced - prev) / prev;
-                // Cap à 100% par mois pour eviter les explosions de 400M
-                totalGrowth += Math.min(g, 1.0); 
-                growthCounts++;
-            }
-        }
-        const avgHistoricalGrowth = growthCounts > 0 ? (totalGrowth / growthCounts) : 0.15;
+        // --- CALCUL DE LA TENDANCE LINÉAIRE (STATU QUO) ---
+        // On calcule la progression moyenne en DOLLARS pour éviter l'explosion exponentielle
+        const firstMonthVal = fullHistory[0].invoiced;
+        const totalIncrease = lastCompletedMonthVal - firstMonthVal;
+        const avgMonthlyIncrease = currentMonthIndex > 0 ? totalIncrease / currentMonthIndex : 0;
 
-        // 2. Points de départ pour les trajectoires (Partent du dernier mois complet)
+        // Point de départ futur pour Evo 20
         const startingPointForFutureEvo20 = Math.max(lastCompletedMonthVal * 1.20, estimatedCurrentMonth);
-        const startingPointForFutureSQ = Math.max(lastCompletedMonthVal * (1 + avgHistoricalGrowth), estimatedCurrentMonth);
 
-        // 3. Construction des trajectoires
         const yearlyExtrapolation: ExtrapolationMonth[] = [];
         let totalYearlyStatusQuo = 0;
         let totalYearlyEvo20 = 0;
@@ -70,20 +60,13 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             const isFuture = i > currentMonthIndex;
             const isPast = i < currentMonthIndex;
 
-            // --- CALCUL STATUS QUO (Tendance d'évolution réelle) ---
-            let statusQuoVal = 0;
-            if (isPast) {
-                statusQuoVal = fullHistory[i].invoiced;
-            } else if (isCurrent) {
-                // Pour avril, le statu quo suit la tendance historique moyenne calculée à partir de mars
-                statusQuoVal = Math.round(lastCompletedMonthVal * (1 + avgHistoricalGrowth));
-            } else {
-                // Projection future : Prolonge la tendance historique à partir de mars ou estimation avril
-                const monthsAheadFromCurrent = i - currentMonthIndex;
-                statusQuoVal = Math.round(startingPointForFutureSQ * Math.pow(1 + avgHistoricalGrowth, monthsAheadFromCurrent));
-            }
+            // Statu Quo : Progression Linéaire (Last + (écart * avgIncrease))
+            // C'est prévisible et ça ne casse pas l'échelle du graphique
+            const statusQuoVal = isPast 
+                ? fullHistory[i].invoiced 
+                : Math.round(lastCompletedMonthVal + ((i - (currentMonthIndex - 1)) * avgMonthlyIncrease));
 
-            // --- CALCUL EVO 20 (Objectif Ambitieux) ---
+            // Target 20 : Progression Exponentielle (Ambition)
             let target20Val = 0;
             if (isPast) {
                 target20Val = fullHistory[i].invoiced;
@@ -101,7 +84,7 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
                 name: monthNames[i],
                 actual: (isPast || isCurrent) ? fullHistory[i].invoiced : 0,
                 estimated: isCurrent ? estimatedCurrentMonth : null,
-                statusQuo: statusQuoVal,
+                statusQuo: statusQuoVal > 0 ? statusQuoVal : 0,
                 target20: target20Val,
                 isProjected: isFuture,
                 isCurrent: isCurrent
@@ -111,14 +94,11 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const currentSQ = yearlyExtrapolation[currentMonthIndex].statusQuo;
         const perfVsSQ = currentSQ > 0 ? Math.round(((estimatedCurrentMonth - currentSQ) / currentSQ) * 100) : 0;
 
-        const { start, end } = financialUtils.getPeriodRange(timeframe);
-        const current = financialUtils.calculateMetrics(invoices, expenses, start, end);
-
         return {
             trendData: {
-                collected: { value: current.cashCollected, trend: perfVsSQ, label: 'vs Statu Quo' },
-                invoiced: { value: current.invoicedTotal, trend: 0, label: timeframe },
-                clients: { value: clients.length, trend: 0, label: 'total' }
+                collected: { value: 0, trend: perfVsSQ, label: 'vs Statu Quo' },
+                invoiced: { value: 0, trend: 0, label: timeframe },
+                clients: { value: 0, trend: 0, label: 'total' }
             },
             performanceDelta: perfVsSQ,
             yearlyExtrapolation,
@@ -126,7 +106,7 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             totalYearlyStatusQuo,
             totalYearlyEvo20
         };
-    }, [invoices, expenses, projects, clients, timeframe]);
+    }, [invoices, expenses, timeframe]);
 
     return {
         isLoading: iLoad || eLoad || pLoad || cLoad,
