@@ -19,7 +19,7 @@ export default function AnalyticsDashboard() {
     const { t } = useTranslation();
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     
-    const { isLoading: engineLoading, trendData, yearlyExtrapolation, performanceDelta, estimatedCurrentMonth, totalYearlyStatusQuo, totalYearlyEvo20 } = useAnalyticsData(timeframe);
+    const { isLoading: engineLoading, yearlyExtrapolation, performanceDelta, estimatedCurrentMonth, totalYearlyStatusQuo, totalYearlyEvo20 } = useAnalyticsData(timeframe);
 
     const { data: projects = [] as Project[], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: invoices = [] as Invoice[], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
@@ -28,7 +28,7 @@ export default function AnalyticsDashboard() {
     const { isLoading: cLoad } = useQuery({ queryKey: ['clients_dummy'], queryFn: () => [] }); 
 
     if (pLoad || iLoad || uLoad || eLoad || engineLoading || cLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Anticipation stratégique...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Calcul des trajectoires annuelles...</div>;
     }
 
     const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, cashCollected: number }> = {};
