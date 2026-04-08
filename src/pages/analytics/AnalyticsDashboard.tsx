@@ -1,5 +1,5 @@
 import { apiInvoices, Invoice } from '@/services/apiInvoices';
-import { apiProjects, Project } from '@/services/apiProjects';
+import { apiProjects } from '@/services/apiProjects';
 import { useQuery } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
