@@ -71,7 +71,11 @@ export default function ProjectsList() {
         }
 
         return true;
-    }).sort(sortByRush);
+    }).sort((a, b) => {
+        const rush = sortByRush(a, b);
+        if (rush !== 0) return rush;
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
 
     const hasActiveFilter = !!filterAffiliate || !!filterManufacturer || !!searchQuery;
 
@@ -87,7 +91,7 @@ export default function ProjectsList() {
         return window.innerWidth < 768 ? 'list' : 'kanban';
     })
 
-    const columns: ProjectStatus[] = ['designing', '3d_model', 'design_ready', 'waiting_for_approval', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed']
+    const columns: ProjectStatus[] = ['designing', '3d_model', 'design_ready', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed', 'waiting_for_approval']
 
     useEffect(() => {
         const topScroll = topScrollRef.current

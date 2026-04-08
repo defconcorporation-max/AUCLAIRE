@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem, Target, X } from 'lucide-react';
 import { useState } from 'react';
@@ -49,7 +49,7 @@ export default function AnalyticsDashboard() {
             <KpiGrid 
                 trendData={data.trendData} 
                 timeframe={timeframe} 
-                weightedPipeline={data.weightedPipeline!} 
+                weightedPipeline={Math.round(data.forecast!.reduce((s, m) => s + m.invoiced, 0))} 
                 conversionRate={data.conversionRate!}
             />
 
@@ -313,17 +313,21 @@ function ForecastChart({ forecast }: { forecast: ForecastPoint[] }) {
                 <div className="h-[250px] w-full mt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={forecast}>
+                            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                             <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
                             <YAxis hide />
                             <Tooltip
-                                formatter={(value: number) => [formatCurrency(value), t('analyticsPage.forecastTooltip')]}
+                                formatter={(value: number, name: string) => [
+                                    formatCurrency(value), 
+                                    name === 'invoiced' ? t('analyticsPage.forecastInvoiced') : 
+                                    name === 'collected' ? t('analyticsPage.forecastCollected') : 
+                                    t('analyticsPage.forecastExpenses')
+                                ]}
                                 contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
                             />
-                            <Bar dataKey="projected" radius={[4, 4, 0, 0]} barSize={40}>
-                                {forecast.map((_, index) => (
-                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#A68A56' : '#d2b57b'} />
-                                ))}
-                            </Bar>
+                            <Legend verticalAlign="top" height={36} iconType="circle" />
+                            <Bar name="invoiced" dataKey="invoiced" fill="var(--luxury-gold)" radius={[4, 4, 0, 0]} barSize={20} />
+                            <Bar name="collected" dataKey="collected" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

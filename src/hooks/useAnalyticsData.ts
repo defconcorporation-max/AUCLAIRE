@@ -112,7 +112,9 @@ export interface ManufacturerStat {
 
 export interface ForecastPoint {
     name: string;
-    projected: number;
+    invoiced: number;
+    collected: number;
+    expenses: number;
 }
 
 export interface JewelryRow {
@@ -330,36 +332,62 @@ export function useAnalyticsData(timeframe: Timeframe, selectedSellerId?: string
 
         // ─── Revenue Forecast ───────────────────────────────────
 
-        const PROBABILITY_MAP: Record<string, number> = {
-            designing: 0.1, '3d_model': 0.4, design_ready: 0.6,
-            waiting_for_approval: 0.8, design_modification: 0.4,
-            approved_for_production: 0.9, production: 1.0, delivery: 1.0, completed: 1.0,
+        const distributionMatrix: Record<string, { invoiced: number[], collected: number[] }> = {
+            designing: { invoiced: [0.1, 0.3, 0.4], collected: [0.0, 0.1, 0.4] },
+            '3d_model': { invoiced: [0.3, 0.4, 0.2], collected: [0.1, 0.3, 0.4] },
+            design_ready: { invoiced: [0.6, 0.3, 0.1], collected: [0.2, 0.5, 0.3] },
+            waiting_for_approval: { invoiced: [0.8, 0.2, 0.0], collected: [0.4, 0.4, 0.2] },
+            design_modification: { invoiced: [0.3, 0.3, 0.3], collected: [0.1, 0.2, 0.3] },
+            approved_for_production: { invoiced: [0.9, 0.1, 0.0], collected: [0.6, 0.3, 0.1] },
+            production: { invoiced: [1.0, 0.0, 0.0], collected: [0.8, 0.2, 0.0] },
+            delivery: { invoiced: [1.0, 0.0, 0.0], collected: [0.9, 0.1, 0.0] },
         };
 
         const forecast: ForecastPoint[] = [
-            { name: t('analyticsPage.forecastMonth0'), projected: 0 },
-            { name: t('analyticsPage.forecastMonth1'), projected: 0 },
-            { name: t('analyticsPage.forecastMonth2'), projected: 0 },
+            { name: t('analyticsPage.forecastMonth0'), invoiced: 0, collected: 0, expenses: 0 },
+            { name: t('analyticsPage.forecastMonth1'), invoiced: 0, collected: 0, expenses: 0 },
+            { name: t('analyticsPage.forecastMonth2'), invoiced: 0, collected: 0, expenses: 0 },
         ];
-        
-        // Month 0 anchor
-        const m0Start = new Date(); m0Start.setDate(1); m0Start.setHours(0,0,0,0);
-        forecast[0].projected = financialUtils.getCollectedFromInvoices(filteredInvoices, m0Start, new Date());
 
+        // 1. Anchor M0 with real data so far
+        const m0Start = new Date(); m0Start.setDate(1); m0Start.setHours(0, 0, 0, 0);
+        forecast[0].collected = financialUtils.getCollectedFromInvoices(filteredInvoices, m0Start, new Date());
+        forecast[0].invoiced = filteredInvoices
+            .filter(inv => new Date(inv.created_at) >= m0Start && inv.status !== 'void')
+            .reduce((sum, inv) => sum + Number(inv.amount), 0);
+
+        // 2. Project remaining based on pipeline distribution
         filteredProjects.forEach(p => {
             if (p.status === 'completed' || p.status === 'cancelled') return;
+            const matrix = distributionMatrix[p.status];
+            if (!matrix) return;
+
             const totalValue = getSalePrice(p);
             const paidSoFar = Number(p.financials?.paid_amount || 0);
-            const remainingValue = Math.max(0, totalValue - paidSoFar);
-            const prob = PROBABILITY_MAP[p.status] || 0;
-            const weightedRemaining = remainingValue * prob;
+            const remainingToCollect = Math.max(0, totalValue - paidSoFar);
 
-            if (['production', 'delivery', 'approved_for_production'].includes(p.status)) {
-                forecast[0].projected += weightedRemaining;
-            } else if (['3d_model', 'design_ready', 'waiting_for_approval'].includes(p.status)) {
-                forecast[1].projected += weightedRemaining;
+            // Distribute remaining across M0, M1, M2
+            matrix.invoiced.forEach((factor, i) => {
+                if (forecast[i]) forecast[i].invoiced += totalValue * factor;
+            });
+            matrix.collected.forEach((factor, i) => {
+                if (forecast[i]) forecast[i].collected += remainingToCollect * factor;
+            });
+        });
+
+        // 3. Estimer les dépenses (Dépenses fixes + % proportionnel au volume)
+        const avgHistoricalExpenses = expenses.length > 0 
+            ? filteredExpenses.reduce((sum, e) => sum + Number(e.amount), 0) / Math.max(1, chartData.length)
+            : 0;
+
+        forecast.forEach((f, i) => {
+            if (i === 0) {
+                const realM0Expenses = filteredExpenses
+                    .filter(e => new Date(e.date) >= m0Start && e.status !== 'cancelled')
+                    .reduce((sum, e) => sum + Number(e.amount), 0);
+                f.expenses = Math.max(realM0Expenses, avgHistoricalExpenses);
             } else {
-                forecast[2].projected += weightedRemaining;
+                f.expenses = avgHistoricalExpenses;
             }
         });
 
@@ -488,7 +516,7 @@ export function useAnalyticsData(timeframe: Timeframe, selectedSellerId?: string
 
         // ─── Pipeline Totals ────────────────────────────────────
 
-        const weightedPipeline = Math.round(forecast.reduce((s, m) => s + m.projected, 0));
+        const weightedPipeline = Math.round(forecast.reduce((s, m) => s + m.invoiced, 0));
 
         return {
             trendData,
