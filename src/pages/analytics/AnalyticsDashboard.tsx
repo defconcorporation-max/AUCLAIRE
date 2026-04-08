@@ -1,13 +1,13 @@
-import { apiClients, Client } from '@/services/apiClients';
+import { apiClients } from '@/services/apiClients';
 import { apiInvoices, Invoice } from '@/services/apiInvoices';
 import { apiProjects, Project } from '@/services/apiProjects';
 import { useQuery } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses, Expense } from '@/services/apiExpenses';
-import { apiActivities, ActivityLog } from '@/services/apiActivities';
+import { apiActivities } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Banknote, Briefcase, Trophy, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem } from 'lucide-react';
+import { Briefcase, Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -119,8 +119,8 @@ export default function AnalyticsDashboard() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">Analytiques Business</h1>
-                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Pilotage des performances et prévisions de trésorerie</p>
+                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">{t('analyticsPage.title')}</h1>
+                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">{t('analyticsPage.subtitle')}</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -311,7 +311,7 @@ export default function AnalyticsDashboard() {
                         <CardDescription>Analyses automatiques sur vos opérations</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
-                        {generateInsights(projects, invoices, expenses, monthlyData, leaderboard, clients).map((insight, i) => (
+                        {generateInsights(projects, invoices, leaderboard).map((insight, i) => (
                             <div key={i} className={`p-4 rounded-xl border flex gap-3 ${
                                 insight.type === 'success' ? 'bg-emerald-500/5 border-emerald-500/10' :
                                 insight.type === 'warning' ? 'bg-amber-500/5 border-amber-500/10' : 'bg-blue-500/5 border-blue-500/10'
@@ -384,7 +384,7 @@ function TrendBadge({ value, label }: { value: number; label: string }) {
 }
 
 interface Insight { icon: string; title: string; description: string; type: 'success' | 'warning' | 'info'; }
-function generateInsights(projects: Project[], invoices: Invoice[], expenses: Expense[], monthlyData: any[], leaderboard: any[], clients: Client[]): Insight[] {
+function generateInsights(projects: Project[], invoices: Invoice[], leaderboard: any[]): Insight[] {
     const insights: Insight[] = [];
     const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
     const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
