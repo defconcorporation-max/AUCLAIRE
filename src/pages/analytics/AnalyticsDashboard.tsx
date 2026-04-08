@@ -7,10 +7,9 @@ import { apiExpenses, Expense } from '@/services/apiExpenses';
 import { apiActivities, ActivityLog } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Banknote, Briefcase, Trophy, ChevronUp, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem } from 'lucide-react';
+import { Users, Banknote, Briefcase, Trophy, TrendingUp, ArrowUpRight, ArrowDownRight, Minus, FileDown, Gem } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import { Button } from '@/components/ui/button';
 import { financialUtils } from '@/utils/financialUtils';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
@@ -20,14 +19,13 @@ import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
 import { apiSettings } from '@/services/apiSettings';
 
 export default function AnalyticsDashboard() {
-    const { t, i18n } = useTranslation();
-    const localeTag = i18n.language.startsWith('en') ? 'en-CA' : 'fr-CA';
+    const { t } = useTranslation();
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     
-    // Engine Hook
+    // Engine Hook for Dynamic Forecasting
     const { isLoading: engineLoading, forecast, trendData, weightedPipeline } = useAnalyticsData(timeframe);
 
-    // Standard Queries (needed for table sections)
+    // Queries for Detailed Tables
     const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
@@ -35,104 +33,20 @@ export default function AnalyticsDashboard() {
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
     const { data: activities = [], isLoading: alLoad } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll });
 
-<<<<<<< Updated upstream
-    if (pLoad || cLoad || iLoad || uLoad || eLoad || alLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">{t('analyticsPage.loading')}</div>;
-=======
     if (pLoad || cLoad || iLoad || uLoad || eLoad || alLoad || engineLoading) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">Loading Power Analytics...</div>;
->>>>>>> Stashed changes
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">Initialisation du Moteur Analytique...</div>;
     }
 
     const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
 
-<<<<<<< Updated upstream
-    // Calculate Trend Data
-    const getTrendData = () => {
-        const { start: startCurr } = financialUtils.getPeriodRange(timeframe);
-        const startPrev = new Date(startCurr);
-        let label = "";
-
-        if (timeframe === 'day') {
-            startPrev.setDate(startPrev.getDate() - 1);
-            label = t('analyticsPage.compareYesterday');
-        } else if (timeframe === 'week') {
-            startPrev.setDate(startPrev.getDate() - 7);
-            label = t('analyticsPage.compareLastWeek');
-        } else if (timeframe === 'month') {
-            startPrev.setMonth(startPrev.getMonth() - 1);
-            label = t('analyticsPage.compareLastMonth');
-        } else {
-            label = t('analyticsPage.compareTotal');
-        }
-
-        const getStatsForRangeStandard = (start: Date, end: Date) => {
-            const periodInvoices = invoices.filter(inv => {
-                const date = new Date(inv.created_at);
-                return date >= start && date <= end && inv.status !== 'void';
-            });
-            const periodClients = clients.filter(c => {
-                const date = new Date(c.created_at);
-                return date >= start && date <= end;
-            });
-            const periodExpenses = expenses.filter(exp => {
-                const date = new Date(exp.created_at);
-                return date >= start && date <= end && exp.status !== 'cancelled';
-            });
-
-            const collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
-
-            const invoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
-            const expAmount = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-            
-            const count = periodInvoices.length;
-            const avgOrder = count > 0 ? Math.round(invoiced / count) : 0;
-            const profit = collected - expAmount;
-            const outstanding = invoiced - collected;
-            
-            return { collected, invoiced, avgOrder, clients: periodClients.length, expenses: expAmount, profit, outstanding };
-        };
-
-        const current = getStatsForRangeStandard(startCurr, new Date());
-        const previous = getStatsForRangeStandard(startPrev, startCurr);
-
-        const calcGrowth = (curr: number, prev: number) => {
-            if (prev === 0) return curr > 0 ? 100 : 0;
-            return Math.round(((curr - prev) / prev) * 100);
-        };
-
-        return {
-            current,
-            previous,
-            label,
-            growth: {
-                collected: calcGrowth(current.collected, previous.collected),
-                avgOrder: calcGrowth(current.avgOrder, previous.avgOrder),
-                clients: calcGrowth(current.clients, previous.clients),
-                profit: calcGrowth(current.profit, previous.profit),
-                outstanding: calcGrowth(current.outstanding, previous.outstanding)
-            }
-        };
-    };
-
-    const trendData = getTrendData();
-
-    // 2. Monthly Revenue Chart (Paid Invoices)
-=======
-    // 2. Monthly Revenue Chart (Current Year)
+    // Annual Growth Logic
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
->>>>>>> Stashed changes
     const currentYear = new Date().getFullYear();
-    const monthlyData = [...Array(12)].map((_, monthIdx) => ({
-        month: new Date(currentYear, monthIdx, 1).toLocaleDateString(localeTag, { month: 'short' }),
-        collected: 0,
-        invoiced: 0,
-        expenses: 0,
-    }));
+    const monthlyData = months.map(m => ({ month: m, collected: 0, invoiced: 0 }));
 
-    monthlyData.forEach((_, monthIdx) => {
-        const start = new Date(currentYear, monthIdx, 1, 0, 0, 0, 0);
-        const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59, 999);
+    months.forEach((_, monthIdx) => {
+        const start = new Date(currentYear, monthIdx, 1);
+        const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59);
         monthlyData[monthIdx].collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
     });
 
@@ -144,25 +58,16 @@ export default function AnalyticsDashboard() {
         }
     });
 
-    expenses.forEach(exp => {
-        if (exp.status === 'cancelled') return;
-        const date = new Date(exp.date || exp.created_at);
-        if (date.getFullYear() === currentYear) {
-            monthlyData[date.getMonth()].expenses += Number(exp.amount || 0);
-        }
-    });
-
-    const PRODUCTION_READY_STATUSES = ['approved_for_production', 'production', 'delivery', 'completed'];
-    const isProjectASale = (p: Project) => PRODUCTION_READY_STATUSES.includes(p.status) || invoices.some(inv => inv.project_id === p.id);
-
-    // 3. Seller Leaderboard
-    const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, commissions: number, cashCollected: number }> = {};
+    // Seller Leaderboard Calculations
+    const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, cashCollected: number }> = {};
     users.filter(u => ['affiliate', 'admin', 'ambassador'].includes(u.role as string)).forEach(u => {
-        sellerStats[u.id] = { id: u.id, name: u.full_name, role: u.role as string, projectCount: 0, volume: 0, commissions: 0, cashCollected: 0 };
+        sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, cashCollected: 0 };
     });
 
     projects.forEach(p => {
-        if (!isProjectASale(p)) return;
+        const isSale = ['production', 'delivery', 'completed'].includes(p.status) || invoices.some(inv => inv.project_id === p.id);
+        if (!isSale) return;
+
         const responsibleId = p.sales_agent_id || p.affiliate_id;
         if (responsibleId && sellerStats[responsibleId]) {
             sellerStats[responsibleId].projectCount++;
@@ -174,91 +79,32 @@ export default function AnalyticsDashboard() {
         }
     });
 
-    expenses.filter(e => e.category === 'commission' && e.status !== 'cancelled' && !e.description?.includes('Commission Payout')).forEach(e => {
-        const recipientId = e.recipient_id;
-        if (recipientId && sellerStats[recipientId]) {
-            sellerStats[recipientId].commissions += Number(e.amount || 0);
-        }
-    });
-
     const leaderboard = Object.values(sellerStats).filter(s => s.projectCount > 0).sort((a, b) => b.volume - a.volume);
 
-<<<<<<< Updated upstream
-    // 4. POWER ANALYTICS: Revenue Forecasting & Projections
-    const PROBABILITY_MAP: Record<string, number> = {
-        designing: 0.1,
-        '3d_model': 0.4,
-        design_ready: 0.6,
-        waiting_for_approval: 0.8,
-        design_modification: 0.4,
-        approved_for_production: 0.9,
-        production: 1.0,
-        delivery: 1.0,
-        completed: 1.0,
-    };
-
-    // Calculate Projected Cash Flow for next 3 months
-    const currentMonthIdx = new Date().getMonth();
-    const next3MonthsData = [
-        { name: t('analyticsPage.forecastMonth0'), projected: monthlyData[currentMonthIdx].collected },
-        { name: t('analyticsPage.forecastMonth1'), projected: 0 },
-        { name: t('analyticsPage.forecastMonth2'), projected: 0 },
-    ];
-
-    projects.forEach(p => {
-        if (p.status === 'completed' || p.status === 'cancelled') return;
-        
-        const totalValue = getSalePrice(p);
-        const paidSoFar = Number(p.financials?.paid_amount || 0);
-        const remainingValue = Math.max(0, totalValue - paidSoFar);
-        
-        const prob = PROBABILITY_MAP[p.status] || 0;
-        const weightedRemaining = remainingValue * prob;
-
-        if (['production', 'delivery', 'approved_for_production'].includes(p.status)) {
-            next3MonthsData[0].projected += weightedRemaining;
-        } else if (['3d_model', 'design_ready', 'waiting_for_approval'].includes(p.status)) {
-            next3MonthsData[1].projected += weightedRemaining;
-        } else {
-            next3MonthsData[2].projected += weightedRemaining;
-        }
-    });
-
-    // 5. POWER ANALYTICS: Operational Velocity (Days in Status)
-=======
-    // 4. Operational Velocity
->>>>>>> Stashed changes
-    const statusLogs = activities.filter(a => a.action === 'status_change');
-    const logsByProject: Record<string, ActivityLog[]> = {};
-    statusLogs.forEach(log => {
-        if (log.project_id) {
-            if (!logsByProject[log.project_id]) logsByProject[log.project_id] = [];
-            logsByProject[log.project_id].push(log);
-        }
-    });
-
-    // 5. Manufacturer Scorecards
+    // Manufacturer Performance Logic
     const manufacturerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, totalProdDays: number, prodCount: number, modCount: number }> = {};
     users.filter(u => u.role === 'manufacturer').forEach(u => {
         manufacturerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, totalProdDays: 0, prodCount: 0, modCount: 0 };
     });
 
+    const statusLogs = activities.filter(a => a.action === 'status_change');
     projects.forEach(p => {
         if (p.manufacturer_id && manufacturerStats[p.manufacturer_id]) {
             manufacturerStats[p.manufacturer_id].projectCount++;
             manufacturerStats[p.manufacturer_id].volume += getSalePrice(p);
-            const pLogs = logsByProject[p.id] || [];
-            const sorted = pLogs.sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            
+            const pLogs = statusLogs.filter(log => log.project_id === p.id).sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
             let prodStart: Date | null = null;
-            sorted.forEach(log => {
-                const details = log.details.toLowerCase();
-                if (details.includes('to production') || details.includes('to approved_for_production')) prodStart = new Date(log.created_at);
-                if (details.includes('to completed') && prodStart) {
-                    manufacturerStats[p.manufacturer_id!].totalProdDays += (new Date(log.created_at).getTime() - prodStart.getTime()) / (1000 * 60 * 60 * 24);
+            
+            pLogs.forEach(log => {
+                const det = (log.details || '').toLowerCase();
+                if (det.includes('to production')) prodStart = new Date(log.created_at);
+                if (det.includes('to completed') && prodStart) {
+                    manufacturerStats[p.manufacturer_id!].totalProdDays += (new Date(log.created_at).getTime() - prodStart.getTime()) / (1000 * 3600 * 24);
                     manufacturerStats[p.manufacturer_id!].prodCount++;
                     prodStart = null;
                 }
-                if (details.includes('to design_modification')) manufacturerStats[p.manufacturer_id!].modCount++;
+                if (det.includes('to design_modification')) manufacturerStats[p.manufacturer_id!].modCount++;
             });
         }
     });
@@ -273,8 +119,8 @@ export default function AnalyticsDashboard() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">{t('analyticsPage.title')}</h1>
-                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">{t('analyticsPage.subtitle')}</p>
+                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">Analytiques Business</h1>
+                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Pilotage des performances et prévisions de trésorerie</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -285,10 +131,10 @@ export default function AnalyticsDashboard() {
                             const settings = await apiSettings.get();
                             generateMonthlyReportPDF({ invoices, expenses, projects, month: new Date(), settings });
                         }}
-                        className="rounded-lg border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10 hover:border-luxury-gold/50 transition-all"
+                        className="rounded-lg border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
                     >
                         <FileDown className="w-4 h-4 mr-2" />
-                        {t('analyticsPage.exportPdf')}
+                        Exporter Rapport
                     </Button>
                     <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl backdrop-blur-md border border-black/10 dark:border-white/10">
                         {(['day', 'week', 'month', 'total'] as const).map((period) => (
@@ -297,428 +143,139 @@ export default function AnalyticsDashboard() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setTimeframe(period)}
-                                className={`rounded-lg px-4 transition-all duration-300 ${
-                                    timeframe === period 
-                                    ? 'bg-luxury-gold text-white shadow-lg' 
-                                    : 'hover:bg-luxury-gold/10 text-muted-foreground'
-                                }`}
+                                className={`rounded-lg px-4 ${timeframe === period ? 'bg-luxury-gold text-white shadow-lg' : 'text-muted-foreground'}`}
                             >
-                                {period === 'day' ? t('analyticsPage.periodDay') : period === 'week' ? t('analyticsPage.periodWeek') : period === 'month' ? t('analyticsPage.periodMonth') : t('analyticsPage.periodTotal')}
+                                {period === 'day' ? 'Jour' : period === 'week' ? 'Semaine' : period === 'month' ? 'Mois' : 'Total'}
                             </Button>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Top KPIs */}
-<<<<<<< Updated upstream
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiAvgOrder')}</CardTitle>
-                        <Briefcase className="h-4 w-4 text-luxury-gold" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">
-                                {formatCurrency(trendData.current.avgOrder)}
-                            </div>
-                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.avgOrder} label={trendData.label} />}
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiCashCollected')}</CardTitle>
-                        <Banknote className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">
-                                {formatCurrency(trendData.current.collected)}
-                            </div>
-                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.collected} label={trendData.label} />}
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiNewClients')}</CardTitle>
-                        <Users className="h-4 w-4 text-blue-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">{trendData.current.clients}</div>
-                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.clients} label={trendData.label} />}
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden border-l-green-500/50">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiProfit')}</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-green-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-baseline justify-between">
-                            <div className={`text-3xl font-serif ${trendData.current.profit >= 0 ? 'text-black dark:text-white' : 'text-red-500'}`}>
-                                {formatCurrency(trendData.current.profit)}
-                            </div>
-                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.profit} label={trendData.label} />}
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 border-black/10 dark:border-white/10 relative overflow-hidden border-l-red-500/50">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-gray-500">{t('analyticsPage.kpiOutstanding')}</CardTitle>
-                        <Banknote className="h-4 w-4 text-orange-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">
-                                {formatCurrency(trendData.current.outstanding)}
-                            </div>
-                            {timeframe !== 'total' && <TrendBadge value={trendData.growth.outstanding} label={trendData.label} />}
-=======
+            {/* KPIs Grid */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
                     <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Cash Encaissé</CardTitle>
-                            <Banknote className="w-4 h-4 text-emerald-500 opacity-50" />
-                        </div>
+                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Cash Encaissé</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif text-black dark:text-white">{formatCurrency(trendData.collected.value)}</div>
+                        <div className="text-2xl font-serif text-black dark:text-white">{formatCurrency(trendData.collected.value)}</div>
                         <TrendBadge value={trendData.collected.trend} label={trendData.collected.label} />
                     </CardContent>
                 </Card>
 
                 <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
                     <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Facturé</CardTitle>
-                            <TrendingUp className="w-4 h-4 text-blue-500 opacity-50" />
-                        </div>
+                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Total Facturé</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif text-black dark:text-white">{formatCurrency(trendData.invoiced.value)}</div>
+                        <div className="text-2xl font-serif text-black dark:text-white">{formatCurrency(trendData.invoiced.value)}</div>
                         <TrendBadge value={trendData.invoiced.trend} label={trendData.invoiced.label} />
                     </CardContent>
                 </Card>
 
                 <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
                     <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Nouveaux Clients</CardTitle>
-                            <Users className="w-4 h-4 text-luxury-gold opacity-50" />
-                        </div>
+                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Nouveaux Clients</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-serif text-black dark:text-white">{trendData.clients.value}</div>
-                            {timeframe !== 'total' && <TrendBadge value={trendData.clients.trend} label={trendData.clients.label} />}
->>>>>>> Stashed changes
-                        </div>
+                        <div className="text-2xl font-serif text-black dark:text-white">{trendData.clients.value}</div>
+                        {timeframe !== 'total' && <TrendBadge value={trendData.clients.trend} label={trendData.clients.label} />}
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/20 relative overflow-hidden ring-1 ring-luxury-gold/20 shadow-lg shadow-luxury-gold/5">
-<<<<<<< Updated upstream
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium uppercase tracking-widest text-luxury-gold flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4" /> {t('analyticsPage.kpiWeightedPipeline')}
-=======
+                <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/20 shadow-lg shadow-luxury-gold/5">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-luxury-gold flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4" /> Pipeline Pondéré
->>>>>>> Stashed changes
-                        </CardTitle>
+                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-luxury-gold">Pipeline Pondéré</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif text-luxury-gold">
-                            {formatCurrency(weightedPipeline)}
-                        </div>
-<<<<<<< Updated upstream
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-tighter mt-1">{t('analyticsPage.kpiPipelineHint')}</p>
-=======
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-tighter mt-1 italic">Valeur estimée vs probabilité d'étape</p>
->>>>>>> Stashed changes
+                        <div className="text-2xl font-serif text-luxury-gold">{formatCurrency(weightedPipeline)}</div>
+                        <p className="text-[10px] text-zinc-500 mt-1 uppercase italic tracking-tighter">Probabilité d'étape appliquée</p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Charts Section */}
+            {/* Visualizations */}
             <div className="grid gap-6 lg:grid-cols-2">
-                <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
+                <Card className="glass-card shadow-xl overflow-hidden border-black/5 dark:border-white/5">
                     <CardHeader>
-<<<<<<< Updated upstream
-                        <CardTitle className="font-serif text-xl">{t('analyticsPage.chartAnnualTitle', { year: currentYear })}</CardTitle>
-                        <CardDescription>{t('analyticsPage.chartAnnualDesc')}</CardDescription>
-=======
-                        <CardTitle className="font-serif text-xl">Croissance Annuelle ({currentYear})</CardTitle>
-                        <CardDescription>Performance globale sur 12 mois</CardDescription>
->>>>>>> Stashed changes
+                        <CardTitle className="font-serif">Croissance des Revenus ({currentYear})</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="h-[300px] w-full mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorInvoiced" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#A68A56" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#A68A56" stopOpacity={0} />
-                                        </linearGradient>
-                                        <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-<<<<<<< Updated upstream
-                                    <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis
-                                        stroke="#888888"
-                                        fontSize={12}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickFormatter={(value) => formatCurrency(value as number)}
-                                    />
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                                    <Tooltip
-                                        formatter={(value: number) => [formatCurrency(value), ""]}
-                                        contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
-                                    />
-                                    <Area type="monotone" name={t('analyticsPage.seriesInvoiced')} dataKey="invoiced" stroke="#A68A56" fillOpacity={1} fill="url(#colorInvoiced)" />
-                                    <Area type="monotone" name={t('analyticsPage.seriesCollected')} dataKey="collected" stroke="#22c55e" fillOpacity={1} fill="url(#colorCollected)" />
-                                    <Area type="monotone" name={t('analyticsPage.seriesSpent')} dataKey="expenses" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpenses)" />
-=======
-                                    <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000}k`} />
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                    <Tooltip formatter={(value: number) => [formatCurrency(value), ""]} contentStyle={{ backgroundColor: 'rgba(10,10,10,0.95)', borderColor: 'rgba(210,181,123,0.3)', borderRadius: '12px' }} />
-                                    <Area type="monotone" name="Facturé" dataKey="invoiced" stroke="#A68A56" fillOpacity={1} fill="url(#colorInvoiced)" strokeWidth={2} />
-                                    <Area type="monotone" name="Encaissé" dataKey="collected" stroke="#22c55e" fillOpacity={1} fill="url(#colorCollected)" strokeWidth={2} />
->>>>>>> Stashed changes
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="font-serif text-xl flex items-center gap-2">
-<<<<<<< Updated upstream
-                            <Trophy className="w-5 h-5 text-luxury-gold" />
-                            {t('analyticsPage.topSeller')}
-=======
-                            <TrendingUp className="w-5 h-5 text-luxury-gold" />
-                            Prévisions Trésorerie (3 Mois)
->>>>>>> Stashed changes
-                        </CardTitle>
-                        <CardDescription>Projection basée sur le pipeline actuel</CardDescription>
-                    </CardHeader>
-<<<<<<< Updated upstream
-                    <CardContent className="flex flex-col justify-center h-[300px] mt-4">
-                        {leaderboard.length > 0 ? (
-                            <div className="text-center space-y-6">
-                                <div className="inline-flex items-center justify-center p-6 bg-luxury-gold/10 rounded-full ring-2 ring-luxury-gold/30">
-                                    <Trophy className="w-12 h-12 text-luxury-gold" />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-serif text-black dark:text-white">{leaderboard[0].name}</h3>
-                                        <p className="text-luxury-gold mt-1 uppercase tracking-widest text-sm font-semibold">
-                                            {t('analyticsPage.topSellerGenerated', { amount: formatCurrency(leaderboard[0].volume) })}
-                                        </p>
-                                    <p className="text-gray-500 text-xs mt-2">{t('analyticsPage.topSellerProjects', { count: leaderboard[0].projectCount })}</p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center text-gray-500">{t('analyticsPage.topSellerEmpty')}</div>
-                        )}
-=======
-                    <CardContent>
-                        <div className="h-[300px] w-full mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={forecast} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                    <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000}k`} />
-                                    <Tooltip 
-                                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                                        contentStyle={{ backgroundColor: 'rgba(10,10,10,0.95)', borderColor: 'rgba(210,181,123,0.3)', borderRadius: '12px' }}
-                                        formatter={(value: number) => [formatCurrency(value), ""]}
-                                    />
-                                    <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
-                                    <Bar name="Facturé (Potentiel)" dataKey="invoiced" fill="#d2b57b" radius={[4, 4, 0, 0]} barSize={25} />
-                                    <Bar name="Encaissé (Trésorerie)" dataKey="collected" fill="#10B981" radius={[4, 4, 0, 0]} barSize={25} />
-                                    <Bar name="Dépenses (Est.)" dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={25} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
->>>>>>> Stashed changes
-                    </CardContent>
-                </Card>
-            </div>
-
-<<<<<<< Updated upstream
-            {/* Velocity Section */}
-            <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl">
-                <CardHeader>
-                    <CardTitle className="font-serif text-xl flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-luxury-gold" />
-                        {t('analyticsPage.forecastTitle')}
-                    </CardTitle>
-                    <CardDescription>{t('analyticsPage.forecastDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="h-[250px] w-full mt-4">
+                    <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={next3MonthsData}>
-                                <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                                <YAxis hide />
-                                <Tooltip 
-                                    formatter={(value: number) => [formatCurrency(value), t('analyticsPage.forecastTooltip')]}
-                                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(210,181,123,0.3)', color: '#fff' }}
-                                />
-                                <Bar dataKey="projected" radius={[4, 4, 0, 0]} barSize={40}>
-                                    {next3MonthsData.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === 0 ? '#A68A56' : '#d2b57b'} />
-                                    ))}
-                                </Bar>
+                            <AreaChart data={monthlyData}>
+                                <defs>
+                                    <linearGradient id="cInv" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#A68A56" stopOpacity={0.3}/><stop offset="95%" stopColor="#A68A56" stopOpacity={0}/></linearGradient>
+                                    <linearGradient id="cCol" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/><stop offset="95%" stopColor="#10B981" stopOpacity={0}/></linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                <XAxis dataKey="month" fontSize={10} tickLine={false} axisLine={false} />
+                                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `$${v/1000}k`} />
+                                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                <Area type="monotone" name="Facturé" dataKey="invoiced" stroke="#A68A56" fill="url(#cInv)" strokeWidth={2} />
+                                <Area type="monotone" name="Encaissé" dataKey="collected" stroke="#10B981" fill="url(#cCol)" strokeWidth={2} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                <Card className="glass-card shadow-xl overflow-hidden border-black/5 dark:border-white/5">
+                    <CardHeader>
+                        <CardTitle className="font-serif">Prévisions de Trésorerie (Flux Probables)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={forecast}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `$${v/1000}k`} />
+                                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase' }} />
+                                <Bar name="Facturé" dataKey="invoiced" fill="#A68A56" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Bar name="Trésorerie" dataKey="collected" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Bar name="Dépenses" dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} />
                             </BarChart>
                         </ResponsiveContainer>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground text-center italic mt-2">
-                        {t('analyticsPage.forecastFootnote')}
-                    </p>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </div>
 
-            {/* Manufacturer Performance Scorecards */}
-            <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle className="font-serif text-2xl tracking-wide flex items-center gap-2">
-                            <Briefcase className="w-6 h-6 text-luxury-gold" />
-                            {t('analyticsPage.manufacturerTitle')}
-                        </CardTitle>
-                        <CardDescription>{t('analyticsPage.manufacturerDesc')}</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader className="bg-black/5 dark:bg-white/5">
-                            <TableRow className="border-black/5 dark:border-white/5">
-                                <TableHead>{t('analyticsPage.colManufacturer')}</TableHead>
-                                <TableHead className="text-center">{t('analyticsPage.colProjects')}</TableHead>
-                                <TableHead className="text-center text-blue-500">{t('analyticsPage.colAvgSpeed')}</TableHead>
-                                <TableHead className="text-center text-green-500">{t('analyticsPage.colQualityScore')}</TableHead>
-                                <TableHead className="text-right">{t('analyticsPage.colTotalVolume')}</TableHead>
-=======
-            {/* Scorecard Sections (Original Tables Simplified) */}
+            {/* Performance Tables */}
             <div className="grid gap-8">
-                <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="font-serif text-xl">Manufacturer Performance</CardTitle>
+                <Card className="glass-card shadow-xl border-black/5 dark:border-white/5 overflow-hidden">
+                    <CardHeader className="bg-black/[0.02] dark:bg-white/[0.02]">
+                        <CardTitle className="font-serif text-lg flex items-center gap-2">
+                            <Briefcase className="w-5 h-5 text-luxury-gold" /> Performance Fabricants
+                        </CardTitle>
                     </CardHeader>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Manufacturer</TableHead>
-                                <TableHead className="text-center">Projects</TableHead>
-                                <TableHead className="text-center">Avg Speed</TableHead>
-                                <TableHead className="text-center">Quality Score</TableHead>
-                                <TableHead className="text-right">Total Volume</TableHead>
->>>>>>> Stashed changes
+                                <TableHead>Fabricant</TableHead>
+                                <TableHead className="text-center">Projets</TableHead>
+                                <TableHead className="text-center">Vitesse (Moy)</TableHead>
+                                <TableHead className="text-center">Qualité</TableHead>
+                                <TableHead className="text-right">Volume</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {manufacturerScorecard.map((m) => (
-<<<<<<< Updated upstream
-                                <TableRow key={m.id} className="border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                                    <TableCell className="font-medium text-black dark:text-white">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-luxury-gold/10 flex items-center justify-center text-luxury-gold font-bold text-xs">
-                                                {m.name.charAt(0)}
-                                            </div>
-                                            {m.name}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-widest border-luxury-gold/30 text-luxury-gold bg-transparent uppercase">
-                                            {t('analyticsPage.projectsBadge', { count: m.projectCount })}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-center font-serif text-lg">
-                                        {m.avgSpeed > 0 ? (
-                                            <span className={m.avgSpeed < 7 ? 'text-green-500' : m.avgSpeed > 14 ? 'text-red-500' : 'text-amber-500'}>
-                                                {t('analyticsPage.days', { count: m.avgSpeed })}
-                                            </span>
-                                        ) : (
-                                            <span className="text-gray-400 text-xs italic">{t('analyticsPage.na')}</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex flex-col items-center">
-                                            <span className={`text-lg font-serif ${m.qualityRate > 90 ? 'text-green-500' : m.qualityRate < 70 ? 'text-red-500' : 'text-amber-500'}`}>
-                                                {Math.round(m.qualityRate)}%
-                                            </span>
-                                            <div className="w-16 h-1 bg-gray-200 dark:bg-gray-800 rounded-full mt-1 overflow-hidden">
-                                                <div 
-                                                    className={`h-full ${m.qualityRate > 90 ? 'bg-green-500' : m.qualityRate < 70 ? 'bg-red-500' : 'bg-amber-500'}`} 
-                                                    style={{ width: `${m.qualityRate}%` }} 
-                                                />
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right font-serif text-lg font-bold">
-                                        {formatCurrency(m.volume)}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {manufacturerScorecard.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-gray-500 italic">
-                                        {t('analyticsPage.manufacturerEmpty')}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-=======
+                            {manufacturerScorecard.map(m => (
                                 <TableRow key={m.id}>
-                                    <TableCell className="font-medium text-black dark:text-white">{m.name}</TableCell>
+                                    <TableCell className="font-medium">{m.name}</TableCell>
                                     <TableCell className="text-center">{m.projectCount}</TableCell>
-                                    <TableCell className="text-center">{m.avgSpeed} Days</TableCell>
-                                    <TableCell className="text-center">{Math.round(m.qualityRate)}%</TableCell>
+                                    <TableCell className="text-center">{m.avgSpeed} Jours</TableCell>
+                                    <TableCell className="text-center font-bold text-luxury-gold">{Math.round(m.qualityRate)}%</TableCell>
                                     <TableCell className="text-right font-serif">{formatCurrency(m.volume)}</TableCell>
                                 </TableRow>
                             ))}
->>>>>>> Stashed changes
                         </TableBody>
                     </Table>
                 </Card>
 
-<<<<<<< Updated upstream
-            <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-xl overflow-hidden mt-8">
-                <CardHeader>
-                    <CardTitle className="font-serif text-2xl tracking-wide">{t('analyticsPage.leaderboardTitle')}</CardTitle>
-                    <CardDescription>{t('analyticsPage.leaderboardDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader className="bg-black/5 dark:bg-white/5">
-                            <TableRow className="border-black/5 dark:border-white/5">
-                                <TableHead className="w-16 text-center font-bold text-luxury-gold">{t('analyticsPage.colRank')}</TableHead>
-                                <TableHead>{t('analyticsPage.colSellerName')}</TableHead>
-                                <TableHead className="text-center">{t('analyticsPage.colProjects')}</TableHead>
-                                <TableHead className="text-right">{t('analyticsPage.colBroughtVolume')}</TableHead>
-                                <TableHead className="text-right text-green-600/70 dark:text-green-500">{t('analyticsPage.colCashRecovered')}</TableHead>
-                                <TableHead className="text-right text-purple-600/70 dark:text-purple-400">{t('analyticsPage.colCommissionsEst')}</TableHead>
-=======
-                <Card className="border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="font-serif text-xl flex items-center gap-2">
-                            <Trophy className="w-5 h-5 text-luxury-gold" />
-                            Classement Ventes (Admins & Ambassadeurs)
+                <Card className="glass-card shadow-xl border-black/5 dark:border-white/5 overflow-hidden">
+                    <CardHeader className="bg-black/[0.02] dark:bg-white/[0.02]">
+                        <CardTitle className="font-serif text-lg flex items-center gap-2">
+                            <Trophy className="w-5 h-5 text-luxury-gold" /> Leaders de Vente
                         </CardTitle>
                     </CardHeader>
                     <Table>
@@ -727,478 +284,117 @@ export default function AnalyticsDashboard() {
                                 <TableHead className="w-16 text-center">Rang</TableHead>
                                 <TableHead>Vendeur</TableHead>
                                 <TableHead className="text-center">Projets</TableHead>
-                                <TableHead className="text-right">Volume</TableHead>
-                                <TableHead className="text-right">Cash Récolté</TableHead>
->>>>>>> Stashed changes
+                                <TableHead className="text-right">Volume Apporté</TableHead>
+                                <TableHead className="text-right text-emerald-600">Encaissement</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {leaderboard.map((seller, idx) => (
-<<<<<<< Updated upstream
-                                <TableRow key={seller.id} className="border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                                    <TableCell className="text-center font-serif text-lg text-gray-500">
-                                        {idx === 0 ? <span className="text-luxury-gold">1</span> : idx + 1}
-                                    </TableCell>
-                                    <TableCell className="font-medium text-black dark:text-white text-base">
-                                        <div className="flex items-center gap-2">
-                                            {seller.name}
-                                            <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tighter ${
-                                                seller.role === 'admin' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                                                seller.role === 'ambassador' ? 'bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20' :
-                                                'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                                            }`}>
-                                                {seller.role === 'admin' ? t('affiliatesListPage.roleAdmin') : seller.role === 'ambassador' ? t('affiliatesListPage.roleAmbassador') : t('affiliatesListPage.roleSeller')}
-                                            </span>
-                                            {idx === 0 && <ChevronUp className="inline-block w-4 h-4 text-green-500" />}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium tracking-widest border-luxury-gold/30 text-luxury-gold bg-transparent uppercase">
-                                            {seller.projectCount}
-                                        </div>
-                                    </TableCell>
-                            <TableCell className="text-right font-serif text-lg font-bold">
-                                        {formatCurrency(seller.volume)}
-                            </TableCell>
-                            <TableCell className="text-right font-serif text-lg font-bold text-green-600 dark:text-green-500">
-                                        {formatCurrency(seller.cashCollected)}
-                            </TableCell>
-                            <TableCell className="text-right font-mono text-sm text-purple-600 dark:text-purple-400 font-medium">
-                                        {formatCurrency(seller.commissions)}
-                            </TableCell>
+                            {leaderboard.map((s, idx) => (
+                                <TableRow key={s.id}>
+                                    <TableCell className="text-center font-serif text-lg opacity-40">{idx + 1}</TableCell>
+                                    <TableCell className="font-medium">{s.name}</TableCell>
+                                    <TableCell className="text-center">{s.projectCount}</TableCell>
+                                    <TableCell className="text-right font-serif font-bold">{formatCurrency(s.volume)}</TableCell>
+                                    <TableCell className="text-right font-serif font-bold text-emerald-600">{formatCurrency(s.cashCollected)}</TableCell>
                                 </TableRow>
                             ))}
-                            {leaderboard.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                                        {t('analyticsPage.leaderboardEmpty')}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-=======
-                                <TableRow key={seller.id}>
-                                    <TableCell className="text-center font-serif">{idx + 1}</TableCell>
-                                    <TableCell className="font-medium">{seller.name}</TableCell>
-                                    <TableCell className="text-center">{seller.projectCount}</TableCell>
-                                    <TableCell className="text-right font-serif">{formatCurrency(seller.volume)}</TableCell>
-                                    <TableCell className="text-right font-serif text-green-600">{formatCurrency(seller.cashCollected)}</TableCell>
-                                </TableRow>
-                            ))}
->>>>>>> Stashed changes
                         </TableBody>
                     </Table>
                 </Card>
             </div>
 
-            {/* AI Insights Section */}
-            <Card className="border-luxury-gold/20 bg-gradient-to-br from-luxury-gold/5 to-transparent backdrop-blur-md shadow-xl mt-8">
-                <CardHeader>
-                    <CardTitle className="font-serif text-2xl tracking-wide flex items-center gap-2">
-                        <span className="text-luxury-gold">✨</span>
-                        {t('analyticsPage.aiInsightsTitle')}
-                    </CardTitle>
-<<<<<<< Updated upstream
-                    <CardDescription>{t('analyticsPage.aiInsightsDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2">
-                        {generateInsights(t, projects, invoices, expenses, monthlyData, leaderboard, clients).map((insight, i) => (
-                            <div
-                                key={i}
-                                className={`p-4 rounded-xl border ${
-                                    insight.type === 'success' ? 'border-green-500/20 bg-green-500/5' :
-                                    insight.type === 'warning' ? 'border-amber-500/20 bg-amber-500/5' :
-                                    insight.type === 'danger' ? 'border-red-500/20 bg-red-500/5' :
-                                    'border-blue-500/20 bg-blue-500/5'
-                                }`}
-                            >
-=======
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2">
+            {/* AI and Categories */}
+            <div className="grid gap-8 lg:grid-cols-2">
+                <Card className="glass-card border-luxury-gold/20 bg-luxury-gold/[0.02]">
+                    <CardHeader>
+                        <CardTitle className="font-serif text-xl flex items-center gap-2">✨ Insights Stratégiques</CardTitle>
+                        <CardDescription>Analyses automatiques sur vos opérations</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4">
                         {generateInsights(projects, invoices, expenses, monthlyData, leaderboard, clients).map((insight, i) => (
-                            <div key={i} className={`p-4 rounded-xl border ${
-                                insight.type === 'success' ? 'border-green-500/20 bg-green-500/5' :
-                                insight.type === 'warning' ? 'border-amber-500/20 bg-amber-500/5' :
-                                'border-blue-500/20 bg-blue-500/5'
+                            <div key={i} className={`p-4 rounded-xl border flex gap-3 ${
+                                insight.type === 'success' ? 'bg-emerald-500/5 border-emerald-500/10' :
+                                insight.type === 'warning' ? 'bg-amber-500/5 border-amber-500/10' : 'bg-blue-500/5 border-blue-500/10'
                             }`}>
->>>>>>> Stashed changes
-                                <div className="flex items-start gap-3">
-                                    <span className="text-xl">{insight.icon}</span>
-                                    <div>
-                                        <p className="font-medium text-sm">{insight.title}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">{insight.description}</p>
-                                    </div>
+                                <span className="text-xl">{insight.icon}</span>
+                                <div>
+                                    <p className="font-bold text-sm">{insight.title}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{insight.description}</p>
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </CardContent>
-            </Card>
-<<<<<<< Updated upstream
+                    </CardContent>
+                </Card>
 
-            {/* Profitability by Jewelry Type */}
-            <Card className="glass-card">
-                <CardHeader>
-                    <CardTitle className="font-serif text-lg flex items-center gap-2">
-                        <Gem className="w-5 h-5 text-luxury-gold" />
-                        {t('analyticsPage.jewelryProfitTitle')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {(() => {
-                        const categories: Record<string, { count: number; revenue: number; costs: number }> = {};
-                        const autoDetect = (title: string): string => {
-                            const t = title.toLowerCase();
-                            if (t.includes('ring') || t.includes('bague') || t.includes('engagement') || t.includes('chevalier')) return 'Bague';
-                            if (t.includes('bracelet')) return 'Bracelet';
-                            if (t.includes('pendant') || t.includes('pendentif')) return 'Pendentif';
-                            if (t.includes('earring') || t.includes('boucle')) return "Boucles d'oreilles";
-                            if (t.includes('necklace') || t.includes('collier') || t.includes('chain') || t.includes('chaine')) return 'Collier';
-                            return 'Autre';
-                        };
-
-                        (projects || []).forEach((p: Project) => {
-                            const cat = p.jewelry_type || autoDetect(p.title || '');
-                            if (!categories[cat]) categories[cat] = { count: 0, revenue: 0, costs: 0 };
-                            categories[cat].count++;
-                            const revenue = Number(p.financials?.selling_price || p.budget || 0);
-                            const costItemsSum = p.financials?.cost_items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0;
-                            const costs = Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0) + Number(p.financials?.customs_fee || 0) + Number(p.financials?.additional_expense || 0) + costItemsSum;
-                            categories[cat].revenue += revenue;
-                            categories[cat].costs += costs;
-                        });
-
-                        const rows = Object.entries(categories)
-                            .map(([name, data]) => ({
-                                name,
-                                ...data,
-                                margin: data.revenue - data.costs,
-                                marginPct: data.revenue > 0 ? ((data.revenue - data.costs) / data.revenue) * 100 : 0
-                            }))
-                            .sort((a, b) => b.revenue - a.revenue);
-
-                        const maxRevenue = Math.max(...rows.map(r => r.revenue), 1);
-
-                        return (
-                            <div className="space-y-6">
-                                <div className="space-y-3">
-                                    {rows.map(row => (
-                                        <div key={row.name} className="space-y-1">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-serif font-medium">{row.name}</span>
-                                                    <span className="text-[10px] text-muted-foreground">{t('analyticsPage.jewelryProjectCount', { count: row.count })}</span>
-                                                </div>
-                                                <div className="flex items-center gap-4 text-xs">
-                                                    <span className="text-muted-foreground">{formatCurrency(row.revenue)}</span>
-                                                    <span className={`font-bold ${row.marginPct >= 30 ? 'text-green-500' : row.marginPct >= 15 ? 'text-amber-500' : 'text-red-500'}`}>
-                                                        {t('analyticsPage.jewelryMargin', { pct: row.marginPct.toFixed(0) })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden flex">
-                                                <div
-                                                    className="h-full bg-luxury-gold/60 rounded-full transition-all duration-700"
-                                                    style={{ width: `${(row.costs / maxRevenue) * 100}%` }}
-                                                />
-                                                <div
-                                                    className="h-full bg-green-500/60 rounded-full transition-all duration-700"
-                                                    style={{ width: `${(Math.max(0, row.margin) / maxRevenue) * 100}%` }}
-                                                />
-                                            </div>
-                                            <div className="flex gap-4 text-[10px] text-muted-foreground">
-                                                <span>{t('analyticsPage.jewelryCosts', { amount: formatCurrency(row.costs) })}</span>
-                                                <span>{t('analyticsPage.jewelryMarginAmt', { amount: formatCurrency(row.margin) })}</span>
-                                            </div>
+                <Card className="glass-card">
+                    <CardHeader>
+                        <CardTitle className="font-serif text-xl flex items-center gap-2"><Gem className="w-5 h-5 text-luxury-gold" /> Rentabilité par Type</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {(() => {
+                            const categories: Record<string, { count: number; revenue: number; costs: number }> = {};
+                            const detect = (t: string): string => {
+                                const s = t.toLowerCase();
+                                if (s.includes('bague') || s.includes('ring')) return 'Bagues';
+                                if (s.includes('collier') || s.includes('necklace')) return 'Colliers';
+                                if (s.includes('bracelet')) return 'Bracelets';
+                                if (s.includes('boucle')) return 'Boucles';
+                                return 'Autres';
+                            };
+                            projects.forEach(p => {
+                                const cat = p.jewelry_type || detect(p.title || '');
+                                if (!categories[cat]) categories[cat] = { count: 0, revenue: 0, costs: 0 };
+                                categories[cat].count++;
+                                categories[cat].revenue += getSalePrice(p);
+                                categories[cat].costs += (Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0));
+                            });
+                            return Object.entries(categories).sort((a,b) => b[1].revenue - a[1].revenue).map(([name, data]) => {
+                                const margin = data.revenue - data.costs;
+                                const pct = data.revenue > 0 ? (margin / data.revenue) * 100 : 0;
+                                return (
+                                    <div key={name} className="mb-4 last:mb-0">
+                                        <div className="flex justify-between text-xs mb-1 font-medium">
+                                            <span>{name} ({data.count})</span>
+                                            <span className="text-luxury-gold">{pct.toFixed(0)}% de marge</span>
                                         </div>
-                                    ))}
-                                </div>
-                                <div className="flex items-center gap-6 text-[10px] text-muted-foreground pt-2 border-t border-white/5">
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-3 h-3 rounded bg-luxury-gold/60" />
-                                        <span>{t('analyticsPage.legendDirectCosts')}</span>
+                                        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden flex">
+                                            <div className="h-full bg-luxury-gold" style={{ width: `${Math.min(100, (data.costs / Math.max(1, data.revenue)) * 100)}%` }} />
+                                            <div className="h-full bg-emerald-500" style={{ width: `${Math.max(0, pct)}%` }} />
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-3 h-3 rounded bg-green-500/60" />
-                                        <span>{t('analyticsPage.legendGrossMargin')}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })()}
-                </CardContent>
-            </Card>
-
-=======
->>>>>>> Stashed changes
+                                );
+                            });
+                        })()}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
 
-// UI Components
 function TrendBadge({ value, label }: { value: number; label: string }) {
-<<<<<<< Updated upstream
-    const { t } = useTranslation();
-    if (value === 0) return (
-        <div className="flex flex-col items-end">
-            <div className="flex items-center gap-1 text-gray-400 text-xs font-medium">
-                <Minus className="w-3 h-3" />
-                <span>{t('analyticsPage.trendFlat')}</span>
-            </div>
-            <span className="text-[9px] text-gray-400 uppercase tracking-tighter">{t('analyticsPage.trendVs', { label })}</span>
-        </div>
-    );
-
-    const isPositive = value > 0;
-
+    if (value === 0) return <span className="text-[10px] text-zinc-400 mt-1 uppercase italic tracking-tighter">Stable vs {label}</span>;
+    const isPos = value > 0;
     return (
-        <div className="flex flex-col items-end">
-            <div className={`flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                isPositive 
-                ? 'text-green-600 bg-green-500/10' 
-                : 'text-red-600 bg-red-500/10'
-            }`}>
-                {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                <span>{Math.abs(value)}%</span>
-            </div>
-            <span className="text-[9px] text-muted-foreground uppercase tracking-tighter mt-1 italic">{t('analyticsPage.trendVs', { label })}</span>
-=======
-    if (value === 0) return <span className="text-[10px] text-gray-400">Stable vs {label}</span>;
-    const isPositive = value > 0;
-    return (
-        <div className={`flex items-center gap-0.5 text-xs font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-            {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            <span>{Math.abs(value)}%</span>
-            <span className="text-[9px] text-muted-foreground ml-1">vs {label}</span>
->>>>>>> Stashed changes
+        <div className={`flex items-center gap-1 text-xs font-bold mt-1 ${isPos ? 'text-emerald-500' : 'text-red-500'}`}>
+            {isPos ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            {Math.abs(value)}% <span className="text-[9px] text-zinc-400 font-normal ml-0.5">vs {label}</span>
         </div>
     );
 }
 
-<<<<<<< Updated upstream
-// AI Insights Engine — generates smart observations from raw data
-interface Insight {
-    icon: string;
-    title: string;
-    description: string;
-    type: 'success' | 'warning' | 'danger' | 'info';
-}
-
-function generateInsights(
-    t: TFunction,
-    projects: Project[],
-    invoices: Invoice[],
-    expenses: Expense[],
-    monthlyData: { month: string; collected: number; invoiced: number; expenses: number }[],
-    leaderboard: { name: string; projectCount: number; volume: number }[],
-    clients: Client[]
-): Insight[] {
-    const ti = (key: string, opts?: Record<string, string | number>) =>
-        t(`analyticsPage.insights.${key}`, opts as Record<string, unknown>);
-=======
-// AI Insights Logic
-interface Insight { icon: string; title: string; description: string; type: 'success' | 'warning' | 'danger' | 'info'; }
+interface Insight { icon: string; title: string; description: string; type: 'success' | 'warning' | 'info'; }
 function generateInsights(projects: Project[], invoices: Invoice[], expenses: Expense[], monthlyData: any[], leaderboard: any[], clients: Client[]): Insight[] {
->>>>>>> Stashed changes
     const insights: Insight[] = [];
-    const now = new Date();
-    const currentMonth = now.getMonth();
-
-<<<<<<< Updated upstream
-    // 1. Revenue Trend
-    const last3Months = monthlyData.slice(Math.max(0, currentMonth - 2), currentMonth + 1);
-    const totalRecent = last3Months.reduce((s, m) => s + m.collected, 0);
-    const prev3Months = monthlyData.slice(Math.max(0, currentMonth - 5), Math.max(0, currentMonth - 2));
-    const totalPrev = prev3Months.reduce((s, m) => s + m.collected, 0);
-
-    if (totalPrev > 0) {
-        const growth = Math.round(((totalRecent - totalPrev) / totalPrev) * 100);
-        if (growth > 20) {
-            insights.push({
-                icon: '📈',
-                title: ti('revenueUpTitle', { growth }),
-                description: ti('revenueUpDesc', { from: formatCurrency(totalPrev), to: formatCurrency(totalRecent) }),
-                type: 'success',
-            });
-        } else if (growth < -10) {
-            insights.push({
-                icon: '📉',
-                title: ti('revenueDownTitle', { growth: Math.abs(growth) }),
-                description: ti('revenueDownDesc', { from: formatCurrency(totalPrev), to: formatCurrency(totalRecent) }),
-                type: 'danger',
-            });
-        } else {
-            insights.push({
-                icon: '📊',
-                title: ti('revenueStableTitle', { pct: `${growth > 0 ? '+' : ''}${growth}` }),
-                description: ti('revenueStableDesc', { avg: formatCurrency(Math.round(totalRecent / 3)) }),
-                type: 'info',
-            });
-        }
-    }
-
-    // 2. Collection Rate (adjusted for deposit model: 50% deposit upfront, rest at delivery)
-=======
->>>>>>> Stashed changes
-    const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
     const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
-    const collectionRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
+    const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
+    const rate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 100;
 
-    if (collectionRate >= 70) insights.push({ icon: '💰', title: `Excellent Recouvrement (${collectionRate}%)`, description: `Bravo! La majorité du CA facturé est déjà encaissée.`, type: 'success' });
-    else insights.push({ icon: '⚠️', title: `Suivi Trésorerie (${collectionRate}%)`, description: `Attention aux paiements en attente sur les projets livrés.`, type: 'warning' });
+    if (rate < 70) insights.push({ icon: '⚠️', title: 'Attention Trésorerie', description: `Seulement ${rate}% de vos factures sont encaissées.`, type: 'warning' });
+    else insights.push({ icon: '💰', title: 'Recouvrement Sain', description: `Excellent taux d'encaissement de ${rate}%.`, type: 'success' });
 
-<<<<<<< Updated upstream
-    if (collectionRate >= 80) {
-        insights.push({
-            icon: '💰',
-            title: ti('collectionExcellentTitle', { rate: collectionRate }),
-            description: ti('collectionExcellentDesc', { paid: formatCurrency(totalPaid), invoiced: formatCurrency(totalInvoiced) }),
-            type: 'success',
-        });
-    } else if (collectionRate >= 40) {
-        const overduePart = overdueAmount > 0 ? ti('collectionNormalOverdue', { amount: formatCurrency(overdueAmount) }) : '';
-        insights.push({
-            icon: '💰',
-            title: ti('collectionNormalTitle', { rate: collectionRate }),
-            description: ti('collectionNormalDesc', { count: preDeliveryProjects.length, overduePart }),
-            type: overdueAmount > 0 ? 'warning' : 'success',
-        });
-    } else if (totalInvoiced > 0) {
-        insights.push({
-            icon: '⚠️',
-            title: ti('collectionLowTitle', { rate: collectionRate }),
-            description: ti('collectionLowDesc', { pending: formatCurrency(totalInvoiced - totalPaid) }),
-            type: 'info',
-        });
-    }
-=======
-    const inProd = projects.filter(p => p.status === 'production').length;
-    if (inProd > 5) insights.push({ icon: '🏭', title: 'Forte Productivité', description: `${inProd} projets en atelier. Surveillez les délais de livraison.`, type: 'success' });
->>>>>>> Stashed changes
-
-    if (leaderboard.length > 0) insights.push({ icon: '🏆', title: `Top Seller: ${leaderboard[0].name}`, description: `Meneur en volume avec ${formatCurrency(leaderboard[0].volume)} apportés.`, type: 'success' });
-
-<<<<<<< Updated upstream
-    if (designing > inProduction * 2) {
-        insights.push({
-            icon: '🎨',
-            title: ti('pipelineBottleneckTitle', { designing, production: inProduction }),
-            description: ti('pipelineBottleneckDesc'),
-            type: 'warning',
-        });
-    } else if (inProduction > 0) {
-        insights.push({
-            icon: '🏭',
-            title: ti('pipelineHealthyTitle', { production: inProduction, designing }),
-            description: ti('pipelineHealthyDesc', { completed }),
-            type: 'success',
-        });
-    }
-
-    // 4. Best Season
-    const busyMonths = monthlyData
-        .map((m, i) => ({ ...m, index: i }))
-        .filter(m => m.invoiced > 0)
-        .sort((a, b) => b.invoiced - a.invoiced);
-
-    if (busyMonths.length >= 2) {
-        const topMonth = busyMonths[0];
-        insights.push({
-            icon: '📅',
-            title: ti('peakMonthTitle', { month: topMonth.month }),
-            description: ti('peakMonthDesc', { volume: formatCurrency(topMonth.invoiced) }),
-            type: 'info',
-        });
-    }
-
-    // 5. Top Client Concentration
-    if (leaderboard.length >= 2) {
-        const topSellerShare = Math.round((leaderboard[0].volume / leaderboard.reduce((s, l) => s + l.volume, 0)) * 100);
-        if (topSellerShare > 60) {
-            insights.push({
-                icon: '👤',
-                title: ti('sellerConcentratedTitle', { name: leaderboard[0].name, share: topSellerShare }),
-                description: ti('sellerConcentratedDesc'),
-                type: 'warning',
-            });
-        } else {
-            insights.push({
-                icon: '👥',
-                title: ti('sellerDiversifiedTitle'),
-                description: ti('sellerDiversifiedDesc', {
-                    name: leaderboard[0].name,
-                    share: topSellerShare,
-                    count: leaderboard.length,
-                }),
-                type: 'success',
-            });
-        }
-    }
-
-    // 6. Expense Ratio
-    const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-    const totalRevenue = invoices.reduce((s, i) => s + Number(i.amount), 0);
-    if (totalRevenue > 0) {
-        const expenseRatio = Math.round((totalExpenses / totalRevenue) * 100);
-        if (expenseRatio < 40) {
-            insights.push({
-                icon: '✅',
-                title: ti('expenseHealthyTitle', { ratio: expenseRatio }),
-                description: ti('expenseHealthyDesc', { expenses: formatCurrency(totalExpenses), revenue: formatCurrency(totalRevenue) }),
-                type: 'success',
-            });
-        } else if (expenseRatio < 70) {
-            insights.push({
-                icon: '📋',
-                title: ti('expenseMonitorTitle', { ratio: expenseRatio }),
-                description: ti('expenseMonitorDesc'),
-                type: 'warning',
-            });
-        } else {
-            insights.push({
-                icon: '🔴',
-                title: ti('expenseSqueezedTitle', { ratio: expenseRatio }),
-                description: ti('expenseSqueezedDesc'),
-                type: 'danger',
-            });
-        }
-    }
-
-    // 7. Growth Prediction
-    if (currentMonth >= 2) {
-        const avgMonthly = totalRecent / Math.min(3, currentMonth + 1);
-        const monthsLeft = 12 - currentMonth - 1;
-        const predicted = totalRecent + (avgMonthly * monthsLeft);
-        insights.push({
-            icon: '🔮',
-            title: ti('projectedAnnualTitle', { amount: formatCurrency(Math.round(predicted)) }),
-            description: ti('projectedAnnualDesc', {
-                avg: formatCurrency(Math.round(avgMonthly)),
-                monthsLeft,
-            }),
-            type: 'info',
-        });
-    }
-
-    // 8. Client Growth
-    const newClientsThisMonth = clients.filter(c => {
-        const d = new Date(c.created_at);
-        return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
-    }).length;
-
-    if (newClientsThisMonth > 0) {
-        insights.push({
-            icon: '🌟',
-            title: t('analyticsPage.insights.newClientsTitle', { count: newClientsThisMonth }),
-            description: ti('newClientsDesc', { total: clients.length }),
-            type: 'success',
-        });
-    }
-=======
-    const newClients = clients.filter(c => new Date(c.created_at).getMonth() === currentMonth).length;
-    if (newClients > 0) insights.push({ icon: '🌟', title: `${newClients} Nouveaux Clients`, description: `Belle croissance ce mois-ci!`, type: 'success' });
->>>>>>> Stashed changes
+    if (projects.filter(p => p.status === 'production').length > 5) insights.push({ icon: '🏭', title: 'Atelier Surchargé', description: 'Volume important en production. Surveillez les délais.', type: 'warning' });
+    if (leaderboard[0]) insights.push({ icon: '🏆', title: `Performeur: ${leaderboard[0].name}`, description: 'Meneur indiscutable du volume de vente actuel.', type: 'success' });
 
     return insights;
 }
