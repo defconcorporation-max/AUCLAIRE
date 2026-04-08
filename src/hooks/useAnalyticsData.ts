@@ -42,11 +42,25 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const multiplier = daysInMonth / currentDay;
         const estimatedCurrentMonth = currentMonthInvoiced * multiplier;
 
-        const startingPointForFuture = Math.max(lastCompletedMonthVal * 1.20, estimatedCurrentMonth);
+        // 1. Calcul de l'évolution moyenne réelle (Historique)
+        let totalGrowth = 0;
+        let growthCounts = 0;
+        for (let i = 1; i < currentMonthIndex; i++) {
+            const prev = fullHistory[i - 1].invoiced;
+            if (prev > 0) {
+                const g = (fullHistory[i].invoiced - prev) / prev;
+                // Cap à 100% par mois pour eviter les explosions de 400M
+                totalGrowth += Math.min(g, 1.0); 
+                growthCounts++;
+            }
+        }
+        const avgHistoricalGrowth = growthCounts > 0 ? (totalGrowth / growthCounts) : 0.15;
 
-        const firstMonthVal = fullHistory[0].invoiced;
-        const avgMonthlyDollarIncrease = currentMonthIndex > 0 ? (lastCompletedMonthVal - firstMonthVal) / currentMonthIndex : 0;
+        // 2. Points de départ pour les trajectoires (Partent du dernier mois complet)
+        const startingPointForFutureEvo20 = Math.max(lastCompletedMonthVal * 1.20, estimatedCurrentMonth);
+        const startingPointForFutureSQ = Math.max(lastCompletedMonthVal * (1 + avgHistoricalGrowth), estimatedCurrentMonth);
 
+        // 3. Construction des trajectoires
         const yearlyExtrapolation: ExtrapolationMonth[] = [];
         let totalYearlyStatusQuo = 0;
         let totalYearlyEvo20 = 0;
@@ -56,7 +70,20 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             const isFuture = i > currentMonthIndex;
             const isPast = i < currentMonthIndex;
 
-            const statusQuoVal = Math.round(firstMonthVal + (i * avgMonthlyDollarIncrease));
+            // --- CALCUL STATUS QUO (Tendance d'évolution réelle) ---
+            let statusQuoVal = 0;
+            if (isPast) {
+                statusQuoVal = fullHistory[i].invoiced;
+            } else if (isCurrent) {
+                // Pour avril, le statu quo suit la tendance historique moyenne calculée à partir de mars
+                statusQuoVal = Math.round(lastCompletedMonthVal * (1 + avgHistoricalGrowth));
+            } else {
+                // Projection future : Prolonge la tendance historique à partir de mars ou estimation avril
+                const monthsAheadFromCurrent = i - currentMonthIndex;
+                statusQuoVal = Math.round(startingPointForFutureSQ * Math.pow(1 + avgHistoricalGrowth, monthsAheadFromCurrent));
+            }
+
+            // --- CALCUL EVO 20 (Objectif Ambitieux) ---
             let target20Val = 0;
             if (isPast) {
                 target20Val = fullHistory[i].invoiced;
@@ -64,17 +91,17 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
                 target20Val = Math.max(Math.round(lastCompletedMonthVal * 1.20), Math.round(estimatedCurrentMonth));
             } else {
                 const monthsAheadFromCurrent = i - currentMonthIndex;
-                target20Val = Math.round(startingPointForFuture * Math.pow(1.20, monthsAheadFromCurrent));
+                target20Val = Math.round(startingPointForFutureEvo20 * Math.pow(1.20, monthsAheadFromCurrent));
             }
 
             totalYearlyStatusQuo += (isPast ? fullHistory[i].invoiced : statusQuoVal);
-            totalYearlyEvo20 += target20Val;
+            totalYearlyEvo20 += (isPast ? fullHistory[i].invoiced : target20Val);
 
             yearlyExtrapolation.push({
                 name: monthNames[i],
                 actual: (isPast || isCurrent) ? fullHistory[i].invoiced : 0,
                 estimated: isCurrent ? estimatedCurrentMonth : null,
-                statusQuo: statusQuoVal > 0 ? statusQuoVal : 0,
+                statusQuo: statusQuoVal,
                 target20: target20Val,
                 isProjected: isFuture,
                 isCurrent: isCurrent
