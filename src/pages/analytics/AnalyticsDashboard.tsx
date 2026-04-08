@@ -5,7 +5,7 @@ import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target, TrendingUp } from 'lucide-react';
+import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ export default function AnalyticsDashboard() {
     const { isLoading: cLoad } = useQuery({ queryKey: ['clients_dummy'], queryFn: () => [] }); 
 
     if (pLoad || iLoad || uLoad || eLoad || engineLoading || cLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Calcul des trajectoires...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Alignement des trajectoires...</div>;
     }
 
     const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, cashCollected: number }> = {};
@@ -76,7 +76,7 @@ export default function AnalyticsDashboard() {
                         <FileDown className="w-4 h-4 mr-2" />
                         Exporter Rapport
                     </Button>
-                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full backdrop-blur-xl border border-black/10 dark:border-white/10">
+                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full backdrop-blur-xl border border-black/10 dark:border-white/10 shadow-inner">
                         {(['day', 'week', 'month', 'total'] as const).map((period) => (
                             <Button
                                 key={period}
@@ -141,7 +141,6 @@ export default function AnalyticsDashboard() {
                                 }} />
                                 <Legend verticalAlign="top" height={36} iconType="circle"/>
                                 
-                                {/* Zone d'ombre pour l'ambition (Evo 20) */}
                                 <Area type="monotone" dataKey="target20" fill="rgba(16, 185, 129, 0.05)" stroke="none" />
                                 
                                 <Bar name="Revenu Réel" dataKey="actual" fill="#A68A56" radius={[4, 4, 0, 0]} barSize={35}>
@@ -233,7 +232,7 @@ function KPICard({ title, value, trend, label, isCurrency = true }: { title: str
                         {Math.abs(trend)}% <span className="text-[9px] text-zinc-400 font-normal uppercase italic tracking-tighter">vs {label}</span>
                     </div>
                 ) : (
-                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Sur l'Objectif</span>
+                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Cible atteinte</span>
                 )}
             </CardContent>
         </Card>

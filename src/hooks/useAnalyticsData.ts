@@ -39,7 +39,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         }
 
         // 2. Calcul des croissances
-        // Croissance moyenne des mois TERMINÉS (Janvier -> Mars)
         let totalGrowth = 0;
         let growthCounts = 0;
         for (let i = 1; i < currentMonthIndex; i++) {
@@ -50,7 +49,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             }
         }
         const avgGrowth = growthCounts > 0 ? (totalGrowth / growthCounts) : 0.10;
-        const lastCompletedMonthVal = fullHistory[currentMonthIndex - 1]?.invoiced || 10000;
 
         // 3. Construction des trajectoires
         const yearlyExtrapolation: ExtrapolationMonth[] = [];
@@ -62,7 +60,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             const isFuture = i > currentMonthIndex;
             const isPast = i < currentMonthIndex;
 
-            // Estimation pour le mois en cours (x4 environ si on est le 8)
             const multiplier = daysInMonth / currentDay;
             const estimatedVal = isCurrent ? fullHistory[i].invoiced * multiplier : null;
 
@@ -76,14 +73,10 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
                 isCurrent: isCurrent
             });
 
-            // Calcul des points suivants (on continue à partir du mois actuel)
-            // Status Quo continue avec la moyenne calculée
             statusQuoRunner = statusQuoRunner * (1 + avgGrowth);
-            // Target 20 continue avec +20% fixe
             target20Runner = target20Runner * 1.20;
         }
 
-        // Metrics de performance pour le mois en cours
         const currentEstim = yearlyExtrapolation[currentMonthIndex].estimated || 0;
         const currentSQ = yearlyExtrapolation[currentMonthIndex].statusQuo;
         const perfVsSQ = currentSQ > 0 ? Math.round(((currentEstim - currentSQ) / currentSQ) * 100) : 0;
