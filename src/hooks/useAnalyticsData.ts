@@ -1,60 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiProjects, ProjectStatus } from '@/services/apiProjects';
 import { apiInvoices } from '@/services/apiInvoices';
 import { apiExpenses } from '@/services/apiExpenses';
+import { apiProjects } from '@/services/apiProjects';
 import { apiClients } from '@/services/apiClients';
 import { financialUtils } from '@/utils/financialUtils';
 
-export interface ForecastPoint {
-    name: string;
-    invoiced: number;
-    collected: number;
-    expenses: number;
-}
-
 export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total') {
-    // 1. Fetch all data
-    const projectsQuery = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
-    const invoicesQuery = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
-    const expensesQuery = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
-    const clientsQuery = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
+    const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
+    const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
+    const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
+    const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
 
-    const isLoading = projectsQuery.isLoading || invoicesQuery.isLoading || expensesQuery.isLoading || clientsQuery.isLoading;
-    const projects = projectsQuery.data || [];
-    const invoices = invoicesQuery.data || [];
-    const expenses = expensesQuery.data || [];
-    const clients = clientsQuery.data || [];
+    const isLoading = iLoad || eLoad || pLoad || cLoad;
 
-    if (isLoading) return { isLoading: true };
+    // 1. Current Period Trends (KPIs)
+    const { start: currentStart, end: currentEnd } = financialUtils.getPeriodRange(timeframe);
+    const { start: previousStart, end: previousEnd } = financialUtils.getPreviousPeriodRange(timeframe);
 
-    // ─── Trend Calculations ─────────────────────────────────
-    const { start: startCurr } = financialUtils.getPeriodRange(timeframe);
-    let startPrev = new Date(startCurr);
-    let compareLabel = "";
-
-    if (timeframe === 'day') {
-        startPrev.setDate(startPrev.getDate() - 1);
-        compareLabel = "hier";
-    } else if (timeframe === 'week') {
-        startPrev.setDate(startPrev.getDate() - 7);
-        compareLabel = "semaine dernière";
-    } else if (timeframe === 'month') {
-        startPrev.setMonth(startPrev.getMonth() - 1);
-        compareLabel = "mois dernier";
-    } else {
-        compareLabel = "total";
-    }
-
-    const { invoicedTotal, cashCollected, expensesTotal } = financialUtils.calculateMetrics(invoices, expenses, startCurr);
-    const prevMetrics = financialUtils.calculateMetrics(invoices, expenses, startPrev, startCurr);
-
-    const getClientsForRange = (start: Date, end: Date) => clients.filter(c => {
-        const date = financialUtils.toLocalDate(c.created_at);
-        return date >= start && date <= end;
-    }).length;
-
-    const currClients = getClientsForRange(startCurr, new Date());
-    const prevClients = getClientsForRange(startPrev, startCurr);
+    const currentMetrics = financialUtils.calculateMetrics(invoices, expenses, currentStart, currentEnd);
+    const previousMetrics = financialUtils.calculateMetrics(invoices, expenses, previousStart, previousEnd);
 
     const calcTrend = (curr: number, prev: number) => {
         if (prev === 0) return curr > 0 ? 100 : 0;
@@ -62,65 +26,118 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total') 
     };
 
     const trendData = {
-        collected: { value: cashCollected, trend: calcTrend(cashCollected, prevMetrics.cashCollected), label: compareLabel },
-        invoiced: { value: invoicedTotal, trend: calcTrend(invoicedTotal, prevMetrics.invoicedTotal), label: compareLabel },
-        expenses: { value: expensesTotal, trend: calcTrend(expensesTotal, prevMetrics.expensesTotal), label: compareLabel },
-        profit: { value: cashCollected - expensesTotal, trend: calcTrend(cashCollected - expensesTotal, prevMetrics.cashCollected - prevMetrics.expensesTotal), label: compareLabel },
-        clients: { value: currClients, trend: calcTrend(currClients, prevClients), label: compareLabel }
+        collected: { value: currentMetrics.collected, trend: calcTrend(currentMetrics.collected, previousMetrics.collected), label: timeframe },
+        invoiced: { value: currentMetrics.invoiced, trend: calcTrend(currentMetrics.invoiced, previousMetrics.invoiced), label: timeframe },
+        clients: { 
+            value: clients.filter(c => {
+                const d = new Date(c.created_at);
+                return d >= currentStart && d <= currentEnd;
+            }).length,
+            trend: 0, 
+            label: timeframe 
+        }
     };
 
-    // ─── Matrix-Based Forecasting Engine ────────────────────
-    const distributionMatrix: Record<ProjectStatus, { invoice: number[], collection: number[] }> = {
-        'designing': { invoice: [0.2, 0.6, 0.2], collection: [0.1, 0.3, 0.6] },
-        '3d_model': { invoice: [0.5, 0.5, 0], collection: [0.2, 0.5, 0.3] },
-        'design_ready': { invoice: [0.8, 0.2, 0], collection: [0.4, 0.4, 0.2] },
-        'waiting_for_approval': { invoice: [1, 0, 0], collection: [0.5, 0.5, 0] },
-        'design_modification': { invoice: [0.4, 0.6, 0], collection: [0.2, 0.4, 0.4] },
-        'approved_for_production': { invoice: [1, 0, 0], collection: [0.5, 0.5, 0] },
-        'production': { invoice: [1, 0, 0], collection: [0.7, 0.3, 0] },
-        'delivery': { invoice: [1, 0, 0], collection: [0.9, 0.1, 0] },
-        'completed': { invoice: [1, 0, 0], collection: [1, 0, 0] },
-        'cancelled': { invoice: [0, 0, 0], collection: [0, 0, 0] }
+    // 2. Weighted Pipeline (Project Potential)
+    const statusWeights: Record<string, number> = {
+        'waiting_for_approval': 0.1,
+        'approved_for_production': 0.4,
+        'production': 0.8,
+        'delivery': 0.95,
+        'completed': 1.0,
+        'cancelled': 0
     };
 
-    // Prepare Anchor Data for M0
-    const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const realData = financialUtils.calculateMetrics(invoices, expenses, currentMonthStart);
+    const weightedPipeline = projects.reduce((acc, p) => {
+        const weight = statusWeights[p.status] || 0.2;
+        const val = Number(p.financials?.selling_price || p.budget || 0);
+        return acc + (val * weight);
+    }, 0);
 
-    const forecast: ForecastPoint[] = [
-        { name: "Ce mois", invoiced: realData.invoicedTotal, collected: realData.cashCollected, expenses: realData.expensesTotal },
-        { name: "Mois +1", invoiced: 0, collected: 0, expenses: 0 },
-        { name: "Mois +2", invoiced: 0, collected: 0, expenses: 0 }
-    ];
+    // 3. Short Term 3-Month Matrix Forecast
+    const distributionMatrix = {
+        'waiting_for_approval': [0.1, 0.4, 0.5],
+        'approved_for_production': [0.3, 0.5, 0.2],
+        'production': [0.6, 0.3, 0.1],
+        'delivery': [0.9, 0.1, 0],
+        'completed': [1, 0, 0]
+    };
 
-    // Forecast Revenue & Collection from Pipeline (for M1 and M2 mostly)
-    projects.forEach(p => {
-        if (p.status === 'completed' || p.status === 'cancelled') return;
-        const value = Number(p.financials?.selling_price || p.budget || 0);
-        const matrix = distributionMatrix[p.status] || distributionMatrix['designing'];
+    const forecast = [0, 1, 2].map(m => {
+        const d = new Date();
+        d.setMonth(d.getMonth() + m);
+        const name = d.toLocaleDateString('fr-FR', { month: 'short' });
         
-        // M0 is already anchored with real data for current invoices, 
-        // but pipeline projects can still contribute to collections in M0, M1, M2.
-        // We only add pipeline projections to M1 and M2 to avoid double counting with current M0 invoices
-        matrix.invoice.forEach((factor, i) => { if (i > 0 && forecast[i]) forecast[i].invoiced += value * factor; });
-        matrix.collection.forEach((factor, i) => { if (i > 0 && forecast[i]) forecast[i].collected += value * factor; });
+        let mInvoiced = 0;
+        let mCollected = 0;
+
+        projects.forEach(p => {
+            const matrix = distributionMatrix[p.status as keyof typeof distributionMatrix] || [0.3, 0.4, 0.3];
+            const val = Number(p.financials?.selling_price || p.budget || 0);
+            mInvoiced += val * matrix[m];
+            mCollected += (val * matrix[m]) * 0.85; // Est. collection rate
+        });
+
+        return { name, invoiced: Math.round(mInvoiced), collected: Math.round(mCollected), expenses: Math.round(mCollected * 0.4) };
     });
 
-    // Estimate future expenses based on average of last 3 months
-    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    const historicalMetrics = financialUtils.calculateMetrics(invoices, expenses, threeMonthsAgo);
-    const avgMonthlyExpenses = historicalMetrics.expensesTotal / 3;
-    forecast[1].expenses = Math.round(avgMonthlyExpenses);
-    forecast[2].expenses = Math.round(avgMonthlyExpenses);
+    // 4. Yearly Growth & Extrapolation Engine
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth(); // 0-indexed
+    const monthlyHistory = Array.from({ length: currentMonth + 1 }, (_, i) => {
+        const start = new Date(currentYear, i, 1);
+        const end = new Date(currentYear, i + 1, 0, 23, 59, 59);
+        const metrics = financialUtils.calculateMetrics(invoices, expenses, start, end);
+        return { month: i, ...metrics };
+    });
 
-    forecast.forEach(f => { f.invoiced = Math.round(f.invoiced); f.collected = Math.round(f.collected); });
+    // Calculate Monthly Average Growth Rate (Safe CAGR approach)
+    let avgGrowthRate = 0;
+    if (monthlyHistory.length > 1) {
+        let totalGrowth = 0;
+        let growthPoints = 0;
+        for (let i = 1; i < monthlyHistory.length; i++) {
+            const prev = monthlyHistory[i-1].invoiced || 1; // avoid div by zero
+            const curr = monthlyHistory[i].invoiced;
+            totalGrowth += (curr - prev) / prev;
+            growthPoints++;
+        }
+        avgGrowthRate = totalGrowth / growthPoints;
+    }
+
+    // Limit growth to a realistic range (-20% to +50% per month for projections)
+    const safeGrowthRate = Math.max(-0.2, Math.min(0.5, avgGrowthRate));
+
+    const yearlyExtrapolation = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date(currentYear, i, 1);
+        const name = date.toLocaleDateString('fr-FR', { month: 'short' });
+        
+        if (i <= currentMonth) {
+            // Real Data
+            const hist = monthlyHistory[i];
+            return { name, invoiced: hist.invoiced, collected: hist.collected, expenses: hist.expenses, isProjected: false };
+        } else {
+            // Projected Data based on growth
+            const monthsForward = i - currentMonth;
+            const lastRealInvoiced = monthlyHistory[currentMonth].invoiced;
+            const projectedInvoiced = lastRealInvoiced * Math.pow(1 + safeGrowthRate, monthsForward);
+            
+            return { 
+                name, 
+                invoiced: Math.round(projectedInvoiced), 
+                collected: Math.round(projectedInvoiced * 0.8), // 80% collection efficiency
+                expenses: Math.round(projectedInvoiced * 0.35), // 35% margin est
+                isProjected: true 
+            };
+        }
+    });
 
     return {
-        isLoading: false,
+        isLoading,
         trendData,
+        weightedPipeline,
         forecast,
-        weightedPipeline: Math.round(forecast.reduce((s, m) => s + m.invoiced, 0)),
-        conversionRate: projects.length > 0 ? (projects.filter(p => !['cancelled', 'designing'].includes(p.status)).length / projects.length) * 100 : 0
+        yearlyExtrapolation,
+        avgMonthlyGrowth: Math.round(safeGrowthRate * 100)
     };
 }

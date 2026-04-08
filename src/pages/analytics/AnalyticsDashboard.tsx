@@ -1,4 +1,3 @@
-import { apiClients } from '@/services/apiClients';
 import { apiInvoices, Invoice } from '@/services/apiInvoices';
 import { apiProjects, Project } from '@/services/apiProjects';
 import { useQuery } from '@tanstack/react-query';
@@ -7,13 +6,13 @@ import { apiExpenses } from '@/services/apiExpenses';
 import { apiActivities } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Briefcase, Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem } from 'lucide-react';
+import { Briefcase, Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, Target, MousePointer2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { financialUtils } from '@/utils/financialUtils';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, ReferenceLine, ComposedChart, Line } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import { generateMonthlyReportPDF } from '@/services/monthlyReportPdf';
 import { apiSettings } from '@/services/apiSettings';
@@ -22,43 +21,26 @@ export default function AnalyticsDashboard() {
     const { t } = useTranslation();
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     
-    // Engine Hook for Dynamic Forecasting
-    const { isLoading: engineLoading, forecast, trendData, weightedPipeline } = useAnalyticsData(timeframe);
+    // Engine Hook with New Growth Extrapolation
+    const { isLoading: engineLoading, forecast, trendData, weightedPipeline, yearlyExtrapolation, avgMonthlyGrowth } = useAnalyticsData(timeframe);
 
-    // Queries for Detailed Tables
+    // Queries
     const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
-    const { isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
     const { data: users = [], isLoading: uLoad } = useQuery({ queryKey: ['users'], queryFn: apiUsers.getAll });
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
     const { data: activities = [], isLoading: alLoad } = useQuery({ queryKey: ['activities'], queryFn: apiActivities.getAll });
+    const { isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: () => [] }); // Dummy to maintain signature consistency
 
-    if (pLoad || cLoad || iLoad || uLoad || eLoad || alLoad || engineLoading) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif">Initialisation du Moteur Analytique...</div>;
+    if (pLoad || iLoad || uLoad || eLoad || alLoad || engineLoading || cLoad) {
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Initialisation des algorithmes de croissance...</div>;
     }
 
-    const getSalePrice = (p: Project) => Number(p.financials?.selling_price || p.budget || 0);
-
-    // Annual Growth Logic
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentYear = new Date().getFullYear();
-    const monthlyData = months.map(m => ({ month: m, collected: 0, invoiced: 0 }));
+    const totalYearlyProjected = yearlyExtrapolation.reduce((sum, m) => sum + m.invoiced, 0);
+    const realYearlyToDate = yearlyExtrapolation.filter(m => !m.isProjected).reduce((sum, m) => sum + m.invoiced, 0);
 
-    months.forEach((_, monthIdx) => {
-        const start = new Date(currentYear, monthIdx, 1);
-        const end = new Date(currentYear, monthIdx + 1, 0, 23, 59, 59);
-        monthlyData[monthIdx].collected = financialUtils.getCollectedFromInvoices(invoices, start, end);
-    });
-
-    invoices.forEach(inv => {
-        if (inv.status === 'void') return;
-        const createdDate = new Date(inv.created_at);
-        if (createdDate.getFullYear() === currentYear) {
-            monthlyData[createdDate.getMonth()].invoiced += Number(inv.amount || 0);
-        }
-    });
-
-    // Seller Leaderboard Calculations
+    // Logic for Seller Leaderboard
     const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, cashCollected: number }> = {};
     users.filter(u => ['affiliate', 'admin', 'ambassador'].includes(u.role as string)).forEach(u => {
         sellerStats[u.id] = { id: u.id, name: u.full_name, role: u.role as string, projectCount: 0, volume: 0, cashCollected: 0 };
@@ -67,11 +49,10 @@ export default function AnalyticsDashboard() {
     projects.forEach(p => {
         const isSale = ['production', 'delivery', 'completed'].includes(p.status) || invoices.some(inv => inv.project_id === p.id);
         if (!isSale) return;
-
         const responsibleId = p.sales_agent_id || p.affiliate_id;
         if (responsibleId && sellerStats[responsibleId]) {
             sellerStats[responsibleId].projectCount++;
-            sellerStats[responsibleId].volume += getSalePrice(p);
+            sellerStats[responsibleId].volume += Number(p.financials?.selling_price || p.budget || 0);
             invoices.filter(inv => inv.project_id === p.id).forEach(inv => {
                 const paidValue = Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : (inv.status === 'paid' ? Number(inv.amount) : 0);
                 sellerStats[responsibleId].cashCollected += paidValue;
@@ -81,7 +62,7 @@ export default function AnalyticsDashboard() {
 
     const leaderboard = Object.values(sellerStats).filter(s => s.projectCount > 0).sort((a, b) => b.volume - a.volume);
 
-    // Manufacturer Performance Logic
+    // Logic for Manufacturers
     const manufacturerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, totalProdDays: number, prodCount: number, modCount: number }> = {};
     users.filter(u => u.role === 'manufacturer').forEach(u => {
         manufacturerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, totalProdDays: 0, prodCount: 0, modCount: 0 };
@@ -91,11 +72,9 @@ export default function AnalyticsDashboard() {
     projects.forEach(p => {
         if (p.manufacturer_id && manufacturerStats[p.manufacturer_id]) {
             manufacturerStats[p.manufacturer_id].projectCount++;
-            manufacturerStats[p.manufacturer_id].volume += getSalePrice(p);
-            
+            manufacturerStats[p.manufacturer_id].volume += Number(p.financials?.selling_price || p.budget || 0);
             const pLogs = statusLogs.filter(log => log.project_id === p.id).sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
             let prodStart: Date | null = null;
-            
             pLogs.forEach(log => {
                 const det = (log.details || '').toLowerCase();
                 if (det.includes('to production')) prodStart = new Date(log.created_at);
@@ -116,14 +95,17 @@ export default function AnalyticsDashboard() {
     })).sort((a, b) => b.qualityRate - a.qualityRate);
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-12">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-16 px-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-black/5 dark:border-white/5 pb-8">
                 <div>
-                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-wide">{t('analyticsPage.title')}</h1>
-                    <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">{t('analyticsPage.subtitle')}</p>
+                    <h1 className="text-4xl font-serif text-black dark:text-white tracking-tighter">{t('analyticsPage.title')}</h1>
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="h-1 w-12 bg-luxury-gold rounded-full" />
+                        <p className="text-muted-foreground text-sm uppercase tracking-[0.2em] font-medium">{t('analyticsPage.subtitle')}</p>
+                    </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                     <Button
                         variant="outline"
                         size="sm"
@@ -131,235 +113,170 @@ export default function AnalyticsDashboard() {
                             const settings = await apiSettings.get();
                             generateMonthlyReportPDF({ invoices, expenses, projects, month: new Date(), settings });
                         }}
-                        className="rounded-lg border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10"
+                        className="rounded-full border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/5 px-6"
                     >
                         <FileDown className="w-4 h-4 mr-2" />
                         Exporter Rapport
                     </Button>
-                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl backdrop-blur-md border border-black/10 dark:border-white/10">
+                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full backdrop-blur-xl border border-black/10 dark:border-white/10 shadow-inner">
                         {(['day', 'week', 'month', 'total'] as const).map((period) => (
                             <Button
                                 key={period}
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setTimeframe(period)}
-                                className={`rounded-lg px-4 ${timeframe === period ? 'bg-luxury-gold text-white shadow-lg' : 'text-muted-foreground'}`}
+                                className={`rounded-full px-6 transition-all duration-300 ${timeframe === period ? 'bg-luxury-gold text-white shadow-lg scale-105' : 'text-muted-foreground hover:text-black dark:hover:text-white'}`}
                             >
-                                {period === 'day' ? 'Jour' : period === 'week' ? 'Semaine' : period === 'month' ? 'Mois' : 'Total'}
+                                {period === 'day' ? 'Jour' : period === 'week' ? 'Semaine' : period === 'month' ? 'Mois' : 'V3'}
                             </Button>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* KPIs Grid */}
+            {/* Main Stats Summary */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
+                <KPICard title="Cash Encaissé" value={trendData.collected.value} trend={trendData.collected.trend} label={trendData.collected.label} />
+                <KPICard title="Total Facturé" value={trendData.invoiced.value} trend={trendData.invoiced.trend} label={trendData.invoiced.label} />
+                <KPICard title="Nouveaux Clients" value={trendData.clients.value} trend={trendData.clients.trend} label={trendData.clients.label} isCurrency={false} />
+                <Card className="bg-black text-white dark:bg-white dark:text-black shadow-2xl overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Target className="w-20 h-20" />
+                    </div>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Cash Encaissé</CardTitle>
+                        <CardTitle className="text-[10px] uppercase tracking-widest opacity-60">Estimation Fin d'Année</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-serif text-black dark:text-white">{formatCurrency(trendData.collected.value)}</div>
-                        <TrendBadge value={trendData.collected.trend} label={trendData.collected.label} />
-                    </CardContent>
-                </Card>
-
-                <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Total Facturé</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-serif text-black dark:text-white">{formatCurrency(trendData.invoiced.value)}</div>
-                        <TrendBadge value={trendData.invoiced.trend} label={trendData.invoiced.label} />
-                    </CardContent>
-                </Card>
-
-                <Card className="luxury-card border-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-zinc-500">Nouveaux Clients</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-serif text-black dark:text-white">{trendData.clients.value}</div>
-                        {timeframe !== 'total' && <TrendBadge value={trendData.clients.trend} label={trendData.clients.label} />}
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-luxury-gold/10 to-transparent border-luxury-gold/20 shadow-lg shadow-luxury-gold/5">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-serif uppercase tracking-widest text-luxury-gold">Pipeline Pondéré</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-serif text-luxury-gold">{formatCurrency(weightedPipeline)}</div>
-                        <p className="text-[10px] text-zinc-500 mt-1 uppercase italic tracking-tighter">Probabilité d'étape appliquée</p>
+                        <div className="text-3xl font-serif">{formatCurrency(totalYearlyProjected)}</div>
+                        <div className="flex items-center gap-2 mt-2">
+                            <ArrowUpRight className="w-4 h-4 text-luxury-gold" />
+                            <span className="text-xs font-bold text-luxury-gold">+{avgMonthlyGrowth}% / mois</span>
+                            <span className="text-[10px] opacity-40 uppercase">extrapolation</span>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Visualizations */}
-            <div className="grid gap-6 lg:grid-cols-2">
-                <Card className="glass-card shadow-xl overflow-hidden border-black/5 dark:border-white/5">
-                    <CardHeader>
-                        <CardTitle className="font-serif">Croissance des Revenus ({currentYear})</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
+            {/* Strategic Extension: Yearly Objectives & Growth Extrapolation */}
+            <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-black overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
+                <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-black/5 dark:border-white/5 pb-8">
+                    <div>
+                        <CardTitle className="text-2xl font-serif flex items-center gap-2">
+                            <Target className="w-6 h-6 text-luxury-gold" />
+                            Prévisionnel Annuel & Objectifs de Croissance
+                        </CardTitle>
+                        <CardDescription>Analyse de la tendance actuelle extrapolée jusqu'au 31 décembre {currentYear}</CardDescription>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                        <div className="bg-black/5 dark:bg-white/5 p-3 rounded-2xl border border-black/5 dark:border-white/5">
+                            <p className="text-[10px] uppercase opacity-50 tracking-tighter">Cumul Réel (YTD)</p>
+                            <p className="text-xl font-serif text-black dark:text-white">{formatCurrency(realYearlyToDate)}</p>
+                        </div>
+                        <div className="bg-luxury-gold/10 p-3 rounded-2xl border border-luxury-gold/20">
+                            <p className="text-[10px] uppercase text-luxury-gold tracking-tighter">Objectif Projeté</p>
+                            <p className="text-xl font-serif text-luxury-gold">{formatCurrency(totalYearlyProjected)}</p>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0 sm:p-6">
+                    <div className="h-[400px] w-full mt-6">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={monthlyData}>
-                                <defs>
-                                    <linearGradient id="cInv" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#A68A56" stopOpacity={0.3}/><stop offset="95%" stopColor="#A68A56" stopOpacity={0}/></linearGradient>
-                                    <linearGradient id="cCol" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/><stop offset="95%" stopColor="#10B981" stopOpacity={0}/></linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                <XAxis dataKey="month" fontSize={10} tickLine={false} axisLine={false} />
-                                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `$${v/1000}k`} />
-                                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                                <Area type="monotone" name="Facturé" dataKey="invoiced" stroke="#A68A56" fill="url(#cInv)" strokeWidth={2} />
-                                <Area type="monotone" name="Encaissé" dataKey="collected" stroke="#10B981" fill="url(#cCol)" strokeWidth={2} />
-                            </AreaChart>
+                            <ComposedChart data={yearlyExtrapolation} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
+                                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} tick={{fill: 'currentColor', opacity: 0.5}} />
+                                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `$${v/1000}k`} tick={{fill: 'currentColor', opacity: 0.5}} />
+                                <Tooltip 
+                                    content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                                <div className="bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 p-4 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                                    <p className="text-xs font-bold uppercase tracking-widest mb-2 border-b pb-1 opacity-50">{data.name} {data.isProjected ? '(Projection)' : '(Réel)'}</p>
+                                                    <div className="space-y-1.5">
+                                                        <p className="flex justify-between gap-8 text-sm"><span className="opacity-60">Facturation:</span> <strong>{formatCurrency(data.invoiced)}</strong></p>
+                                                        <p className="flex justify-between gap-8 text-sm"><span className="opacity-60">Cash Flow (Est.):</span> <strong className="text-emerald-500">{formatCurrency(data.collected)}</strong></p>
+                                                        <p className="flex justify-between gap-8 text-sm"><span className="opacity-60">Dépenses:</span> <strong className="text-red-500">{formatCurrency(data.expenses)}</strong></p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
+                                />
+                                <Legend verticalAlign="top" height={36}/>
+                                <Bar name="Réel (Facturation)" dataKey={(d) => d.isProjected ? 0 : d.invoiced} fill="#000000" radius={[4, 4, 0, 0]} barSize={30} dark:fill="#ffffff" />
+                                <Bar name="Projeté (Objectif)" dataKey={(d) => d.isProjected ? d.invoiced : 0} fill="#A68A56" radius={[4, 4, 0, 0]} barSize={30} opacity={0.6} />
+                                <Line name="Trend Trésorerie" type="monotone" dataKey="collected" stroke="#10B981" strokeWidth={3} dot={{ r: 4 }} strokeDasharray={(d) => d.isProjected ? "5 5" : ""} />
+                                <ReferenceLine x={yearlyExtrapolation.findIndex(m => m.isProjected) - 0.5} stroke="#A68A56" label={{ value: 'TENDANCE', position: 'top', fill: '#A68A56', fontSize: 10, fontWeight: 'bold' }} strokeDasharray="3 3"/>
+                            </ComposedChart>
                         </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+                    </div>
+                </CardContent>
+            </Card>
 
-                <Card className="glass-card shadow-xl overflow-hidden border-black/5 dark:border-white/5">
-                    <CardHeader>
-                        <CardTitle className="font-serif">Prévisions de Trésorerie (Flux Probables)</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={forecast}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-                                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `$${v/1000}k`} />
-                                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} contentStyle={{ borderRadius: '12px', border: 'none' }} />
-                                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase' }} />
-                                <Bar name="Facturé" dataKey="invoiced" fill="#A68A56" radius={[4, 4, 0, 0]} barSize={20} />
-                                <Bar name="Trésorerie" dataKey="collected" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} />
-                                <Bar name="Dépenses" dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Performance Tables */}
-            <div className="grid gap-8">
-                <Card className="glass-card shadow-xl border-black/5 dark:border-white/5 overflow-hidden">
-                    <CardHeader className="bg-black/[0.02] dark:bg-white/[0.02]">
+            <div className="grid gap-8 lg:grid-cols-2">
+                <Card className="glass-card shadow-xl border-black/5 dark:border-white/5 hover:shadow-luxury-gold/5 transition-all duration-500">
+                    <CardHeader className="flex flex-row items-center justify-between border-b border-black/[0.03] dark:border-white/[0.03] pb-4">
                         <CardTitle className="font-serif text-lg flex items-center gap-2">
-                            <Briefcase className="w-5 h-5 text-luxury-gold" /> Performance Fabricants
+                            <Trophy className="w-5 h-5 text-luxury-gold" /> Performance Vendeurs
                         </CardTitle>
                     </CardHeader>
                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Fabricant</TableHead>
-                                <TableHead className="text-center">Projets</TableHead>
-                                <TableHead className="text-center">Vitesse (Moy)</TableHead>
-                                <TableHead className="text-center">Qualité</TableHead>
-                                <TableHead className="text-right">Volume</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {manufacturerScorecard.map(m => (
-                                <TableRow key={m.id}>
-                                    <TableCell className="font-medium">{m.name}</TableCell>
-                                    <TableCell className="text-center">{m.projectCount}</TableCell>
-                                    <TableCell className="text-center">{m.avgSpeed} Jours</TableCell>
-                                    <TableCell className="text-center font-bold text-luxury-gold">{Math.round(m.qualityRate)}%</TableCell>
-                                    <TableCell className="text-right font-serif">{formatCurrency(m.volume)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Card>
-
-                <Card className="glass-card shadow-xl border-black/5 dark:border-white/5 overflow-hidden">
-                    <CardHeader className="bg-black/[0.02] dark:bg-white/[0.02]">
-                        <CardTitle className="font-serif text-lg flex items-center gap-2">
-                            <Trophy className="w-5 h-5 text-luxury-gold" /> Leaders de Vente
-                        </CardTitle>
-                    </CardHeader>
-                    <Table>
-                        <TableHeader>
+                        <TableHeader className="bg-black/[0.01] dark:bg-white/[0.01]">
                             <TableRow>
                                 <TableHead className="w-16 text-center">Rang</TableHead>
                                 <TableHead>Vendeur</TableHead>
-                                <TableHead className="text-center">Projets</TableHead>
-                                <TableHead className="text-right">Volume Apporté</TableHead>
+                                <TableHead className="text-right">Volume (YTD)</TableHead>
                                 <TableHead className="text-right text-emerald-600">Encaissement</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {leaderboard.map((s, idx) => (
-                                <TableRow key={s.id}>
-                                    <TableCell className="text-center font-serif text-lg opacity-40">{idx + 1}</TableCell>
-                                    <TableCell className="font-medium">{s.name}</TableCell>
-                                    <TableCell className="text-center">{s.projectCount}</TableCell>
-                                    <TableCell className="text-right font-serif font-bold">{formatCurrency(s.volume)}</TableCell>
-                                    <TableCell className="text-right font-serif font-bold text-emerald-600">{formatCurrency(s.cashCollected)}</TableCell>
+                                <TableRow key={s.id} className="group hover:bg-luxury-gold/[0.02] transition-colors">
+                                    <TableCell className="text-center font-serif text-lg opacity-30 group-hover:opacity-100 transition-opacity">{idx + 1}</TableCell>
+                                    <TableCell>
+                                        <p className="font-bold text-sm">{s.name}</p>
+                                        <p className="text-[10px] uppercase opacity-40 tracking-tighter">{s.role}</p>
+                                    </TableCell>
+                                    <TableCell className="text-right font-serif font-bold text-sm">{formatCurrency(s.volume)}</TableCell>
+                                    <TableCell className="text-right font-serif font-bold text-emerald-600 text-sm">{formatCurrency(s.cashCollected)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </Card>
-            </div>
 
-            {/* AI and Categories */}
-            <div className="grid gap-8 lg:grid-cols-2">
-                <Card className="glass-card border-luxury-gold/20 bg-luxury-gold/[0.02]">
-                    <CardHeader>
-                        <CardTitle className="font-serif text-xl flex items-center gap-2">✨ Insights Stratégiques</CardTitle>
-                        <CardDescription>Analyses automatiques sur vos opérations</CardDescription>
+                <Card className="glass-card shadow-xl border-black/5 dark:border-white/5 overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between border-b border-black/[0.03] dark:border-white/[0.03] pb-4">
+                        <CardTitle className="font-serif text-lg flex items-center gap-2">
+                            <Gem className="w-5 h-5 text-luxury-gold" /> Rentabilité par Catégorie
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4">
-                        {generateInsights(projects, invoices, leaderboard).map((insight, i) => (
-                            <div key={i} className={`p-4 rounded-xl border flex gap-3 ${
-                                insight.type === 'success' ? 'bg-emerald-500/5 border-emerald-500/10' :
-                                insight.type === 'warning' ? 'bg-amber-500/5 border-amber-500/10' : 'bg-blue-500/5 border-blue-500/10'
-                            }`}>
-                                <span className="text-xl">{insight.icon}</span>
-                                <div>
-                                    <p className="font-bold text-sm">{insight.title}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{insight.description}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-
-                <Card className="glass-card">
-                    <CardHeader>
-                        <CardTitle className="font-serif text-xl flex items-center gap-2"><Gem className="w-5 h-5 text-luxury-gold" /> Rentabilité par Type</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                         {(() => {
-                            const categories: Record<string, { count: number; revenue: number; costs: number }> = {};
-                            const detect = (t: string): string => {
-                                const s = t.toLowerCase();
-                                if (s.includes('bague') || s.includes('ring')) return 'Bagues';
-                                if (s.includes('collier') || s.includes('necklace')) return 'Colliers';
-                                if (s.includes('bracelet')) return 'Bracelets';
-                                if (s.includes('boucle')) return 'Boucles';
-                                return 'Autres';
-                            };
+                            const categories: Record<string, { count: number; rev: number; costs: number }> = {};
                             projects.forEach(p => {
-                                const cat = p.jewelry_type || detect(p.title || '');
-                                if (!categories[cat]) categories[cat] = { count: 0, revenue: 0, costs: 0 };
+                                const cat = p.jewelry_type || 'Autres';
+                                if (!categories[cat]) categories[cat] = { count: 0, rev: 0, costs: 0 };
                                 categories[cat].count++;
-                                categories[cat].revenue += getSalePrice(p);
-                                categories[cat].costs += (Number(p.financials?.supplier_cost || 0) + Number(p.financials?.shipping_cost || 0));
+                                categories[cat].rev += Number(p.financials?.selling_price || p.budget || 0);
+                                categories[cat].costs += (Number(p.financials?.supplier_cost || 0));
                             });
-                            return Object.entries(categories).sort((a,b) => b[1].revenue - a[1].revenue).map(([name, data]) => {
-                                const margin = data.revenue - data.costs;
-                                const pct = data.revenue > 0 ? (margin / data.revenue) * 100 : 0;
+                            return Object.entries(categories).sort((a,b) => b[1].rev - a[1].rev).map(([name, d]) => {
+                                const m = d.rev - d.costs;
+                                const pct = d.rev > 0 ? (m / d.rev) * 100 : 0;
                                 return (
-                                    <div key={name} className="mb-4 last:mb-0">
-                                        <div className="flex justify-between text-xs mb-1 font-medium">
-                                            <span>{name} ({data.count})</span>
-                                            <span className="text-luxury-gold">{pct.toFixed(0)}% de marge</span>
+                                    <div key={name} className="mb-6 last:mb-0">
+                                        <div className="flex justify-between items-end mb-2">
+                                            <div>
+                                                <span className="text-xs font-bold uppercase tracking-widest">{name}</span>
+                                                <span className="text-[10px] ml-2 opacity-40">{d.count} projets</span>
+                                            </div>
+                                            <span className={`text-xs font-bold ${pct > 40 ? 'text-emerald-500' : 'text-luxury-gold'}`}>{pct.toFixed(0)}% Marge</span>
                                         </div>
-                                        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden flex">
-                                            <div className="h-full bg-luxury-gold" style={{ width: `${Math.min(100, (data.costs / Math.max(1, data.revenue)) * 100)}%` }} />
-                                            <div className="h-full bg-emerald-500" style={{ width: `${Math.max(0, pct)}%` }} />
+                                        <div className="h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden flex">
+                                            <div className="h-full bg-luxury-gold/50" style={{ width: `${(d.costs/Math.max(1, d.rev))*100}%` }} />
+                                            <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
                                         </div>
                                     </div>
                                 );
@@ -368,18 +285,68 @@ export default function AnalyticsDashboard() {
                     </CardContent>
                 </Card>
             </div>
+
+            <div className="grid gap-8 lg:grid-cols-2">
+                <Card className="border-none bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-zinc-900 shadow-xl ring-1 ring-emerald-500/10">
+                    <CardHeader>
+                        <CardTitle className="font-serif text-xl flex items-center gap-2">⚡ Insights Stratégiques IA</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-3">
+                        {generateInsights(projects, invoices, leaderboard).map((insight, i) => (
+                            <div key={i} className={`p-4 rounded-3xl border flex gap-4 items-center transition-all hover:scale-[1.02] cursor-default bg-white/50 dark:bg-black/20 ${
+                                insight.type === 'success' ? 'border-emerald-500/10 shadow-emerald-500/5' : 'border-amber-500/10'
+                            }`}>
+                                <div className="p-3 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm text-2xl">{insight.icon}</div>
+                                <div>
+                                    <p className="font-bold text-[13px] leading-tight">{insight.title}</p>
+                                    <p className="text-[11px] text-muted-foreground mt-0.5">{insight.description}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+
+                <Card className="glass-card shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="font-serif text-xl flex items-center gap-2">
+                            <MousePointer2 className="w-5 h-5 text-luxury-gold" /> Prochaines Actions
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="p-4 bg-black/5 rounded-2xl border border-dashed border-black/10 flex items-center justify-between">
+                            <span className="text-xs font-medium">Relancer factures impayées ({invoices.filter(i => i.status === 'sent').length})</span>
+                            <Button size="xs" variant="ghost" className="text-luxury-gold text-[10px] font-bold">ACTIONS</Button>
+                        </div>
+                        <div className="p-4 bg-black/5 rounded-2xl border border-dashed border-black/10 flex items-center justify-between">
+                            <span className="text-xs font-medium">Valider projets en attente ({projects.filter(p => p.status === 'waiting_for_approval').length})</span>
+                            <Button size="xs" variant="ghost" className="text-luxury-gold text-[10px] font-bold">REVUE</Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
 
-function TrendBadge({ value, label }: { value: number; label: string }) {
-    if (value === 0) return <span className="text-[10px] text-zinc-400 mt-1 uppercase italic tracking-tighter">Stable vs {label}</span>;
-    const isPos = value > 0;
+function KPICard({ title, value, trend, label, isCurrency = true }: { title: string; value: number; trend: number; label: string; isCurrency?: boolean }) {
+    const isPos = trend > 0;
     return (
-        <div className={`flex items-center gap-1 text-xs font-bold mt-1 ${isPos ? 'text-emerald-500' : 'text-red-500'}`}>
-            {isPos ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            {Math.abs(value)}% <span className="text-[9px] text-zinc-400 font-normal ml-0.5">vs {label}</span>
-        </div>
+        <Card className="luxury-card border-none bg-white/60 dark:bg-zinc-900/60 backdrop-blur-3xl shadow-lg hover:shadow-2xl transition-all duration-500 group">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-[10px] font-serif uppercase tracking-[0.2em] text-zinc-400 group-hover:text-luxury-gold transition-colors">{title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="text-3xl font-serif text-black dark:text-white mb-2">{isCurrency ? formatCurrency(value) : value}</div>
+                {trend !== 0 ? (
+                    <div className={`flex items-center gap-1.5 text-xs font-bold ${isPos ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {isPos ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                        {Math.abs(trend)}% <span className="text-[9px] text-zinc-400 font-normal uppercase italic tracking-tighter">vs {label}</span>
+                    </div>
+                ) : (
+                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Stable vs {label}</span>
+                )}
+            </CardContent>
+        </Card>
     );
 }
 
@@ -389,12 +356,9 @@ function generateInsights(projects: Project[], invoices: Invoice[], leaderboard:
     const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
     const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
     const rate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 100;
-
-    if (rate < 70) insights.push({ icon: '💰', title: 'Attention Trésorerie', description: `Seulement ${rate}% de vos factures sont encaissées.`, type: 'warning' });
-    else insights.push({ icon: '💰', title: 'Recouvrement Sain', description: `Excellent taux d'encaissement de ${rate}%.`, type: 'success' });
-
-    if (projects.filter(p => p.status === 'production').length > 5) insights.push({ icon: '🏭', title: 'Atelier Surchargé', description: 'Volume important en production. Surveillez les délais.', type: 'warning' });
-    if (leaderboard[0]) insights.push({ icon: '🏆', title: `Performeur: ${leaderboard[0].name}`, description: 'Meneur indiscutable du volume de vente actuel.', type: 'success' });
-
+    if (rate < 70) insights.push({ icon: '💰', title: 'Attention Trésorerie', description: `Seulement ${rate}% du CA facturé est encaissé. Relancez vos paiements.`, type: 'warning' });
+    else insights.push({ icon: '💰', title: 'Collecte Efficace', description: `Taux d'encaissement de ${rate}%. Très bonne gestion clients.`, type: 'success' });
+    if (projects.filter(p => p.status === 'production').length > 5) insights.push({ icon: '🏭', title: 'Capacité Atelier', description: 'Volume important en production. Risque de goulot d\'étranglement.', type: 'warning' });
+    if (leaderboard[0]) insights.push({ icon: '🏆', title: `Top Seller: ${leaderboard[0].name}`, description: 'Meneur indiscutable avec un volume YTD impressionnant.', type: 'success' });
     return insights;
 }
