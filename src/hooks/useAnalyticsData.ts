@@ -29,7 +29,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const daysInMonth = new Date(now.getFullYear(), currentMonthIndex + 1, 0).getDate();
         const monthNames = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juill.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
-        // 1. Récupérer l'historique réel
         const fullHistory: { invoiced: number, collected: number }[] = [];
         for (let i = 0; i <= currentMonthIndex; i++) {
             const monthStart = new Date(now.getFullYear(), i, 1);
@@ -38,46 +37,43 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             fullHistory.push({ invoiced: invoicedTotal, collected: cashCollected });
         }
 
-        // 2. Calculer l'évolution LINÉAIRE (en dollars, pas en %)
-        // On regarde combien de dollars on a gagné en moyenne par mois depuis janvier
-        const firstMonthVal = fullHistory[0].invoiced;
-        const lastCompletedMonthVal = fullHistory[currentMonthIndex - 1]?.invoiced || fullHistory[0].invoiced;
-        
-        // Augmentation totale en $ / nombre de mois passés
-        const avgMonthlyDollarIncrease = currentMonthIndex > 0 
-            ? (lastCompletedMonthVal - firstMonthVal) / currentMonthIndex 
-            : 0;
+        const lastCompletedMonthVal = fullHistory[currentMonthIndex - 1]?.invoiced || 0;
+        const currentMonthInvoiced = fullHistory[currentMonthIndex].invoiced;
+        const multiplier = daysInMonth / currentDay;
+        const estimatedCurrentMonth = currentMonthInvoiced * multiplier;
 
-        // 3. Construction des trajectoires réalistes
+        const startingPointForFuture = Math.max(lastCompletedMonthVal * 1.20, estimatedCurrentMonth);
+
+        const firstMonthVal = fullHistory[0].invoiced;
+        const avgMonthlyDollarIncrease = currentMonthIndex > 0 ? (lastCompletedMonthVal - firstMonthVal) / currentMonthIndex : 0;
+
         const yearlyExtrapolation: ExtrapolationMonth[] = [];
+        let totalYearlyStatusQuo = 0;
+        let totalYearlyEvo20 = 0;
         
         for (let i = 0; i < 12; i++) {
             const isCurrent = i === currentMonthIndex;
             const isFuture = i > currentMonthIndex;
             const isPast = i < currentMonthIndex;
 
-            // Estimation avril (au prorata temporis)
-            const multiplier = daysInMonth / currentDay;
-            const estimatedVal = isCurrent ? fullHistory[i].invoiced * multiplier : null;
-
-            // Statu Quo : Évolue linéairement à partir du premier mois
-            // Formule : Premier Mois + (i * Augmentation Moyenne)
             const statusQuoVal = Math.round(firstMonthVal + (i * avgMonthlyDollarIncrease));
-
-            // Target 20 : Commence REELLEMENT à partir du dernier mois complet
             let target20Val = 0;
-            if (i < currentMonthIndex) {
-                target20Val = fullHistory[i].invoiced; // Passé = Réel
+            if (isPast) {
+                target20Val = fullHistory[i].invoiced;
+            } else if (isCurrent) {
+                target20Val = Math.max(Math.round(lastCompletedMonthVal * 1.20), Math.round(estimatedCurrentMonth));
             } else {
-                // Futur = Dernier mois complet * 1.20 ^ nombre de mois d'écart
-                const monthsAhead = i - (currentMonthIndex - 1);
-                target20Val = Math.round(lastCompletedMonthVal * Math.pow(1.20, monthsAhead));
+                const monthsAheadFromCurrent = i - currentMonthIndex;
+                target20Val = Math.round(startingPointForFuture * Math.pow(1.20, monthsAheadFromCurrent));
             }
+
+            totalYearlyStatusQuo += (isPast ? fullHistory[i].invoiced : statusQuoVal);
+            totalYearlyEvo20 += target20Val;
 
             yearlyExtrapolation.push({
                 name: monthNames[i],
                 actual: (isPast || isCurrent) ? fullHistory[i].invoiced : 0,
-                estimated: estimatedVal,
+                estimated: isCurrent ? estimatedCurrentMonth : null,
                 statusQuo: statusQuoVal > 0 ? statusQuoVal : 0,
                 target20: target20Val,
                 isProjected: isFuture,
@@ -85,9 +81,8 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             });
         }
 
-        const currentEstim = yearlyExtrapolation[currentMonthIndex].estimated || 0;
         const currentSQ = yearlyExtrapolation[currentMonthIndex].statusQuo;
-        const perfVsSQ = currentSQ > 0 ? Math.round(((currentEstim - currentSQ) / currentSQ) * 100) : 0;
+        const perfVsSQ = currentSQ > 0 ? Math.round(((estimatedCurrentMonth - currentSQ) / currentSQ) * 100) : 0;
 
         const { start, end } = financialUtils.getPeriodRange(timeframe);
         const current = financialUtils.calculateMetrics(invoices, expenses, start, end);
@@ -100,7 +95,9 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             },
             performanceDelta: perfVsSQ,
             yearlyExtrapolation,
-            estimatedCurrentMonth: currentEstim
+            estimatedCurrentMonth,
+            totalYearlyStatusQuo,
+            totalYearlyEvo20
         };
     }, [invoices, expenses, projects, clients, timeframe]);
 

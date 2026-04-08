@@ -5,7 +5,7 @@ import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, TrendingUp } from 'lucide-react';
+import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, TrendingUp, Target } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ export default function AnalyticsDashboard() {
     const { t } = useTranslation();
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     
-    const { isLoading: engineLoading, trendData, yearlyExtrapolation, performanceDelta, estimatedCurrentMonth } = useAnalyticsData(timeframe);
+    const { isLoading: engineLoading, trendData, yearlyExtrapolation, performanceDelta, estimatedCurrentMonth, totalYearlyStatusQuo, totalYearlyEvo20 } = useAnalyticsData(timeframe);
 
     const { data: projects = [] as Project[], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: invoices = [] as Invoice[], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
@@ -28,7 +28,7 @@ export default function AnalyticsDashboard() {
     const { isLoading: cLoad } = useQuery({ queryKey: ['clients_dummy'], queryFn: () => [] }); 
 
     if (pLoad || iLoad || uLoad || eLoad || engineLoading || cLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Alignement des trajectoires...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Anticipation stratégique...</div>;
     }
 
     const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, cashCollected: number }> = {};
@@ -94,14 +94,33 @@ export default function AnalyticsDashboard() {
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <KPICard title="Estimation Fin de Mois" value={estimatedCurrentMonth} trend={performanceDelta} label="vs Statu Quo" />
-                <KPICard title="CA Réel (Avril)" value={yearlyExtrapolation.find(m => m.isCurrent)?.actual || 0} trend={0} label="ce mois" />
-                <KPICard title="Cash Encaissé" value={trendData.collected.value} trend={0} label="ce mois" />
-                <Card className="bg-emerald-600 text-white shadow-2xl overflow-hidden relative group border-none">
-                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity"><TrendingUp className="w-20 h-20" /></div>
-                    <CardHeader className="pb-2"><CardTitle className="text-[10px] uppercase tracking-widest opacity-80">Objectif Expansion (Evo 20)</CardTitle></CardHeader>
+                
+                <Card className="luxury-card border-none bg-zinc-100/10 dark:bg-zinc-900/10 backdrop-blur-3xl shadow-lg group">
+                    <CardHeader className="pb-2"><CardTitle className="text-[10px] font-serif uppercase tracking-[0.2em] text-zinc-400">Total Annuel (Statu Quo)</CardTitle></CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-serif">{formatCurrency(yearlyExtrapolation[yearlyExtrapolation.length-1].target20)}</div>
-                        <div className="flex items-center gap-2 mt-2"><ArrowUpRight className="w-4 h-4 text-white" /><span className="text-xs font-bold text-white">Target Décembre (+20%/m)</span></div>
+                        <div className="text-3xl font-serif text-zinc-500">{formatCurrency(totalYearlyStatusQuo)}</div>
+                        <div className="text-[9px] text-zinc-400 mt-2 uppercase tracking-tighter">Évolution Linéaire Réaliste</div>
+                    </CardContent>
+                </Card>
+
+                <Card className="luxury-card border-none bg-emerald-600 shadow-lg group overflow-hidden relative">
+                    <div className="absolute top-0 right-0 p-4 opacity-20"><Target className="w-12 h-12 text-white" /></div>
+                    <CardHeader className="pb-2"><CardTitle className="text-[10px] font-serif uppercase tracking-[0.2em] text-white/80">Objectif Annuel (EVO 20)</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-serif text-white">{formatCurrency(totalYearlyEvo20)}</div>
+                        <div className="flex items-center gap-2 mt-2">
+                            <ArrowUpRight className="w-4 h-4 text-emerald-200" />
+                            <span className="text-[9px] text-white/80 uppercase font-bold">Potentiel Expansion +20%/m</span>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-black text-white dark:bg-zinc-800 dark:text-white shadow-2xl overflow-hidden relative group border-none">
+                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity"><TrendingUp className="w-20 h-20" /></div>
+                    <CardHeader className="pb-2"><CardTitle className="text-[10px] uppercase tracking-widest opacity-80">Ecart de Fin d'Année</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-serif">+{formatCurrency(totalYearlyEvo20 - totalYearlyStatusQuo)}</div>
+                        <div className="text-[9px] text-zinc-400 mt-2 uppercase tracking-tighter italic">Bonus par rapport au Statu Quo</div>
                     </CardContent>
                 </Card>
             </div>
