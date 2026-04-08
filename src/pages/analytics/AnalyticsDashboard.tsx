@@ -205,7 +205,7 @@ export default function AnalyticsDashboard() {
             <div className="grid gap-8 lg:grid-cols-2">
                 <Card className="border-none bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-zinc-900 shadow-xl ring-1 ring-emerald-500/10"><CardHeader><CardTitle className="font-serif text-xl flex items-center gap-2">⚡ Insights Stratégiques</CardTitle></CardHeader>
                     <CardContent className="grid gap-3">
-                        {generateInsights(projects, invoices, leaderboard).map((insight, i) => (
+                        {generateInsights(invoices, leaderboard).map((insight, i) => (
                             <div key={i} className={`p-4 rounded-3xl border flex gap-4 items-center bg-white/50 dark:bg-black/20 ${insight.type === 'success' ? 'border-emerald-500/10' : 'border-amber-500/10'}`}>
                                 <div className="p-3 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm text-2xl">{insight.icon}</div>
                                 <div><p className="font-bold text-[13px] leading-tight">{insight.title}</p><p className="text-[11px] text-muted-foreground mt-0.5">{insight.description}</p></div>
@@ -238,12 +238,13 @@ function KPICard({ title, value, trend, label, isCurrency = true }: { title: str
     );
 }
 
-function generateInsights(projects: Project[], invoices: Invoice[], leaderboard: any[]): any[] {
+function generateInsights(invoices: Invoice[], leaderboard: any[]): any[] {
     const insights = [];
     const totalPaid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
     const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
     const rate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 100;
     if (rate < 70) insights.push({ icon: '💰', title: 'Attention Trésorerie', description: `Seulement ${rate}% encaissé.`, type: 'warning' });
+    else insights.push({ icon: '💰', title: 'Collecte Efficace', description: `Taux d'encaissement de ${rate}%. Serein.`, type: 'success' });
     if (leaderboard[0]) insights.push({ icon: '🏆', title: `Top Seller: ${leaderboard[0].name}`, description: 'Meneur YTD.', type: 'success' });
     return insights;
 }
