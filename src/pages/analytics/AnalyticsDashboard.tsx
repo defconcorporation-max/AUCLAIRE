@@ -3,7 +3,7 @@ import { apiInvoices, Invoice } from '@/services/apiInvoices';
 import { apiProjects, Project } from '@/services/apiProjects';
 import { useQuery } from '@tanstack/react-query';
 import { apiUsers } from '@/services/apiUsers';
-import { apiExpenses, Expense } from '@/services/apiExpenses';
+import { apiExpenses } from '@/services/apiExpenses';
 import { apiActivities } from '@/services/apiActivities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -27,7 +27,7 @@ export default function AnalyticsDashboard() {
 
     // Queries for Detailed Tables
     const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
-    const { data: clients = [], isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
+    const { isLoading: cLoad } = useQuery({ queryKey: ['clients'], queryFn: apiClients.getAll });
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
     const { data: users = [], isLoading: uLoad } = useQuery({ queryKey: ['users'], queryFn: apiUsers.getAll });
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
@@ -61,7 +61,7 @@ export default function AnalyticsDashboard() {
     // Seller Leaderboard Calculations
     const sellerStats: Record<string, { id: string, name: string, projectCount: number, volume: number, cashCollected: number }> = {};
     users.filter(u => ['affiliate', 'admin', 'ambassador'].includes(u.role as string)).forEach(u => {
-        sellerStats[u.id] = { id: u.id, name: u.full_name, projectCount: 0, volume: 0, cashCollected: 0 };
+        sellerStats[u.id] = { id: u.id, name: u.full_name, role: u.role as string, projectCount: 0, volume: 0, cashCollected: 0 };
     });
 
     projects.forEach(p => {
@@ -390,7 +390,7 @@ function generateInsights(projects: Project[], invoices: Invoice[], leaderboard:
     const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount), 0);
     const rate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 100;
 
-    if (rate < 70) insights.push({ icon: '⚠️', title: 'Attention Trésorerie', description: `Seulement ${rate}% de vos factures sont encaissées.`, type: 'warning' });
+    if (rate < 70) insights.push({ icon: '💰', title: 'Attention Trésorerie', description: `Seulement ${rate}% de vos factures sont encaissées.`, type: 'warning' });
     else insights.push({ icon: '💰', title: 'Recouvrement Sain', description: `Excellent taux d'encaissement de ${rate}%.`, type: 'success' });
 
     if (projects.filter(p => p.status === 'production').length > 5) insights.push({ icon: '🏭', title: 'Atelier Surchargé', description: 'Volume important en production. Surveillez les délais.', type: 'warning' });
