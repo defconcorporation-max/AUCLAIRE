@@ -92,30 +92,42 @@ export default function Login() {
             <div className="fixed top-4 right-4 z-50">
                 <LanguageSwitcher />
             </div>
-            <div className="hidden lg:flex flex-col justify-center items-center bg-black text-white p-12 relative overflow-hidden">
-                <div className="absolute inset-0 z-0 opacity-40">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/20 to-black" />
+            <div className="hidden lg:flex flex-col justify-center items-center p-12 relative overflow-hidden">
+                <div className="absolute inset-0 z-0">
+                    <img 
+                        src="/luxury_jewelry_workshop_bg_1775758304091.png" 
+                        alt="Luxury Workshop" 
+                        className="w-full h-full object-cover scale-110 animate-pulse-slow opacity-60"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-br from-black via-black/40 to-transparent" />
                 </div>
-                <div className="z-10 text-center space-y-6">
-                    <h1 className="text-4xl font-serif tracking-wider">AUCLAIRE</h1>
-                    <p className="text-luxury-gold/80 italic font-light tracking-widest uppercase text-sm">{t('auth.tagline')}</p>
+                <div className="z-10 text-center space-y-8 animate-in fade-in zoom-in duration-1000">
+                    <h1 className="text-6xl font-serif tracking-[0.3em] text-white">AUCLAIRE</h1>
+                    <div className="h-px w-24 bg-luxury-gold mx-auto" />
+                    <p className="text-luxury-gold italic font-light tracking-[0.4em] uppercase text-xs">{t('auth.tagline')}</p>
                 </div>
             </div>
 
-            <div className="flex items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-900">
-                <Card className="w-full max-w-md border-0 shadow-2xl bg-white/50 dark:bg-black/50 backdrop-blur-sm">
+            <div className="flex items-center justify-center p-8 bg-[#0a0a0a] relative overflow-hidden">
+                {/* Background glow for mobile/form side */}
+                <div className="absolute top-1/4 right-0 w-64 h-64 bg-luxury-gold/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-1/4 left-0 w-64 h-64 bg-amber-500/5 blur-[120px] rounded-full" />
+
+                <Card className="w-full max-w-md border border-white/10 shadow-3xl bg-black/40 backdrop-blur-2xl p-4 overflow-hidden relative group">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-luxury-gold to-transparent opacity-50" />
+                    
                     <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-2xl font-serif mb-2">A U C L A I R E</CardTitle>
-                        <div className="flex justify-center gap-4 text-sm font-medium text-muted-foreground">
+                        <CardTitle className="text-3xl font-serif mb-6 tracking-widest text-white">BIENVENUE</CardTitle>
+                        <div className="flex justify-center p-1 bg-white/5 rounded-full border border-white/10 text-xs font-bold uppercase tracking-widest text-muted-foreground w-fit mx-auto">
                             <button
                                 onClick={() => { setMode('login'); setMessage(null); }}
-                                className={`pb-1 border-b-2 transition-colors ${mode === 'login' ? 'text-luxury-gold border-luxury-gold' : 'border-transparent hover:text-foreground'}`}
+                                className={`px-6 py-2 rounded-full transition-all duration-300 ${mode === 'login' ? 'bg-luxury-gold text-black shadow-lg' : 'hover:text-white'}`}
                             >
                                 {t('auth.login')}
                             </button>
                             <button
                                 onClick={() => { setMode('register'); setMessage(null); }}
-                                className={`pb-1 border-b-2 transition-colors ${mode === 'register' ? 'text-luxury-gold border-luxury-gold' : 'border-transparent hover:text-foreground'}`}
+                                className={`px-6 py-2 rounded-full transition-all duration-300 ${mode === 'register' ? 'bg-luxury-gold text-black shadow-lg' : 'hover:text-white'}`}
                             >
                                 {t('auth.register')}
                             </button>
@@ -151,7 +163,7 @@ export default function Login() {
                                 />
                             )}
 
-                            <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold-dark text-black" disabled={loading}>
+                            <Button type="submit" className="w-full bg-luxury-gold hover:bg-luxury-gold/90 text-black font-bold h-12 rounded-xl shimmer-luxury shadow-lg shadow-luxury-gold/10 transition-transform active:scale-95" disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {mode === 'login' ? t('auth.signIn') : mode === 'register' ? t('auth.createAccount') : mode === 'magic-link' ? t('auth.sendAccessLink') : mode === 'update-password' ? t('auth.updatePassword', 'Mettre à jour') : t('auth.sendResetLink')}
                             </Button>

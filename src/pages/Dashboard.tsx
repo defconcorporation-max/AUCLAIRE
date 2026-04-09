@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers } from '@/services/apiUsers';
 import { apiActivities, ActivityLog } from '@/services/apiActivities';
-import { Filter, User, Factory, X, Briefcase, Settings, Zap, ArrowRight } from 'lucide-react';
+import { Filter, User, Factory, X, Briefcase, Settings, Zap, ArrowRight, Users, Target, Calendar } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
@@ -448,14 +448,55 @@ export default function Dashboard() {
     } = dashboardData;
 
     return (
-        <div className="space-y-6 pb-12">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="animate-in fade-in slide-in-from-left-4">
-                    <h1 className="text-4xl font-serif text-luxury-gradient tracking-tight mb-2">{t('dashboard.title')}</h1>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
-                        {t('dashboard.welcome')}, <span className="text-foreground">{profile?.full_name}</span> • {new Date().toLocaleDateString(i18n.language?.startsWith('en') ? 'en-CA' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </p>
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 page-fade-in relative">
+            {/* LUXURY WELCOME HEADER */}
+            <div className="relative overflow-hidden rounded-[32px] bg-zinc-950 border border-white/5 shadow-2xl">
+                {/* Mesh Gradient and Background decorations */}
+                <div className="absolute inset-0 z-0">
+                    <div className="absolute top-[-50%] left-[-20%] w-[100%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_50%)] from-luxury-gold/20 via-transparent to-transparent blur-3xl opacity-40 animate-pulse-slow" />
+                    <div className="absolute bottom-[-50%] right-[-20%] w-[100%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_50%)] from-amber-500/10 via-transparent to-transparent blur-3xl opacity-30" />
+                </div>
+
+                <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="space-y-4 text-center md:text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-[0.2em] text-luxury-gold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-luxury-gold animate-pulse" />
+                            {new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir'}, {profile?.full_name?.split(' ')[0]}
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-serif font-bold text-white tracking-tight">
+                            Votre empire, <br />
+                            <span className="text-luxury-gold italic">à portée de vue.</span>
+                        </h1>
+                        <p className="text-muted-foreground text-sm md:text-base max-w-lg leading-relaxed">
+                            {t('dashboard.welcomeSub', 'Analysez vos performances, gérez vos ateliers et suivez vos ventes avec l\'élégance et la précision qui définissent Maison Auclaire.')}
+                        </p>
+                    </div>
+
+                    <div className="flex gap-4">
+                        <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex flex-col items-center justify-center min-w-[120px] hover:border-luxury-gold/30 transition-colors group cursor-default">
+                             <Users className="w-5 h-5 text-luxury-gold mb-2 group-hover:scale-110 transition-transform" />
+                             <span className="text-2xl font-serif font-bold text-white">{filteredProjects.length}</span>
+                             <span className="text-[9px] uppercase tracking-widest text-muted-foreground">Projets</span>
+                        </div>
+                        <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex flex-col items-center justify-center min-w-[120px] hover:border-luxury-gold/30 transition-colors group cursor-default">
+                             <Target className="w-5 h-5 text-luxury-gold mb-2 group-hover:scale-110 transition-transform" />
+                             <span className="text-2xl font-serif font-bold text-white">{manufacturerPendingProduction.length}</span>
+                             <span className="text-[9px] uppercase tracking-widest text-muted-foreground">En attente</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-serif font-bold text-luxury-gold tracking-wide">Vue d'ensemble</h2>
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground uppercase tracking-widest">{t('dashboard.filterActiveBy')}</p>
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-white">
+                            <Calendar className="w-3 h-3 text-luxury-gold" />
+                            {timeframe === 'custom' ? `${customRange.start} - ${customRange.end}` : timeframe}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Dashboard Filters for Admin/Secretary */}

@@ -22,7 +22,10 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
     const label = t(`projectStatus.${status}`, { defaultValue: status.replace(/_/g, ' ') }).toUpperCase();
 
     return (
-        <span className={`px-2.5 py-0.5 rounded text-[10px] font-medium tracking-widest border ${styles[status] || 'bg-white/5 text-gray-400 border-white/10'}`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-medium tracking-widest border transition-all duration-300 ${styles[status] || 'bg-white/5 text-gray-400 border-white/10'}`}>
+            {(status === 'designing' || status === 'production' || status === '3d_model') && (
+                <span className="w-1 h-1 rounded-full bg-current animate-pulse shadow-[0_0_8px_currentColor]" />
+            )}
             {label}
         </span>
     );

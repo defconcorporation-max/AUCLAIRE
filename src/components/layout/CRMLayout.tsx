@@ -139,11 +139,11 @@ function Sidebar({ role, profile, signOut, setIsMobileOpen, collapsed = false, o
                                     to={item.href}
                                     title={collapsed ? t(item.labelKey) : undefined}
                                     className={({ isActive }) => `
-                                        group relative flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg transition-all duration-300 text-sm font-medium
+                                        group relative flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-xl transition-all duration-300 text-sm font-medium
                                         ${isActive
-                                            ? 'bg-gradient-to-r from-luxury-gold/15 to-transparent text-luxury-gold shadow-[inset_2px_0_0_0_#D2B57B]'
-                                            : 'hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'}
-                                    `}
+                                             ? 'bg-luxury-gold text-black shadow-lg shadow-luxury-gold/20 scale-[1.02] border border-white/20'
+                                             : 'text-gray-400 hover:text-white hover:bg-white/5'}
+                                     `}
                                     onClick={() => setIsMobileOpen(false)}
                                 >
                                     <item.icon className="w-4 h-4 shrink-0 transition-transform duration-300 group-hover:scale-110" />
@@ -252,8 +252,12 @@ export default function CRMLayout({ children }: { children?: React.ReactNode }) 
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-w-0 relative">
-                    {/* Subtle top gradient for depth */}
-                    <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-luxury-gold/5 to-transparent pointer-events-none -z-10" />
+                    {/* Sublime mesh background for depth */}
+                    <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-luxury-gold/5 via-transparent to-transparent" />
+                        <div className="absolute top-1/4 right-0 w-[600px] h-[600px] bg-luxury-gold/[0.03] blur-[150px] rounded-full" />
+                        <div className="absolute bottom-0 left-1/4 w-[800px] h-[800px] bg-amber-500/[0.02] blur-[180px] rounded-full" />
+                    </div>
 
                     <header className="hidden lg:flex items-center justify-end px-8 py-4 z-30 gap-3">
                         <DailyReportSheet />
