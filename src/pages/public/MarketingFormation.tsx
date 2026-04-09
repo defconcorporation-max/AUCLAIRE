@@ -11,7 +11,8 @@ import {
   Target, 
   LucideIcon,
   Gift,
-  ArrowLeft
+  ArrowLeft,
+  ShoppingBag
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -124,6 +125,19 @@ export default function MarketingFormation() {
       tasks: [
         'Répondre aux avis clients (Google, Facebook, Instagram).',
         'Chercher de nouveaux clients à qui demander un avis pour renforcer la preuve sociale.'
+      ]
+    },
+    {
+      id: 'part7',
+      title: 'Partie 7 : Marketplace & Etsy',
+      duration: '45min',
+      emoji: '🛍️',
+      icon: ShoppingBag,
+      color: 'text-orange-500',
+      tasks: [
+        'Lister les nouveaux produits sur Facebook Marketplace.',
+        'Mettre à jour la boutique Etsy avec les dernières créations.',
+        'Rechercher et lister sur de nouvelles marketplaces pertinentes identifiées durant le brainstorm.'
       ]
     }
   ];
