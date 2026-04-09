@@ -112,7 +112,7 @@ export interface Project {
     share_token?: string;
     pandadoc_contract_id?: string;
     pandadoc_contract_status?: string;
-    client?: { full_name: string; email?: string };
+    client?: { full_name: string; email?: string; phone?: string };
     sales_agent_id?: string;
     stage_details?: StageDetails;
     financials?: Financials;
