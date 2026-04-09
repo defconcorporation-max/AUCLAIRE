@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, Search, Loader2, Trash2, Edit3, Users, ExternalLink, ChevronLeft, UserPlus, Mail, Phone, Instagram, Youtube, Globe } from 'lucide-react';
+import { Plus, Search, Loader2, Trash2, Edit3, Users, ExternalLink, ChevronLeft, UserPlus, Mail, Phone, Instagram, Youtube, Globe, Calendar, RefreshCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 
 const STATUS_COLORS: Record<string, string> = {
     prospect: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
@@ -41,7 +43,7 @@ export default function CollaborationsHub() {
     const [editItem, setEditItem] = useState<MarketingCollaboration | null>(null);
     const [selectedItem, setSelectedItem] = useState<MarketingCollaboration | null>(null);
     const [form, setForm] = useState<Partial<MarketingCollaboration>>({
-        name: '', type: 'influencer', status: 'prospect', social_links: [], partnership_details: '', notes: '',
+        name: '', type: 'influencer', status: 'prospect', social_links: [], partnership_details: '', notes: '', follow_up_date: '', reach_out_count: 0,
     });
     const [newLink, setNewLink] = useState({ platform: 'instagram', url: '', username: '' });
 
@@ -49,6 +51,8 @@ export default function CollaborationsHub() {
         queryKey: ['marketing-collabs'],
         queryFn: apiMarketing.getCollaborations,
     });
+
+    const dfLocale = useTranslation().i18n.language.startsWith('en') ? enUS : fr;
 
     const createMutation = useMutation({
         mutationFn: (data: Partial<MarketingCollaboration>) => apiMarketing.createCollaboration(data),
@@ -168,6 +172,24 @@ export default function CollaborationsHub() {
                             {selectedItem.contact_phone && (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground"><Phone className="w-4 h-4 text-luxury-gold" />{selectedItem.contact_phone}</div>
                             )}
+                            <div className="grid grid-cols-2 gap-3 mt-2">
+                                <div className="bg-luxury-gold/5 p-3 rounded-xl border border-luxury-gold/10">
+                                    <p className="text-[10px] uppercase font-bold text-luxury-gold mb-1">{t('marketing.collabs.followUp')}</p>
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Calendar className="w-4 h-4 text-luxury-gold" />
+                                        {selectedItem.follow_up_date ? format(new Date(selectedItem.follow_up_date), 'PP', { locale: dfLocale }) : t('common.none')}
+                                    </div>
+                                </div>
+                                <div className="bg-luxury-gold/5 p-3 rounded-xl border border-luxury-gold/10">
+                                    <p className="text-[10px] uppercase font-bold text-luxury-gold mb-1">{t('marketing.collabs.outreachCount')}</p>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-lg font-serif font-bold">{selectedItem.reach_out_count || 0}</span>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-luxury-gold" onClick={() => updateMutation.mutate({ id: selectedItem.id, data: { reach_out_count: (selectedItem.reach_out_count || 0) + 1, last_contacted_at: new Date().toISOString() } })}>
+                                            <RefreshCcw className="w-3 h-3" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
                             {(selectedItem.social_links?.length || 0) > 0 && (
                                 <div className="bg-black/5 dark:bg-white/5 p-4 rounded-xl space-y-2">
                                     <h4 className="text-xs font-bold uppercase tracking-widest text-luxury-gold mb-2">{t('marketing.collabs.socialLinks')}</h4>
@@ -244,6 +266,10 @@ export default function CollaborationsHub() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2"><Label>{t('marketing.collabs.emailLabel')}</Label><Input value={form.contact_email} onChange={e => setForm(p => ({ ...p, contact_email: e.target.value }))} /></div>
                             <div className="space-y-2"><Label>{t('marketing.collabs.phoneLabel')}</Label><Input value={form.contact_phone} onChange={e => setForm(p => ({ ...p, contact_phone: e.target.value }))} /></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label>{t('marketing.collabs.followUpLabel')}</Label><Input type="date" value={form.follow_up_date?.split('T')[0]} onChange={e => setForm(p => ({ ...p, follow_up_date: e.target.value }))} /></div>
+                            <div className="space-y-2"><Label>{t('marketing.collabs.outreachLabel')}</Label><Input type="number" value={form.reach_out_count} onChange={e => setForm(p => ({ ...p, reach_out_count: parseInt(e.target.value) }))} /></div>
                         </div>
                         <div className="space-y-2">
                             <Label>{t('marketing.collabs.socialLinks')}</Label>

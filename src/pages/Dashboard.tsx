@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiExpenses } from '@/services/apiExpenses';
 import { apiUsers } from '@/services/apiUsers';
 import { apiActivities, ActivityLog } from '@/services/apiActivities';
-import { Filter, User, Factory, X, Briefcase, Settings } from 'lucide-react';
+import { Filter, User, Factory, X, Briefcase, Settings, Zap, ArrowRight } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
@@ -611,6 +611,28 @@ export default function Dashboard() {
                         waitingCollection={totalInvoiced - totalCollected}
                     />
                     )}
+
+                    {/* MARKETING QUICK ACCESS */}
+                    <Card className="border-luxury-gold/30 bg-black/40 ring-1 ring-luxury-gold/20 overflow-hidden group">
+                        <div className="p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-5">
+                                <div className="p-4 rounded-2xl bg-luxury-gold/10 text-luxury-gold group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-luxury-gold/5">
+                                    <Zap className="w-8 h-8 fill-luxury-gold animate-pulse" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-serif font-bold text-luxury-gold">{t('dashboard.marketingExecutionTitle', 'Centre d\'Exécution Marketing')}</h3>
+                                    <p className="text-xs text-muted-foreground mt-1 max-w-md">{t('dashboard.marketingExecutionDesc', 'Gérez vos checklists quotidiennes, invitations Facebook, interactions TikTok et suivis Ads en un seul endroit.')}</p>
+                                </div>
+                            </div>
+                            <Button 
+                                onClick={() => navigate('/dashboard/marketing/execution')}
+                                className="bg-luxury-gold hover:bg-luxury-gold/90 text-black font-bold px-8 py-6 rounded-xl shadow-xl shadow-luxury-gold/10 transition-all hover:translate-y-[-2px]"
+                            >
+                                {t('dashboard.openExecutionHub', 'Ouvrir la Checklist')}
+                                <ArrowRight className="w-5 h-5 ml-2" />
+                            </Button>
+                        </div>
+                    </Card>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div className="lg:col-span-2 space-y-4">

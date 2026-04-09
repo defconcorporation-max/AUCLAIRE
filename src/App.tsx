@@ -67,6 +67,7 @@ const MarketingRoadmap = lazy(() => import('./pages/marketing/MarketingRoadmap')
 const WebsiteAudit = lazy(() => import('./pages/marketing/WebsiteAudit'));
 const AccountsDirectory = lazy(() => import('./pages/marketing/AccountsDirectory'));
 const MarketingFormation = lazy(() => import('./pages/public/MarketingFormation'));
+const MarketingExecution = lazy(() => import('./pages/marketing/MarketingExecution'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 
 // Realtime sync component — must be inside Router + QueryClientProvider
@@ -160,6 +161,7 @@ function App() {
               <Route path="marketing/roadmap" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><MarketingRoadmap /></ProtectedRoute>} />
               <Route path="marketing/website" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><WebsiteAudit /></ProtectedRoute>} />
               <Route path="marketing/accounts" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AccountsDirectory /></ProtectedRoute>} />
+              <Route path="marketing/execution" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><MarketingExecution /></ProtectedRoute>} />
               <Route path="admin-panel" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="feedback" element={<ProtectedRoute allowedRoles={['admin']}><BetaFeedback /></ProtectedRoute>} />
             </Route>

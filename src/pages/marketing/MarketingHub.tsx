@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import {
     Sparkles, Users, Map, Globe, AtSign, Megaphone, Loader2,
     ArrowRight, Lightbulb, Video, Camera, Film, BookOpen,
-    CheckCircle2, Circle, Target, Calendar, TrendingUp, Plus
+    CheckCircle2, Circle, Target, Calendar, TrendingUp, Plus, Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
@@ -80,11 +80,11 @@ export default function MarketingHub() {
 
     // KPI data
     const kpis = [
+        { label: t('marketing.hub.kpiExecution', 'Actions du jour'), value: '85%', icon: Zap, gradient: 'from-luxury-gold/20 to-amber-500/10', color: 'text-luxury-gold', href: '/dashboard/marketing/execution' },
         { label: t('marketing.hub.kpiIdeas'), value: ideas.length, icon: Sparkles, gradient: 'from-amber-500/20 to-orange-500/20', color: 'text-amber-400', href: '/dashboard/marketing/creative' },
         { label: t('marketing.hub.kpiCollabs'), value: activeCollabs.length, icon: Users, gradient: 'from-pink-500/20 to-purple-500/20', color: 'text-pink-400', href: '/dashboard/marketing/collaborations' },
         { label: t('marketing.hub.kpiCampaigns'), value: activeCampaigns.length, icon: Target, gradient: 'from-emerald-500/20 to-teal-500/20', color: 'text-emerald-400', href: '/dashboard/marketing/roadmap' },
         { label: t('marketing.hub.kpiWebTasks'), value: pendingWebTasks.length, icon: Globe, gradient: 'from-blue-500/20 to-cyan-500/20', color: 'text-blue-400', href: '/dashboard/marketing/website' },
-        { label: t('marketing.hub.kpiAccounts'), value: accounts.length, icon: AtSign, gradient: 'from-violet-500/20 to-indigo-500/20', color: 'text-violet-400', href: '/dashboard/marketing/accounts' },
     ];
 
     if (isLoading) {

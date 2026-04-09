@@ -25,8 +25,21 @@ export interface MarketingCollaboration {
     contact_phone?: string;
     status: 'prospect' | 'contacted' | 'negotiating' | 'active' | 'completed' | 'declined';
     notes?: string;
+    follow_up_date?: string;
+    reach_out_count: number;
+    last_contacted_at?: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface MarketingExecutionLog {
+    id: string;
+    date: string;
+    task_id: string;
+    status: 'completed' | 'skipped';
+    notes?: string;
+    metadata?: any;
+    created_at: string;
 }
 
 export interface MarketingCampaign {
@@ -230,5 +243,24 @@ export const apiMarketing = {
     async deleteWebsiteTask(id: string) {
         const { error } = await supabase.from('website_tasks').delete().eq('id', id);
         if (error) throw error;
+    },
+
+    // --- EXECUTION LOGS ---
+    async getExecutionLogs(date: string) {
+        const { data, error } = await supabase
+            .from('marketing_execution_logs')
+            .select('*')
+            .eq('date', date);
+        if (error) throw error;
+        return data as MarketingExecutionLog[];
+    },
+    async logTaskExecution(log: Partial<MarketingExecutionLog>) {
+        const { data, error } = await supabase
+            .from('marketing_execution_logs')
+            .upsert([log], { onConflict: 'date,task_id' })
+            .select()
+            .single();
+        if (error) throw error;
+        return data as MarketingExecutionLog;
     },
 };
