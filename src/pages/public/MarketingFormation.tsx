@@ -29,9 +29,23 @@ interface Section {
 
 export default function MarketingFormation() {
   const navigate = useNavigate();
-  const [expandedSections, setExpandedSections] = useState<string[]>(['part1']);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['part0', 'part1']);
 
   const sections: Section[] = [
+    {
+      id: 'part0',
+      title: 'Partie 0 : Facebook Ads Checkup',
+      duration: '15min',
+      emoji: '💰',
+      icon: Target,
+      color: 'text-red-500',
+      tasks: [
+        'Vérifier les Facebook Ads actives dans le Gestionnaire de Publicités.',
+        'Analyse du coût : Le prix par conversation doit idéalement être en dessous de 10$.',
+        'Seuil d\'alerte : Le coût ne doit jamais dépasser 25$ par conversation.',
+        'Surveiller la répétition des publicités et ajuster le budget quotidien si nécessaire.'
+      ]
+    },
     {
       id: 'part1',
       title: 'Partie 1 : Heat up / Check up Meta & TikTok',
@@ -81,6 +95,7 @@ export default function MarketingFormation() {
       icon: Gift,
       color: 'text-amber-500',
       tasks: [
+        'Brainstorm d\'idées marketing : Session créative pour identifier de nouveaux angles d\'attaque.',
         'Créer des codes promos ou offres spécifiques pour les affiliés.',
         'Rechercher les dates clés (Fête des mères, Fête des pères, etc.) et préparer les promos.',
         'Contacter des photographes pour organiser les futurs contenus.'
