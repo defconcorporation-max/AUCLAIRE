@@ -108,8 +108,10 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         let totalSalesCycleDays = 0;
         let salesCycleCount = 0;
         invoices.forEach(inv => {
-            if (inv.status === 'paid' && inv.paid_at && inv.project?.created_at) {
-                const diff = new Date(inv.paid_at).getTime() - new Date(inv.project.created_at).getTime();
+            // Utiliser la date du projet jointe si disponible
+            const projectCreatedDate = inv.project?.created_at;
+            if (inv.status === 'paid' && inv.paid_at && projectCreatedDate) {
+                const diff = new Date(inv.paid_at).getTime() - new Date(projectCreatedDate).getTime();
                 totalSalesCycleDays += diff / (1000 * 60 * 60 * 24);
                 salesCycleCount++;
             }
@@ -120,8 +122,14 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         let totalMarkup = 0;
         let markupCount = 0;
         projects.forEach(p => {
-            const sale = Number(p.financials?.selling_price || 0);
-            const cost = Number(p.financials?.supplier_cost || 0);
+            const sale = Number(p.financials?.selling_price || p.budget || 0);
+            
+            // Calculer le coût total à partir des cost_items si supplier_cost est vide
+            let cost = Number(p.financials?.supplier_cost || 0);
+            if (cost === 0 && p.financials?.cost_items) {
+                cost = (p.financials.cost_items as { amount: number }[]).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            }
+
             if (sale > 0 && cost > 0) {
                 totalMarkup += sale / cost;
                 markupCount++;
@@ -135,7 +143,8 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const cashBalance = totalCollected - totalSpent;
         const elapsedMonths = Math.max(1, currentMonthIndex + 1);
         const avgMonthlyBurn = totalSpent / elapsedMonths;
-        const cashRunway = avgMonthlyBurn > 0 ? (cashBalance / avgMonthlyBurn) : 99;
+        // Si pas de dépenses, on considère une santé excellente (99+ mois)
+        const cashRunway = avgMonthlyBurn > 0 ? (cashBalance / avgMonthlyBurn) : (cashBalance > 0 ? 99 : 0);
 
         return {
             performanceDelta: totalYearlyStatusQuo > 0 ? Math.round(((totalYearlyEvo20 - totalYearlyStatusQuo) / totalYearlyStatusQuo) * 100) : 0,
