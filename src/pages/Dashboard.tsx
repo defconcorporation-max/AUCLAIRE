@@ -43,8 +43,9 @@ export default function Dashboard() {
     const [selectedAffiliate, setSelectedAffiliate] = useState<string>('all');
     const [selectedManufacturer, setSelectedManufacturer] = useState<string>('all');
     
-    type TimeFrame = 'today' | 'week' | 'month' | 'year' | 'total';
+    type TimeFrame = 'today' | 'week' | 'month' | 'year' | 'total' | 'custom';
     const [timeframe, setTimeframe] = useState<TimeFrame>('month');
+    const [customRange, setCustomRange] = useState({ start: '', end: '' });
 
     const WIDGET_DEFAULTS: Record<string, boolean> = {
         stats: true,
@@ -187,16 +188,25 @@ export default function Dashboard() {
     const projectedProfit = (totalInvoiced + potentialRevenue) - totalRealExpenses - totalProductionCost - totalPendingCommissions;
 
     // Time-filtered Stats for DashboardStats
-    const { start: periodStart, end: periodEnd } = financialUtils.getPeriodRange(timeframe);
+    let range: { start: Date; end: Date };
+    if (timeframe === 'custom' && customRange.start && customRange.end) {
+        range = { 
+            start: new Date(customRange.start), 
+            end: new Date(new Date(customRange.end).setHours(23, 59, 59, 999)) 
+        };
+    } else {
+        range = financialUtils.getPeriodRange(timeframe === 'custom' ? 'total' : timeframe);
+    }
+    const { start: periodStart, end: periodEnd } = range;
     
     const periodProjects = filteredProjects.filter(p => {
         const date = new Date(p.created_at);
-        return timeframe === 'total' || (date >= periodStart && date <= periodEnd);
+        return date >= periodStart && date <= periodEnd;
     });
 
     const periodInvoices = filteredInvoices.filter(i => {
         const date = new Date(i.created_at);
-        return timeframe === 'total' || (date >= periodStart && date <= periodEnd);
+        return date >= periodStart && date <= periodEnd;
     });
 
     // Total encaissé = invoices only (single source of truth)
@@ -209,7 +219,7 @@ export default function Dashboard() {
 
     const periodExpenses = expenses?.filter(e => {
         const date = new Date(e.created_at);
-        return e.status !== 'cancelled' && (timeframe === 'total' || (date >= periodStart && date <= periodEnd));
+        return e.status !== 'cancelled' && (date >= periodStart && date <= periodEnd);
     }).reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
     const periodProfit = periodCollected - periodExpenses;
@@ -381,7 +391,7 @@ export default function Dashboard() {
         manufacturerScorecard,
         insights,
     };
-    }, [projects, invoices, expenses, profile, role, selectedAffiliate, selectedManufacturer, timeframe, activities, manufacturers]);
+    }, [projects, invoices, expenses, profile, role, selectedAffiliate, selectedManufacturer, timeframe, customRange, activities, manufacturers]);
 
     if (projectsLoading || invoicesLoading || expensesLoading || usersLoading || activitiesLoading) {
         return (
@@ -510,7 +520,7 @@ export default function Dashboard() {
                 <div className="space-y-5">
                     <div className="flex justify-center items-center gap-3 mb-4">
                         <div className="flex bg-white/5 p-1 rounded-full border border-white/10 gap-1">
-                            {(['today', 'week', 'month', 'year', 'total'] as const).map((tf) => (
+                            {(['today', 'week', 'month', 'year', 'total', 'custom'] as const).map((tf) => (
                                 <button
                                     key={tf}
                                     onClick={() => setTimeframe(tf)}
@@ -520,10 +530,34 @@ export default function Dashboard() {
                                         : 'text-muted-foreground hover:text-foreground'
                                     }`}
                                 >
-                                    {tf === 'today' ? t('dashboard.timeframeToday') : tf === 'week' ? t('dashboard.timeframeWeek') : tf === 'month' ? t('dashboard.timeframeMonth') : tf === 'year' ? t('dashboard.timeframeYear') : t('dashboard.timeframeTotal')}
+                                    {tf === 'today' ? t('dashboard.timeframeToday') : 
+                                     tf === 'week' ? t('dashboard.timeframeWeek') : 
+                                     tf === 'month' ? t('dashboard.timeframeMonth') : 
+                                     tf === 'year' ? t('dashboard.timeframeYear') : 
+                                     tf === 'total' ? t('dashboard.timeframeTotal') : 
+                                     'Dates'}
                                 </button>
                             ))}
                         </div>
+
+                        {timeframe === 'custom' && (
+                            <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
+                                <input 
+                                    type="date" 
+                                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-xs text-foreground focus:outline-none focus:border-luxury-gold/50"
+                                    value={customRange.start}
+                                    onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
+                                />
+                                <span className="text-muted-foreground text-xs">à</span>
+                                <input 
+                                    type="date" 
+                                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-xs text-foreground focus:outline-none focus:border-luxury-gold/50"
+                                    value={customRange.end}
+                                    onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
+                                />
+                            </div>
+                        )}
+
                         <button
                             onClick={() => setShowWidgetConfig(!showWidgetConfig)}
                             className="p-2 rounded-full hover:bg-white/10 transition-colors"
