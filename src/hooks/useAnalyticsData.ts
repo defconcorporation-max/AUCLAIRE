@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiInvoices } from '@/services/apiInvoices';
 import { apiExpenses } from '@/services/apiExpenses';
+import { apiProjects } from '@/services/apiProjects';
 import { financialUtils } from '@/utils/financialUtils';
 import { useMemo } from 'react';
 
@@ -14,9 +15,18 @@ export interface ExtrapolationMonth {
     isCurrent: boolean;
 }
 
+export interface StrategicMetrics {
+    closingRate: number;      // % de projets gagnés
+    avgSalesCycle: number;    // Jours moyens pour closer
+    avgMarkup: number;        // Coefficient moyen (Vente/Coût)
+    cashRunway: number;       // Mois de survie cas de 0 ventes
+    totalCashAvailable: number; // Cash - Dépenses
+}
+
 export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' = 'month') {
     const { data: invoices = [], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
     const { data: expenses = [], isLoading: eLoad } = useQuery({ queryKey: ['expenses'], queryFn: apiExpenses.getAll });
+    const { data: projects = [], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
 
     const analytics = useMemo(() => {
         const now = new Date();
@@ -25,6 +35,7 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const daysInMonth = new Date(now.getFullYear(), currentMonthIndex + 1, 0).getDate();
         const monthNames = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juill.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
+        // 1. Métriques Réelles par mois
         const fullHistory: { invoiced: number, collected: number }[] = [];
         for (let i = 0; i <= currentMonthIndex; i++) {
             const monthStart = new Date(now.getFullYear(), i, 1);
@@ -41,7 +52,6 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
         const firstMonthVal = fullHistory[0].invoiced;
         const totalIncrease = lastCompletedMonthVal - firstMonthVal;
         const avgMonthlyIncrease = currentMonthIndex > 0 ? totalIncrease / currentMonthIndex : 0;
-
         const startingPointForFutureEvo20 = Math.max(lastCompletedMonthVal * 1.20, estimatedCurrentMonth);
 
         const yearlyExtrapolation: ExtrapolationMonth[] = [];
@@ -81,20 +91,62 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             });
         }
 
-        const currentSQ = yearlyExtrapolation[currentMonthIndex].statusQuo;
-        const perfVsSQ = currentSQ > 0 ? Math.round(((estimatedCurrentMonth - currentSQ) / currentSQ) * 100) : 0;
+        // --- CALCUL DES MÉTRIQUES STRATÉGIQUES ---
+        const validProjects = projects.filter(p => p.status !== 'cancelled');
+        const closedProjects = validProjects.filter(p => ['approved_for_production', 'production', 'delivery', 'completed'].includes(p.status));
+        const closingRate = validProjects.length > 0 ? (closedProjects.length / validProjects.length) * 100 : 0;
+
+        // Délai de vente moyen
+        let totalSalesCycleDays = 0;
+        let salesCycleCount = 0;
+        invoices.forEach(inv => {
+            if (inv.status === 'paid' && inv.paid_at && inv.project?.created_at) {
+                const diff = new Date(inv.paid_at).getTime() - new Date(inv.project.created_at).getTime();
+                totalSalesCycleDays += diff / (1000 * 60 * 60 * 24);
+                salesCycleCount++;
+            }
+        });
+        const avgSalesCycle = salesCycleCount > 0 ? Math.round(totalSalesCycleDays / salesCycleCount) : 0;
+
+        // Markup moyen (Coefficient)
+        let totalMarkup = 0;
+        let markupCount = 0;
+        projects.forEach(p => {
+            const sale = Number(p.financials?.selling_price || 0);
+            const cost = Number(p.financials?.supplier_cost || 0);
+            if (sale > 0 && cost > 0) {
+                totalMarkup += sale / cost;
+                markupCount++;
+            }
+        });
+        const avgMarkup = markupCount > 0 ? (totalMarkup / markupCount) : 0;
+
+        // Santé de Trésorerie
+        const totalCollected = invoices.reduce((sum, inv) => sum + (Number(inv.amount_paid) || 0), 0);
+        const totalSpent = expenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+        const cashBalance = totalCollected - totalSpent;
+        const elapsedMonths = Math.max(1, currentMonthIndex + 1);
+        const avgMonthlyBurn = totalSpent / elapsedMonths;
+        const cashRunway = avgMonthlyBurn > 0 ? (cashBalance / avgMonthlyBurn) : 99;
 
         return {
-            performanceDelta: perfVsSQ,
+            performanceDelta: totalYearlyStatusQuo > 0 ? Math.round(((totalYearlyEvo20 - totalYearlyStatusQuo) / totalYearlyStatusQuo) * 100) : 0,
             yearlyExtrapolation,
             estimatedCurrentMonth,
             totalYearlyStatusQuo,
-            totalYearlyEvo20
+            totalYearlyEvo20,
+            strategicMetrics: {
+                closingRate,
+                avgSalesCycle,
+                avgMarkup: Number(avgMarkup.toFixed(2)),
+                cashRunway: Number(cashRunway.toFixed(1)),
+                totalCashAvailable: cashBalance
+            }
         };
-    }, [invoices, expenses, timeframe]);
+    }, [invoices, expenses, projects, timeframe]);
 
     return {
-        isLoading: iLoad || eLoad,
+        isLoading: iLoad || eLoad || pLoad,
         ...analytics
     };
 }

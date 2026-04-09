@@ -5,7 +5,7 @@ import { apiUsers } from '@/services/apiUsers';
 import { apiExpenses } from '@/services/apiExpenses';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, TrendingUp, Target } from 'lucide-react';
+import { Trophy, ArrowUpRight, ArrowDownRight, FileDown, Gem, TrendingUp, Target, Zap, Clock, Calculator, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ export default function AnalyticsDashboard() {
     const { t } = useTranslation();
     const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'total'>('month');
     
-    const { isLoading: engineLoading, yearlyExtrapolation, performanceDelta, estimatedCurrentMonth, totalYearlyStatusQuo, totalYearlyEvo20 } = useAnalyticsData(timeframe);
+    const { isLoading: engineLoading, yearlyExtrapolation, performanceDelta, estimatedCurrentMonth, totalYearlyStatusQuo, totalYearlyEvo20, strategicMetrics } = useAnalyticsData(timeframe);
 
     const { data: projects = [] as Project[], isLoading: pLoad } = useQuery({ queryKey: ['projects'], queryFn: apiProjects.getAll });
     const { data: invoices = [] as Invoice[], isLoading: iLoad } = useQuery({ queryKey: ['invoices'], queryFn: apiInvoices.getAll });
@@ -28,7 +28,7 @@ export default function AnalyticsDashboard() {
     const { isLoading: cLoad } = useQuery({ queryKey: ['clients_dummy'], queryFn: () => [] }); 
 
     if (pLoad || iLoad || uLoad || eLoad || engineLoading || cLoad) {
-        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Calcul des trajectoires annuelles...</div>;
+        return <div className="p-8 text-center text-luxury-gold animate-pulse font-serif italic text-xl">Alignement des KPIs stratégiques...</div>;
     }
 
     const sellerStats: Record<string, { id: string, name: string, role: string, projectCount: number, volume: number, cashCollected: number }> = {};
@@ -94,35 +94,52 @@ export default function AnalyticsDashboard() {
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <KPICard title="Estimation Fin de Mois" value={estimatedCurrentMonth} trend={performanceDelta} label="vs Statu Quo" />
-                
-                <Card className="luxury-card border-none bg-zinc-100/10 dark:bg-zinc-900/10 backdrop-blur-3xl shadow-lg group">
-                    <CardHeader className="pb-2"><CardTitle className="text-[10px] font-serif uppercase tracking-[0.2em] text-zinc-400">Total Annuel (Statu Quo)</CardTitle></CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-serif text-zinc-500">{formatCurrency(totalYearlyStatusQuo)}</div>
-                        <div className="text-[9px] text-zinc-400 mt-2 uppercase tracking-tighter">Évolution Linéaire Réaliste</div>
-                    </CardContent>
-                </Card>
-
+                <KPICard title="Total Annuel (Statu Quo)" value={totalYearlyStatusQuo} trend={0} label="Projection" />
                 <Card className="luxury-card border-none bg-emerald-600 shadow-lg group overflow-hidden relative">
                     <div className="absolute top-0 right-0 p-4 opacity-20"><Target className="w-12 h-12 text-white" /></div>
                     <CardHeader className="pb-2"><CardTitle className="text-[10px] font-serif uppercase tracking-[0.2em] text-white/80">Objectif Annuel (EVO 20)</CardTitle></CardHeader>
                     <CardContent>
                         <div className="text-3xl font-serif text-white">{formatCurrency(totalYearlyEvo20)}</div>
-                        <div className="flex items-center gap-2 mt-2">
-                            <ArrowUpRight className="w-4 h-4 text-emerald-200" />
-                            <span className="text-[9px] text-white/80 uppercase font-bold">Potentiel Expansion +20%/m</span>
-                        </div>
+                        <div className="flex items-center gap-2 mt-2"><ArrowUpRight className="w-4 h-4 text-emerald-200" /><span className="text-[9px] text-white/80 uppercase font-bold">Potentiel +20%/m</span></div>
                     </CardContent>
                 </Card>
-
                 <Card className="bg-black text-white dark:bg-zinc-800 dark:text-white shadow-2xl overflow-hidden relative group border-none">
                     <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity"><TrendingUp className="w-20 h-20" /></div>
                     <CardHeader className="pb-2"><CardTitle className="text-[10px] uppercase tracking-widest opacity-80">Ecart de Fin d'Année</CardTitle></CardHeader>
                     <CardContent>
                         <div className="text-3xl font-serif">+{formatCurrency(totalYearlyEvo20 - totalYearlyStatusQuo)}</div>
-                        <div className="text-[9px] text-zinc-400 mt-2 uppercase tracking-tighter italic">Bonus par rapport au Statu Quo</div>
+                        <div className="text-[9px] text-zinc-400 mt-2 uppercase tracking-tighter italic font-serif">Prime de Croissance Dynamique</div>
                     </CardContent>
                 </Card>
+            </div>
+
+            {/* SECTION PERFORMANCE STRATÉGIQUE */}
+            <div className="grid gap-6 md:grid-cols-4">
+                <StrategicKPI 
+                    icon={<Zap className="w-4 h-4 text-amber-500" />} 
+                    label="Taux de Closing" 
+                    value={`${strategicMetrics.closingRate.toFixed(1)}%`} 
+                    description="Projets convertis en production"
+                />
+                <StrategicKPI 
+                    icon={<Clock className="w-4 h-4 text-blue-500" />} 
+                    label="Délai de Vente" 
+                    value={`${strategicMetrics.avgSalesCycle} Jrs`} 
+                    description="De la soumission au paiement"
+                />
+                <StrategicKPI 
+                    icon={<Calculator className="w-4 h-4 text-purple-500" />} 
+                    label="Markup Moyen" 
+                    value={`x${strategicMetrics.avgMarkup}`} 
+                    description="Coefficient de marge (Vente/Coût)"
+                />
+                <StrategicKPI 
+                    icon={<ShieldCheck className="w-4 h-4 text-emerald-500" />} 
+                    label="Santé de Trésorerie" 
+                    value={`${strategicMetrics.cashRunway} Mois`} 
+                    description="Survie basée sur les coûts fixes"
+                    secondaryValue={formatCurrency(strategicMetrics.totalCashAvailable)}
+                />
             </div>
 
             <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-black overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
@@ -251,8 +268,26 @@ function KPICard({ title, value, trend, label, isCurrency = true }: { title: str
                         {Math.abs(trend)}% <span className="text-[9px] text-zinc-400 font-normal uppercase italic tracking-tighter">vs {label}</span>
                     </div>
                 ) : (
-                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Cible atteinte</span>
+                    <span className="text-[9px] text-zinc-400 uppercase italic tracking-tighter">Impact Planifié</span>
                 )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function StrategicKPI({ icon, label, value, description, secondaryValue }: { icon: React.ReactNode; label: string; value: string; description: string; secondaryValue?: string }) {
+    return (
+        <Card className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md border border-white/10 dark:border-white/5 shadow-sm hover:shadow-md transition-all">
+            <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-black/5 dark:bg-white/5 rounded-lg">{icon}</div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{label}</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                    <div className="text-xl font-serif font-bold">{value}</div>
+                    {secondaryValue && <div className="text-[10px] text-zinc-400 font-medium">({secondaryValue})</div>}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{description}</p>
             </CardContent>
         </Card>
     );
