@@ -66,6 +66,7 @@ const CollaborationsHub = lazy(() => import('./pages/marketing/CollaborationsHub
 const MarketingRoadmap = lazy(() => import('./pages/marketing/MarketingRoadmap'));
 const WebsiteAudit = lazy(() => import('./pages/marketing/WebsiteAudit'));
 const AccountsDirectory = lazy(() => import('./pages/marketing/AccountsDirectory'));
+const MarketingFormation = lazy(() => import('./pages/public/MarketingFormation'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 
 // Realtime sync component — must be inside Router + QueryClientProvider
@@ -112,6 +113,7 @@ function App() {
             <Route path="/pending" element={<PendingApproval />} />
             <Route path="/shared/:token" element={<SharedProjectView />} />
             <Route path="/formation" element={<Formation />} />
+            <Route path="/formation/marketing" element={<MarketingFormation />} />
 
             <Route path="/dashboard" element={
               <ProtectedRoute>

@@ -24,11 +24,8 @@ export const generateSpecSheet = (config: RingConfig, _materials: unknown, image
     // --- 1. HEADER ---
     doc.setFontSize(24)
     doc.setTextColor(40, 40, 40)
-    doc.text("AUCLAIRE", 105, 20, { align: "center" })
-
-    doc.setFontSize(10)
-    doc.setTextColor(100, 100, 100)
-    doc.text("BESPOKE JEWELRY STUDIO", 105, 26, { align: "center" })
+    doc.text("MAISON AUCLAIRE", 105, 20, { align: "center" })
+    doc.text("MAISON AUCLAIRE INC", 105, 26, { align: "center" })
 
     // Line
     doc.setDrawColor(200, 200, 200)
@@ -77,7 +74,7 @@ export const generateSpecSheet = (config: RingConfig, _materials: unknown, image
     doc.setFontSize(8)
     doc.setTextColor(150, 150, 150)
     doc.text("Estimate valid for 7 days. Final price requires stone selection.", 105, 280, { align: "center" })
-    doc.text("auclaire.com | Exquisite Craftsmanship", 105, 285, { align: "center" })
+    doc.text("maisonauclaire.ca | Exquisite Craftsmanship", 105, 285, { align: "center" })
 
     // Save
     doc.save(`Auclaire_${designName.replace(/\s+/g, '_')}_${Date.now()}.pdf`)
