@@ -197,7 +197,6 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
 
         const clientName = project.client?.full_name || 'Client';
         const invoiceNum = (invoice.id || 'XXXXXX').substring(0, 8).toUpperCase();
-        const dateStr = new Date(invoice.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
 
         setupDoc(doc);
         drawHeader(doc, 'FACTURE', `Réf : #INV-${invoiceNum}`);
