@@ -65,7 +65,7 @@ export default function AffiliateDetails() {
                 setFullName(found.full_name || '');
                 setStatus(found.affiliate_status || 'pending');
                 setLevel(found.affiliate_level || 'starter');
-                setRate(found.commission_rate || 10);
+                setRate(found.commission_rate ?? 10);
                 setType(found.commission_type || 'percent');
 
                 // 2. Fetch Stats

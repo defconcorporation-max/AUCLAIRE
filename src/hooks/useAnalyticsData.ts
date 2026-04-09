@@ -63,9 +63,17 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
             const isFuture = i > currentMonthIndex;
             const isPast = i < currentMonthIndex;
 
-            const statusQuoVal = isPast 
-                ? fullHistory[i].invoiced 
-                : Math.round(lastCompletedMonthVal + ((i - (currentMonthIndex - 1)) * avgMonthlyIncrease));
+            let statusQuoVal = 0;
+            if (isPast) {
+                statusQuoVal = fullHistory[i].invoiced;
+            } else if (isCurrent) {
+                // Pour le mois actuel dans le status quo, on montre l'estimation basée sur le rythme actuel
+                statusQuoVal = Math.round(estimatedCurrentMonth);
+            } else {
+                // Pour le futur, on part de l'estimation du mois actuel et on ajoute la progression moyenne
+                const monthsFromNow = i - currentMonthIndex;
+                statusQuoVal = Math.round(estimatedCurrentMonth + (monthsFromNow * avgMonthlyIncrease));
+            }
 
             let target20Val = 0;
             if (isPast) {
@@ -77,8 +85,8 @@ export function useAnalyticsData(timeframe: 'day' | 'week' | 'month' | 'total' =
                 target20Val = Math.round(startingPointForFutureEvo20 * Math.pow(1.20, monthsAheadFromCurrent));
             }
 
-            totalYearlyStatusQuo += (isPast ? fullHistory[i].invoiced : statusQuoVal);
-            totalYearlyEvo20 += (isPast ? fullHistory[i].invoiced : target20Val);
+            totalYearlyStatusQuo += statusQuoVal;
+            totalYearlyEvo20 += target20Val;
 
             yearlyExtrapolation.push({
                 name: monthNames[i],
