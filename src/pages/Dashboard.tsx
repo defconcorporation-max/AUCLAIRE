@@ -44,7 +44,7 @@ export default function Dashboard() {
     const [selectedManufacturer, setSelectedManufacturer] = useState<string>('all');
     
     type TimeFrame = 'today' | 'week' | 'month' | 'year' | 'total';
-    const [timeframe, setTimeframe] = useState<TimeFrame>('total');
+    const [timeframe, setTimeframe] = useState<TimeFrame>('month');
 
     const WIDGET_DEFAULTS: Record<string, boolean> = {
         stats: true,

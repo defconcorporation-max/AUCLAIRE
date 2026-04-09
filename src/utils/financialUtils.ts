@@ -64,25 +64,49 @@ export const financialUtils = {
 
     getPeriodRange(type: TimeFrame): { start: Date; end: Date } {
         const now = new Date();
-        const start = new Date();
-        if (type === 'day' || type === 'today') start.setHours(0,0,0,0);
-        else if (type === 'week') start.setDate(now.getDate() - 7);
-        else if (type === 'month') start.setMonth(now.getMonth() - 1);
-        else if (type === 'year') start.setFullYear(now.getFullYear(), 0, 1);
-        else start.setFullYear(2000);
+        const start = new Date(now);
+        
+        if (type === 'day' || type === 'today') {
+            start.setHours(0, 0, 0, 0);
+        } else if (type === 'week') {
+            // Start of current calendar week (Monday)
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+            start.setDate(diff);
+            start.setHours(0, 0, 0, 0);
+        } else if (type === 'month') {
+            // Start of current calendar month
+            start.setDate(1);
+            start.setHours(0, 0, 0, 0);
+        } else if (type === 'year') {
+            // Start of current year
+            start.setMonth(0, 1);
+            start.setHours(0, 0, 0, 0);
+        } else {
+            // All-time or Total
+            start.setFullYear(2000, 0, 1);
+            start.setHours(0, 0, 0, 0);
+        }
+        
         return { start, end: now };
     },
 
     getPreviousPeriodRange(type: TimeFrame): { start: Date; end: Date } {
-        let { start: currentStart } = this.getPeriodRange(type);
+        const { start: currentStart } = this.getPeriodRange(type);
         const end = new Date(currentStart);
         const start = new Date(currentStart);
         
-        if (type === 'day' || type === 'today') start.setDate(start.getDate() - 1);
-        else if (type === 'week') start.setDate(start.getDate() - 7);
-        else if (type === 'month') start.setMonth(start.getMonth() - 1);
-        else if (type === 'year') start.setFullYear(start.getFullYear() - 1);
-        else start.setFullYear(start.getFullYear() - 1);
+        if (type === 'day' || type === 'today') {
+            start.setDate(start.getDate() - 1);
+        } else if (type === 'week') {
+            start.setDate(start.getDate() - 7);
+        } else if (type === 'month') {
+            start.setMonth(start.getMonth() - 1);
+        } else if (type === 'year') {
+            start.setFullYear(start.getFullYear() - 1);
+        } else {
+            start.setFullYear(start.getFullYear() - 1);
+        }
         
         return { start, end };
     },
@@ -90,10 +114,22 @@ export const financialUtils = {
     getCollectedFromInvoices(invoices: Invoice[], start: Date, end: Date): number {
         return invoices.reduce((sum, inv) => {
             if (inv.status === 'void') return sum;
-            const dateToUse = inv.paid_at || (inv as any).updated_at || inv.created_at;
+            
+            // If the invoice is paid or partial, we check the date of payment
+            // We prioritize paid_at which is set when an invoice is fully paid
+            // For partial payments, we should ideally check the payment history, 
+            // but if not available we fall back to a reasonable date.
+            
+            const dateToUse = inv.paid_at || (inv.status === 'paid' ? (inv as any).updated_at || inv.created_at : null);
+            
+            if (!dateToUse) return sum;
+            
             const paidAt = new Date(dateToUse);
             if (paidAt >= start && paidAt <= end) {
-                return sum + (Number(inv.amount_paid) > 0 ? Number(inv.amount_paid) : Number(inv.amount));
+                // If amount_paid is tracked, use it. Otherwise, if status is 'paid', use full amount.
+                const paid = Number(inv.amount_paid);
+                if (paid > 0) return sum + paid;
+                if (inv.status === 'paid') return sum + Number(inv.amount || 0);
             }
             return sum;
         }, 0);
