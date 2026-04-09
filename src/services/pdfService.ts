@@ -189,10 +189,15 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
         const project = invoice.project;
-        if (!project) throw new Error("Project data missing for invoice");
+
+        if (!project) {
+            console.error("Missing project for invoice", invoice.id);
+            return;
+        }
 
         const clientName = project.client?.full_name || 'Client';
-        const invoiceNum = (invoice.id || '000000').substring(0, 8).toUpperCase();
+        const invoiceNum = (invoice.id || 'XXXXXX').substring(0, 8).toUpperCase();
+        const dateStr = new Date(invoice.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
 
         setupDoc(doc);
         drawHeader(doc, 'FACTURE', `Réf : #INV-${invoiceNum}`);
@@ -204,7 +209,7 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
         doc.setFontSize(7);
         doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
         doc.text('FACTURÉ À', 14, 56, { charSpace: 1 });
-        doc.setFont('times', 'normal');
+        doc.setFont('times', 'bold');
         doc.setFontSize(14);
         doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
         doc.text(clientName, 14, 63);
@@ -212,145 +217,153 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
         doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
-        let clientDetailY = 69;
-        if (project.client?.phone) {
-            doc.text(project.client.phone, 14, clientDetailY);
-            clientDetailY += 5;
-        }
-        if (project.client?.email) {
-            doc.text(project.client.email, 14, clientDetailY);
-        }
-        doc.setFont('times', 'normal');
+        let clientY = 68;
+        if (project.client?.email) { doc.text(project.client.email, 14, clientY); clientY += 5; }
+        if (project.client?.phone) { doc.text(project.client.phone, 14, clientY); }
+
+        doc.setFontSize(7);
+        doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+        doc.text('DE LA PART DE', pageWidth / 2 + 7, 56, { charSpace: 1 });
+        doc.setFont('times', 'bold');
         doc.setFontSize(14);
         doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
-        doc.text(settings.company_name, pageWidth / 2 + 7, 63);
+        doc.text(settings.company_name || 'AUCLAIRE JEWELRY', pageWidth / 2 + 7, 63);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
+        const cityInfo = settings.city && settings.country ? `${settings.city}, ${settings.country}` : 'Montréal, Canada';
+        doc.text(cityInfo, pageWidth / 2 + 7, 68);
+        doc.text('www.auclaire.com', pageWidth / 2 + 7, 73);
 
-        // ── INVOICE INTRO ──
+        // ── PROJECT SUMMARY ──
         doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]);
         doc.setLineWidth(0.5);
-        doc.line(14, 75, pageWidth - 14, 75);
+        doc.line(14, 85, pageWidth - 14, 85);
 
-        doc.setFont('times', 'normal');
+        doc.setFont('times', 'italic');
         doc.setFontSize(11);
         doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
-        const introText = `Facture relative au projet : ${project.title.toUpperCase()}.\nCe document atteste de la vente et de la production de vos bijoux sur mesure.`;
-        doc.text(introText, 14, 82);
+        const desc = project.description || project.stage_details?.design_notes || 'Design et fabrication de bijoux d’exception.';
+        const splitDesc = doc.splitTextToSize(`PROJET : ${project.title.toUpperCase()}\n\n"${desc}"`, pageWidth - 28);
+        doc.text(splitDesc, 14, 94);
+        const descHeight = splitDesc.length * 5;
 
         // ── ITEMS TABLE ──
         const netAmount = Number(invoice.amount) || 0;
         
         autoTable(doc, {
-            head: [['Description des prestations', 'Montant']],
+            head: [['DESCRIPTION DES SERVICES', 'MONTANT']],
             body: [[
-                { content: `${project.title}\nDesign et fabrication de haute joaillerie sur mesure Auclaire.`, styles: { font: 'times', fontSize: 11 } },
-                { content: fmt(netAmount), styles: { font: 'times', fontSize: 13, halign: 'right' } }
+                { content: `${project.title}\nServices de joaillerie personnalisée incluant design, modélisation 3D et fabrication.`, styles: { font: 'times', fontSize: 11, cellPadding: 8 } },
+                { content: fmt(netAmount), styles: { font: 'times', fontSize: 14, halign: 'right', cellPadding: 8, textColor: GOLD as any } }
             ]],
-            startY: 95,
+            startY: 94 + descHeight + 10,
             theme: 'plain',
             headStyles: { fontSize: 8, textColor: GOLD as any, font: 'helvetica', fontStyle: 'bold' },
             styles: { cellPadding: 6 },
             columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 50 } }
         });
 
-        const tableEndY = (doc as any).lastAutoTable.finalY;
+        let currentY = (doc as any).lastAutoTable.finalY + 15;
 
-        // ── VISUALS (Same as Quote) ──
-        const designFiles = [
+        // ── VISUALS (FORCE SHOW) ──
+        const visuals = [
             ...(project.stage_details?.design_files || []),
             ...(project.stage_details?.sketch_files || []),
             ...(project.stage_details?.design_versions || []).flatMap(v => v.files || []),
         ].filter((url, i, arr) => arr.indexOf(url) === i).slice(0, 2);
 
-        let visualsEndY = tableEndY;
-        if (designFiles.length > 0) {
-            let imgY = tableEndY + 15;
-            if (imgY + 60 > 270) { doc.addPage(); setupDoc(doc); imgY = 20; }
-            
+        if (visuals.length > 0) {
+            if (currentY + 60 > 275) { doc.addPage(); setupDoc(doc); currentY = 20; }
             doc.setFontSize(8);
             doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
-            doc.text('VISUELS DU PROJET', 14, imgY, { charSpace: 1 });
+            doc.text('APPERÇU DU DESIGN', 14, currentY, { charSpace: 1 });
             
             const imgW = (pageWidth - 36) / 2;
-            const imgH = imgW * 0.8;
-            for (let i = 0; i < designFiles.length; i++) {
+            const imgH = imgW * 0.75;
+            for (let i = 0; i < visuals.length; i++) {
                 try {
-                    const imgData = await getBase64ImageFromURL(designFiles[i]);
-                    doc.addImage(imgData, 'PNG', 14 + (i * (imgW + 8)), imgY + 5, imgW, imgH);
-                    visualsEndY = imgY + 5 + imgH;
-                } catch (e) { console.warn(e); }
+                    const imgData = await getBase64ImageFromURL(visuals[i]);
+                    doc.addImage(imgData, 'PNG', 14 + (i * (imgW + 8)), currentY + 5, imgW, imgH);
+                } catch (e) {
+                    console.warn("Could not add image to invoice PDF", e);
+                }
             }
+            currentY += imgH + 20;
         }
 
-        // ── TAXES & SUMMARY ──
+        // ── TOTALS & TAXES ──
+        if (currentY + 50 > 280) { doc.addPage(); setupDoc(doc); currentY = 25; }
+        
         const province = project.financials?.tax_province as CanadianProvince | undefined;
         let taxTotal = 0;
         let gst = 0;
         let pst = 0;
-        let hst = 0;
 
         if (province) {
             const taxes = calculateCanadianTax(netAmount, province);
             taxTotal = taxes.total;
             gst = taxes.gst;
             pst = taxes.pst;
-            hst = taxes.hst;
         }
 
-        const summaryY = Math.max(visualsEndY + 15, 230);
         doc.setDrawColor(ZINC_100[0], ZINC_100[1], ZINC_100[2]);
-        doc.line(pageWidth - 80, summaryY, pageWidth - 14, summaryY);
-
-        doc.setFontSize(9);
+        doc.line(pageWidth - 90, currentY, pageWidth - 14, currentY);
+        
         doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
         doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
         
-        let currentY = summaryY + 10;
-        doc.text('Sous-total :', pageWidth - 80, currentY);
+        currentY += 8;
+        doc.text('Sous-total hors taxes :', pageWidth - 90, currentY);
         doc.text(fmt(netAmount), pageWidth - 14, currentY, { align: 'right' });
 
         if (province) {
-            if (gst > 0) {
-                currentY += 6;
-                doc.text('TPS/GST (5%) :', pageWidth - 80, currentY);
-                doc.text(fmt(gst), pageWidth - 14, currentY, { align: 'right' });
-            }
+            currentY += 6;
+            doc.text('TPS / GST (5%) :', pageWidth - 90, currentY);
+            doc.text(fmt(gst), pageWidth - 14, currentY, { align: 'right' });
             
-            if (pst > 0) {
-                currentY += 6;
-                const provTaxName = province === 'QC' ? 'TVQ/QST (9.975%)' : `Taxe Provinciale (${province})`;
-                doc.text(`${provTaxName} :`, pageWidth - 80, currentY);
-                doc.text(fmt(pst), pageWidth - 14, currentY, { align: 'right' });
-            }
-
-            if (hst > 0) {
-                currentY += 6;
-                doc.text(`TVH/HST :`, pageWidth - 80, currentY);
-                doc.text(fmt(hst), pageWidth - 14, currentY, { align: 'right' });
-            }
+            currentY += 6;
+            const provName = province === 'QC' ? 'TVQ / QST (9.975%)' : `Taxe Provinciale (${province})`;
+            doc.text(provName + ' :', pageWidth - 90, currentY);
+            doc.text(fmt(pst), pageWidth - 14, currentY, { align: 'right' });
         }
 
-        currentY += 10;
+        currentY += 12;
         doc.setFont('times', 'bold');
-        doc.setFontSize(22);
+        doc.setFontSize(26);
         doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
         doc.text(`TOTAL TTC : ${fmt(netAmount + taxTotal)}`, pageWidth - 14, currentY, { align: 'right' });
 
-        // Payment status badge
-        if (invoice.status === 'paid') {
+        // SOLDE RESTANT (Important info)
+        const amountPaid = Number(invoice.amount_paid) || 0;
+        const balance = (netAmount + taxTotal) - amountPaid;
+        
+        if (balance > 0 && amountPaid > 0) {
+            currentY += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
+            doc.text(`Déjà réglé : ${fmt(amountPaid)}`, pageWidth - 14, currentY, { align: 'right' });
+            currentY += 6;
+            doc.setFont('times', 'bold');
+            doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
+            doc.text(`SOLDE À RÉGLER : ${fmt(balance)}`, pageWidth - 14, currentY, { align: 'right' });
+        } else if (invoice.status === 'paid') {
             doc.setDrawColor(0, 150, 0);
             doc.setTextColor(0, 150, 0);
-            doc.setFontSize(14);
-            doc.rect(14, currentY - 10, 40, 12);
-            doc.text('PAYÉE', 34, currentY - 1, { align: 'center' });
+            doc.rect(14, currentY - 14, 40, 14);
+            doc.setFontSize(16);
+            doc.text('PAYÉE', 34, currentY - 4, { align: 'center' });
         }
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
+        doc.setFontSize(8);
         doc.setTextColor(ZINC_400[0], ZINC_400[1], ZINC_400[2]);
-        doc.text('MERCI POUR VOTRE CONFIANCE. AUCLAIRE BIJOUTERIE SUR MESURE.', pageWidth / 2, 285, { align: 'center', charSpace: 2 });
+        doc.text('AUCLAIRE BIJOUTERIE SUR MESURE | EXCELLENCE & PRÉCISION', pageWidth / 2, 285, { align: 'center', charSpace: 1 });
 
         doc.save(`Facture_AUCLAIRE_${invoiceNum}.pdf`);
     } catch (e) {
-        console.error(e);
+        console.error("PDF generation error", e);
     }
 };
