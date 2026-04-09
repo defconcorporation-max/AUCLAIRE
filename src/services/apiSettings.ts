@@ -20,7 +20,7 @@ export interface CompanySettings {
 }
 
 const DEFAULT_SETTINGS: CompanySettings = {
-    company_name: 'Auclaire Jewelry',
+    company_name: 'Maison Auclaire Inc',
     contact_email: 'contact@auclaire.com',
     phone: '+1 (555) 0123',
     address_line1: '123 Luxury Lane',

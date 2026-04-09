@@ -134,7 +134,7 @@ export function generateAmbassadorReportPDF(data: AmbassadorReportData) {
     doc.line(14, finalY, pageWidth - 14, finalY);
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Rapport généré le ${new Date().toLocaleDateString('fr-CA')} — AUCLAIRE Jewelry`, pageWidth / 2, finalY + 5, { align: 'center' });
+    doc.text(`Rapport généré le ${new Date().toLocaleDateString('fr-CA')} — MAISON AUCLAIRE`, pageWidth / 2, finalY + 5, { align: 'center' });
 
     doc.save(`rapport_ambassadeur_${data.name.replace(/\s+/g, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.pdf`);
 }

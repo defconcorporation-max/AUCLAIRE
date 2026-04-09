@@ -48,7 +48,7 @@ const drawHeader = (doc: jsPDF, title: string, subReference: string) => {
     doc.setFont('times', 'bold');
     doc.setFontSize(38);
     doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
-    doc.text('AUCLAIRE', 14, 28);
+    doc.text('MAISON AUCLAIRE', 14, 28);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
@@ -110,7 +110,7 @@ export const generateQuotePDF = async (project: Project, settings: CompanySettin
         doc.setFontSize(10);
         doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
         
-        const contractText = `ENTRE : ${clientName.toUpperCase()} (le "Client") ET : AUCLAIRE INC. ("Auclaire")\n\nCONTRAT DE PRODUCTION : Par la présente soumission, il est entendu qu'un dépôt a été effectué ou est requis pour lancer la production officielle. Auclaire garantit la qualité supérieure et l'authenticité de tous les matériaux utilisés (pierres précieuses certifiées et métaux nobles). Ce document fait office d'engagement mutuel sur le design et le prix présentés ci-dessous.`;
+        const contractText = `ENTRE : ${clientName.toUpperCase()} (le "Client") ET : MAISON AUCLAIRE INC. ("Maison Auclaire")\n\nCONTRAT DE PRODUCTION : Par la présente soumission, il est entendu qu'un dépôt a été effectué ou est requis pour lancer la production officielle. Maison Auclaire garantit la qualité supérieure et l'authenticité de tous les matériaux utilisés (pierres précieuses certifiées et métaux nobles). Ce document fait office d'engagement mutuel sur le design et le prix présentés ci-dessous.`;
         const splitContract = doc.splitTextToSize(contractText, pageWidth - 28);
         doc.text(splitContract, 14, 82);
         
@@ -226,14 +226,14 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
         doc.setFont('times', 'bold');
         doc.setFontSize(14);
         doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
-        doc.text(settings.company_name || 'AUCLAIRE JEWELRY', pageWidth / 2 + 7, 63);
+        doc.text(settings.company_name || 'MAISON AUCLAIRE INC', pageWidth / 2 + 7, 63);
         
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
         doc.setTextColor(ZINC_600[0], ZINC_600[1], ZINC_600[2]);
         const cityInfo = settings.city && settings.country ? `${settings.city}, ${settings.country}` : 'Montréal, Canada';
         doc.text(cityInfo, pageWidth / 2 + 7, 68);
-        doc.text('www.auclaire.com', pageWidth / 2 + 7, 73);
+        doc.text('www.maisonauclaire.ca', pageWidth / 2 + 7, 73);
 
         // ── PROJECT SUMMARY ──
         doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]);
@@ -359,7 +359,7 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: CompanySett
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(ZINC_400[0], ZINC_400[1], ZINC_400[2]);
-        doc.text('AUCLAIRE BIJOUTERIE SUR MESURE | EXCELLENCE & PRÉCISION', pageWidth / 2, 285, { align: 'center', charSpace: 1 });
+        doc.text('MAISON AUCLAIRE INC | EXCELLENCE & PRÉCISION', pageWidth / 2, 285, { align: 'center', charSpace: 1 });
 
         doc.save(`Facture_AUCLAIRE_${invoiceNum}.pdf`);
     } catch (e) {

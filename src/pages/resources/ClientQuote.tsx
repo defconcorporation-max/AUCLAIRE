@@ -195,7 +195,7 @@ export default function ClientQuote() {
                 <div className="p-12 md:p-16">
                     <div className="flex flex-col md:flex-row justify-between items-start mb-16 gap-8">
                         <div>
-                            <h1 className="text-5xl font-serif tracking-tighter text-zinc-900 mb-2">AUCLAIRE</h1>
+                            <h1 className="text-5xl font-serif tracking-tighter text-zinc-900 mb-2">MAISON AUCLAIRE</h1>
                             <p className="text-xs uppercase tracking-[0.4em] text-luxury-gold font-bold">{t('clientQuotePage.tagline')}</p>
                         </div>
                         <div className="text-right">
@@ -217,10 +217,10 @@ export default function ClientQuote() {
                         <div className="md:text-right">
                             <h3 className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold mb-4">{t('clientQuotePage.fromUs')}</h3>
                             <div className="space-y-1">
-                                <p className="font-serif text-xl text-zinc-900">AUCLAIRE</p>
+                                <p className="font-serif text-xl text-zinc-900">MAISON AUCLAIRE INC</p>
                                 <p className="text-zinc-600 text-sm italic">{t('clientQuotePage.fromTagline')}</p>
                                 <p className="text-zinc-600 text-sm">{t('clientQuotePage.fromLocation')}</p>
-                                <p className="text-zinc-600 text-sm">www.auclaire.com</p>
+                                <p className="text-zinc-600 text-sm">www.maisonauclaire.ca</p>
                             </div>
                         </div>
                     </div>
@@ -312,7 +312,7 @@ export default function ClientQuote() {
                     </div>
 
                     <div className="mt-20 pt-10 border-t border-zinc-100 text-center">
-                        <p className="text-luxury-gold font-serif text-xl mb-2">AUCLAIRE</p>
+                        <p className="text-luxury-gold font-serif text-xl mb-2">MAISON AUCLAIRE INC</p>
                         <p className="text-[9px] uppercase tracking-[0.5em] text-zinc-400 font-bold">{t('clientQuotePage.footerLine')}</p>
                     </div>
                 </div>
