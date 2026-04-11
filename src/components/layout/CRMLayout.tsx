@@ -65,6 +65,7 @@ const NAV_SECTIONS: NavSectionDef[] = [
     {
         sectionKey: 'nav.sections.crm',
         items: [
+            { labelKey: 'nav.items.leads', href: '/dashboard/leads', icon: MessageSquarePlus, roles: ['admin', 'affiliate', 'secretary'] },
             { labelKey: 'nav.items.clients', href: '/dashboard/clients', icon: Users, roles: ['admin', 'affiliate', 'secretary'] },
             { labelKey: 'nav.items.affiliates', href: '/dashboard/affiliates', icon: Users, roles: ['admin', 'secretary'] },
             { labelKey: 'nav.items.suppliers', href: '/dashboard/suppliers', icon: Truck, roles: ['admin', 'secretary'] },
