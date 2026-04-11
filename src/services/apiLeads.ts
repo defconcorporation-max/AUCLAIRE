@@ -17,6 +17,8 @@ export interface Lead {
     affiliate?: {
         full_name: string | null;
     } | null;
+    affiliate_id?: string | null;
+    affiliate_source?: string | null;
     assigned_to?: string | null;
     assigned_agent?: {
         full_name: string | null;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -6,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Plus, UserPlus, FilePlus } from 'lucide-react';
-import { apiClients, Client } from '@/services/apiClients';
+import { Loader2, UserPlus, FilePlus } from 'lucide-react';
+import { apiClients } from '@/services/apiClients';
 import { apiProjects } from '@/services/apiProjects';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 

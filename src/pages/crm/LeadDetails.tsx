@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Phone, Mail, Calendar, Edit, Save, X, Loader2, Sparkles, FileText } from 'lucide-react';
 import { apiLeads, Lead } from '@/services/apiLeads';
-import { apiAffiliates, AffiliateProfile } from '@/services/apiAffiliates';
+import { apiAffiliates } from '@/services/apiAffiliates';
 import { ShieldCheck, UserCheck } from 'lucide-react';
 
 export default function LeadDetails() {
@@ -259,6 +259,16 @@ export default function LeadDetails() {
                             </div>
                         </CardContent>
                     </Card>
+                    
+                    <div className="p-4 rounded-xl border border-luxury-gold/30 bg-luxury-gold/5 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <ShieldCheck className="w-5 h-5 text-luxury-gold" />
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold">Provenance Affiliation</p>
+                                <p className="text-white font-serif">{lead.affiliate?.full_name || lead.affiliate_id || 'Direct'}</p>
+                            </div>
+                        </div>
+                    </div>
 
                     <Card className="bg-white/80 dark:bg-black/60 backdrop-blur-md shadow-sm border-black/5 dark:border-white/5">
                         <CardHeader>

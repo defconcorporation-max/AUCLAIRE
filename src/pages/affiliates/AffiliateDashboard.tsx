@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, DollarSign, Briefcase, TrendingUp, Clock, Target, Award, BarChart3, Percent, UserCheck, Zap, ShieldCheck, Plus, Star } from 'lucide-react';
-import { apiLeads, Lead } from '@/services/apiLeads';
+import { Loader2, DollarSign, Briefcase, TrendingUp, Clock, Target, Award, BarChart3, Percent, UserCheck, Zap, ShieldCheck, Plus } from 'lucide-react';
+import { apiLeads } from '@/services/apiLeads';
 import { useQuery } from '@tanstack/react-query';
 import { AmbassadorNewSaleModal } from '@/components/project/AmbassadorNewSaleModal';
 
@@ -64,9 +64,9 @@ export default function AffiliateDashboard() {
     // Dynamic Role / Participant Type
     const participantType = profile?.participant_type || 
         (profile?.role === 'ambassador' ? 'ambassador' : 
-        (profile?.role === 'seller' || profile?.role === 'sales' ? 'seller' : 'affiliate'));
+        (profile?.role === 'seller' ? 'seller' : 'affiliate'));
 
-    const { data: assignedLeads = [], isLoading: isLoadingLeads } = useQuery({
+    const { data: assignedLeads = [] } = useQuery({
         queryKey: ['assigned-leads', profile?.id],
         queryFn: async () => {
             const leads = await apiLeads.getAll();
