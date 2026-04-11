@@ -96,6 +96,9 @@ export default function LeadsDashboard() {
     const columns: LeadStatus[] = ['new', 'contacted', 'qualified', 'won', 'lost'];
 
     const filteredLeads = leads.filter(lead => {
+        // Only show leads from affiliates
+        if (!lead.affiliate_id) return false;
+
         const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (lead.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (lead.phone?.includes(searchTerm));

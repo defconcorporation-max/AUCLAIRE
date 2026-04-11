@@ -5,15 +5,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Phone, Mail, Clock, Calendar, MessageSquare, Play, PhoneIncoming, PhoneOutgoing, Edit, Save, X, Loader2, Sparkles } from 'lucide-react';
-import Dialer from '@/components/crm/Dialer';
-import { apiLeads, Lead, type Message } from '@/services/apiLeads';
-
-const mockCallHistory = [
-    { id: 1, type: 'outgoing' as const, duration: '5m 23s', timestamp: '2026-02-26T10:30:00Z', notes: 'Discussed the 2ct Radiant Cut. Client is very interested.', hasRecording: true },
-    { id: 2, type: 'incoming' as const, duration: '2m 10s', timestamp: '2026-02-25T14:15:00Z', notes: 'Missed call. Left a voicemail.', hasRecording: false },
-    { id: 3, type: 'outgoing' as const, duration: '12m 45s', timestamp: '2026-02-20T09:20:00Z', notes: 'Initial consultation and budget qualification.', hasRecording: true },
-];
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, Phone, Mail, Clock, Calendar, Edit, Save, X, Loader2, Sparkles, FileText } from 'lucide-react';
+import { apiLeads, Lead } from '@/services/apiLeads';
 
 export default function LeadDetails() {
     const { t, i18n } = useTranslation();
@@ -21,19 +15,17 @@ export default function LeadDetails() {
     const { id = '' } = useParams();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [isDialerOpen, setIsDialerOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [newMessage, setNewMessage] = useState('');
+    const [isSavingNotes, setIsSavingNotes] = useState(false);
+    const [activeNotes, setActiveNotes] = useState('');
 
     const { data: lead, isLoading: isLeadLoading, error: leadError } = useQuery({
         queryKey: ['lead', id],
-        queryFn: () => apiLeads.getById(id),
-        enabled: !!id
-    });
-
-    const { data: messages = [] } = useQuery({
-        queryKey: ['messages', id],
-        queryFn: () => apiLeads.getMessages(id),
+        queryFn: async () => {
+            const data = await apiLeads.getById(id);
+            setActiveNotes(data.notes || '');
+            return data;
+        },
         enabled: !!id
     });
 
@@ -48,27 +40,17 @@ export default function LeadDetails() {
         }
     });
 
-    const sendMessageMutation = useMutation({
-        mutationFn: (content: string) => apiLeads.createMessage({
-            lead_id: id,
-            content,
-            sender_type: 'agent',
-            platform: lead?.source === 'facebook' ? 'facebook' : 'whatsapp'
-        }),
-        onSuccess: () => {
-            setNewMessage('');
-            queryClient.invalidateQueries({ queryKey: ['messages', id] });
-        },
-        onError: (err) => {
-            console.error('Failed to send message:', err);
-            alert(t('crmLeadDetails.sendError'));
+    const handleSaveNotes = async () => {
+        setIsSavingNotes(true);
+        try {
+            await apiLeads.update(id, { notes: activeNotes });
+            queryClient.invalidateQueries({ queryKey: ['lead', id] });
+        } catch (error) {
+            console.error('Failed to save notes:', error);
+            alert('Erreur lors de la sauvegarde des notes.');
+        } finally {
+            setIsSavingNotes(false);
         }
-    });
-
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim() || sendMessageMutation.isPending) return;
-        sendMessageMutation.mutate(newMessage);
     };
 
     const leadStatusLabel = (s: string) =>
@@ -91,10 +73,6 @@ export default function LeadDetails() {
         );
     }
 
-    const handleCall = () => {
-        setIsDialerOpen(true);
-    };
-
     const handleSave = () => {
         updateLeadMutation.mutate({
             name: editForm.name,
@@ -115,7 +93,7 @@ export default function LeadDetails() {
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto">
+        <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/leads')} className="hover:bg-black/5 dark:hover:bg-white/5">
@@ -143,12 +121,7 @@ export default function LeadDetails() {
                 </div>
 
                 <div className="flex gap-3">
-                    <Button onClick={handleCall} className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20 transition-all border-none">
-                        <Phone className="w-4 h-4 mr-2" />
-                        {t('crmLeadDetails.callLead')}
-                    </Button>
-                    
-                    {/* CONVERT BUTTON - NEW */}
+                    {/* CONVERT BUTTON */}
                     {lead.status !== 'won' && (
                         <Button 
                             onClick={async () => {
@@ -157,12 +130,10 @@ export default function LeadDetails() {
                                     const { apiProjects } = await import('@/services/apiProjects');
                                     const newProject = await apiProjects.create({
                                         title: `Projet - ${lead.name}`,
-                                        description: lead.notes || '',
+                                        description: activeNotes || lead.notes || '',
                                         budget: lead.value || 0,
                                         status: 'designing',
                                         affiliate_id: lead.affiliate_id,
-                                        // You might want to link client too if you have one, 
-                                        // for now we just pass the names and basics
                                     });
                                     
                                     await apiLeads.update(lead.id, { status: 'won' });
@@ -182,11 +153,6 @@ export default function LeadDetails() {
                             Convertir en Projet
                         </Button>
                     )}
-
-                    <Button variant="outline" className="border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5">
-                        <Mail className="w-4 h-4 mr-2" />
-                        {t('crmLeadDetails.email')}
-                    </Button>
                 </div>
             </div>
 
@@ -231,35 +197,31 @@ export default function LeadDetails() {
                             )}
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5 transition-all">
-                                <div className="w-10 h-10 shrink-0 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-                                    <Phone className="w-5 h-5" />
-                                </div>
+                            <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5">
+                                <Phone className="w-4 h-4 text-luxury-gold" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('crmLeadDetails.phone')}</p>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{t('crmLeadDetails.phone')}</p>
                                     {isEditing ? (
                                         <Input
                                             value={editForm.phone}
                                             onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                                            className="h-7 mt-1 text-sm bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
+                                            className="h-7 mt-1 text-sm bg-transparent border-black/20 dark:border-white/20"
                                         />
                                     ) : (
-                                        <p className="text-sm font-medium truncate">{lead.phone || t('crmLeadDetails.na')}</p>
+                                        <p className="text-sm font-medium">{lead.phone || t('crmLeadDetails.na')}</p>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5 transition-all">
-                                <div className="w-10 h-10 shrink-0 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
-                                    <Mail className="w-5 h-5" />
-                                </div>
+                            <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5">
+                                <Mail className="w-4 h-4 text-luxury-gold" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('crmLeadDetails.emailLabel')}</p>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{t('crmLeadDetails.emailLabel')}</p>
                                     {isEditing ? (
                                         <Input
                                             value={editForm.email}
                                             onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                            className="h-7 mt-1 text-sm bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
+                                            className="h-7 mt-1 text-sm bg-transparent border-black/20 dark:border-white/20"
                                         />
                                     ) : (
                                         <p className="text-sm font-medium truncate">{lead.email || t('crmLeadDetails.na')}</p>
@@ -268,12 +230,10 @@ export default function LeadDetails() {
                             </div>
 
                             <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#0A0A0A] rounded-lg border border-black/5 dark:border-white/5">
-                                <div className="w-10 h-10 rounded-full bg-luxury-gold/10 flex items-center justify-center text-luxury-gold">
-                                    <Calendar className="w-5 h-5" />
-                                </div>
+                                <Calendar className="w-4 h-4 text-luxury-gold" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('crmLeadDetails.createdInCrm')}</p>
-                                    <p className="text-sm font-medium truncate">{new Date(lead.created_at).toLocaleDateString(dateLocale)}</p>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{t('crmLeadDetails.createdInCrm')}</p>
+                                    <p className="text-sm font-medium">{new Date(lead.created_at).toLocaleDateString(dateLocale)}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -291,7 +251,7 @@ export default function LeadDetails() {
                                         type="number"
                                         value={editForm.value}
                                         onChange={(e) => setEditForm({ ...editForm, value: e.target.value })}
-                                        className="text-2xl font-serif text-luxury-gold h-12 w-32 bg-transparent border-black/20 dark:border-white/20 focus-visible:ring-1 focus-visible:ring-luxury-gold/50"
+                                        className="text-2xl font-serif text-luxury-gold h-12 w-32 bg-transparent border-black/20 dark:border-white/20"
                                     />
                                 </div>
                             ) : (
@@ -309,147 +269,30 @@ export default function LeadDetails() {
                         <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-xl font-serif flex items-center gap-2">
-                                    <Clock className="w-5 h-5 text-luxury-gold" />
-                                    {t('crmLeadDetails.commHistory')}
+                                    <FileText className="w-5 h-5 text-luxury-gold" />
+                                    Notes & Détails du Projet
                                 </CardTitle>
-                                <div className="flex gap-2">
-                                    <Button variant="ghost" size="sm" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-black dark:hover:text-white">{t('crmLeadDetails.filterAll')}</Button>
-                                    <Button variant="ghost" size="sm" className="text-xs font-semibold uppercase tracking-wider text-blue-500 hover:bg-blue-500/10">{t('crmLeadDetails.filterCalls')}</Button>
-                                    <Button variant="ghost" size="sm" className="text-xs font-semibold uppercase tracking-wider text-purple-500 hover:bg-purple-500/10">{t('crmLeadDetails.filterNotes')}</Button>
-                                </div>
+                                <Button 
+                                    onClick={handleSaveNotes}
+                                    disabled={isSavingNotes || activeNotes === lead.notes}
+                                    className="h-8 bg-luxury-gold text-black hover:bg-luxury-gold/90 text-xs font-bold uppercase tracking-widest"
+                                >
+                                    {isSavingNotes ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
+                                    Enregistrer les Notes
+                                </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-auto p-6 space-y-6">
-
-                            {mockCallHistory.map((call) => (
-                                <div key={call.id} className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20 last:before:bottom-auto last:before:h-full">
-                                    <div className={`absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] ${call.type === 'outgoing' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'}`}>
-                                        {call.type === 'outgoing' ? <PhoneOutgoing className="w-3 h-3" /> : <PhoneIncoming className="w-3 h-3" />}
-                                    </div>
-
-                                    <div className="bg-white dark:bg-black rounded-xl p-4 border border-black/5 dark:border-white/5 shadow-sm">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h4 className="font-semibold text-sm capitalize flex items-center gap-2">
-                                                    {call.type === 'outgoing' ? t('crmLeadDetails.callOutgoing') : t('crmLeadDetails.callIncoming')}
-                                                    <span className="text-xs font-normal text-muted-foreground bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full">
-                                                        {call.duration}
-                                                    </span>
-                                                </h4>
-                                                <p className="text-xs text-muted-foreground mt-0.5">
-                                                    {new Date(call.timestamp).toLocaleString(dateLocale)}
-                                                </p>
-                                            </div>
-
-                                            {call.hasRecording && (
-                                                <Button variant="outline" size="sm" className="h-8 gap-2 text-xs border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold/10">
-                                                    <Play className="w-3 h-3" /> {t('crmLeadDetails.playRecording')}
-                                                </Button>
-                                            )}
-                                        </div>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 bg-black/5 dark:bg-white/5 p-3 rounded-lg border-l-2 border-luxury-gold">
-                                            {call.notes}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {messages.map((msg: Message) => (
-                                <div key={msg.id} className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20">
-                                    <div className={`absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] ${msg.sender_type === 'agent' ? 'bg-luxury-gold text-white' : 'bg-pink-100 text-pink-600 dark:bg-pink-900/30'}`}>
-                                        <MessageSquare className="w-3 h-3" />
-                                    </div>
-                                    <div className={`rounded-xl p-4 border shadow-sm ${msg.sender_type === 'agent' ? 'bg-luxury-gold/5 border-luxury-gold/20' : 'bg-gray-50 dark:bg-white/5 border-black/5 dark:border-white/5'}`}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h4 className="font-semibold text-sm flex items-center gap-2">
-                                                    {msg.sender_type === 'agent' ? t('crmLeadDetails.crmReply') : t('crmLeadDetails.messagePlatform', { platform: msg.platform })}
-                                                </h4>
-                                                <p className="text-xs text-muted-foreground mt-0.5">
-                                                    {new Date(msg.created_at).toLocaleString(dateLocale)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-                                            {msg.content}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {lead.source === 'facebook' && (
-                                <div className="relative pl-8 before:absolute before:inset-y-0 before:left-[15px] before:w-[2px] before:bg-luxury-gold/20">
-                                    <div className="absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#0A0A0A] bg-blue-100 text-blue-600 dark:bg-blue-900/30">
-                                        <MessageSquare className="w-3 h-3" />
-                                    </div>
-                                    <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-500/20 shadow-sm">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h4 className="font-semibold text-sm flex items-center gap-2">
-                                                    {t('crmLeadDetails.fbFormTitle')}
-                                                </h4>
-                                                <p className="text-xs text-muted-foreground mt-0.5">
-                                                    {new Date(lead.created_at).toLocaleString(dateLocale)}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {lead.notes && (
-                                            <p className="text-sm italic text-gray-700 dark:text-gray-300 mt-2">
-                                                {lead.notes}
-                                            </p>
-                                        )}
-
-                                        {lead.metadata && typeof lead.metadata === 'object' && Object.keys(lead.metadata).length > 0 && (
-                                            <div className="mt-4 space-y-3 pt-3 border-t border-blue-500/10">
-                                                {Object.entries(lead.metadata).map(([key, value]) => (
-                                                    <div key={key} className="space-y-1">
-                                                        <p className="text-[10px] uppercase tracking-wider font-bold text-blue-600 dark:text-blue-400">
-                                                            {key.replace(/_/g, ' ')}
-                                                        </p>
-                                                        <p className="text-sm font-medium">
-                                                            {String(value)}
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
+                        <CardContent className="flex-1 p-0">
+                            <Textarea 
+                                value={activeNotes}
+                                onChange={(e) => setActiveNotes(e.target.value)}
+                                placeholder="Saisissez les notes ici... budget, préférences de design, pierres souhaitées, etc."
+                                className="w-full h-full min-h-[400px] p-6 text-base bg-transparent border-none focus-visible:ring-0 resize-none font-sans leading-relaxed"
+                            />
                         </CardContent>
-
-                        <div className="p-4 border-t border-black/5 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
-                            <form onSubmit={handleSendMessage} className="flex gap-2">
-                                <Input
-                                    placeholder={t('crmLeadDetails.replyPlaceholder', { name: lead.name, source: lead.source })}
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    className="bg-white dark:bg-black border-black/10 dark:border-white/10"
-                                />
-                                <Button
-                                    type="submit"
-                                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                                    className="bg-luxury-gold hover:bg-luxury-gold/90 text-black font-semibold"
-                                >
-                                    {sendMessageMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t('crmLeadDetails.send')}
-                                </Button>
-                            </form>
-                            <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                                {t('crmLeadDetails.sendingFooter')}
-                            </p>
-                        </div>
                     </Card>
                 </div>
             </div>
-
-            <Dialer
-                isOpen={isDialerOpen}
-                onClose={() => setIsDialerOpen(false)}
-                contactName={lead.name}
-                phoneNumber={lead.phone || ''}
-            />
         </div>
     );
 }
