@@ -1982,6 +1982,8 @@
     "toastPayFailed": "Échec du versement."
   },
   "affiliateDetailsPage": {
+    "participantType": "Classe de Partenaire",
+    "participantTypeDesc": "Détermine l'interface du dashboard et les permissions de données.",
     "loadErrorTitle": "Erreur de chargement des données",
     "loadErrorHint": "Vérifiez que les tables invoices, projects et expenses existent et ont les colonnes attendues.",
     "retry": "Réessayer",
@@ -2103,10 +2105,6 @@
     "affiliate": "Affilié (Apporteur)",
     "ambassador": "Ambassadeur (Vente Partielle)",
     "seller": "Vendeur (Closer)"
-  },
-  "affiliateDetailsPage": {
-    "participantType": "Classe de Partenaire",
-    "participantTypeDesc": "Détermine l'interface du dashboard et les permissions de données."
   },
   "registerAffiliatePage": {
     "heroTitle": "AMBASSADEUR",
