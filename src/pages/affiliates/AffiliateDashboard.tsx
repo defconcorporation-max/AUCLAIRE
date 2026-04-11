@@ -130,6 +130,8 @@ export default function AffiliateDashboard() {
 
     const sortedAffiliates = [...allAffiliates].sort((a, b) => (b.stats?.totalSales ?? 0) - (a.stats?.totalSales ?? 0));
     const myRank = sortedAffiliates.findIndex(a => a.id === profile?.id) + 1;
+    const topPerformer = sortedAffiliates[0];
+    const topVolume = topPerformer?.stats?.totalSales ?? 0;
     const badge = getBadgeForVolume(totalSales);
 
     const expenseByProject = new Map<string | undefined, PendingCommission>();
@@ -406,6 +408,12 @@ export default function AffiliateDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center gap-4">
+                            <div className={`rounded-full px-4 py-2 ${badge.bg} ${badge.color} font-serif font-bold`}>
+                                {t(`affiliateDashboardPage.${badge.nameKey}`)}
+                            </div>
+                            <div>
+                                <p className="text-lg font-serif font-bold text-white">
+                                    {t('affiliateDashboardPage.rankOf', { rank: myRank || '-', total: sortedAffiliates.length })}
                                 </p>
                                 {topVolume > 0 && totalSales < topVolume && (
                                     <p className="text-xs text-gray-500">
