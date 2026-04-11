@@ -83,9 +83,10 @@ export default function AffiliateDetails() {
                     .order('date', { ascending: false });
                 setPendingCommissions((commData ?? []) as CommissionExpenseUI[]);
             }
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error("Failed to load affiliate", error);
-            setError(error instanceof Error ? error.message : t('affiliateDetailsPage.unknownError'));
+            const errorMessage = error?.message || (error instanceof Error ? error.message : t('affiliateDetailsPage.unknownError'));
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
