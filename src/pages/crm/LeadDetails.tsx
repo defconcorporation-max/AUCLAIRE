@@ -147,6 +147,42 @@ export default function LeadDetails() {
                         <Phone className="w-4 h-4 mr-2" />
                         {t('crmLeadDetails.callLead')}
                     </Button>
+                    
+                    {/* CONVERT BUTTON - NEW */}
+                    {lead.status !== 'won' && (
+                        <Button 
+                            onClick={async () => {
+                                if (!confirm("Voulez-vous convertir ce lead en projet ?")) return;
+                                try {
+                                    const { apiProjects } = await import('@/services/apiProjects');
+                                    const newProject = await apiProjects.create({
+                                        title: `Projet - ${lead.name}`,
+                                        description: lead.notes || '',
+                                        budget: lead.value || 0,
+                                        status: 'designing',
+                                        affiliate_id: lead.affiliate_id,
+                                        // You might want to link client too if you have one, 
+                                        // for now we just pass the names and basics
+                                    });
+                                    
+                                    await apiLeads.update(lead.id, { status: 'won' });
+                                    queryClient.invalidateQueries({ queryKey: ['lead', id] });
+                                    
+                                    if (confirm("Lead converti ! Souhaitez-vous voir le projet ?")) {
+                                        navigate(`/dashboard/projects/${newProject.id}`);
+                                    }
+                                } catch (err) {
+                                    console.error("Conversion failed:", err);
+                                    alert("Erreur lors de la conversion.");
+                                }
+                            }}
+                            className="bg-luxury-gold text-black hover:bg-luxury-gold/90 shadow-lg shadow-luxury-gold/20"
+                        >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Convertir en Projet
+                        </Button>
+                    )}
+
                     <Button variant="outline" className="border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5">
                         <Mail className="w-4 h-4 mr-2" />
                         {t('crmLeadDetails.email')}

@@ -15,6 +15,8 @@ export interface Lead {
     notes: string | null;
     metadata: Record<string, unknown> | null;
     fb_leadgen_id: string | null;
+    affiliate_id?: string | null;
+    affiliate_source?: string | null;
 }
 
 export const apiLeads = {

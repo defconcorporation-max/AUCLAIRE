@@ -97,7 +97,7 @@ export default function AffiliateDashboard() {
         );
     }
 
-    const { commissionEarned = 0, activeProjects = 0, projects = [], totalSales = 0, salesCount = 0 } = stats || {};
+    const { commissionEarned = 0, activeProjects = 0, projects = [], totalSales = 0, salesCount = 0, leadsCount = 0 } = stats || {};
     const pendingTotal = pendingCommissions.filter(c => c.status === 'pending').reduce((s, c) => s + Number(c.amount), 0);
 
     const monthlyGoal = profile?.monthly_goal ?? 10000;
@@ -105,8 +105,10 @@ export default function AffiliateDashboard() {
     const goalProgress = Math.min(100, (currentMonthRevenue / monthlyGoal) * 100);
     const remaining = Math.max(0, monthlyGoal - currentMonthRevenue);
 
-    const totalLeads = (projects as Project[]).length;
-    const conversionRate = totalLeads > 0 ? ((salesCount / totalLeads) * 100).toFixed(1) : '0';
+    // Calculation: If we have link-tracked leads, use that as base for conversion.
+    // Otherwise fallback to legacy projects count for historical accuracy.
+    const effectiveLeadsCount = leadsCount > 0 ? leadsCount : (projects as Project[]).length;
+    const conversionRate = effectiveLeadsCount > 0 ? ((salesCount / effectiveLeadsCount) * 100).toFixed(1) : '0';
 
     const sortedAffiliates = [...allAffiliates].sort((a, b) => (b.stats?.totalSales ?? 0) - (a.stats?.totalSales ?? 0));
     const myRank = sortedAffiliates.findIndex(a => a.id === profile?.id) + 1;
@@ -145,6 +147,60 @@ export default function AffiliateDashboard() {
                     <span className="text-luxury-gold font-bold uppercase">{profile?.affiliate_level || 'Starter'}</span>
                 </p>
             </div>
+
+            {/* Tracking Link Generator - NEW */}
+            <Card className="glass-card border border-[#D2B57B]/30 bg-zinc-900/90 shadow-[0_0_40px_rgba(210,181,123,0.1)] overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-luxury-gold/10 to-transparent">
+                    <CardTitle className="text-lg font-serif flex items-center gap-2 text-luxury-gold">
+                        <Target className="h-5 w-5" />
+                        Générateur de Liens de Contact Traqués
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="flex-1 space-y-2 w-full">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1">
+                                Source du Trafic <span className="text-luxury-gold/60 normal-case font-normal">(ex: instagram, tiktok, bio)</span>
+                            </label>
+                            <Input 
+                                id="affiliate-source"
+                                placeholder="instagram"
+                                className="bg-white/5 border-white/10 h-10 focus:border-luxury-gold/50"
+                                onChange={(e) => {
+                                    const val = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                    const linkEl = document.getElementById('tracking-link-display') as HTMLInputElement;
+                                    if (linkEl) {
+                                        const baseUrl = `${window.location.origin}/contact?aff=${profile?.id}`;
+                                        linkEl.value = val ? `${baseUrl}&src=${val}` : baseUrl;
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="flex-[2] space-y-2 w-full">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Votre Lien Personnel</label>
+                            <div className="flex gap-2">
+                                <Input 
+                                    id="tracking-link-display"
+                                    readOnly
+                                    value={`${window.location.origin}/contact?aff=${profile?.id}`}
+                                    className="bg-black/40 border-luxury-gold/20 h-10 text-luxury-gold font-mono text-xs"
+                                />
+                                <Button 
+                                    onClick={() => {
+                                        const link = (document.getElementById('tracking-link-display') as HTMLInputElement).value;
+                                        navigator.clipboard.writeText(link);
+                                        // Simple visual feedback could be added if toast is available or just alert
+                                        alert("Lien copié dans le presse-papier !");
+                                    }}
+                                    className="bg-luxury-gold hover:bg-luxury-gold/90 text-black h-10"
+                                >
+                                    Copier
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Quick Stats Cards - Luxury dark theme */}
             <div className="grid gap-4 md:grid-cols-4">

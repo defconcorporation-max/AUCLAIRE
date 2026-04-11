@@ -26,6 +26,7 @@ export interface AffiliateStats {
     commissionPaid: number;
     commissionPending: number;
     activeProjects: number;
+    leadsCount: number; // NEW
     projects: unknown[];
 }
 
@@ -81,6 +82,14 @@ export const apiAffiliates = {
             .neq('status', 'cancelled');
 
         if (projectsError) throw projectsError;
+        
+        // 1.5 Get Leads Stats (New!)
+        const { count: leadsCount, error: leadsError } = await supabase
+            .from('leads')
+            .select('*', { count: 'exact', head: true })
+            .eq('affiliate_id', affiliateId);
+
+        if (leadsError) console.warn("Could not fetch lead count for affiliate:", leadsError);
 
         // 2. Get Invoices to verify sales AND get total cash collected
         const projectIds = projects.map(p => p.id);
@@ -151,6 +160,7 @@ export const apiAffiliates = {
             commissionPaid,
             commissionPending,
             activeProjects,
+            leadsCount: leadsCount || 0,
             projects: projects || []
         };
     },

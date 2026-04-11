@@ -69,6 +69,8 @@ const AccountsDirectory = lazy(() => import('./pages/marketing/AccountsDirectory
 const MarketingFormation = lazy(() => import('./pages/public/MarketingFormation'));
 const MarketingExecution = lazy(() => import('./pages/marketing/MarketingExecution'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const ContactForm = lazy(() => import('./pages/public/ContactForm'));
+const ThankYou = lazy(() => import('./pages/public/ThankYou'));
 
 // Realtime sync component — must be inside Router + QueryClientProvider
 function RealtimeSync() {
@@ -115,6 +117,8 @@ function App() {
             <Route path="/shared/:token" element={<SharedProjectView />} />
             <Route path="/formation" element={<Formation />} />
             <Route path="/formation/marketing" element={<MarketingFormation />} />
+            <Route path="/contact" element={<ContactForm />} />
+            <Route path="/thank-you" element={<ThankYou />} />
 
             <Route path="/dashboard" element={
               <ProtectedRoute>
