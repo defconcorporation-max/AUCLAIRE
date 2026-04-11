@@ -1,6 +1,6 @@
 import { Invoice, PaymentEntry } from '@/services/apiInvoices';
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiInvoices } from '@/services/apiInvoices'
 
@@ -44,6 +44,7 @@ export default function InvoicesList() {
         queryFn: apiInvoices.getAll
     })
 
+    const [activeTab, setActiveTab] = useState<'invoices' | 'payments'>('invoices');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
     const [paymentLink, setPaymentLink] = useState('');
@@ -204,6 +205,48 @@ export default function InvoicesList() {
         ? selectedInvoice.amount - payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
         : 0;
 
+    const allPayments = useMemo(() => {
+        if (!invoices) return [];
+        const list: (PaymentEntry & { invoiceId: string, projectName: string, clientName: string })[] = [];
+        
+        invoices.forEach(inv => {
+            let historySum = 0;
+            if (inv.payment_history && Array.isArray(inv.payment_history) && inv.payment_history.length > 0) {
+                inv.payment_history.forEach(p => {
+                    historySum += Number(p.amount) || 0;
+                    list.push({
+                        ...p,
+                        invoiceId: inv.id,
+                        projectName: inv.project?.title || t('invoicesPage.unknownProject'),
+                        clientName: inv.project?.client?.full_name || t('invoicesPage.na')
+                    });
+                });
+            }
+            
+            // Add legacy entry for unaccounted amount
+            let trueTotalPaid = Number(inv.amount_paid || 0);
+            if (inv.status === 'paid' && trueTotalPaid === 0) {
+                trueTotalPaid = Number(inv.amount || 0);
+            }
+            const unaccountedAmount = Math.max(0, trueTotalPaid - historySum);
+            
+            if (unaccountedAmount > 0) {
+                const dateToUse = inv.paid_at || ((inv.status === 'paid' || inv.status === 'partial') ? ((inv as any).updated_at || inv.created_at) : inv.created_at);
+                list.push({
+                    id: 'legacy-' + inv.id + '-' + Math.random().toString(36).substring(7),
+                    amount: unaccountedAmount,
+                    date: dateToUse,
+                    note: 'Paiement (Historique hérité/Solde)',
+                    invoiceId: inv.id,
+                    projectName: inv.project?.title || t('invoicesPage.unknownProject'),
+                    clientName: inv.project?.client?.full_name || t('invoicesPage.na')
+                });
+            }
+        });
+        
+        return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [invoices, t]);
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -260,6 +303,24 @@ export default function InvoicesList() {
                 </div>
             </div>
 
+            {/* --- Tabs Switcher --- */}
+            <div className="flex border-b border-border/50">
+                <button
+                    onClick={() => setActiveTab('invoices')}
+                    className={`pb-3 px-4 font-serif text-sm transition-colors border-b-2 ${activeTab === 'invoices' ? 'border-luxury-gold text-luxury-gold' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                >
+                    {t('invoicesPage.title')} {/* Reusing title "Factures" */}
+                </button>
+                <button
+                    onClick={() => setActiveTab('payments')}
+                    className={`pb-3 px-4 font-serif text-sm transition-colors border-b-2 ${activeTab === 'payments' ? 'border-luxury-gold text-luxury-gold' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                >
+                    Historique des Paiements
+                </button>
+            </div>
+
+            {activeTab === 'invoices' ? (
+                <>
             <div className="flex items-center gap-3 flex-wrap">
                 <div className="relative flex-1 min-w-[200px] max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -420,6 +481,48 @@ export default function InvoicesList() {
                     ))
                 )}
             </div>
+            </>
+            ) : (
+                <div className="bg-card rounded-xl border p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <DollarSign className="w-5 h-5 text-luxury-gold" />
+                        <h3 className="font-serif text-lg">Liste chronologique des paiements</h3>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {allPayments.length === 0 ? (
+                            <div className="text-center p-8 border border-dashed rounded-lg text-muted-foreground">
+                                Aucun paiement enregistré.
+                            </div>
+                        ) : (
+                            allPayments.map(p => (
+                                <div key={p.id} className="flex justify-between items-center p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-border/50 hover:border-border transition-colors">
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold text-lg">{formatCurrency(p.amount)}</span>
+                                            <span className="text-xs text-muted-foreground uppercase tracking-wider bg-white/50 dark:bg-black/50 px-2 py-0.5 rounded flex items-center gap-1">
+                                                <CalendarDays className="w-3 h-3" />
+                                                {new Date(p.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                        <span className="text-sm font-medium mt-1">{p.projectName}</span>
+                                        <span className="text-xs text-muted-foreground">{p.clientName}{p.note ? ` • ${p.note}` : ''}</span>
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => {
+                                        const originalInvoice = invoices?.find(i => i.id === p.invoiceId);
+                                        if (originalInvoice) {
+                                            setActiveTab('invoices');
+                                            openDetailsModal(originalInvoice);
+                                        }
+                                    }}>
+                                        <Search className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* --- Edit Link Modal --- */}
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
