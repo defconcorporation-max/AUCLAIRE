@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Phone, Mail, Clock, Calendar, Edit, Save, X, Loader2, Sparkles, FileText } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, Calendar, Edit, Save, X, Loader2, Sparkles, FileText } from 'lucide-react';
 import { apiLeads, Lead } from '@/services/apiLeads';
 
 export default function LeadDetails() {
