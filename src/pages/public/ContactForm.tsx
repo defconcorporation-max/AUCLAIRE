@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { apiLeads } from '@/services/apiLeads';
 import { JEWELRY_TYPES } from '@/services/apiProjects';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ import {
 } from 'lucide-react';
 
 export default function ContactForm() {
-    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     

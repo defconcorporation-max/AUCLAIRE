@@ -314,7 +314,7 @@ export const apiAffiliates = {
 
                 return {
                     ...profile,
-                    stats: { totalSales, salesCount, cashCollected, commissionEarned, commissionPaid, commissionPending, activeProjects, projects }
+                    stats: { totalSales, salesCount, cashCollected, commissionEarned, commissionPaid, commissionPending, activeProjects, leadsCount: 0, projects }
                 };
             });
         } catch (err) {

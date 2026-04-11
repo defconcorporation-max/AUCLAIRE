@@ -1,19 +1,11 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { 
     CheckCircle2, 
-    ArrowLeft,
     Instagram,
-    Globe,
-    ExternalLink
+    Globe
 } from 'lucide-react';
 
 export default function ThankYou() {
-    const { t } = useTranslation();
-    const navigate = useNavigate();
-
     return (
         <div className="min-h-screen bg-[#050505] relative flex items-center justify-center p-4 md:p-8 font-sans overflow-hidden">
             {/* Ambient Background */}

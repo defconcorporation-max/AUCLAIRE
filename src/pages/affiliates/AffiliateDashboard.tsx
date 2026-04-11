@@ -8,9 +8,11 @@ import { apiAffiliates, AffiliateStats } from '@/services/apiAffiliates';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, DollarSign, Briefcase, TrendingUp, Clock, Target, Award, BarChart3, Percent } from 'lucide-react';
+import { Loader2, DollarSign, Briefcase, TrendingUp, Clock, Target, Award, BarChart3, Percent, Sparkles } from 'lucide-react';
 
 interface PendingCommission {
     id: string;
