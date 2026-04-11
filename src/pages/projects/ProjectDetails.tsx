@@ -1194,12 +1194,20 @@ export default function ProjectDetails() {
 
                 {activeTab === 'finance' && (
                     <div className="md:col-span-2">
-                        {(role === 'admin' || role === 'secretary') && (
+                        {(role === 'admin' || role === 'secretary') ? (
                             <ProjectFinancialDashboard 
                                 budget={project.budget}
                                 financials={project.financials}
                                 commission={financialUtils.computeCommissionAmount(project)}
                             />
+                        ) : (
+                            <Card className="glass-card border-none bg-luxury-gold/5 p-8 flex flex-col items-center justify-center text-center">
+                                <ShieldCheck className="w-12 h-12 text-luxury-gold/40 mb-4" />
+                                <h3 className="text-xl font-serif text-luxury-gold">{t('projectDetailsPage.financialPrivacyTitle', 'Confidentialité Financière')}</h3>
+                                <p className="text-sm text-gray-400 mt-2 max-w-xs">
+                                    {t('projectDetailsPage.financialPrivacyDesc', 'Les détails des coûts et marges sont réservés à l\'administration.')}
+                                </p>
+                            </Card>
                         )}
                     </div>
                 )}
@@ -1211,8 +1219,8 @@ export default function ProjectDetails() {
                         <CardTitle className="text-luxury-gold font-serif text-lg tracking-wide">{t('projectDetailsPage.financialDetails')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5 pt-6">
-                        {/* Margin Health Gauge */}
-                        {(() => {
+                        {/* Margin Health Gauge - ADMIN ONLY */}
+                        {(role === 'admin' || role === 'secretary') && (() => {
                             const { marginAmount, marginPercent } = financialUtils.computeProjectMargin(project);
                             const revenue = financialUtils.getSalePrice(project);
                             const isHealthy = marginPercent >= 40;

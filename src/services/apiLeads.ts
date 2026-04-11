@@ -14,10 +14,11 @@ export interface Lead {
     value: number;
     notes: string | null;
     metadata: Record<string, unknown> | null;
-    fb_leadgen_id: string | null;
-    affiliate_id?: string | null;
-    affiliate_source?: string | null;
     affiliate?: {
+        full_name: string | null;
+    } | null;
+    assigned_to?: string | null;
+    assigned_agent?: {
         full_name: string | null;
     } | null;
 }
@@ -26,7 +27,7 @@ export const apiLeads = {
     async getAll() {
         const { data, error } = await supabase
             .from('leads')
-            .select('*, affiliate:profiles(full_name)')
+            .select('*, affiliate:profiles!leads_affiliate_id_fkey(full_name), assigned_agent:profiles!leads_assigned_to_fkey(full_name)')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -36,7 +37,7 @@ export const apiLeads = {
     async getById(id: string) {
         const { data, error } = await supabase
             .from('leads')
-            .select('*, affiliate:profiles(full_name)')
+            .select('*, affiliate:profiles!leads_affiliate_id_fkey(full_name), assigned_agent:profiles!leads_assigned_to_fkey(full_name)')
             .eq('id', id)
             .single();
 

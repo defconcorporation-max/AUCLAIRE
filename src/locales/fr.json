@@ -1442,6 +1442,9 @@
     "placeholderEmail": "jean@exemple.com",
     "placeholderPhone": "+33 6 00 00 00 00",
     "placeholderNotes": "Préférences, taille de bague, etc.",
+    "statusDesigning": "Design Initial",
+    "financialPrivacyTitle": "Confidentialité Financière",
+    "financialPrivacyDesc": "Les détails des coûts et des marges sont restreints selon votre rôle.",
     "submitCreate": "Créer le client"
   },
   "createProjectPage": {
@@ -2085,7 +2088,25 @@
     "badgeBronze": "Bronze",
     "badgeSilver": "Argent",
     "badgeGold": "Or",
-    "badgeDiamond": "Diamant"
+    "badgeDiamond": "Diamant",
+    "identityCard": "Votre Classe",
+    "role_seller": "Vendeur (Closer)",
+    "role_ambassador": "Ambassadeur (Entrepreneur)",
+    "role_affiliate": "Affilié (Apporteur)",
+    "assignedLeads": "Mes Leads Assignés",
+    "logSale": "Nouveau Projet / Vente",
+    "createProjectDesc": "Initier un nouveau design pour un client",
+    "noAssignedLeads": "Aucun lead ne vous est assigné pour le moment.",
+    "newSale": "Nouvelle Vente"
+  },
+  "participantType": {
+    "affiliate": "Affilié (Apporteur)",
+    "ambassador": "Ambassadeur (Vente Partielle)",
+    "seller": "Vendeur (Closer)"
+  },
+  "affiliateDetailsPage": {
+    "participantType": "Classe de Partenaire",
+    "participantTypeDesc": "Détermine l'interface du dashboard et les permissions de données."
   },
   "registerAffiliatePage": {
     "heroTitle": "AMBASSADEUR",
@@ -2340,7 +2361,9 @@
     "role_secretary": "Secrétaire",
     "role_admin": "Admin",
     "role_sales": "Agent de vente",
-    "role_affiliate": "Ambassadeur",
+    "role_affiliate": "Affilié",
+    "role_ambassador": "Ambassadeur",
+    "role_seller": "Vendeur",
     "toastSuccess": "Succès"
   },
   "marketing": {

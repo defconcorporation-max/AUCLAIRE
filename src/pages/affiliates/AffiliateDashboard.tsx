@@ -12,7 +12,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, DollarSign, Briefcase, TrendingUp, Clock, Target, Award, BarChart3, Percent } from 'lucide-react';
+import { Loader2, DollarSign, Briefcase, TrendingUp, Clock, Target, Award, BarChart3, Percent, UserCheck, Zap, ShieldCheck, Plus, Star } from 'lucide-react';
+import { apiLeads, Lead } from '@/services/apiLeads';
+import { useQuery } from '@tanstack/react-query';
+import { AmbassadorNewSaleModal } from '@/components/project/AmbassadorNewSaleModal';
 
 interface PendingCommission {
     id: string;
@@ -56,6 +59,21 @@ export default function AffiliateDashboard() {
     const [allAffiliates, setAllAffiliates] = useState<{ id: string; full_name: string | null; stats?: AffiliateStats }[]>([]);
     const [commissionFilter, setCommissionFilter] = useState<'all' | 'pending' | 'paid'>('all');
     const [isLoading, setIsLoading] = useState(true);
+    const [isNewSaleModalOpen, setIsNewSaleModalOpen] = useState(false);
+
+    // Dynamic Role / Participant Type
+    const participantType = profile?.participant_type || 
+        (profile?.role === 'ambassador' ? 'ambassador' : 
+        (profile?.role === 'seller' || profile?.role === 'sales' ? 'seller' : 'affiliate'));
+
+    const { data: assignedLeads = [], isLoading: isLoadingLeads } = useQuery({
+        queryKey: ['assigned-leads', profile?.id],
+        queryFn: async () => {
+            const leads = await apiLeads.getAll();
+            return leads.filter(l => l.assigned_to === profile?.id);
+        },
+        enabled: participantType === 'seller' && !!profile?.id
+    });
 
     useEffect(() => {
         let isMounted = true;
@@ -107,15 +125,11 @@ export default function AffiliateDashboard() {
     const goalProgress = Math.min(100, (currentMonthRevenue / monthlyGoal) * 100);
     const remaining = Math.max(0, monthlyGoal - currentMonthRevenue);
 
-    // Calculation: If we have link-tracked leads, use that as base for conversion.
-    // Otherwise fallback to legacy projects count for historical accuracy.
     const effectiveLeadsCount = leadsCount > 0 ? leadsCount : (projects as Project[]).length;
     const conversionRate = effectiveLeadsCount > 0 ? ((salesCount / effectiveLeadsCount) * 100).toFixed(1) : '0';
 
     const sortedAffiliates = [...allAffiliates].sort((a, b) => (b.stats?.totalSales ?? 0) - (a.stats?.totalSales ?? 0));
     const myRank = sortedAffiliates.findIndex(a => a.id === profile?.id) + 1;
-    const topPerformer = sortedAffiliates[0];
-    const topVolume = topPerformer?.stats?.totalSales ?? 0;
     const badge = getBadgeForVolume(totalSales);
 
     const expenseByProject = new Map<string | undefined, PendingCommission>();
@@ -139,72 +153,145 @@ export default function AffiliateDashboard() {
     const maxChartValue = Math.max(...monthlySales.map(m => m.amount), 1);
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-serif text-gray-900 dark:text-white">
-                    {t('affiliateDashboardPage.hello', { name: profile?.full_name?.split(' ')[0] ?? '' })}
-                </h1>
-                <p className="text-gray-500">
-                    {t('affiliateDashboardPage.level')}{' '}
-                    <span className="text-luxury-gold font-bold uppercase">{profile?.affiliate_level || 'Starter'}</span>
-                </p>
-            </div>
-
-            {/* Tracking Link Generator - NEW */}
-            <Card className="glass-card border border-[#D2B57B]/30 bg-zinc-900/90 shadow-[0_0_40px_rgba(210,181,123,0.1)] overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-luxury-gold/10 to-transparent">
-                    <CardTitle className="text-lg font-serif flex items-center gap-2 text-luxury-gold">
-                        <Target className="h-5 w-5" />
-                        Générateur de Liens de Contact Traqués
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 space-y-2 w-full">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1">
-                                Source du Trafic <span className="text-luxury-gold/60 normal-case font-normal">(ex: instagram, tiktok, bio)</span>
-                            </label>
-                            <Input 
-                                id="affiliate-source"
-                                placeholder="instagram"
-                                className="bg-white/5 border-white/10 h-10 focus:border-luxury-gold/50"
-                                onChange={(e) => {
-                                    const val = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '');
-                                    const linkEl = document.getElementById('tracking-link-display') as HTMLInputElement;
-                                    if (linkEl) {
-                                        const baseUrl = `${window.location.origin}/contact?aff=${profile?.id}`;
-                                        linkEl.value = val ? `${baseUrl}&src=${val}` : baseUrl;
-                                    }
-                                }}
-                            />
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-luxury-gold/40 to-luxury-gold/10 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <div className="relative glass-card border border-white/10 bg-zinc-900/60 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-6">
+                        <div className="relative">
+                            <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-zinc-800 to-zinc-950 flex items-center justify-center border border-luxury-gold/30 shadow-2xl overflow-hidden group">
+                                {participantType === 'seller' && <ShieldCheck className="h-10 w-10 text-luxury-gold animate-pulse" />}
+                                {participantType === 'ambassador' && <Zap className="h-10 w-10 text-luxury-gold animate-pulse" />}
+                                {participantType === 'affiliate' && <Target className="h-10 w-10 text-luxury-gold animate-pulse" />}
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 bg-luxury-gold text-black text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg border border-white/20">
+                                CLASSE
+                            </div>
                         </div>
-                        <div className="flex-[2] space-y-2 w-full">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Votre Lien Personnel</label>
-                            <div className="flex gap-2">
-                                <Input 
-                                    id="tracking-link-display"
-                                    readOnly
-                                    value={`${window.location.origin}/contact?aff=${profile?.id}`}
-                                    className="bg-black/40 border-luxury-gold/20 h-10 text-luxury-gold font-mono text-xs"
-                                />
-                                <Button 
-                                    onClick={() => {
-                                        const link = (document.getElementById('tracking-link-display') as HTMLInputElement).value;
-                                        navigator.clipboard.writeText(link);
-                                        // Simple visual feedback could be added if toast is available or just alert
-                                        alert("Lien copié dans le presse-papier !");
-                                    }}
-                                    className="bg-luxury-gold hover:bg-luxury-gold/90 text-black h-10"
-                                >
-                                    Copier
-                                </Button>
+                        <div>
+                            <h1 className="text-3xl font-serif text-white tracking-tight">
+                                {t('affiliateDashboardPage.hello', { name: profile?.full_name?.split(' ')[0] ?? '' })}
+                            </h1>
+                            <div className="flex items-center gap-2 mt-1">
+                                <Badge className="bg-luxury-gold/10 text-luxury-gold border-luxury-gold/30 hover:bg-luxury-gold/20 font-serif">
+                                    {t(`affiliateDashboardPage.role_${participantType}`)}
+                                </Badge>
+                                <span className="text-xs text-gray-500 uppercase tracking-widest font-medium">
+                                    • {t('affiliateDashboardPage.level')} {profile?.affiliate_level || 'Starter'}
+                                </span>
                             </div>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
 
-            {/* Quick Stats Cards - Luxury dark theme */}
+                    {participantType === 'ambassador' && (
+                        <div className="flex items-center gap-3">
+                            <Button 
+                                onClick={() => setIsNewSaleModalOpen(true)}
+                                className="bg-luxury-gold text-black hover:bg-luxury-gold/90 shadow-lg shadow-luxury-gold/20 gap-2 border-none font-serif px-6"
+                            >
+                                <Plus className="w-4 h-4" /> 
+                                {t('affiliateDashboardPage.newSale', 'Nouvelle Vente')}
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <AmbassadorNewSaleModal 
+                isOpen={isNewSaleModalOpen} 
+                onClose={() => setIsNewSaleModalOpen(false)} 
+            />
+
+            {participantType !== 'seller' && (
+                <Card className="glass-card border border-white/5 bg-zinc-900/80 backdrop-blur-sm">
+                    <CardHeader className="bg-gradient-to-r from-luxury-gold/10 to-transparent">
+                        <CardTitle className="text-lg font-serif flex items-center gap-2 text-luxury-gold">
+                            <Target className="h-5 w-5" />
+                            Générateur de Liens de Contact Traqués
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="flex flex-col md:flex-row gap-4 items-end">
+                            <div className="flex-1 space-y-2 w-full">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1">
+                                    Source du Trafic <span className="text-luxury-gold/60 normal-case font-normal">(ex: instagram, tiktok, bio)</span>
+                                </label>
+                                <Input 
+                                    id="affiliate-source"
+                                    placeholder="instagram"
+                                    className="bg-white/5 border-white/10 h-10 focus:border-luxury-gold/50"
+                                    onChange={(e) => {
+                                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                        const linkEl = document.getElementById('tracking-link-display') as HTMLInputElement;
+                                        if (linkEl) {
+                                            const baseUrl = `${window.location.origin}/contact?aff=${profile?.id}`;
+                                            linkEl.value = val ? `${baseUrl}&src=${val}` : baseUrl;
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-[2] space-y-2 w-full">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Votre Lien Personnel</label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        id="tracking-link-display"
+                                        readOnly
+                                        value={`${window.location.origin}/contact?aff=${profile?.id}`}
+                                        className="bg-black/40 border-luxury-gold/20 h-10 text-luxury-gold font-mono text-xs"
+                                    />
+                                    <Button 
+                                        onClick={() => {
+                                            const link = (document.getElementById('tracking-link-display') as HTMLInputElement).value;
+                                            navigator.clipboard.writeText(link);
+                                            alert("Lien copié dans le presse-papier !");
+                                        }}
+                                        className="bg-luxury-gold hover:bg-luxury-gold/90 text-black h-10"
+                                    >
+                                        Copier
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {participantType === 'seller' && (
+                <Card className="glass-card border border-[#D2B57B]/30 bg-zinc-900/90 shadow-[0_0_40px_rgba(210,181,123,0.1)] overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-luxury-gold/10 to-transparent">
+                        <CardTitle className="text-lg font-serif flex items-center gap-2 text-luxury-gold">
+                            <UserCheck className="h-5 w-5" />
+                            {t('affiliateDashboardPage.assignedLeads')}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        {assignedLeads.length === 0 ? (
+                            <div className="py-12 text-center text-gray-500 italic">
+                                {t('affiliateDashboardPage.noAssignedLeads')}
+                            </div>
+                        ) : (
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {assignedLeads.map(lead => (
+                                    <div 
+                                        key={lead.id} 
+                                        className="p-4 rounded-xl border border-white/5 bg-black/20 hover:border-luxury-gold/40 transition-all cursor-pointer group"
+                                        onClick={() => window.location.href = `/dashboard/leads/${lead.id}`}
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h4 className="font-serif text-white group-hover:text-luxury-gold transition-colors">{lead.name}</h4>
+                                            <Badge variant="outline" className="text-[10px] text-luxury-gold border-luxury-gold/30">
+                                                {lead.status}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-gray-500 truncate">{lead.email || lead.phone || 'Pas de contact'}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="grid gap-4 md:grid-cols-4">
                 <Card className="glass-card border border-white/5 bg-zinc-900/80 backdrop-blur-sm shadow-xl">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -260,7 +347,6 @@ export default function AffiliateDashboard() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-                {/* Monthly Goal Progress */}
                 <Card className="glass-card border border-white/5 bg-zinc-900/80 backdrop-blur-sm overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
@@ -311,7 +397,6 @@ export default function AffiliateDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Ranking & Badge */}
                 <Card className="glass-card border border-white/5 bg-zinc-900/80 backdrop-blur-sm overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
@@ -321,12 +406,6 @@ export default function AffiliateDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className={`rounded-full px-4 py-2 ${badge.bg} ${badge.color} font-serif font-bold`}>
-                                {t(`affiliateDashboardPage.${badge.nameKey}`)}
-                            </div>
-                            <div>
-                                <p className="text-lg font-serif font-bold text-white">
-                                    {t('affiliateDashboardPage.rankOf', { rank: myRank || '-', total: sortedAffiliates.length })}
                                 </p>
                                 {topVolume > 0 && totalSales < topVolume && (
                                     <p className="text-xs text-gray-500">

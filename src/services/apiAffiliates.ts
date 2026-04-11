@@ -35,6 +35,7 @@ export interface AffiliateProfile {
     full_name: string | null;
     email?: string;
     role: string;
+    participant_type?: 'affiliate' | 'ambassador' | 'seller';
     affiliate_status?: 'pending' | 'active' | 'rejected';
     affiliate_level?: 'starter' | 'confirmed' | 'elite' | 'partner';
     commission_rate?: number;
@@ -48,9 +49,7 @@ export const apiAffiliates = {
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .in('role', ['affiliate', 'ambassador', 'admin']);
-        // Actually, keep it simple:
-        // .in('role', ['affiliate', 'ambassador']);
+            .or('role.in.(affiliate,ambassador,seller,admin,sales,sales_agent),participant_type.is.not.null');
 
         // Wait, ProjectDetails used it for specific dropdowns. Let's just fetch all potential affiliates.
         if (error) throw error;
@@ -240,7 +239,8 @@ export const apiAffiliates = {
             const allProfiles = (data || []) as AffiliateProfile[];
 
             const affiliateProfiles = allProfiles.filter(p =>
-                ['affiliate', 'ambassador', 'admin'].includes(p.role?.toLowerCase())
+                ['affiliate', 'ambassador', 'admin', 'seller', 'sales', 'sales_agent'].includes(p.role?.toLowerCase()) || 
+                p.participant_type
             );
 
             if (affiliateProfiles.length === 0) return [];

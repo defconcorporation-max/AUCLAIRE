@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Phone, Mail, Calendar, Edit, Save, X, Loader2, Sparkles, FileText } from 'lucide-react';
 import { apiLeads, Lead } from '@/services/apiLeads';
+import { apiAffiliates, AffiliateProfile } from '@/services/apiAffiliates';
+import { ShieldCheck, UserCheck } from 'lucide-react';
 
 export default function LeadDetails() {
     const { t, i18n } = useTranslation();
@@ -28,6 +30,18 @@ export default function LeadDetails() {
         },
         enabled: !!id
     });
+
+    const { data: agents } = useQuery({
+        queryKey: ['agents'],
+        queryFn: async () => {
+            const all = await apiAffiliates.getAllAffiliatesWithStats();
+            // All 'seller' or 'ambassador' can be assigned
+            return all.filter(a => a.participant_type === 'seller' || a.participant_type === 'ambassador');
+        }
+    });
+
+    const [isEditingAssignment, setIsEditingAssignment] = useState(false);
+    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
     const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', value: '' });
 
@@ -267,6 +281,73 @@ export default function LeadDetails() {
                                 </div>
                             )}
                             <p className="text-xs text-muted-foreground mt-2">{t('crmLeadDetails.estimatedValue')}</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-white/80 dark:bg-black/60 border-luxury-gold/20 shadow-lg shimmer-luxury">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-serif text-luxury-gold flex items-center gap-2">
+                                <UserCheck className="w-4 h-4" /> 
+                                {t('crmLeadDetails.assignmentTitle', 'Assignation Commerciale')}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {!isEditingAssignment ? (
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-luxury-gold/20 flex items-center justify-center text-luxury-gold font-bold text-xs">
+                                            {lead.assigned_agent?.full_name?.charAt(0) || '?'}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">{t('crmLeadDetails.assignedTo', 'Chargé de compte')}</p>
+                                            <p className="font-medium">{lead.assigned_agent?.full_name || t('crmLeadDetails.notAssigned', 'Non assigné')}</p>
+                                        </div>
+                                    </div>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-7 text-[10px] uppercase tracking-widest border-luxury-gold/30"
+                                        onClick={() => {
+                                            setSelectedAgentId(lead.assigned_to);
+                                            setIsEditingAssignment(true);
+                                        }}
+                                    >
+                                        {t('common.change', 'Modifier')}
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                    <select
+                                        className="w-full h-9 rounded-md border border-luxury-gold/30 bg-white/50 dark:bg-black/50 text-sm px-3"
+                                        value={selectedAgentId || ''}
+                                        onChange={(e) => setSelectedAgentId(e.target.value || null)}
+                                    >
+                                        <option value="">{t('crmLeadDetails.selectAgent', '-- Choisir un agent --')}</option>
+                                        {agents?.map(agent => (
+                                            <option key={agent.id} value={agent.id}>{agent.full_name} ({t(`participantType.${agent.participant_type}`)})</option>
+                                        ))}
+                                    </select>
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            className="flex-1 h-8 bg-luxury-gold text-black hover:bg-luxury-gold/90 text-xs"
+                                            onClick={async () => {
+                                                await updateLeadMutation.mutateAsync({ assigned_to: selectedAgentId });
+                                                setIsEditingAssignment(false);
+                                                queryClient.invalidateQueries({ queryKey: ['lead', id] });
+                                            }}
+                                        >
+                                            {t('common.save')}
+                                        </Button>
+                                        <Button 
+                                            variant="ghost" 
+                                            className="h-8 text-xs"
+                                            onClick={() => setIsEditingAssignment(false)}
+                                        >
+                                            {t('common.cancel')}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

@@ -47,6 +47,7 @@ export default function AffiliateDetails() {
     const [level, setLevel] = useState<string>('starter');
     const [rate, setRate] = useState<number>(10);
     const [type, setType] = useState<string>('percent');
+    const [participantType, setParticipantType] = useState<string>('affiliate');
 
     const loadData = useCallback(async () => {
         if (!id) return;
@@ -67,6 +68,7 @@ export default function AffiliateDetails() {
                 setLevel(found.affiliate_level || 'starter');
                 setRate(found.commission_rate ?? 10);
                 setType(found.commission_type || 'percent');
+                setParticipantType(found.participant_type || 'affiliate');
 
                 // 2. Fetch Stats
                 const statsData = await apiAffiliates.getAffiliateStats(id!);
@@ -119,7 +121,8 @@ export default function AffiliateDetails() {
                 affiliate_status: status as NonNullable<AffiliateProfile['affiliate_status']>,
                 affiliate_level: level as NonNullable<AffiliateProfile['affiliate_level']>,
                 commission_rate: Number(rate),
-                commission_type: type as NonNullable<AffiliateProfile['commission_type']>
+                commission_type: type as NonNullable<AffiliateProfile['commission_type']>,
+                participant_type: participantType as any
             });
             alert(t('affiliateDetailsPage.saveSuccess'));
             loadData(); // Reload
@@ -370,10 +373,27 @@ export default function AffiliateDetails() {
                                     value={type}
                                     onChange={(e) => setType(e.target.value)}
                                 >
-                                    <option value="percent">{t('affiliateDetailsPage.typePercent')}</option>
-                                    <option value="fixed">{t('affiliateDetailsPage.typeFixed')}</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div className="space-y-2 pt-2 border-t border-black/5 dark:border-white/5">
+                            <Label className="text-luxury-gold font-bold flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4" />
+                                {t('affiliateDetailsPage.participantType', 'Classe de Partenaire')}
+                            </Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-luxury-gold/30 bg-luxury-gold/5 px-3 py-2 text-sm font-medium"
+                                value={participantType}
+                                onChange={(e) => setParticipantType(e.target.value)}
+                            >
+                                <option value="affiliate">{t('participantType.affiliate', 'Affilié (Apporteur)')}</option>
+                                <option value="ambassador">{t('participantType.ambassador', 'Ambassadeur (Vente Partielle)')}</option>
+                                <option value="seller">{t('participantType.seller', 'Vendeur (Closer)')}</option>
+                            </select>
+                            <p className="text-[10px] text-muted-foreground italic">
+                                {t('affiliateDetailsPage.participantTypeDesc', 'Détermine l\'interface du dashboard et les permissions de données.')}
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
