@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, DollarSign, Briefcase, TrendingUp, Clock, Target, Award, BarChart3, Percent, Sparkles } from 'lucide-react';
+import { Loader2, DollarSign, Briefcase, TrendingUp, Clock, Target, Award, BarChart3, Percent } from 'lucide-react';
 
 interface PendingCommission {
     id: string;
