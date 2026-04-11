@@ -210,7 +210,7 @@ export default function Dashboard() {
     });
 
     // Total encaissé = invoices only (single source of truth)
-    const periodCollected = financialUtils.getCollectedFromInvoices(invoices || [], periodStart, periodEnd);
+    const periodCollected = financialUtils.getCollectedFromInvoices(filteredInvoices, periodStart, periodEnd);
     const periodInvoiced = periodInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
     const periodPotential = periodProjects.reduce((sum, p) => {
         if (p.status === 'cancelled' || invoicedProjectIds.has(p.id)) return sum;

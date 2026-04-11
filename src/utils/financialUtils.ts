@@ -115,35 +115,47 @@ export const financialUtils = {
         return invoices.reduce((sum, inv) => {
             if (inv.status === 'void') return sum;
             
-            // PRIORITY 1: Precise tracking via payment history
-            if (inv.payment_history && Array.isArray(inv.payment_history) && inv.payment_history.length > 0) {
-                const historySum = inv.payment_history.reduce((hSum, entry) => {
+            let historySumInRange = 0;
+            let totalHistorySum = 0;
+
+            // PRIORITY 1: Sum up all detailed payment history
+            if (inv.payment_history && Array.isArray(inv.payment_history)) {
+                inv.payment_history.forEach((entry) => {
+                    const amt = Number(entry.amount || 0);
+                    totalHistorySum += amt;
+                    
                     const pDate = new Date(entry.date);
                     if (pDate >= start && pDate <= end) {
-                        return hSum + Number(entry.amount || 0);
+                        historySumInRange += amt;
                     }
-                    return hSum;
-                }, 0);
-                return sum + historySum;
+                });
             }
 
-            // PRIORITY 2: Fallback for rows without history (legacy or simplified)
-            // Use paid_at (fully paid) OR updated_at (likely latest partial payment)
-            const dateToUse = inv.paid_at || ((inv.status === 'paid' || inv.status === 'partial') ? (inv as any).updated_at || inv.created_at : null);
-            
-            if (!dateToUse) return sum;
-            
-            const paidAt = new Date(dateToUse);
-            if (paidAt >= start && paidAt <= end) {
-                // If we don't have history, we can only count the total amount_paid as of this date range
-                // Note: this is an approximation for legacy data
-                const paid = Number(inv.amount_paid);
-                if (paid > 0) return sum + paid;
-                if (inv.status === 'paid') return sum + Number(inv.amount || 0);
+            // PRIORITY 2: Calculate unaccounted amounts (e.g. from manual amount_paid updates without history)
+            // Determine what the true total paid is.
+            let trueTotalPaid = Number(inv.amount_paid || 0);
+            if (inv.status === 'paid' && trueTotalPaid === 0) {
+                trueTotalPaid = Number(inv.amount || 0);
             }
-            return sum;
+
+            // If there's an unaccounted amount, we assign it to a fallback date
+            const unaccountedAmount = Math.max(0, trueTotalPaid - totalHistorySum);
+
+            if (unaccountedAmount > 0) {
+                // Determine fallback date
+                const dateToUse = inv.paid_at || ((inv.status === 'paid' || inv.status === 'partial') ? ((inv as any).updated_at || inv.created_at) : null);
+                if (dateToUse) {
+                    const fallbackDate = new Date(dateToUse);
+                    if (fallbackDate >= start && fallbackDate <= end) {
+                        historySumInRange += unaccountedAmount;
+                    }
+                }
+            }
+
+            return sum + historySumInRange;
         }, 0);
     },
+
 
     calculateMetrics(invoices: Invoice[], expenses: Expense[], start: Date, end: Date = new Date()) {
         const invoicedTotal = invoices.reduce((sum, inv) => {
