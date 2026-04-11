@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Project } from '@/services/apiProjects';
 import { ActivityLog } from '@/services/apiActivities';
 import { CompanySettings } from '@/services/apiSettings';
+import { Invoice } from '@/services/apiInvoices';
+import { Expense } from '@/services/apiExpenses';
 import { financialUtils } from '@/utils/financialUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, CheckCircle2 } from 'lucide-react';
@@ -18,7 +20,7 @@ interface HealthAlert {
     id: string;
     projectId: string;
     projectTitle: string;
-    type: 'delay' | 'margin';
+    type: 'delay' | 'margin' | 'billing' | 'payment';
     severity: 'warning' | 'danger';
     message: string;
 }
@@ -26,9 +28,11 @@ interface HealthAlert {
 interface HealthAuditorWidgetProps {
     projects: Project[];
     activities: ActivityLog[];
+    invoices?: Invoice[];
+    expenses?: Expense[];
 }
 
-export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidgetProps) {
+export function HealthAuditorWidget({ projects, activities, invoices, expenses }: HealthAuditorWidgetProps) {
     const { t } = useTranslation();
     const [nowMs, setNowMs] = useState(() => Date.now());
     useEffect(() => {
@@ -149,6 +153,64 @@ export function HealthAuditorWidget({ projects, activities }: HealthAuditorWidge
                 });
             }
         }
+
+        // --- NEW AUDIT RULES: BILLING AND PAYMENTS ---
+        if (['production', 'delivery', 'completed'].includes(p.status) && invoices && expenses) {
+            const projInvoices = invoices.filter(i => i.project_id === p.id && i.status !== 'void');
+            const projExpenses = expenses.filter(e => e.project_id === p.id && e.status !== 'cancelled');
+            
+            // Check missing invoice
+            if (projInvoices.length === 0 && price > 0) {
+                out.push({
+                    id: `billing-noinvoice-${p.id}`,
+                    projectId: p.id,
+                    projectTitle: p.title,
+                    type: 'billing',
+                    severity: 'danger',
+                    message: "PAS DE FACTURE ÉMISE"
+                });
+            }
+
+            // Check missing expense
+            const prodCostParam = financialUtils.computeProjectCosts(p.financials);
+            if (!p.financials?.exported_to_expenses && projExpenses.length === 0 && prodCostParam <= 0) {
+                // Not exported, no manual expenses, and cost is 0 or less = anomaly
+                out.push({
+                    id: `billing-noexpense-${p.id}`,
+                    projectId: p.id,
+                    projectTitle: p.title,
+                    type: 'billing',
+                    severity: 'danger',
+                    message: "AUCUNE DÉPENSE EN PRODUCTION"
+                });
+            }
+        }
+
+        // Check missing complete payment for COMPLETED projects
+        if (p.status === 'completed' && invoices) {
+            const projInvoices = invoices.filter(i => i.project_id === p.id && i.status !== 'void');
+            const totalPaid = projInvoices.reduce((sum, inv) => {
+                let historySum = 0;
+                if (inv.payment_history && Array.isArray(inv.payment_history)) {
+                    historySum = inv.payment_history.reduce((hs, e) => hs + Number(e.amount || 0), 0);
+                }
+                const amtPaid = Number(inv.amount_paid || 0);
+                const amtFull = inv.status === 'paid' ? Number(inv.amount) : 0;
+                return sum + Math.max(historySum, amtPaid, amtFull);
+            }, 0);
+            
+            if (price > 0 && totalPaid < price - 1) {
+                out.push({
+                    id: `payment-incomplete-${p.id}`,
+                    projectId: p.id,
+                    projectTitle: p.title,
+                    type: 'payment',
+                    severity: 'danger',
+                    message: "LIVRÉ SANS PAIEMENT COMPLET"
+                });
+            }
+        }
+        
     });
 
         return out;
