@@ -427,6 +427,7 @@ export default function Dashboard() {
 
     const {
         filteredProjects,
+        filteredInvoices,
         manufacturerDesignRequests,
         manufacturerPendingProduction,
         manufacturerOngoingProduction,
