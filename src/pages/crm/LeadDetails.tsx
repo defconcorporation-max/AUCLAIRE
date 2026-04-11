@@ -114,9 +114,16 @@ export default function LeadDetails() {
                                 </span>
                             </h2>
                         )}
-                        <p className="text-muted-foreground mt-1 text-sm bg-black/5 dark:bg-white/5 px-3 py-1 rounded-md inline-block">
-                            {t('crmLeadDetails.sourceLabel')} <span className="capitalize">{lead.source}</span>
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <p className="text-muted-foreground text-sm bg-black/5 dark:bg-white/5 px-3 py-1 rounded-md inline-block">
+                                {t('crmLeadDetails.sourceLabel')} <span className="capitalize">{lead.source}</span>
+                            </p>
+                            {lead.affiliate && (
+                                <p className="text-luxury-gold text-sm bg-luxury-gold/10 px-3 py-1 rounded-md inline-block font-semibold border border-luxury-gold/20">
+                                    Ambassadeur: {lead.affiliate.full_name || 'Inconnu'}
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
