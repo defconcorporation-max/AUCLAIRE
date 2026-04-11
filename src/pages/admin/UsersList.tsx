@@ -250,12 +250,11 @@ export default function UsersList() {
                                             }}
                                             disabled={user.id === currentProfile?.id}
                                         >
-                                            <option value="pending">{t('usersListPage.role_pending')}</option>
+                                              <option value="pending">{t('usersListPage.role_pending')}</option>
                                             <option value="client">{t('usersListPage.role_client')}</option>
                                             <option value="manufacturer">{t('usersListPage.role_manufacturer')}</option>
                                             <option value="secretary">{t('usersListPage.role_secretary')}</option>
                                             <option value="admin">{t('usersListPage.role_admin')}</option>
-                                            <option value="sales">{t('usersListPage.role_sales')}</option>
                                             <option value="affiliate">{t('usersListPage.role_affiliate')}</option>
                                         </select>
 
