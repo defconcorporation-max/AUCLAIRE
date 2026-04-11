@@ -90,6 +90,7 @@ const NAV_SECTIONS: NavSectionDef[] = [
         sectionKey: 'nav.sections.marketing',
         items: [
             { labelKey: 'nav.items.marketingHub', href: '/dashboard/marketing', icon: Megaphone, roles: ['admin', 'secretary'] },
+            { labelKey: 'nav.items.affiliatePortal', href: '/dashboard/affiliate-portal', icon: Target, roles: ['admin', 'affiliate', 'secretary'] },
         ],
     },
     {

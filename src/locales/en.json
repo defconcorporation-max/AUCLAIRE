@@ -46,7 +46,8 @@
       "adminPanel": "Admin Panel",
       "users": "Users",
       "settings": "Settings",
-      "betaFeedback": "Beta feedback"
+      "betaFeedback": "Beta feedback",
+      "affiliatePortal": "Affiliate Portal"
     }
   },
   "layout": {

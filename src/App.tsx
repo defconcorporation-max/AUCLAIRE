@@ -69,6 +69,7 @@ const AccountsDirectory = lazy(() => import('./pages/marketing/AccountsDirectory
 const MarketingFormation = lazy(() => import('./pages/public/MarketingFormation'));
 const MarketingExecution = lazy(() => import('./pages/marketing/MarketingExecution'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AffiliateDashboard = lazy(() => import('./pages/affiliates/AffiliateDashboard'));
 const ContactForm = lazy(() => import('./pages/public/ContactForm'));
 const ThankYou = lazy(() => import('./pages/public/ThankYou'));
 
@@ -166,6 +167,7 @@ function App() {
               <Route path="marketing/website" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><WebsiteAudit /></ProtectedRoute>} />
               <Route path="marketing/accounts" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><AccountsDirectory /></ProtectedRoute>} />
               <Route path="marketing/execution" element={<ProtectedRoute allowedRoles={['admin', 'secretary']}><MarketingExecution /></ProtectedRoute>} />
+              <Route path="affiliate-portal" element={<ProtectedRoute allowedRoles={['admin', 'affiliate', 'secretary']}><AffiliateDashboard /></ProtectedRoute>} />
               <Route path="admin-panel" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="feedback" element={<ProtectedRoute allowedRoles={['admin']}><BetaFeedback /></ProtectedRoute>} />
             </Route>

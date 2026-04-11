@@ -46,7 +46,8 @@
       "adminPanel": "Panneau Admin",
       "users": "Utilisateurs",
       "settings": "Paramètres",
-      "betaFeedback": "Retours bêta"
+      "betaFeedback": "Retours bêta",
+      "affiliatePortal": "Espace Affilié"
     }
   },
   "layout": {
