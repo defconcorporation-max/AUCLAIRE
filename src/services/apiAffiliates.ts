@@ -49,7 +49,7 @@ export const apiAffiliates = {
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .or('role.in.(affiliate,ambassador,seller,admin,sales,sales_agent),participant_type.is.not.null');
+            .or('role.in.(affiliate,ambassador,seller,admin,sales,sales_agent),participant_type.not.is.null');
 
         // Wait, ProjectDetails used it for specific dropdowns. Let's just fetch all potential affiliates.
         if (error) throw error;
