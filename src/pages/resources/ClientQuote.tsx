@@ -307,7 +307,9 @@ export default function ClientQuote() {
                         <div>
                             <h4 className="text-zinc-900 font-bold mb-3 border-b border-zinc-100 pb-1">{t('clientQuotePage.conditions')}</h4>
                             <p className="mb-2 italic">{t('clientQuotePage.conditionsP1')}</p>
-                            <p>{t('clientQuotePage.conditionsP2')}</p>
+                            <p className="mb-4">{t('clientQuotePage.conditionsP2')}</p>
+                            <h4 className="text-zinc-900 font-bold mb-3 border-b border-zinc-100 pb-1 mt-6">Garantie & Certifications</h4>
+                            <p className="leading-normal normal-case">Nous garantissons la manufacture de la bague pendant 90 jours en cas de bris dû à une erreur de fabrication. Les diamants de plus de 1ct sont certifiés par IGI. Nous garantissons la pureté de l'or selon les standards de l'industrie.</p>
                         </div>
                     </div>
 
