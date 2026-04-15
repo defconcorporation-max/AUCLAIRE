@@ -110,7 +110,7 @@ export const generateQuotePDF = async (project: Project, settings: CompanySettin
         doc.setFontSize(10);
         doc.setTextColor(ZINC_900[0], ZINC_900[1], ZINC_900[2]);
         
-        const contractText = `ENTRE : ${clientName.toUpperCase()} (le "Client") ET : MAISON AUCLAIRE INC. ("Maison Auclaire")\n\nCONTRAT DE PRODUCTION : Par la présente soumission, il est entendu qu'un dépôt a été effectué ou est requis pour lancer la production officielle. Maison Auclaire garantit la qualité supérieure et l'authenticité de tous les matériaux utilisés (pierres précieuses certifiées et métaux nobles). Ce document fait office d'engagement mutuel sur le design et le prix présentés ci-dessous.`;
+        const contractText = `ENTRE : ${clientName.toUpperCase()} (le "Client") ET : MAISON AUCLAIRE INC. ("Maison Auclaire")\n\nCONTRAT DE PRODUCTION : Par la présente soumission, il est entendu qu'un dépôt a été effectué ou est requis pour lancer la production officielle.\n\nGARANTIE ET QUALITÉ : Nous garantissons la manufacture de la bague pendant 90 jours en cas de bris dû à une erreur de fabrication. Les diamants de plus de 1ct sont certifiés par IGI. Nous garantissons la pureté de l'or selon les standards de l'industrie.\n\nCe document fait office d'engagement mutuel sur le design et le prix présentés ci-dessous.`;
         const splitContract = doc.splitTextToSize(contractText, pageWidth - 28);
         doc.text(splitContract, 14, 82);
         
