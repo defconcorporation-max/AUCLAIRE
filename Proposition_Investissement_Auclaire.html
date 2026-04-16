@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROPOSITION D'INVESTISSEMENT - AUCLAIRE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #E5C362;
+            --zinc-950: #09090b;
+            --zinc-900: #18181b;
+            --zinc-800: #27272a;
+            --zinc-700: #3f3f46;
+            --zinc-600: #52525b;
+            --zinc-400: #a1a1aa;
+            --zinc-200: #e4e4e7;
+            --zinc-100: #f4f4f5;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f8f8;
+            color: var(--zinc-900);
+            line-height: 1.6;
+        }
+
+        .paper {
+            width: 8.5in;
+            min-height: 11in;
+            margin: 2rem auto;
+            background: white;
+            padding: 2.5rem 3.5rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media print {
+            body { 
+                background: white !important; 
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .paper { 
+                margin: 0 !important; 
+                box-shadow: none !important; 
+                width: 100% !important;
+                padding: 0.5in !important;
+            }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            section, .exec-box, .offer-highlight, .revenue-chart, .grid-stats {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            @page {
+                size: letter;
+                margin: 0.5in;
+            }
+        }
+
+        /* Decorative Elements */
+        .gold-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+        }
+
+        /* Typography */
+        h1, h2, h3, .brand-logo {
+            font-family: 'Bodoni Moda', serif;
+        }
+
+        .brand-logo {
+            font-size: 2.8rem;
+            letter-spacing: -1px;
+            font-weight: 800;
+            color: var(--zinc-950);
+            line-height: 1;
+        }
+
+        .tagline {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4rem;
+            color: var(--gold);
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5rem;
+            margin-top: 1rem;
+        }
+
+        .doc-title {
+            text-align: right;
+        }
+
+        .doc-title h2 {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            color: var(--zinc-400);
+        }
+
+        .doc-title p {
+            font-size: 0.85rem;
+            color: var(--zinc-600);
+            margin-top: 5px;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 3.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-number {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.5rem;
+            color: var(--gold);
+            margin-right: 1rem;
+            opacity: 0.5;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            border-bottom: 1px solid var(--zinc-100);
+            flex-grow: 1;
+            padding-bottom: 0.5rem;
+        }
+
+        /* Executive Summary Box */
+        .exec-box {
+            background: var(--zinc-950);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 4px;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .exec-box h2 {
+            color: var(--gold);
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .exec-box p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* Growth Table / Stats */
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--zinc-100);
+            padding: 1.5rem;
+            border-radius: 4px;
+            text-align: center;
+            border-left: 3px solid var(--gold);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--zinc-600);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .stat-value {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.4rem;
+            color: var(--zinc-950);
+            font-weight: 700;
+        }
+
+        .stat-growth {
+            font-size: 0.65rem;
+            color: #10b981;
+            font-weight: 700;
+            margin-top: 0.2rem;
+        }
+
+        /* Chart-like Visualization (Pure CSS) */
+        .revenue-chart {
+            display: flex;
+            align-items: flex-end;
+            height: 180px;
+            gap: 1.5rem;
+            margin: 4rem 0 2rem 0;
+            padding-bottom: 2.5rem;
+            border-bottom: 1px solid var(--zinc-200);
+            position: relative;
+        }
+
+        .bar-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .bar {
+            width: 100%;
+            background: var(--zinc-900);
+            position: relative;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s;
+        }
+
+        .bar.projected {
+            background: var(--gold);
+            opacity: 0.8;
+            border: 2px dashed var(--gold);
+            background: repeating-linear-gradient(
+                45deg,
+                var(--gold),
+                var(--gold) 10px,
+                var(--gold-light) 10px,
+                var(--gold-light) 20px
+            );
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--zinc-950);
+        }
+
+        .bar-label {
+            margin-top: 10px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--zinc-400);
+        }
+
+        /* Use of Funds Styles */
+        .funds-list {
+            list-style: none;
+        }
+
+        .fund-item {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem 0;
+            border-bottom: 1px solid var(--zinc-100);
+        }
+
+        .fund-amount {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.8rem;
+            color: var(--gold);
+            min-width: 150px;
+        }
+
+        .fund-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .fund-desc {
+            font-size: 0.85rem;
+            color: var(--zinc-600);
+        }
+
+        /* Offer Highlights */
+        .offer-highlight {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 3rem;
+            background: #fffdf5;
+            border: 1px solid #fef3c7;
+            padding: 2rem;
+            border-radius: 8px;
+        }
+
+        .offer-price {
+            font-size: 3rem;
+            color: var(--zinc-950);
+            font-family: 'Bodoni Moda', serif;
+            line-height: 1;
+        }
+
+        .offer-equity {
+            font-size: 1.5rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            font-weight: 800;
+        }
+
+        /* Footer / Signatures */
+        .signatures {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5rem;
+            margin-top: 6rem;
+        }
+
+        .sig-block {
+            border-top: 1px solid var(--zinc-400);
+            padding-top: 1rem;
+            text-align: center;
+        }
+
+        .sig-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            color: var(--zinc-400);
+        }
+
+        .sig-name {
+            font-family: 'Bodoni Moda', serif;
+            font-size: 1.2rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Print Button */
+        .print-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--zinc-950);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .print-btn:hover {
+            background: var(--gold);
+            transform: translateY(-5px);
+        }
+
+        /* Validity Note */
+        .validity-alert {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 1.5rem;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            color: #991b1b;
+        }
+
+        .val-date {
+            font-weight: 800;
+            text-decoration: underline;
+        }
+
+        .valuation-breakdown {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        ul.points {
+            margin-left: 1.2rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        ul.points li {
+            margin-bottom: 0.5rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <button class="print-btn no-print" onclick="window.print()">
+        <span>Exporter en PDF</span>
+    </button>
+
+    <div class="paper">
+        <div class="gold-border"></div>
+        
+        <header>
+            <div class="brand">
+                <div class="brand-logo">AUCLAIRE</div>
+                <div class="tagline">Bijouterie sur mesure</div>
+            </div>
+            <div class="doc-title">
+                <h2>Proposition d'Investissement</h2>
+                <p>Confidentiel | Version 1.0</p>
+                <p>Émis le 13 Avril 2026</p>
+            </div>
+        </header>
+
+        <section class="exec-summary">
+            <div class="exec-box">
+                <h2>Vision Stratégique & Indépendance</h2>
+                <p>
+                    Auclaire n’est pas qu’une bijouterie ; c’est un écosystème technologique et créatif totalement intégré. Ouverte en Janvier 2026, l'entreprise a prouvé son adéquation marché en seulement 90 jours. Notre force réside dans notre <b>Pôle Marketing 100% interne</b> : aucune sous-traitance. De l'écriture des scripts publicitaires à la gestion complexe des Ads, en passant par le développement de notre logiciel propriétaire et de notre site web, tout est maîtrisé à l'interne.
+                </p>
+                <div class="valuation-breakdown">
+                    VALUATION PROJETÉ : +2 000 000 $ <br>
+                    (1.75M$ basés sur la projection de 1.4M$ de revenus annuels + 250k$ actifs immatériels : Logiciel CRM propriétaire, communauté sociale et pôle média intégré).
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-header">
+                <span class="section-number">01</span>
+                <h3 class="section-title">Performance & Trajectoire</h3>
+            </div>
+            
+            <div class="grid-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Marge Nette</div>
+                    <div class="stat-value">20%</div>
+                    <div class="stat-growth">Après salaires</div>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--zinc-950);">
+                    <div class="stat-label">Revenus 2026</div>
+                    <div class="stat-value">1.4M $</div>
+                    <div class="stat-growth">Projection</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Partenariats</div>
+                    <div class="stat-value">10+</div>
+                    <div class="stat-growth">Artistes/Influencers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Status</div>
+                    <div class="stat-value">Profit</div>
+                    <div class="stat-growth">100% Automatisé</div>
+                </div>
+            </div>
+
+            <div class="revenue-chart">
+                <div class="bar-container">
+                    <div class="bar-value">8 050$</div>
+                    <div class="bar" style="height: 13%;"></div>
+                    <div class="bar-label">Janvier</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-value">12 000$</div>
+                    <div class="bar" style="height: 19%;"></div>
+                    <div class="bar-label">Février</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-value">47 000$</div>
+                    <div class="bar" style="height: 76%;"></div>
+                    <div class="bar-label">Mars</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-value">62 000$</div>
+                    <div class="bar projected" style="height: 100%;"></div>
+                    <div class="bar-label">Avril (Proj)</div>
+                </div>
+            </div>
+
+            <p style="font-size: 0.85rem; color: var(--zinc-600); font-style: italic;">
+                * Note : Au 13 avril, nous avons déjà sécurisé 26 000 $ de revenus. L'augmentation massive de Mars coïncide avec le lancement des campagnes Facebook Ads et le rayonnement médiatique.
+            </p>
+        </section>
+
+        <section class="page-break">
+            <div class="section-header">
+                <span class="section-number">02</span>
+                <h3 class="section-title">L'Opportunité d'Investissement</h3>
+            </div>
+            
+            <p style="margin-bottom: 2rem;">
+                En raison de la phase de démarrage ("early stage"), nous proposons une entrée en capital avec un rabais stratégique sur la valeur réelle de l'entreprise, afin de compenser le risque initial de l'investisseur.
+            </p>
+
+            <div class="offer-highlight">
+                <div>
+                    <div class="offer-equity">15% ÉQUITÉ</div>
+                    <div class="offer-price">180 000 $</div>
+                    <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--zinc-600);">
+                        Investissement direct dans Auclaire APP Inc.
+                    </p>
+                </div>
+                <div style="border-left: 1px solid var(--zinc-100); padding-left: 2rem;">
+                    <ul class="points">
+                        <li><b>Valuation d'entrée :</b> 1.2M$ (vs +2M$ réelle)</li>
+                        <li><b>Rabais Stratégique :</b> ~40% (Compensation risque early-stage)</li>
+                        <li><b>ROI Projeté :</b> Dividendes annuels basés sur 20% de marge nette</li>
+                        <li><b>Sortie :</b> Options de rachat prioritaires après 24 mois</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="validity-alert">
+                <b>ATTENTION :</b> Cette offre est valide uniquement jusqu'au <span class="val-date">20 Avril 2026</span>. Passé ce délai, la valeur de l'entreprise sera recalculée en fonction de la croissance organique quotidienne, ce qui augmentera le coût de participation.
+            </div>
+        </section>
+
+        <section>
+            <div class="section-header">
+                <span class="section-number">03</span>
+                <h3 class="section-title">Utilisation des Fonds</h3>
+            </div>
+
+            <div class="funds-list">
+                <div class="fund-item">
+                    <div class="fund-amount">60 000 $</div>
+                    <div>
+                        <div class="fund-title">Sérénité Opérationnelle (Fondateurs)</div>
+                        <div class="fund-desc">Avance de salaire permettant aux fondateurs de se concentrer à 100% sur l'exécution stratégique sans distraction financière.</div>
+                    </div>
+                </div>
+                <div class="fund-item">
+                    <div class="fund-amount">20 000 $</div>
+                    <div>
+                        <div class="fund-title">Infrastructure & Studio de Vente</div>
+                        <div class="fund-desc">Construction de nouveaux locaux physiques. Augmentation estimée du taux de conversion de +20-30% grâce à l'expérience client tangible.</div>
+                    </div>
+                </div>
+                <div class="fund-item">
+                    <div class="fund-amount">50 000 $</div>
+                    <div>
+                        <div class="fund-title">Accélération Marketing</div>
+                        <div class="fund-desc">Campagnes d'acquisition agressives réparties sur les 6 prochains mois, ciblant les audiences qualifiées et les partenariats d'influence.</div>
+                    </div>
+                </div>
+                <div class="fund-item">
+                    <div class="fund-amount">50 000 $</div>
+                    <div>
+                        <div class="fund-title">Fonds de Roulement & Sécurité</div>
+                        <div class="fund-desc">Réserve de liquidités pour garantir la réactivité opérationnelle et la sécurité face aux imprévus.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-header">
+                <span class="section-number">04</span>
+                <h3 class="section-title">Momentum & Vision</h3>
+            </div>
+            <ul class="points">
+                <li><b>Pôle Média Interne :</b> Maîtrise totale de la chaîne de valeur (Scripts, Production, Distribution, Gestion Ads). 0$ de frais de sous-traitance.</li>
+                <li><b>Expansion Physique :</b> Ouverture d'une boutique haut de gamme dans les prochains mois.</li>
+                <li><b>Influence :</b> 10 partenariats déjà ficelés avec les plus gros artistes et influenceurs du Québec.</li>
+                <li><b>Technologie :</b> Logiciel de gestion interne et site web 100% propriétaires (Code source maîtrisé).</li>
+                <li><b>Rentabilité :</b> Modèle déjà éprouvé, rentable et quasiment 100% automatisé.</li>
+            </ul>
+        </section>
+
+        <div class="signatures">
+            <div class="sig-block">
+                <div class="sig-label">Pour Auclaire</div>
+                <div class="sig-name">Direction Générale</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-label">Pour l'Investisseur</div>
+                <div class="sig-name">Acceptation & Signature</div>
+            </div>
+        </div>
+
+        <footer style="margin-top: 5rem; text-align: center; border-top: 1px solid var(--zinc-100); padding-top: 2rem;">
+            <p style="font-family: 'Bodoni Moda', serif; color: var(--gold);">AUCLAIRE</p>
+            <p style="font-size: 0.5rem; text-transform: uppercase; letter-spacing: 0.5rem; color: var(--zinc-400);">L'Élégance à l'état pur</p>
+        </footer>
+    </div>
+
+</body>
+</html>

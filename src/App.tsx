@@ -72,6 +72,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AffiliateDashboard = lazy(() => import('./pages/affiliates/AffiliateDashboard'));
 const ContactForm = lazy(() => import('./pages/public/ContactForm'));
 const ThankYou = lazy(() => import('./pages/public/ThankYou'));
+const PartnerTraining = lazy(() => import('./pages/public/PartnerTraining'));
 
 // Realtime sync component — must be inside Router + QueryClientProvider
 function RealtimeSync() {
@@ -118,6 +119,7 @@ function App() {
             <Route path="/shared/:token" element={<SharedProjectView />} />
             <Route path="/formation" element={<Formation />} />
             <Route path="/formation/marketing" element={<MarketingFormation />} />
+            <Route path="/formation/partenaires" element={<PartnerTraining />} />
             <Route path="/contact" element={<ContactForm />} />
             <Route path="/thank-you" element={<ThankYou />} />
 
