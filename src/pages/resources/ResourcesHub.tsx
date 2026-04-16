@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Map, GraduationCap, Tag, Calculator, TrendingUp } from 'lucide-react';
+import { BookOpen, Map, GraduationCap, Tag, Calculator, TrendingUp, Handshake } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
 

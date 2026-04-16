@@ -1,6 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Target, ChevronRight, Gem, Handshake, CheckCircle2, AlertCircle, ArrowUpRight, Diamond, Award, Settings, Layers, DollarSign, Info } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Target, Handshake, CheckCircle2, Diamond, Award, Layers, Info } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function PartnerTraining() {
