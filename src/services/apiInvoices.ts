@@ -266,7 +266,7 @@ export const apiInvoices = {
                     updates.paid_at = userProvidedPaidAt || new Date().toISOString();
                 } else if (paid > 0) {
                     updates.status = 'partial';
-                    updates.paid_at = userProvidedPaidAt ?? undefined;
+                    updates.paid_at = userProvidedPaidAt ?? new Date().toISOString();
                 } else {
                     updates.status = 'sent';
                     updates.paid_at = undefined;
