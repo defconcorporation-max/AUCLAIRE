@@ -88,7 +88,10 @@ export const financialUtils = {
             start.setHours(0, 0, 0, 0);
         }
         
-        return { start, end: now };
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        
+        return { start, end };
     },
 
     getPreviousPeriodRange(type: TimeFrame): { start: Date; end: Date } {
@@ -170,5 +173,44 @@ export const financialUtils = {
             return sum;
         }, 0);
         return { invoicedTotal, cashCollected, expensesTotal };
+    },
+
+    getMonthlyRevenue(projects: Project[], invoices: Invoice[], year: number = new Date().getFullYear()) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const revenueMap = new Map();
+        const collectedMap = new Map();
+        
+        months.forEach(m => {
+            revenueMap.set(m, 0);
+            collectedMap.set(m, 0);
+        });
+
+        // Projected (Full Contract Value)
+        projects.forEach(p => {
+            if (p.status === 'cancelled') return;
+            const date = new Date(p.created_at);
+            if (date.getFullYear() === year) {
+                const month = months[date.getMonth()];
+                const amount = this.getSalePrice(p);
+                revenueMap.set(month, (revenueMap.get(month) || 0) + amount);
+            }
+        });
+
+        // Actual Cash collected from invoices
+        invoices.forEach(inv => {
+            if (inv.status === 'void' || !inv.paid_at) return;
+            const date = new Date(inv.paid_at);
+            if (date.getFullYear() === year) {
+                const month = months[date.getMonth()];
+                const amount = Number(inv.amount_paid || 0);
+                collectedMap.set(month, (collectedMap.get(month) || 0) + amount);
+            }
+        });
+
+        return months.map(name => ({
+            name,
+            projected: revenueMap.get(name) || 0,
+            actual: collectedMap.get(name) || 0
+        }));
     }
 };
