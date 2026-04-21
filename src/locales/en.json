@@ -1403,6 +1403,7 @@
     "design_modification": "Modification",
     "approved_for_production": "Approved",
     "production": "Production",
+    "waiting_for_dispatch": "Waiting for dispatch",
     "delivery": "Delivery",
     "completed": "Completed",
     "cancelled": "Cancelled"

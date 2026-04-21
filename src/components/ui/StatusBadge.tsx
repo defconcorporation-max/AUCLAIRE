@@ -14,6 +14,7 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
         design_modification: 'bg-white/5 text-orange-300 border-orange-500/30 shadow-[inset_0_0_10px_rgba(249,115,22,0.1)]',
         approved_for_production: 'bg-white/5 text-emerald-300 border-emerald-500/30 shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]',
         production: 'bg-white/5 text-amber-300 border-amber-500/30 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]',
+        waiting_for_dispatch: 'bg-white/5 text-teal-300 border-teal-500/30 shadow-[inset_0_0_10px_rgba(20,184,166,0.1)]',
         delivery: 'bg-white/5 text-indigo-300 border-indigo-500/30 shadow-[inset_0_0_10px_rgba(99,102,241,0.1)]',
         completed: 'bg-luxury-gold/10 text-luxury-gold border-luxury-gold/30 shadow-[inset_0_0_10px_rgba(210,181,123,0.15)]',
         cancelled: 'bg-white/5 text-red-300 border-red-500/30 shadow-[inset_0_0_10px_rgba(239,68,68,0.1)]',

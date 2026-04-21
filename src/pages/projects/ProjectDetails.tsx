@@ -620,7 +620,7 @@ export default function ProjectDetails() {
 
     // Helper to check active status for timeline
     const isStepActive = (stepStatus: string) => {
-        const statuses = ['designing', '3d_model', 'design_ready', 'waiting_for_approval', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed'];
+        const statuses = ['designing', '3d_model', 'design_ready', 'waiting_for_approval', 'design_modification', 'approved_for_production', 'production', 'waiting_for_dispatch', 'delivery', 'completed'];
         const currentIndex = statuses.indexOf(project.status);
         const stepIndex = statuses.indexOf(stepStatus);
 
@@ -937,6 +937,7 @@ export default function ProjectDetails() {
                         <option value="design_modification">{t('projectStatus.design_modification')}</option>
                         <option value="approved_for_production">{t('projectStatus.approved_for_production')}</option>
                         <option value="production">{t('projectStatus.production')}</option>
+                        <option value="waiting_for_dispatch">{t('projectStatus.waiting_for_dispatch')}</option>
                         <option value="delivery">{t('projectStatus.delivery')}</option>
                         <option value="completed">{t('projectStatus.completed')}</option>
                         <option value="cancelled">{t('projectStatus.cancelled')}</option>

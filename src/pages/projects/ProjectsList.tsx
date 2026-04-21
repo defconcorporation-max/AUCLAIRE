@@ -91,7 +91,7 @@ export default function ProjectsList() {
         return window.innerWidth < 768 ? 'list' : 'kanban';
     })
 
-    const columns: ProjectStatus[] = ['designing', '3d_model', 'design_ready', 'design_modification', 'approved_for_production', 'production', 'delivery', 'completed', 'waiting_for_approval']
+    const columns: ProjectStatus[] = ['designing', '3d_model', 'design_ready', 'design_modification', 'approved_for_production', 'production', 'waiting_for_dispatch', 'delivery', 'completed', 'waiting_for_approval']
 
     useEffect(() => {
         const topScroll = topScrollRef.current
